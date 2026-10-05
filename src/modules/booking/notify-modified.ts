@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
 import { satangToBaht } from '@/lib/money';
@@ -40,8 +41,8 @@ export async function notifyBookingModified(
       priceDeltaBaht === 0
         ? '0'
         : priceDeltaBaht > 0
-          ? `+${priceDeltaBaht.toLocaleString()}`
-          : priceDeltaBaht.toLocaleString();
+          ? `+${priceDeltaBaht.toLocaleString(UI_LOCALE)}`
+          : priceDeltaBaht.toLocaleString(UI_LOCALE);
 
     const params = {
       booking_id: booking.id,

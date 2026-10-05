@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -165,7 +166,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         {labels['admin.gallery.manage']} →
       </Link>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">
           <div>
             <h2 className="text-heading-3 font-semibold text-text-ink">
@@ -202,7 +203,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
             <p className="text-small text-text-secondary">{labels['admin.unit360.base_rate']}</p>
-            <p className="font-semibold text-text-ink">฿{Math.round(unit.baseNightlyThb / 100).toLocaleString()}</p>
+            <p className="font-semibold text-text-ink">฿{Math.round(unit.baseNightlyThb / 100).toLocaleString(UI_LOCALE)}</p>
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
             <p className="text-small text-text-secondary">{labels['admin.unit360.min_stay']}</p>

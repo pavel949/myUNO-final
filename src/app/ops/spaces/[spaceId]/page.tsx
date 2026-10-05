@@ -121,13 +121,13 @@ export default async function OperatingSpaceHome({
     [labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)],
   ] as const;
 
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-7xl space-y-24">
       <header>
         <Link href="/ops/spaces" className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['staff.space.back']}
         </Link>
-        <p className="mt-16 text-kicker font-bold tracking-widest text-brand-andaman">
+        <p className="mt-16 stitch-kicker">
           {labels['staff.space.kicker']}
         </p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{space.name}</h1>
@@ -138,9 +138,9 @@ export default async function OperatingSpaceHome({
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['staff.space.today']}</h2>
         <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-3 xl:grid-cols-6">
           {cards.map(([label, value]) => (
-            <div key={label} className="rounded-lg border border-border-line bg-surface-paper p-16">
+            <div key={label} className="stitch-panel p-16">
               <p className="text-small text-text-secondary">{label}</p>
-              <p className="mt-4 font-display text-heading-2 font-bold text-text-ink">{value}</p>
+              <p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{value}</p>
             </div>
           ))}
         </div>
@@ -149,7 +149,7 @@ export default async function OperatingSpaceHome({
       <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">
         {links.map(([label, href]) => (
           <Link key={label} href={href}
-            className="rounded-md border border-border-line bg-surface-paper p-20 font-semibold text-text-ink hover:border-brand-andaman">
+            className="stitch-panel p-20 font-semibold text-text-ink hover:border-brand-andaman">
             {label} →
           </Link>
         ))}

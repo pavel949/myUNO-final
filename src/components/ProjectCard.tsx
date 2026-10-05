@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicProjectCard as PublicProject } from '@/modules/projects';
@@ -8,6 +9,8 @@ export interface ProjectCardLabels {
   fromPrice?: string;
   noPhoto: string;
   view?: string;
+  responsibilityProject?: string;
+  responsibilitySelected?: string;
 }
 
 export function ProjectCard({
@@ -24,7 +27,7 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-lg bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-lg bg-brand-deep shadow-card transition-shadow hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
         featured ? 'min-h-[340px] md:min-h-[516px]' : 'min-h-[280px] md:min-h-[250px]'
       }`}
     >
@@ -37,7 +40,7 @@ export function ProjectCard({
       />
 
       {image.illustrative ? (
-        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/40 px-12 py-4 text-small text-white/80 backdrop-blur">
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-white/15 px-12 py-4 text-small font-semibold text-white backdrop-blur">
           {labels.noPhoto}
         </span>
       ) : null}
@@ -62,19 +65,28 @@ export function ProjectCard({
           </p>
         ) : null}
 
+        {project.responsibility?.verified && project.responsibility.organizationName ? (
+          <p className="mt-8 text-small font-medium text-white/85">
+            {(project.responsibility.scope === 'project'
+              ? labels.responsibilityProject
+              : labels.responsibilitySelected
+            )?.replace('{org}', project.responsibility.organizationName)}
+          </p>
+        ) : null}
+
         <div className="mt-12 flex flex-wrap items-end justify-between gap-8">
           {labels.fromPrice && project.fromNightlyThb !== null ? (
             <p className="max-w-full text-small font-semibold text-white/90">
               {labels.fromPrice.replace(
                 '{price}',
-                Math.round(project.fromNightlyThb / 100).toLocaleString()
+                Math.round(project.fromNightlyThb / 100).toLocaleString(UI_LOCALE)
               )}
             </p>
           ) : (
             <span />
           )}
 
-          <span className="shrink-0 text-small font-semibold text-white transition-transform duration-structural group-hover:translate-x-4">
+          <span className="shrink-0 rounded-full bg-brand-sun px-16 py-8 text-small font-semibold text-brand-deep transition-transform duration-structural group-hover:translate-x-4">
             {labels.view || 'Explore'} →
           </span>
         </div>

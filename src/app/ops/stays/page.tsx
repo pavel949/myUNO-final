@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import OpsStatusPill, { opsStateTone } from '@/components/ops/OpsStatusPill';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds } from '@/app/libs/projectScope';
@@ -106,13 +107,13 @@ export default async function StayOperationsPage({
     ...(dept?{department:dept}:{}),...(p?{projectId:p}:{}),
     ...(requestedSpaceId?{spaceId:requestedSpaceId}:{})
   }).toString();
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-6xl space-y-24">
       <header>
         <Link href="/ops/calendar/board" className="text-small text-brand-andaman font-semibold">
           {labels['staff.stay_queue.back']}
         </Link>
-        <p className="mt-16 text-kicker font-semibold tracking-widest text-brand-andaman">
+        <p className="mt-16 stitch-kicker">
           {labels['staff.stay_queue.kicker']}
         </p>
         <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">
@@ -139,31 +140,31 @@ export default async function StayOperationsPage({
         </Link>)}
       </nav>
       <div className="grid grid-cols-2 gap-12">
-        <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+        <div className="stitch-panel p-20">
           <p className="text-small text-text-secondary">{labels['staff.stay_queue.total']}</p>
-          <p className="mt-4 font-display text-heading-2 text-text-ink">{queue.length}</p>
+          <p className="mt-4 font-display text-heading-2 font-tabular text-text-ink">{queue.length}</p>
         </div>
-        <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+        <div className="stitch-panel p-20">
           <p className="text-small text-text-secondary">{labels['staff.stay_queue.attention']}</p>
-          <p className="mt-4 font-display text-heading-2 text-text-ink">
+          <p className="mt-4 font-display text-heading-2 font-tabular text-text-ink">
             {queue.filter(x=>x.severity==='attention').length}
           </p>
         </div>
       </div>
-      <section className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
+      <section className="overflow-hidden stitch-panel">
         {queue.length===0?<p className="p-24 text-body text-text-secondary">{labels['staff.stay_queue.empty']}</p>:
-        queue.map(item=><article key={item.id} className="flex flex-wrap items-center gap-12 border-b border-border-line p-16 last:border-0">
+        queue.map(item=><article key={item.id} className="flex flex-wrap items-center gap-12 border-b border-border-line p-16 transition last:border-0 hover:bg-surface-mint">
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-text-ink">{item.unitName} · {item.guestName}</p>
-            <p className="mt-4 text-small text-text-secondary">
+            <p className="mt-4 text-small text-text-secondary font-tabular">
               {labels['staff.stay_queue.'+item.department]} · {labels['staff.stay_queue.action_key.'+item.actionKey] ?? item.actionKey}
               {' · '}{labels['staff.stay_queue.due']} {formatDate(item.dueDate+'T00:00:00Z', locale)}
             </p>
           </div>
-          {item.severity==='attention'&&<span className="rounded-full bg-amber-100 px-12 py-4 text-small font-semibold text-amber-900">
+          {item.severity==='attention'&&<OpsStatusPill tone={opsStateTone("dirty")}>
             {labels['staff.stay_queue.attention']}
-          </span>}
-          <Link href={'/ops/stays/'+item.bookingId} className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          </OpsStatusPill>}
+          <Link href={'/ops/stays/'+item.bookingId} className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {labels['staff.stay_queue.action']} →
           </Link>
         </article>)}

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -23,7 +25,7 @@ interface Claim {
  * shown as ฿125,050.
  */
 const baht = (satang: number) =>
-  `฿${(satang / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `฿${(satang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ClaimsAdminClient({
   claims,
@@ -62,7 +64,7 @@ export default function ClaimsAdminClient({
 
   if (claims.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+      <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
         <p className="text-body text-text-secondary">{labels['admin.claims.empty']}</p>
       </div>
     );
@@ -86,7 +88,7 @@ export default function ClaimsAdminClient({
             claim.preauthAmountThb !== null && claim.claimedAmountThb > claim.preauthAmountThb;
 
           return (
-            <li key={claim.id} className="p-16 bg-surface-paper border border-border-line rounded-lg">
+            <li key={claim.id} className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card">
               <div className="flex flex-wrap gap-16 mb-12 text-small text-text-secondary">
                 <span>{`${labels['admin.claims.guest']}: ${claim.guestName}`}</span>
                 <span>{`${labels['admin.claims.unit']}: ${claim.unitName}`}</span>

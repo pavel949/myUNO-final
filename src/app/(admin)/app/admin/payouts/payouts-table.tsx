@@ -82,7 +82,7 @@ export default function PayoutsTable({
       {payouts.length === 0 ? (
         <p className="text-body text-text-secondary">{labels['admin.payouts.empty']}</p>
       ) : (
-        <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg">
+        <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg shadow-card">
           <table className="w-full text-small">
             <thead>
               <tr className="border-b border-border-line">
@@ -111,7 +111,7 @@ export default function PayoutsTable({
                 <tr key={payout.id} className="border-b border-border-line last:border-b-0">
                   <td className="px-12 py-8 capitalize text-text-ink">{payeeLabel(payout.payeeType)}</td>
                   <td className="px-12 py-8 font-mono text-text-ink">{payout.reference}</td>
-                  <td className="px-12 py-8 text-right font-mono text-text-ink">
+                  <td className="px-12 py-8 text-right font-tabular text-text-ink">
                     {(payout.amountThb / 100).toFixed(2)}
                   </td>
                   <td className="px-12 py-8">

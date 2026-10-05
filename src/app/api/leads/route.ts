@@ -45,13 +45,14 @@ export async function POST(req: NextRequest) {
       throw createPublicError('invalid_request', 400);
     }
 
-    const { audience, name, contact, message, consent, website, sourceChannelId, sourceMedium, sourceCampaign, referrerIdentityId } = body as {
+    const { audience, name, contact, message, consent, website, projectId, sourceChannelId, sourceMedium, sourceCampaign, referrerIdentityId } = body as {
       audience?: string;
       name?: string;
       contact?: string;
       message?: string;
       consent?: boolean;
       website?: string;
+      projectId?: string;
       sourceChannelId?: string;
       sourceMedium?: string;
       sourceCampaign?: string;
@@ -73,11 +74,21 @@ export async function POST(req: NextRequest) {
       throw createPublicError('consent_required', 400);
     }
 
+    const scopedProjectId = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : undefined;
+    if (scopedProjectId) {
+      const project = await prisma.project.findFirst({
+        where: { id: scopedProjectId, status: 'live' },
+        select: { id: true },
+      });
+      if (!project) throw createPublicError('invalid_project', 400);
+    }
+
     await submitLead(prisma, {
       audience: audience as LeadAudience,
       name,
       contact,
       message: typeof message === 'string' ? message : undefined,
+      projectId: scopedProjectId,
       consent,
     });
 
@@ -89,6 +100,7 @@ export async function POST(req: NextRequest) {
       name,
       contact,
       message: typeof message === 'string' ? message : undefined,
+      projectId: scopedProjectId,
       sourceChannelId: typeof sourceChannelId === 'string' ? sourceChannelId : undefined,
       sourceMedium: typeof sourceMedium === 'string' ? sourceMedium : undefined,
       sourceCampaign: typeof sourceCampaign === 'string' ? sourceCampaign : undefined,

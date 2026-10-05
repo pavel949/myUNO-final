@@ -8,6 +8,8 @@ import { getPublicUnitById } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import UnitDetailClient from './unit-client';
+import { track } from '@/modules/analytics';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +63,14 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     notFound();
   }
 
+  await track(prisma, 'unit_opened', {
+    unitId: unit.id,
+    destination: getDestination().key,
+    locale: getRequestLocale(),
+    intent: 'stay',
+    source: 'stay_unit_detail',
+  }).catch(() => null);
+
   const description = await unitDescription(unit.descriptionKey);
   const jsonLd = unitJsonLd({ ...unit, description });
 
@@ -76,13 +86,14 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'listing.representative_media': 'Representative room-type photography. The exact room is assigned from this category.',
     'listing.guests_count': '{count} guests',
     'listing.bedrooms_count': '{count} bedrooms',
+    'listing.floor': 'Floor {value}',
     'listing.min_nights_count': 'Min {count} nights',
+    'homes.detail.size_unit': 'sqm',
     'listing.not_charged_yet': 'You are not charged yet. Card, transfer or cash on arrival.',
     'listing.fewer_guests': 'Fewer adults',
     'listing.more_guests': 'More adults',
     'search.bar_check_in': 'Check-in',
     'search.bar_check_out': 'Check-out',
-    'listing.default_description': 'A beautiful home in Phuket.',
     'listing.max_guests': 'Max guests',
     'listing.min_stay': 'Min stay',
     'listing.nights': 'nights',
@@ -158,13 +169,14 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           representativeMedia: labels['listing.representative_media'],
           guestsCount: labels['listing.guests_count'],
           bedroomsCount: labels['listing.bedrooms_count'],
+          floor: labels['listing.floor'],
           minNightsCount: labels['listing.min_nights_count'],
+          sizeUnit: labels['homes.detail.size_unit'],
           notChargedYet: labels['listing.not_charged_yet'],
           fewerGuests: labels['listing.fewer_guests'],
           moreGuests: labels['listing.more_guests'],
           checkIn: labels['search.bar_check_in'],
           checkOut: labels['search.bar_check_out'],
-          defaultDescription: labels['listing.default_description'],
           maxGuests: labels['listing.max_guests'],
           minStay: labels['listing.min_stay'],
           nights: labels['listing.nights'],

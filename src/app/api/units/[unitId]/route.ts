@@ -6,11 +6,15 @@ import { excludedSourceControlledUnits } from '@/modules/booking/source-authorit
 import { resolveStayCancellationPolicy } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
+import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
+import { tMany } from '@/modules/content';
+import { getRequestLocale } from '@/lib/i18n';
 
 /**
  * GET /api/units/[unitId]
  * Public unit detail for the guest-facing unit page (S4).
- * Only live units are visible; returns the guest-safe subset of fields
+ * Live units and provenance-backed imported managed drafts can be visible;
+ * returns the guest-safe subset of fields
  * (no owner identity, no engagement economics, no internal status detail).
  *
  * When startDate + endDate are supplied, `pricing` is resolved through the
@@ -56,12 +60,20 @@ export async function GET(
         projectId: true,
         inventoryCategoryId: true,
         name: true,
+        descriptionKey: true,
         unitType: true,
         accommodationType: true,
         bedrooms: true,
         bathrooms: true,
         maxGuests: true,
         sizeSqm: true,
+        usableAreaSqm: true,
+        grossAreaSqm: true,
+        outdoorAreaSqm: true,
+        plotAreaSqm: true,
+        floor: true,
+        unitFeatures: true,
+        views: true,
         amenityKeys: true,
         baseNightlyThb: true,
         minNights: true,
@@ -111,13 +123,26 @@ export async function GET(
       },
     });
 
-    // A unit is public only when both the unit and project are live and the
-    // physical asset is not suspended.
+    const [managedImported, sourceBlockedIds] = await Promise.all([
+      managedImportedInventoryIds(prisma),
+      excludedSourceControlledUnits(prisma, [params.unitId]),
+    ]);
+    const sourceBlocked = sourceBlockedIds.includes(params.unitId);
+    const unitPublished =
+      unit?.status === 'live' ||
+      (unit?.status === 'draft' && managedImported.unitIds.includes(unit.id));
+    const projectPublished =
+      unit?.project.status === 'live' ||
+      (unit?.project.status === 'draft' && managedImported.projectIds.includes(unit.project.id));
+
+    // Legacy imported managed rows can be public before their old draft bit is
+    // reconciled, but they still pass the complete stay-readiness gates below.
     if (
       !unit ||
-      unit.status !== 'live' ||
+      !unitPublished ||
+      sourceBlocked ||
       unit.assetStatus === 'suspended' ||
-      unit.project.status !== 'live' ||
+      !projectPublished ||
       unit.inventoryCategory?.status !== 'live' ||
       (Boolean(unit.project.projectType) && !unit.commercialOfferings.some(offer =>
         ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active'))
@@ -206,8 +231,35 @@ export async function GET(
       project,
       ...rest
     } = unit;
+    const titleKey = unit.descriptionKey
+      ? unit.descriptionKey.replace(/\.description$/, '.title')
+      : null;
+    const factKeys = [
+      ...unit.views.map(view => `catalog.views.${view}.label`),
+      ...unit.unitFeatures
+        .filter(feature => /^[a-z0-9_]+$/.test(feature))
+        .map(feature => `catalog.unit_features.${feature}.label`),
+    ];
+    const copy = await tMany(
+      prisma,
+      [
+        ...[titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key)),
+        ...factKeys,
+      ],
+      getRequestLocale()
+    );
     const publicUnit = {
       ...rest,
+      marketingTitle: titleKey ? copy[titleKey] : null,
+      description: unit.descriptionKey ? copy[unit.descriptionKey] : null,
+      usableAreaSqm: unit.usableAreaSqm === null ? null : Number(unit.usableAreaSqm),
+      grossAreaSqm: unit.grossAreaSqm === null ? null : Number(unit.grossAreaSqm),
+      outdoorAreaSqm: unit.outdoorAreaSqm === null ? null : Number(unit.outdoorAreaSqm),
+      plotAreaSqm: unit.plotAreaSqm === null ? null : Number(unit.plotAreaSqm),
+      viewLabels: unit.views.map(view => copy[`catalog.views.${view}.label`] || view.replace(/_/g, ' ')),
+      featureLabels: unit.unitFeatures
+        .filter(feature => /^[a-z0-9_]+$/.test(feature))
+        .map(feature => copy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' ')),
       inventoryCategory: inventoryCategory
         ? {
             id: inventoryCategory.id,

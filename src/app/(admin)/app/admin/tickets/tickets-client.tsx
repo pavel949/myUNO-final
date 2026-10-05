@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -121,7 +123,7 @@ export default function AdminTicketsClient({
             <select
               name="projectId"
               defaultValue={activeProjectId}
-              className="w-full md:w-auto px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink"
+              className="w-full md:w-auto px-12 py-8 border border-border-line rounded-lg bg-surface-paper shadow-card text-text-ink"
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
             >
               <option value="">{labels['admin.tickets.all_projects']}</option>
@@ -152,11 +154,11 @@ export default function AdminTicketsClient({
       </div>
 
       {tickets.length === 0 ? (
-        <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
           <p className="text-body text-text-secondary">{labels['admin.tickets.empty']}</p>
         </div>
       ) : (
-        <div className="bg-surface-paper border border-border-line rounded-lg">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card">
           {tickets.map((ticket) => {
             const progression = ticketNextStatus(ticket.status);
             const slaBreached = isSlaBreached(ticket.slaDueAt, ticket.status);
@@ -199,7 +201,7 @@ export default function AdminTicketsClient({
                   <p className="text-caption text-text-secondary mt-4">
                     {ticket.categoryKey} · {ticket.priority}
                     {ticket.slaDueAt
-                      ? ` · ${labels['admin.tickets.sla_due']} ${new Date(ticket.slaDueAt).toLocaleString()}`
+                      ? ` · ${labels['admin.tickets.sla_due']} ${new Date(ticket.slaDueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}`
                       : ''}
                   </p>
                 </div>

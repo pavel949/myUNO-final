@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import React from 'react';
 
@@ -103,7 +105,7 @@ export default function Project360Client({
 
   return (
     <div className="space-y-24">
-      <div className="p-16 bg-surface-paper border border-border-line rounded-lg flex flex-col md:flex-row md:justify-between md:items-center gap-16">
+      <div className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card flex flex-col md:flex-row md:justify-between md:items-center gap-16">
         <div>
           <p className="text-small text-text-secondary">{labels['admin.project360.score_label']}</p>
           <div className="flex items-center gap-8 mt-4">
@@ -127,7 +129,7 @@ export default function Project360Client({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-16">
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">
             {labels['admin.project360.development_facts_title']}
           </h2>
@@ -142,7 +144,7 @@ export default function Project360Client({
           </dl>
         </section>
 
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">
             {labels['admin.project360.developer_title']}
           </h2>
@@ -180,7 +182,7 @@ export default function Project360Client({
           </div>
         </section>
 
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.operational_title']}</h2>
           <div className="grid grid-cols-2 gap-8">
             {[
@@ -207,7 +209,7 @@ export default function Project360Client({
         </section>
       </div>
 
-      <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+      <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           <div>
             <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.categories_title']}</h2>
@@ -243,7 +245,7 @@ export default function Project360Client({
                     <td className="py-12 pr-12">{category.unitCount}</td>
                     <td className="py-12 pr-12">{category.bedrooms} / {category.bathrooms}</td>
                     <td className="py-12 pr-12">{category.maxGuests}</td>
-                    <td className="py-12 pr-12">฿{category.baseNightlyThb.toLocaleString()}</td>
+                    <td className="py-12 pr-12">฿{category.baseNightlyThb.toLocaleString(UI_LOCALE)}</td>
                     <td className="py-12">{replace(labels['admin.project360.nights'], { count: category.minNights })}</td>
                   </tr>
                 ))}
@@ -253,7 +255,7 @@ export default function Project360Client({
         )}
       </section>
 
-      <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+      <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
         <div>
           <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.project360.rate_plans_title']}</h2>
           <p className="text-small text-text-secondary">{labels['admin.project360.rate_plans_hint']}</p>
@@ -281,7 +283,7 @@ export default function Project360Client({
         )}
       </section>
 
-      <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+      <section className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card space-y-12">
         <h2 className="font-semibold text-subtitle text-text-ink">
           {labels['admin.project360.facilities_title']}
         </h2>

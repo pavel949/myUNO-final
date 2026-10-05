@@ -20,6 +20,7 @@ export interface SubmitLeadInput {
   name: string;
   contact: string;
   message?: string;
+  projectId?: string;
   consent: boolean;
 }
 
@@ -30,7 +31,7 @@ export async function submitLead(
   db: PrismaClient,
   input: SubmitLeadInput
 ): Promise<{ threadId: string }> {
-  const { audience, name, contact, message, consent } = input;
+  const { audience, name, contact, message, projectId, consent } = input;
 
   if (!LEAD_AUDIENCES.includes(audience)) {
     throw new Error('invalid_audience');
@@ -72,6 +73,7 @@ export async function submitLead(
     `Lead · ${audience}`,
     `Name: ${name.trim()}`,
     `Contact: ${contact.trim()}`,
+    ...(projectId ? [`Project: ${projectId}`] : []),
     ...(message?.trim() ? [`Message: ${message.trim()}`] : []),
     'Consent: yes',
   ];

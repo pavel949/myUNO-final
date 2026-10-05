@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 /**
  * Money display helpers for the service-order detail page (F-SVC-4).
  * Every money field on the order (totalThb, refundAccruedThb,
@@ -8,7 +9,7 @@
  * (CLAUDE.md "Money rules").
  */
 export function baht(satang: number): string {
-  return (satang / 100).toLocaleString();
+  return (satang / 100).toLocaleString(UI_LOCALE);
 }
 
 /**

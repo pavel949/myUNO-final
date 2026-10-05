@@ -7,8 +7,13 @@ import {
 } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { checkRateLimit } from '@/app/libs/rateLimit';
+import { track } from '@/modules/analytics';
+import { getDestination } from '@/modules/destinations';
+import { getRequestLocale } from '@/lib/i18n';
 
 export async function POST(req: NextRequest) {
+  let analyticsCategoryId: string | undefined;
+  let analyticsProjectId: string | undefined;
   try {
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -35,6 +40,7 @@ export async function POST(req: NextRequest) {
       childrenCount = 0,
       petsCount = 0,
     } = body;
+    analyticsCategoryId = typeof inventoryCategoryId === 'string' ? inventoryCategoryId : undefined;
 
     if (!inventoryCategoryId || !startDateStr || !endDateStr) {
       throw createPublicError(
@@ -77,6 +83,8 @@ export async function POST(req: NextRequest) {
     if (!category || category.status !== 'live') {
       throw createPublicError('inventory category not found', 404);
     }
+
+    analyticsProjectId = category.projectId;
 
     const candidates = await findAvailableUnitsForCategory(
       prisma,
@@ -142,6 +150,19 @@ export async function POST(req: NextRequest) {
     const engine = selected.breakdown;
     const nights = engine.lines.length;
 
+    await track(prisma, 'quote_succeeded', {
+      unitId: selected.unitId,
+      projectId: category.projectId,
+      inventoryCategoryId: category.id,
+      destination: getDestination().key,
+      locale: getRequestLocale(),
+      intent: 'stay',
+      source: 'category_quote',
+      nights,
+      guests: guestCount,
+      pets,
+    }).catch(() => null);
+
     return NextResponse.json(
       {
         inventoryCategoryId: category.id,
@@ -165,6 +186,15 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    await track(prisma, 'quote_failed', {
+      projectId: analyticsProjectId,
+      inventoryCategoryId: analyticsCategoryId,
+      destination: getDestination().key,
+      locale: getRequestLocale(),
+      intent: 'stay',
+      source: 'category_quote',
+      failureClass: error instanceof Error ? error.name : 'unknown',
+    }).catch(() => null);
     return handleError(error);
   }
 }

@@ -8,7 +8,7 @@ type Draft = { kind: string; existingUnitId: string | null; operatingModel: stri
 type Saved = { id: string; requirements: Draft };
 const empty: Draft = { kind: 'home', existingUnitId: null, operatingModel: null, requestedManagementCompanyName: '', projectId: null, proposedProject: '', projectAddress: '', projectType: 'condominium', areaId: null, latitude: null, longitude: null, projectPhotos: [], unitName: '', unitType: 'condo', bedrooms: null, bathrooms: null, sizeSqm: null, maxGuests: null, proposedNightlyBaht: null, proposedMinNights: null, floor: '', description: '', offers: [], contact: '', photos: [], status: 'draft' };
 const steps = ['Your property', 'Residence', 'Details', 'Photos', 'How to offer', 'Review'];
-const field = 'mt-8 block h-12 w-full rounded-lg border border-border-line bg-surface-paper px-4 text-text-ink';
+const field = 'stitch-control mt-8 block w-full';
 export default function PropertySubmissionWizard({
   projects,
   areas,
@@ -78,15 +78,15 @@ export default function PropertySubmissionWizard({
   const next = async () => { if (await save()) setStep(old => Math.min(old + 1, steps.length - 1)); };
   const selectedProject = projects.find(p => p.id === draft.projectId);
   const options = [['short_stay', 'Short stays'], ['monthly', 'Monthly rental'], ['yearly', 'Long-term rental'], ['sale', 'For sale']];
-  return <main className="mx-auto max-w-3xl px-20 py-40 md:py-64">
+  return <main className="stitch-workspace mx-auto max-w-4xl px-20 py-32 md:px-32 md:py-48">
     <Link href="/property/listings" className="text-small text-brand-andaman">← My listings</Link>
-    <div className="mt-24 flex flex-wrap justify-between gap-12"><div><p className="text-kicker text-brand-andaman">ADD A PROPERTY</p><h1 className="font-display text-display-xl font-semibold">Tell us about your place</h1></div><span className="text-small text-text-secondary">{step + 1} of {steps.length}</span></div>
+    <div className="stitch-hero mt-24 flex flex-wrap justify-between gap-12"><div><p className="stitch-kicker">ADD A PROPERTY</p><h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">Tell us about your place</h1></div><span className="rounded-full bg-surface-sand px-12 py-8 text-small font-semibold text-text-secondary">{step + 1} of {steps.length}</span></div>
     <div className="mt-24 flex h-8 overflow-hidden rounded-full bg-surface-muted"><div className="bg-brand-andaman transition-all" style={{ width: `${(step + 1) / steps.length * 100}%` }} /></div>
     <p className="mt-12 text-text-secondary">Save your progress at any time. Nothing goes public until reviewed and approved by myUNO.</p>
     {items.length > 0 && !saved && <div className="mt-24 rounded-md border border-border-line p-16"><p className="font-semibold">Continue an earlier application</p>{items.map(item => <button key={item.id} className="mt-8 block text-left text-brand-andaman underline" onClick={() => { setSaved(item); setDraft({ ...empty, ...item.requirements, photos: item.requirements.photos || [], projectPhotos: item.requirements.projectPhotos || [] }); setStep(item.requirements.status !== 'draft' ? steps.length - 1 : 0); }}>{item.requirements.unitName || 'Untitled property'} · {item.requirements.status}</button>)}</div>}
     {error && <p role="alert" className="mt-20 rounded-lg bg-state-error-soft p-16 text-state-error">{error}</p>}
     {notice && <p role="status" className="mt-20 rounded-lg bg-state-success-soft p-16 text-state-success">{notice}</p>}
-    <section className="mt-32 min-h-[280px] rounded-lg border border-border-line bg-surface-paper p-24 md:p-32">
+    <section className="stitch-panel mt-32 min-h-[280px] p-24 md:p-32">
       <h2 className="mb-24 font-display text-heading-2 font-semibold">{steps[step]}</h2>
       {draft.status === 'converted' ? <div className="space-y-12"><p>Your submission has become a canonical draft property. Our team is completing activation checks.</p><p><strong>Onboarding state:</strong> {draft.onboardingState || 'readiness_pending'}</p>{draft.onboardingBlockers?.length ? <div role="status" className="rounded-lg border border-border-line bg-surface-ivory p-12"><p className="font-semibold">Remaining blockers</p><ul className="mt-8 list-disc space-y-4 pl-20 text-small text-text-secondary">{draft.onboardingBlockers.map(blocker => <li key={blocker}>{blocker.replace(/_/g, ' ')}</li>)}</ul></div> : <p className="text-small text-state-success">No derived onboarding blockers are currently recorded.</p>}{draft.canonicalProjectId && <Link className="block text-brand-andaman underline" href="/property/listings">My listings and property settings</Link>}</div> : draft.status === 'submitted' ? <p>Your property is submitted for review. Our team will verify your relationship to the property and applicable permissions before activation.</p> :
       step === 0 ? <div className="space-y-12">{[['home', 'A home in a residence', 'Apartment, condo, villa or house'], ['resort', 'An entire property', 'Resort, hotel or villa estate'], ['management', 'I represent a management company', 'Submit properties on behalf of owners']].map(([value, title, subtitle]) => <button key={value} type="button" onClick={() => set({ kind: value })} aria-pressed={draft.kind === value} className={`w-full rounded-md border p-20 text-left ${draft.kind === value ? 'border-brand-andaman bg-surface-ivory' : 'border-border-line'}`}><strong>{title}</strong><p className="text-small text-text-secondary">{subtitle}</p></button>)}</div> :
@@ -98,7 +98,7 @@ export default function PropertySubmissionWizard({
     </section>
     <div className="mt-24 flex flex-wrap items-center justify-between gap-12">
       <button type="button" disabled={busy || step === 0} onClick={() => { setError(''); setStep(s => s - 1); }} className="rounded-lg border border-border-line px-24 py-12 disabled:opacity-40">Back</button>
-      <div className="flex gap-8"><button type="button" disabled={busy || draft.status !== 'draft'} onClick={() => save()} className="rounded-lg border border-border-line px-20 py-12 disabled:opacity-40">Save draft</button>{step < steps.length - 1 ? <button disabled={busy || draft.status !== 'draft'} onClick={next} className="rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white disabled:opacity-40">Continue →</button> : <button disabled={busy || draft.status !== 'draft'} onClick={() => save(true)} className="rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white disabled:opacity-40">Submit for review</button>}</div>
+      <div className="flex gap-8"><button type="button" disabled={busy || draft.status !== 'draft'} onClick={() => save()} className="rounded-lg border border-border-line px-20 py-12 disabled:opacity-40">Save draft</button>{step < steps.length - 1 ? <button disabled={busy || draft.status !== 'draft'} onClick={next} className="rounded-md bg-brand-andaman px-24 py-12 font-semibold text-white shadow-card transition hover:bg-brand-deep disabled:opacity-40">Continue →</button> : <button disabled={busy || draft.status !== 'draft'} onClick={() => save(true)} className="rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white disabled:opacity-40">Submit for review</button>}</div>
     </div>
   </main>;
 }

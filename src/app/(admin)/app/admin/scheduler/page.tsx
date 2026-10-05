@@ -90,7 +90,7 @@ export default async function AdminSchedulerPage() {
 
       <div className="overflow-x-auto">
         <table className="w-full text-small">
-          <thead className="bg-surface-paper">
+          <thead className="bg-surface-sand">
             <tr className="text-left text-text-secondary border-b border-border-line">
               <th className="px-12 py-12 font-semibold">{labels['admin.scheduler.col.job']}</th>
               <th className="px-12 py-12 font-semibold">{labels['admin.scheduler.col.status']}</th>

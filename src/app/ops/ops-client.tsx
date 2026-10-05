@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -186,7 +188,7 @@ export default function OpsBoardClient({
     if (
       !window.confirm(
         fill(labels['staff.ops.confirm_cash'], {
-          amount: order.totalThb.toLocaleString(),
+          amount: order.totalThb.toLocaleString(UI_LOCALE),
         })
       )
     ) {
@@ -283,7 +285,7 @@ export default function OpsBoardClient({
         {booking.requestExpiresAt ? (
           <p className="text-small text-state-warning mt-4">
             {labels['staff.ops.request_expires']}:{' '}
-            {new Date(booking.requestExpiresAt).toLocaleString()}
+            {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
           </p>
         ) : null}
         <BookingRequestInboxDetails
@@ -365,7 +367,7 @@ export default function OpsBoardClient({
     bookings: OpsBooking[];
     action: (booking: OpsBooking) => React.ReactNode;
   }) => (
-    <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+    <section className="stitch-panel mb-24 p-24">
       <h2 className="font-display text-title font-semibold text-text-ink mb-8">{title}</h2>
       {bookings.length === 0 ? (
         <p className="text-body text-text-secondary py-8">{labels['staff.ops.empty']}</p>
@@ -386,7 +388,7 @@ export default function OpsBoardClient({
       )}
 
       {mobilizationUnits.length > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <section className="stitch-panel mb-24 p-24">
           <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['staff.ops.mobilization_title']}
           </h2>
@@ -426,7 +428,7 @@ export default function OpsBoardClient({
         </section>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel mb-24 p-24">
         <div className="flex items-center justify-between gap-16 mb-8">
           <h2 className="font-display text-title font-semibold text-text-ink">
             {labels['staff.ops.booking_requests']}
@@ -541,7 +543,7 @@ export default function OpsBoardClient({
                 if (
                   window.confirm(
                     fill(labels['staff.ops.confirm_cash'], {
-                      amount: booking.totalThb.toLocaleString(),
+                      amount: booking.totalThb.toLocaleString(UI_LOCALE),
                     })
                   )
                 ) {
@@ -582,7 +584,7 @@ export default function OpsBoardClient({
         )}
       />
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel p-24 mb-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.service_pending_cash']}
         </h2>
@@ -600,8 +602,8 @@ export default function OpsBoardClient({
                   <span className="text-text-secondary font-normal"> · {order.ordererName}</span>
                 </p>
                 <p className="text-small text-text-secondary">
-                  {new Date(order.scheduledStart).toLocaleString()} · ฿
-                  {order.totalThb.toLocaleString()}
+                  {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+                  {order.totalThb.toLocaleString(UI_LOCALE)}
                 </p>
               </div>
               <div className="flex items-center gap-8">
@@ -629,7 +631,7 @@ export default function OpsBoardClient({
         )}
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel p-24 mb-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-8">
           {labels['staff.ops.tickets_title']}
         </h2>
@@ -688,7 +690,7 @@ export default function OpsBoardClient({
                   </p>
                   {ticket.slaDueAt ? (
                     <p className="text-small text-text-secondary">
-                      {labels['staff.ops.ticket_due']}: {new Date(ticket.slaDueAt).toLocaleString()}
+                      {labels['staff.ops.ticket_due']}: {new Date(ticket.slaDueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                     </p>
                   ) : null}
                   {ticket.assigneeName ? (

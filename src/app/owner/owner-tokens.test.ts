@@ -8,9 +8,9 @@ const switcher = readFileSync(join(process.cwd(), 'src/components/owner/ProjectS
 const sell = readFileSync(join(process.cwd(), 'src/components/owner/SellInterestCard.tsx'), 'utf8');
 
 describe('owner tokens (Claude Design board 07)', () => {
-  it('sits on ivory rather than the old background alias alone', () => {
-    expect(portfolio).toContain('bg-surface-ivory');
-    expect(unit).toContain('bg-surface-ivory');
+  it('sits on the Stitch workspace surface', () => {
+    expect(portfolio).toContain('stitch-workspace');
+    expect(unit).toContain('stitch-workspace');
   });
 
   it('uses chip filters instead of a dropdown switcher', () => {
@@ -31,7 +31,7 @@ describe('owner tokens (Claude Design board 07)', () => {
   });
 
   it('keeps sell interest on paper, not a sun gradient', () => {
-    expect(sell).toContain('bg-surface-paper');
+    expect(sell).toContain('stitch-panel');
     expect(sell).not.toContain('from-brand-sun-soft');
   });
 });

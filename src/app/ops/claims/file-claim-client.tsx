@@ -1,5 +1,6 @@
 'use client';
 
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -19,7 +20,7 @@ interface Stay {
 
 /** Satang everywhere in the platform; baht only at the edge where a human reads it. */
 const baht = (satang: number) =>
-  `฿${(satang / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `฿${(satang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2  })}`;
 
 export default function FileClaimClient({
   stays,
@@ -66,7 +67,7 @@ export default function FileClaimClient({
 
   if (stays.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
+      <div className="p-24 stitch-panel text-center">
         <p className="text-body text-text-secondary">{labels['staff.claims.empty']}</p>
       </div>
     );
@@ -97,7 +98,7 @@ export default function FileClaimClient({
           return (
             <li
               key={stay.bookingId}
-              className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card"
+              className="p-16 stitch-panel"
             >
               <div className="flex flex-wrap gap-16 mb-12 text-small text-text-stone">
                 <span>{`${labels['staff.claims.guest']}: ${stay.guestName}`}</span>

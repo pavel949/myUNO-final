@@ -1,11 +1,12 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
-import { Chip } from '@/components/Chip';
 import { ServiceCategoryIcon } from '@/components/ServiceCategoryIcon';
 
 interface MarketService {
@@ -58,7 +59,7 @@ function fill(template: string, params: Record<string, string | number>): string
 // as satang (THB × 100) straight from the DB — convert to baht only here, at
 // final render (money rule, CLAUDE.md "Money rules").
 export function baht(satang: number): string {
-  return (satang / 100).toLocaleString();
+  return (satang / 100).toLocaleString(UI_LOCALE);
 }
 
 export default function ServicesClient({
@@ -264,12 +265,12 @@ export default function ServicesClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+    <main className="min-h-screen bg-surface-mint px-20 py-32 md:px-32 md:py-48">
+      <div className="mx-auto max-w-content">
+        <h1 className="font-display text-display-hero font-semibold text-brand-andaman mb-8 md:text-display-hero-lg">
           {labels['services.browse.title']}
         </h1>
-        <p className="text-body text-text-secondary mb-24">
+        <p className="mb-32 max-w-2xl text-body text-text-secondary md:text-subtitle">
           {labels['services.browse.subtitle']}
         </p>
 
@@ -314,13 +315,22 @@ export default function ServicesClient({
           </div>
         )}
 
-        {/* Super-app facade (SA-1): category tiles from the catalog */}
+        {/* Super-app facade (SA-1): category pills from the catalog (Stitch pattern) */}
         {categories.length > 0 && (
-          <section className="mb-32">
-            <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
-              {labels['services.browse.categories_title']}
-            </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-12">
+          <section className="mb-32" aria-label={labels['services.browse.categories_title']}>
+            <div className="-mx-20 flex gap-8 overflow-x-auto px-20 pb-8 md:mx-0 md:flex-wrap md:px-0">
+              <button
+                type="button"
+                aria-pressed={selectedCategory === null}
+                onClick={() => selectCategory(null)}
+                className={`inline-flex min-h-44 shrink-0 items-center gap-8 rounded-full border px-16 text-small font-semibold transition-colors duration-micro ${
+                  selectedCategory === null
+                    ? 'border-brand-andaman bg-brand-andaman text-surface-ivory'
+                    : 'border-border-line bg-surface-paper text-text-ink hover:border-brand-andaman'
+                }`}
+              >
+                {labels['services.browse.show_all']}
+              </button>
               {categories.map((category) => {
                 const active = selectedCategory === category.key;
                 return (
@@ -329,7 +339,7 @@ export default function ServicesClient({
                     type="button"
                     aria-pressed={active}
                     onClick={() => selectCategory(active ? null : category.key)}
-                    className={`flex flex-col items-center gap-8 rounded-lg border p-12 transition-colors duration-micro ${
+                    className={`inline-flex min-h-44 shrink-0 items-center gap-8 rounded-full border px-16 text-small font-semibold transition-colors duration-micro ${
                       active
                         ? 'border-brand-andaman bg-brand-andaman text-surface-ivory'
                         : 'border-border-line bg-surface-paper text-text-ink hover:border-brand-andaman'
@@ -339,20 +349,11 @@ export default function ServicesClient({
                       name={category.icon}
                       className={active ? 'text-surface-ivory' : 'text-brand-andaman'}
                     />
-                    <span className="text-small font-medium text-center leading-tight">
-                      {category.label}
-                    </span>
+                    <span>{category.label}</span>
                   </button>
                 );
               })}
             </div>
-            {selectedCategory && (
-              <div className="mt-16">
-                <Chip variant="filter" isSelectable onClick={() => selectCategory(null)}>
-                  {labels['services.browse.show_all']}
-                </Chip>
-              </div>
-            )}
           </section>
         )}
 
@@ -371,24 +372,26 @@ export default function ServicesClient({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
+          <div className="grid grid-cols-1 gap-24 mb-48 md:grid-cols-2 lg:grid-cols-3">
             {visibleServices.map((service) => (
               <div
                 key={service.id}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden"
+                className="flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
-                {service.coverUrl && (
+                {service.coverUrl ? (
                   <Image
                     src={service.coverUrl}
                     alt={service.title}
                     width={640}
                     height={360}
-                    className="aspect-video w-full object-cover"
+                    className="aspect-[4/3] w-full object-cover"
                   />
+                ) : (
+                  <div aria-hidden="true" className="aspect-[4/3] w-full bg-surface-sand" />
                 )}
-                <div className="p-16">
+                <div className="flex flex-1 flex-col p-20">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-subtitle font-semibold text-text-ink">
+                    <h2 className="font-display text-title font-semibold text-text-ink">
                       <Link
                         href={`/services/${service.id}?${new URLSearchParams({
                           ...(bookingId ? { bookingId } : {}),
@@ -472,8 +475,8 @@ export default function ServicesClient({
                     </div>
                   ) : (
                     <Button
-                      variant="secondary"
-                      size="sm"
+                      className="mt-auto"
+                      fullWidth
                       onClick={() => {
                         setOpenId(service.id);
                         setError(null);
@@ -509,7 +512,7 @@ export default function ServicesClient({
                     {order.serviceTitle || '—'}
                   </p>
                   <p className="text-small text-text-secondary">
-                    {new Date(order.scheduledStart).toLocaleString()} · ฿
+                    {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
                     {baht(order.totalThb)}
                   </p>
                 </div>

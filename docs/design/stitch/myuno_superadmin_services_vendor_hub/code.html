@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><title>myUNO Global Platform OS</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary":"#ffffff","inverse-surface":"#273331","primary-fixed":"#c2ebdc","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","border-subtle":"#E5DFD3","surface-sand-subtle":"#EAE4D7","on-primary-fixed":"#002019","error-container":"#ffdad6","surface-container":"#e3f1ed","on-secondary-fixed":"#2b1700","surface-container-lowest":"#ffffff","tertiary-fixed":"#c7eadd","accent-gold-muted":"#F5EAD9","primary":"#00221a","surface-tint":"#40665a","on-surface-variant":"#414845","on-tertiary":"#ffffff","status-verified-bg":"#E9F1EE","on-secondary":"#ffffff","surface-container-highest":"#d8e5e2","on-background":"#121e1c","status-instant-bg":"#FAF3E8","secondary-fixed-dim":"#f6bb79","on-secondary-fixed-variant":"#663e04","on-error":"#ffffff","primary-fixed-dim":"#a7cfc1","accent-gold-soft":"#E4BE8D","surface-container-high":"#ddebe8","error":"#ba1a1a","inverse-on-surface":"#e6f4f0","on-tertiary-container":"#7fa195","text-muted":"#566360","surface-bright":"#effcf9","secondary-container":"#fdc17e","surface-ivory":"#FBF9F5","surface-sand":"#F4F0E8","background":"#effcf9","on-tertiary-fixed-variant":"#2d4d44","primary-container":"#11382e","on-error-container":"#93000a","status-instant":"#9A6B32","outline":"#717975","on-surface":"#121e1c","surface-dim":"#cfddd9","surface":"#effcf9","on-secondary-container":"#784d14","tertiary-fixed-dim":"#accec2","tertiary":"#01221a","status-verified":"#1E5848","tertiary-container":"#17372f","on-primary-container":"#7ba295","secondary":"#81551c","secondary-fixed":"#ffddba","on-primary-fixed-variant":"#284e43","inverse-primary":"#a7cfc1","on-tertiary-fixed":"#002019","surface-container-low":"#e9f7f3"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-2xl":"4rem","space-md":"1rem","margin-mobile":"1.25rem","gutter-mobile":"1rem","space-xl":"2.5rem","margin":"3rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xs":"0.25rem","gutter":"1.5rem"},"fontFamily":{"title-md":["Outfit"],"headline-sm":["Outfit"],"body-sm":["Manrope"],"headline-lg-mobile":["Outfit"],"label-md":["Manrope"],"label-caps":["Manrope"],"body-lg":["Manrope"],"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-md":["Outfit"],"display-hero":["Outfit"],"label-lg":["Manrope"],"body-md":["Manrope"]},"fontSize":{"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-screen w-72 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,18,14,0.18)]"><div class="flex flex-col h-full overflow-hidden"><div class="px-space-lg pt-space-lg pb-space-md border-b border-tertiary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md tracking-tight text-on-primary leading-none">myUNO</span><span class="font-label-caps text-label-caps text-on-primary-container tracking-wider uppercase mt-space-xs">GLOBAL OS v4.2</span></div></div><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container"><span class="w-1.5 h-1.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-caps text-label-caps text-accent-gold-soft tracking-wider">PROD</span></div></div><button class="w-full mt-space-sm flex items-center justify-between px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-tertiary-container hover:text-on-primary transition-all text-left group" type="button"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px] text-accent-gold-soft">terminal</span><span class="font-body-sm text-body-sm text-on-primary-container group-hover:text-on-primary">Jump / Command</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container text-on-primary-container font-mono">⌘K</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-md space-y-space-lg"><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ОБЗОР &amp; УПРАВЛЕНИЕ</span><span class="font-label-caps text-label-caps text-on-primary-container">01</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">public</span>Глобальный дашборд</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="portfolio-and-projects" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">domain</span>Дестинации &amp; Комплексы</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="vendor-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">storefront</span>Маркетплейс &amp; Вендоры</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ФИНАНСЫ &amp; КЛИРИНГ</span><span class="font-label-caps text-label-caps text-on-primary-container">02</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="ledger-and-payouts" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">account_balance_wallet</span>Клиринг &amp; Выплаты</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="owners-and-reporting" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">insights</span>Отчетность инвесторов</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">БЕЗОПАСНОСТЬ &amp; СИСТЕМА</span><span class="font-label-caps text-label-caps text-on-primary-container">03</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="iam-and-rbac" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">shield_person</span>Роли &amp; Доступ (IAM)</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">history_edu</span>Аудит-лог &amp; События</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="infrastructure-monitoring" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">network_check</span>Инфраструктура &amp; API</a></nav></div><div class="p-space-md bg-tertiary-container m-space-md rounded-xl border border-primary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Asset Registry</span><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-on-primary">LIVE</span></div><div class="grid grid-cols-3 gap-space-xs text-center py-1 bg-primary/40 rounded-lg"><div class="flex flex-col"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">4</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Зоны</span></div><div class="flex flex-col border-x border-primary-container"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">18</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Компл.</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-accent-gold-soft font-bold leading-tight">342</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Юнита</span></div></div><div class="flex items-center justify-between pt-1 border-t border-primary-container/80"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-body-sm text-body-sm text-on-primary-container text-[11px]">All Systems Operational</span></div><span class="font-label-caps text-label-caps text-on-primary font-mono">99.98%</span></div></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container z-40 px-space-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Platform</span><span class="material-symbols-outlined text-[16px] text-outline-variant">chevron_right</span><span class="font-label-lg text-label-lg text-on-surface font-semibold">myUNO Executive Hub</span></div><div class="h-4 w-[1px] bg-outline-variant"></div><button class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-sand text-on-surface font-body-sm text-body-sm hover:bg-surface-sand-subtle transition-colors" type="button"><span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span><span class="material-symbols-outlined text-[16px] text-status-verified">calendar_today</span><span class="font-semibold text-on-surface">Q4 2026 • Ноябрь</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></button></div><div class="flex-1 max-w-md mx-space-lg"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-text-muted pointer-events-none">search</span><input class="w-full h-9 pl-10 pr-12 rounded-lg bg-surface-sand/70 text-on-surface placeholder:text-text-muted font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:border-primary-container focus:bg-surface-container-lowest transition-all" placeholder="Поиск по инвесторам, виллам, транзакциям..." type="search"/><kbd class="absolute right-space-sm px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-text-muted uppercase">⌘K</kbd></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-status-verified-bg text-status-verified font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">show_chart</span><span class="font-semibold">GMV Today:</span><span class="font-bold font-mono">฿1.48M</span><span class="text-[11px] text-status-verified/80">• 100% Sync</span></div><div class="flex items-center bg-surface-sand p-0.5 rounded-lg border border-border-subtle"><button class="px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">THB ฿</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USD $</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">RUB ₽</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USDT</button></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span></button><div class="h-6 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ring-2 ring-accent-gold-soft"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden 2xl:flex flex-col text-left"><div class="flex items-center gap-1.5"><span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight">Александр В.</span><span class="font-label-caps text-label-caps px-1 py-0.2 rounded bg-primary text-on-primary text-[9px]">COO</span></div><span class="font-label-caps text-label-caps text-text-muted text-[10px]">SuperAdmin Root</span></div></div></div></header><main class="relative pt-16 flex-1 w-full bg-surface-bright"><div class="flex flex-col w-full">
+<!-- Interactive script for Vendor Hub navigation & filters -->
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Highlight sidebar active item for Vendor Hub
+      const vendorNavLink = document.querySelector('aside nav a[data-path="vendor-hub"]');
+      if (vendorNavLink) {
+        document.querySelectorAll('aside nav a').forEach(el => {
+          el.classList.remove('bg-primary-container', 'text-on-primary', 'font-bold', 'shadow-[0_2px_8px_rgba(0,0,0,0.12)]');
+        });
+        vendorNavLink.classList.add('bg-primary-container', 'text-on-primary', 'font-bold', 'rounded-lg', 'shadow-[0_2px_8px_rgba(0,0,0,0.12)]');
+        const icon = vendorNavLink.querySelector('.material-symbols-outlined');
+        if (icon) icon.classList.add('text-on-primary');
+      }
+
+      // Filter tabs interaction
+      const tabs = document.querySelectorAll('.category-tab-btn');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => {
+            t.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+            t.classList.add('bg-surface-sand', 'text-on-surface-variant');
+          });
+          tab.classList.remove('bg-surface-sand', 'text-on-surface-variant');
+          tab.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+        });
+      });
+    });
+  </script>
+<!-- Main Content Container with standard margins & fluid grid -->
+<div class="p-space-lg lg:p-space-xl space-y-space-xl max-w-[1440px] mx-auto w-full">
+<!-- Top Breadcrumb, Title & Global Action Bar -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg">
+<div class="space-y-space-xs max-w-3xl">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-caps text-label-caps tracking-widest text-text-muted uppercase">MYUNO ECOSYSTEM OS • SERVICES &amp; CONCIERGE GOVERNANCE</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Маркетплейс услуг и аккредитация вендоров</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Управление каталогом премиальных консьерж-сервисов, комплаенс аккредитованных поставщиков Пхукета (DBD / KYC), мониторинг SLA заказов и автоматический клиринг комиссий платформы (Take-Rate 10–25%).</p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-space-sm self-start xl:self-end">
+<button class="inline-flex items-center gap-2 px-space-md py-3 rounded-lg bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm hover:bg-surface-sand transition-all" type="button">
+<span class="material-symbols-outlined text-[19px]">tune</span>
+          Управление категориями &amp; Take-Rate
+        </button>
+<button class="inline-flex items-center gap-2 px-space-md py-3 rounded-lg bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm hover:bg-surface-sand transition-all" type="button">
+<span class="material-symbols-outlined text-[19px]">file_download</span>
+          Экспорт реестра (CSV/XLSX)
+        </button>
+<button class="inline-flex items-center gap-2 px-space-lg py-3 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg shadow-md hover:bg-primary transition-all" type="button">
+<span class="material-symbols-outlined text-[19px] text-accent-gold-soft">verified</span>
+          + Аккредитовать вендора
+        </button>
+</div>
+</div>
+<!-- 4 Key Performance Indicator (KPI) Metric Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-lg">
+<!-- Card 1: Активные вендоры и покрытие -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm space-y-space-md relative overflow-hidden group">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Активные вендоры &amp; Покрытие</span>
+<div class="p-2 rounded-lg bg-status-verified-bg text-status-verified">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero-mobile text-display-hero-mobile text-primary tracking-tight font-bold">42</span>
+<span class="font-body-md text-body-md text-text-muted">партнера</span>
+</div>
+<p class="font-body-sm text-body-sm text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+            100% KYC &amp; DBD Verified
+          </p>
+</div>
+<div class="pt-space-sm flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">0 инцидентов безопасности</span>
+<span class="px-2 py-0.5 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps">+4 на онбординге</span>
+</div>
+</div>
+<!-- Card 2: GMV маркетплейса -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm space-y-space-md relative overflow-hidden group">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">GMV Маркетплейса • Ноябрь 2026</span>
+<div class="p-2 rounded-lg bg-surface-sand text-secondary">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero-mobile text-display-hero-mobile text-primary tracking-tight font-bold font-mono">฿2,868,000</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">+24.5% MoM</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            Выручка платформы: <span class="font-semibold text-primary font-mono">฿516,240</span> (ср. ставка 18.0%)
+          </p>
+</div>
+<!-- Micro sparkline indicator -->
+<div class="pt-space-sm flex items-center justify-between">
+<div class="w-full bg-surface-sand rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 82%"></div>
+<div class="bg-accent-gold-soft h-full" style="width: 18%"></div>
+</div>
+</div>
+</div>
+<!-- Card 3: Объем заказов и fulfillment -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm space-y-space-md relative overflow-hidden group">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Исполнение заказов (Fulfillment)</span>
+<div class="p-2 rounded-lg bg-surface-sand text-primary">
+<span class="material-symbols-outlined text-[20px]">room_service</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero-mobile text-display-hero-mobile text-primary tracking-tight font-bold font-mono">184</span>
+<span class="font-body-sm text-body-sm text-text-muted">в работе / закрыто</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">timer</span>
+            SLA выполнения: <span class="font-bold text-primary font-mono">99.4%</span>
+</p>
+</div>
+<div class="pt-space-sm flex items-center justify-between text-text-muted font-body-sm text-body-sm">
+<span>Ср. время отклика вендора:</span>
+<span class="font-mono font-semibold text-primary">4.2 мин</span>
+</div>
+</div>
+<!-- Card 4: Качество сервиса & CSAT -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm space-y-space-md relative overflow-hidden group">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Качество сервиса &amp; CSAT</span>
+<div class="p-2 rounded-lg bg-status-instant-bg text-status-instant">
+<span class="material-symbols-outlined text-[20px]">star</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero-mobile text-display-hero-mobile text-primary tracking-tight font-bold font-mono">★ 4.94</span>
+<span class="font-body-md text-body-md text-text-muted">/ 5.0</span>
+</div>
+<p class="font-body-sm text-body-sm text-status-verified font-medium">
+            98.2% положительных оценок гостей
+          </p>
+</div>
+<div class="pt-space-sm flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-instant"></span>
+            1 спорная заявка (на арбитраже)
+          </span>
+<span class="material-symbols-outlined text-[18px] text-text-muted cursor-pointer hover:text-primary">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Category Switcher, Search & Status Filters -->
+<div class="bg-surface-container-lowest p-space-md lg:p-space-lg rounded-xl shadow-sm space-y-space-md">
+<!-- Tabs -->
+<div class="flex flex-wrap items-center gap-2">
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg transition-all shadow-sm" type="button">
+          Все категории (42)
+        </button>
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-surface-sand text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-all" type="button">
+          Автопарк &amp; Транспорт (12)
+        </button>
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-surface-sand text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-all" type="button">
+          Шеф-повара &amp; Кейтеринг (9)
+        </button>
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-surface-sand text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-all" type="button">
+          Яхтинг &amp; Чартеры (6)
+        </button>
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-surface-sand text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-all" type="button">
+          Клининг &amp; myUNO Clean (8)
+        </button>
+<button class="category-tab-btn px-space-md py-2 rounded-lg bg-surface-sand text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-all" type="button">
+          Спа &amp; Wellness (7)
+        </button>
+</div>
+<!-- Search and Secondary Controls -->
+<div class="flex flex-col lg:flex-row items-center justify-between gap-space-md pt-space-xs">
+<div class="relative w-full lg:max-w-xl">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[19px] text-text-muted">search</span>
+<input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-sand text-on-surface placeholder:text-text-muted font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest shadow-sm" placeholder="Поиск по названию компании, номеру DBD, сервису или контакту..." type="text"/>
+</div>
+<div class="flex items-center gap-space-sm w-full lg:w-auto justify-between lg:justify-end">
+<div class="flex items-center gap-1.5 bg-surface-sand p-1 rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted px-2">Статус:</span>
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">Все</button>
+<button class="px-2.5 py-1 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps" type="button">Аккредитован (38)</button>
+<button class="px-2.5 py-1 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps" type="button">KYC (3)</button>
+<button class="px-2.5 py-1 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps" type="button">Пауза (1)</button>
+</div>
+<button class="p-2.5 rounded-lg bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-colors" title="Сортировка реестра" type="button">
+<span class="material-symbols-outlined text-[19px]">sort</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MAIN SECTION 1: Реестр аккредитованных партнеров и вендоров -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden space-y-0">
+<!-- Table Header Bar -->
+<div class="p-space-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-ivory">
+<div>
+<h2 class="font-title-md text-title-md text-primary flex items-center gap-2">
+<span>Реестр партнеров консьерж-экосистемы</span>
+<span class="px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">Phuket Sandbox Live</span>
+</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Актуальные контракты, подтвержденный SLA и автоматическое расщепление платежей (Split Settlement)</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-text-muted font-mono">Отображено: 6 из 42 вендоров</span>
+</div>
+</div>
+<!-- Rich Interactive Vendor Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left text-on-surface font-body-sm text-body-sm">
+<thead class="bg-surface-sand text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">
+<tr>
+<th class="py-3.5 px-space-lg" scope="col">Компания / Вендор</th>
+<th class="py-3.5 px-space-md" scope="col">Категория &amp; Локации</th>
+<th class="py-3.5 px-space-md" scope="col">Условия &amp; Take-Rate</th>
+<th class="py-3.5 px-space-md" scope="col">SLA &amp; Качество</th>
+<th class="py-3.5 px-space-md" scope="col">Комплаенс &amp; Гарантии</th>
+<th class="py-3.5 px-space-lg text-right" scope="col">Действия</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1: Andaman Luxury Drive Ltd -->
+<tr class="hover:bg-surface-sand/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined text-[22px]">directions_car</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Andaman Luxury Drive Ltd</span>
+<span class="font-label-caps text-label-caps text-text-muted">DBD: 0835564001923 • 14 авто (Porsche, Vellfire, Defender)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    VIP Трансфер &amp; Аренда
+                  </span>
+<span class="text-text-muted text-[12px]">Банг Тао, Лаян, HKT Airport</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">15.0% Take-Rate</span>
+<span class="text-text-muted text-[12px]">฿3,735 средний сплит • Т+1 день</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 4.98</span>
+<span class="text-text-muted font-normal text-[11px]">(86 заказов)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 100% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">DBD Verified</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-on-surface-variant font-label-caps text-label-caps">AIG ฿10M</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Somchai Tan Culinary & Private Dining -->
+<tr class="hover:bg-surface-sand/40 transition-colors bg-surface-ivory/50">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-secondary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[22px]">restaurant</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Somchai Tan Culinary &amp; Private Dining</span>
+<span class="font-label-caps text-label-caps text-text-muted">SHA Plus+ • 6 приватных шеф-поваров</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    Шеф-повара &amp; Банкеты
+                  </span>
+<span class="text-text-muted text-[12px]">Все виллы острова Пхукет</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">20.0% Take-Rate</span>
+<span class="text-text-muted text-[12px]">Фикс. депозит ฿15k • Мгновенный сплит</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 4.96</span>
+<span class="text-text-muted font-normal text-[11px]">(42 заказа)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 98% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">DBD Verified</span>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-label-caps text-label-caps">SHA Extra+</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Blue Lagoon Marine Charter -->
+<tr class="hover:bg-surface-sand/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-primary-container flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[22px]">sailing</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Blue Lagoon Marine Charter</span>
+<span class="font-label-caps text-label-caps text-text-muted">Marine Dept No. 4410 • 4 яхты (Majesty 56ft, Lagoon 42)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    Яхтинг &amp; Чартеры
+                  </span>
+<span class="text-text-muted text-[12px]">Ao Po Grand Marina, RPM</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">20.0% Take-Rate</span>
+<span class="text-text-muted text-[12px]">฿15,000 с чартера • Эскроу клиринг</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 4.91</span>
+<span class="text-text-muted font-normal text-[11px]">(19 заказов)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 95% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">Marine Dept OK</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-on-surface-variant font-label-caps text-label-caps">Allianz ฿25M</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: CleanPro Andaman Services -->
+<tr class="hover:bg-surface-sand/40 transition-colors bg-surface-ivory/50">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-status-verified flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[22px]">cleaning_services</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">CleanPro Andaman Services</span>
+<span class="font-label-caps text-label-caps text-text-muted">myUNO Clean QA partner • 24 клинера (500TC Сатин QA)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    Клининг &amp; Прачечная
+                  </span>
+<span class="text-text-muted text-[12px]">Лагуна, Банг Тао, Сурин</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">10.0% Take-Rate</span>
+<span class="text-text-muted text-[12px]">Мин. объем 120 смен/мес</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 4.95</span>
+<span class="text-text-muted font-normal text-[11px]">(140 заказов)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 99.8% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">DBD Verified</span>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">myUNO Gold QA</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Lotus Sanctuary Wellness & Mobile Spa -->
+<tr class="hover:bg-surface-sand/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-accent-gold-soft flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[22px]">spa</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Lotus Sanctuary Wellness &amp; Mobile Spa</span>
+<span class="font-label-caps text-label-caps text-text-muted">8 терапевтов • Органическая косметика Panpuri</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    Спа &amp; Массажи на виллах
+                  </span>
+<span class="text-text-muted text-[12px]">Банг Тао, Камала, Раваи</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">18.0% Take-Rate</span>
+<span class="text-text-muted text-[12px]">฿1,200 за сессию • Еженедельно</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 4.97</span>
+<span class="text-text-muted font-normal text-[11px]">(54 заказа)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 99.0% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">DBD Verified</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-on-surface-variant font-label-caps text-label-caps">Thai Spa Assoc.</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Siam Island Helicopter Transfers -->
+<tr class="hover:bg-surface-sand/40 transition-colors bg-surface-ivory/50">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-secondary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[22px]">flight</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Siam Island Helicopter Transfers</span>
+<span class="font-label-caps text-label-caps text-text-muted">Лицензия CAAT • 2 вертолета Airbus H130</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 font-semibold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                    Авиа-трансферы &amp; Туры
+                  </span>
+<span class="text-text-muted text-[12px]">HKT Helipad, Koh Yao, Краби</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-bold text-primary font-mono">12.5% Take-Rate</span>
+<span class="text-text-muted text-[12px]">฿8,500 со слота • Эскроу Т+2</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 font-bold text-status-verified">
+<span>★ 5.0</span>
+<span class="text-text-muted font-normal text-[11px]">(11 заказов)</span>
+</div>
+<span class="text-text-muted text-[12px]">Тайминг: 100% SLA</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">CAAT Compliant</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-on-surface-variant font-label-caps text-label-caps">฿50M Civil Ins.</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Карточка</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">Сплит</button>
+<button class="p-1 rounded hover:bg-surface-sand text-text-muted" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="p-space-md px-space-lg bg-surface-ivory flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<span class="font-body-sm text-body-sm text-text-muted">Строк на странице: 6 • Показано 1–6 из 42 партнеров</span>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded bg-surface-sand text-text-muted hover:text-primary transition-colors disabled:opacity-50" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="px-3 py-1 rounded bg-primary text-on-primary font-label-caps text-label-caps">1</span>
+<button class="px-3 py-1 rounded hover:bg-surface-sand text-on-surface font-label-caps text-label-caps" type="button">2</button>
+<button class="px-3 py-1 rounded hover:bg-surface-sand text-on-surface font-label-caps text-label-caps" type="button">3</button>
+<button class="p-1.5 rounded bg-surface-sand text-text-muted hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MAIN SECTION 2: Двухколоночный блок оперативного управления -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Column A: Очередь онбординга и аккредитации (7 Cols) -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-space-lg rounded-xl shadow-sm space-y-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-instant animate-ping"></span>
+<h3 class="font-title-md text-title-md text-primary font-bold">Очередь онбординга и аккредитации (KYC)</h3>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">3 новых поставщика ожидают проверки соответствия стандартам myUNO</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps self-start sm:self-auto">3 активных заявки</span>
+</div>
+<!-- Flow Steps Progress Indicator -->
+<div class="p-space-md rounded-lg bg-surface-sand/70 space-y-2">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Этапы аккредитации myUNO Quality Assurance:</span>
+<div class="grid grid-cols-4 gap-2 text-center">
+<div class="p-2 rounded bg-surface-container-lowest shadow-sm flex flex-col items-center">
+<span class="w-5 h-5 rounded-full bg-status-verified text-on-primary flex items-center justify-center font-bold text-[10px] mb-1">1</span>
+<span class="font-label-caps text-label-caps text-primary">Реестр DBD</span>
+</div>
+<div class="p-2 rounded bg-surface-container-lowest shadow-sm flex flex-col items-center">
+<span class="w-5 h-5 rounded-full bg-status-verified text-on-primary flex items-center justify-center font-bold text-[10px] mb-1">2</span>
+<span class="font-label-caps text-primary">Страховой полис</span>
+</div>
+<div class="p-2 rounded bg-surface-sand flex flex-col items-center">
+<span class="w-5 h-5 rounded-full bg-status-instant text-on-primary flex items-center justify-center font-bold text-[10px] mb-1">3</span>
+<span class="font-label-caps text-text-muted">Тест консьержа</span>
+</div>
+<div class="p-2 rounded bg-surface-sand flex flex-col items-center">
+<span class="w-5 h-5 rounded-full bg-text-muted text-on-primary flex items-center justify-center font-bold text-[10px] mb-1">4</span>
+<span class="font-label-caps text-text-muted">Smart-Split SLA</span>
+</div>
+</div>
+</div>
+<!-- Pending Applications Cards -->
+<div class="space-y-space-md">
+<!-- Application 1: Phuket HeliVenture Ltd -->
+<div class="p-space-md rounded-xl bg-surface-ivory space-y-space-sm hover:shadow-md transition-shadow">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">helicopter</span>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg font-bold text-primary">Phuket HeliVenture Ltd</h4>
+<span class="font-body-sm text-body-sm text-text-muted">Вертолетные экскурсии и экспресс-трансферы</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-label-caps text-label-caps self-start sm:self-auto">Этап 2 / 4 • Проверка AIG</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Предоставлен сертификат эксплуатанта CAAT #TH-092 и расширенный полис страхования пассажиров AIG Thailand на ฿30,000,000 THB.</p>
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">attachment</span>
+                4 документа в архиве
+              </span>
+<div class="flex items-center gap-2">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">
+                  Проверить документы (4)
+                </button>
+<button class="px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-caps text-label-caps transition-colors shadow-sm" type="button">
+                  Одобрить аккредитацию
+                </button>
+</div>
+</div>
+</div>
+<!-- Application 2: Nautical Spirit Catamarans -->
+<div class="p-space-md rounded-xl bg-surface-ivory space-y-space-sm hover:shadow-md transition-shadow">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">directions_boat</span>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg font-bold text-primary">Nautical Spirit Catamarans</h4>
+<span class="font-body-sm text-body-sm text-text-muted">Парусные катамараны премиум-класса (Fountaine Pajot)</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-label-caps text-label-caps self-start sm:self-auto">Этап 1 / 4 • Дозапрос DBD</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Проверка лицензии капитанов и договора базирования в Yacht Haven Marina. Ожидается подтверждение обновленной инспекции корпуса.</p>
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+                Требуется доп. сертификат
+              </span>
+<div class="flex items-center gap-2">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-caps text-label-caps transition-colors" type="button">
+                  Запросить данные у вендора
+                </button>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-sand-subtle text-text-muted font-label-caps text-label-caps" disabled="" type="button">
+                  Одобрить аккредитацию
+                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column B: Финансовый сплит и расчеты с вендорами (5 Cols) -->
+<div class="lg:col-span-5 bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between space-y-space-lg">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="font-title-md text-title-md text-primary font-bold">Финансовый сплит и выплаты</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Vendor Settlements Summary &amp; Escrow Release</p>
+</div>
+<div class="p-2 rounded-lg bg-surface-sand text-primary">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+</div>
+<!-- Highlight Settlement Card -->
+<div class="p-space-md rounded-xl bg-surface-sand/80 space-y-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">К выплате за прошедшую неделю</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero-mobile text-display-hero-mobile text-primary font-bold font-mono">฿842,500</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">100% Escrow Backed</span>
+</div>
+<div class="flex items-center gap-2 text-text-muted font-body-sm text-body-sm pt-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">event_available</span>
+<span>Ближайший транш: <strong class="text-primary">25 Ноября 2026</strong></span>
+</div>
+<div class="text-[12px] text-text-muted">
+              Канал выплат: Kasikorn Corporate API &amp; PromptPay QR Instant
+            </div>
+</div>
+<!-- Revenue Split Breakdown Widget -->
+<div class="space-y-space-sm pt-space-xs">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Структура расщепления оборота (Split Analytics)</span>
+<div class="space-y-2">
+<!-- Vendor Share -->
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-primary"></span>
+<span class="font-semibold text-primary">Выплаты вендорам (Net Vendor Payout)</span>
+</span>
+<span class="font-bold text-primary font-mono">82.0% (฿2,351,760)</span>
+</div>
+<div class="w-full bg-surface-sand rounded-full h-2 overflow-hidden">
+<div class="bg-primary h-full" style="width: 82%"></div>
+</div>
+<!-- myUNO Ecosystem Margin -->
+<div class="flex items-center justify-between font-body-sm text-body-sm pt-1">
+<span class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-secondary"></span>
+<span class="font-semibold text-secondary">Маржа myUNO (Take-Rate Ecosystem)</span>
+</span>
+<span class="font-bold text-secondary font-mono">18.0% (฿516,240)</span>
+</div>
+<div class="w-full bg-surface-sand rounded-full h-2 overflow-hidden">
+<div class="bg-secondary h-full" style="width: 18%"></div>
+</div>
+</div>
+</div>
+<!-- Mini Notice Box -->
+<div class="p-space-sm rounded-lg bg-status-verified-bg text-status-verified font-body-sm text-body-sm flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">lock_clock</span>
+<span>Все средства депонируются на изолированном трастовом счете до подтверждения чек-аута или выполнения услуги гостем виллы.</span>
+</div>
+</div>
+<!-- Seamless link to Ledger & Payouts Screen -->
+<div class="pt-space-md">
+<a class="w-full flex items-center justify-between px-space-md py-3 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-primary transition-all group" data-path="ledger-and-payouts" href="#">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-accent-gold-soft">receipt_long</span>
+<span>Открыть потранзакционный клиринг (Ledger)</span>
+</div>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div></main><footer class="w-full bg-surface-container-lowest border-t border-surface-container py-space-sm px-space-lg"><div class="flex flex-col md:flex-row items-center justify-between text-on-surface-variant font-body-sm text-body-sm gap-space-xs"><div><span class="font-semibold text-primary">myUNO Platform OS</span> © 2026 myUNO Hospitality &amp; Asset Management Ltd. All rights reserved.</div><div class="flex items-center gap-space-md"><span class="flex items-center gap-1 text-[12px]"><span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span> Bangkok (BKK-1) Cluster Sync</span><span class="text-[12px] text-outline">Latency: 18ms</span><a class="hover:text-primary transition-colors text-[12px]" data-path="infrastructure-monitoring" href="#">Status Ledger</a></div></div></footer></div></body></html>

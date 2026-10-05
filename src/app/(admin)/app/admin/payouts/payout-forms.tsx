@@ -1,5 +1,6 @@
 'use client';
 
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { LocalDate } from '@/components/LocalDate';
@@ -148,7 +149,7 @@ export default function PayoutForms({
   );
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
       <h2 className="text-heading-3 font-bold text-text-ink mb-16">
         {labels['admin.payouts.record_title']}
       </h2>
@@ -185,7 +186,7 @@ export default function PayoutForms({
                 <p className="text-small text-text-secondary">
                   {labels['admin.payouts.owner_share']}:{' '}
                   <span className="font-mono text-text-ink">
-                    ฿{(selectedStatement.ownerShareTh / 100).toLocaleString()}
+                    ฿{(selectedStatement.ownerShareTh / 100).toLocaleString(UI_LOCALE)}
                   </span>
                 </p>
               )}
@@ -297,17 +298,17 @@ export default function PayoutForms({
                 <div className="text-small text-text-secondary flex flex-col gap-4 bg-surface-ivory rounded-sm p-12">
                   <span>
                     {labels['admin.payouts.fulfilled_total']}: ฿
-                    {(remittance.fulfilledOrdersTotal / 100).toLocaleString()}
+                    {(remittance.fulfilledOrdersTotal / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span>
-                    {labels['admin.payouts.take_rate']}: ฿{(remittance.takeRateThb / 100).toLocaleString()}
+                    {labels['admin.payouts.take_rate']}: ฿{(remittance.takeRateThb / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span>
                     {labels['admin.payouts.refunds_clawed_back']}: ฿
-                    {(remittance.refundsClawedBack / 100).toLocaleString()}
+                    {(remittance.refundsClawedBack / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span className="font-semibold text-text-ink">
-                    {labels['admin.payouts.net_amount']}: ฿{(remittance.netThb / 100).toLocaleString()}
+                    {labels['admin.payouts.net_amount']}: ฿{(remittance.netThb / 100).toLocaleString(UI_LOCALE)}
                   </span>
                 </div>
               )}

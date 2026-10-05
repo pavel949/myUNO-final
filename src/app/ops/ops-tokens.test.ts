@@ -9,7 +9,7 @@ const claims = readFileSync(join(process.cwd(), 'src/app/ops/claims/file-claim-c
 
 describe('ops tokens (Claude Design board 09)', () => {
   it('sits the board on ivory with a display title and live counts', () => {
-    expect(board).toContain('bg-surface-ivory');
+    expect(board).toContain('stitch-workspace');
     expect(board).toContain('text-display-xl');
     expect(board).toContain('staff.ops.subtitle');
     expect(board).toContain('StatTile');
@@ -28,7 +28,7 @@ describe('ops tokens (Claude Design board 09)', () => {
   it('uses chips for paid, passport, ticket, and TM30 status', () => {
     expect(client).toContain('Chip');
     expect(client).toContain('paidChip');
-    expect(tm30).toContain('bg-surface-ivory');
+    expect(tm30).toContain('stitch-workspace');
     expect(tm30).toContain('staff.tm30.subtitle');
   });
 

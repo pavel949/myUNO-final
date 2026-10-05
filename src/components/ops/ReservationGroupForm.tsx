@@ -27,7 +27,7 @@ export default function ReservationGroupForm({
     if(!response.ok){setError(body.error||labels['reservations.group_failed']);setBusy(false);return;}
     event.currentTarget.reset();setBusy(false);router.refresh();
   }
-  return <form onSubmit={submit} className="grid gap-12 rounded-md border border-border-line bg-surface-paper p-16 md:grid-cols-4">
+  return <form onSubmit={submit} className="grid gap-12 stitch-panel p-16 md:grid-cols-4">
     <input required name="title" placeholder={labels['reservations.group_title']} className="h-44 rounded-md border border-border-line px-12"/>
     <select required name="guestIdentityId" className="h-44 rounded-md border border-border-line bg-white px-12">
       <option value="">{labels['reservations.guest']}</option>

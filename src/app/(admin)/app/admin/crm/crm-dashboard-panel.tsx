@@ -1,5 +1,6 @@
 'use client';
 
+import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { StatTile } from '@/components';
@@ -24,7 +25,7 @@ interface CrmDashboardPanelProps {
 }
 
 function formatThb(value: number): string {
-  return `฿${value.toLocaleString()}`;
+  return `฿${value.toLocaleString(UI_LOCALE)}`;
 }
 
 export default function CrmDashboardPanel({ labels }: CrmDashboardPanelProps) {

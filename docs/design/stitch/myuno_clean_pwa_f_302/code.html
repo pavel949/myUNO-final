@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#effcf9;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary": "#ffffff", "on-error-container": "#93000a", "on-secondary-fixed-variant": "#663e04", "tertiary": "#01221a", "outline": "#717975", "status-instant-bg": "#FAF3E8", "surface-container": "#e3f1ed", "tertiary-container": "#17372f", "on-error": "#ffffff", "on-surface": "#121e1c", "inverse-on-surface": "#e6f4f0", "on-secondary-container": "#784d14", "primary-fixed": "#c2ebdc", "accent-gold-muted": "#F5EAD9", "surface-container-lowest": "#ffffff", "surface-sand-subtle": "#EAE4D7", "border-subtle": "#E5DFD3", "tertiary-fixed": "#c7eadd", "surface-container-highest": "#d8e5e2", "inverse-primary": "#a7cfc1", "surface": "#effcf9", "primary-container": "#11382e", "primary-fixed-dim": "#a7cfc1", "on-primary": "#ffffff", "inverse-surface": "#273331", "outline-variant": "#c1c8c4", "primary": "#00221a", "surface-ivory": "#FBF9F5", "on-tertiary-fixed": "#002019", "error": "#ba1a1a", "secondary-fixed": "#ffddba", "on-surface-variant": "#414845", "on-primary-fixed-variant": "#284e43", "surface-variant": "#d8e5e2", "surface-bright": "#effcf9", "tertiary-fixed-dim": "#accec2", "surface-container-high": "#ddebe8", "surface-container-low": "#e9f7f3", "error-container": "#ffdad6", "status-instant": "#9A6B32", "surface-sand": "#F4F0E8", "on-tertiary-container": "#7fa195", "on-tertiary": "#ffffff", "on-tertiary-fixed-variant": "#2d4d44", "on-secondary-fixed": "#2b1700", "on-primary-fixed": "#002019", "secondary": "#81551c", "on-background": "#121e1c", "secondary-fixed-dim": "#f6bb79", "secondary-container": "#fdc17e", "background": "#effcf9", "surface-tint": "#40665a", "text-muted": "#566360", "status-verified": "#1E5848", "surface-dim": "#cfddd9", "accent-gold-soft": "#E4BE8D", "on-primary-container": "#7ba295", "status-verified-bg": "#E9F1EE" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter-mobile": "1rem", "margin": "3rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "space-md": "1rem", "space-xl": "2.5rem", "gutter": "1.5rem", "margin-mobile": "1.25rem", "space-2xl": "4rem", "space-sm": "0.5rem" }, fontFamily: { "body-sm": ["Manrope"], "headline-lg": ["Outfit"], "headline-sm": ["Outfit"], "body-lg": ["Manrope"], "headline-md": ["Outfit"], "body-md": ["Manrope"], "label-md": ["Manrope"], "display-hero-mobile": ["Outfit"], "label-caps": ["Manrope"], "label-lg": ["Manrope"], "display-hero": ["Outfit"], "headline-lg-mobile": ["Outfit"], "title-md": ["Outfit"] }, fontSize: { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }] } } } }</script></head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-lg text-primary hover:bg-surface-container-high transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><div class="flex flex-col justify-center min-w-0"><div class="flex items-center gap-space-xs"><span class="font-label-caps text-label-caps uppercase text-text-muted tracking-wider truncate">myUNO Clean</span><span class="w-1 h-1 rounded-full bg-outline-variant"></span><span class="font-label-caps text-label-caps text-secondary font-bold">INSPECT</span></div><h1 class="font-title-md text-title-md text-on-surface tracking-tight truncate leading-tight">Active Villa Checklist</h1></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified"><span class="w-1.5 h-1.5 rounded-full bg-status-verified animate-pulse"></span><span class="font-label-caps text-label-caps tracking-wider">LIVE</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface"><div class="flex flex-col w-full px-gutter-mobile space-y-4 pb-36">
+<!-- Top Context Card: Unit & Urgent Guest Inbound -->
+<div class="rounded-xl bg-surface-container-low p-4 shadow-sm space-y-3 relative overflow-hidden">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">#F-302</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-caps text-label-caps uppercase">Pool Access 1BR</span>
+<span class="font-label-md text-label-md text-text-muted">54 м²</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">The Title Legendary Bang Tao • Корпус F</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-1 rounded-full bg-status-instant-bg text-status-instant font-label-md text-label-md font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[15px] animate-pulse">timer</span>
+<span>45 мин</span>
+</span>
+<span class="font-label-caps text-label-caps text-text-muted mt-1">Заезд в 15:00</span>
+</div>
+</div>
+<!-- VIP Guest Banner -->
+<div class="flex items-center justify-between bg-surface-container rounded-lg p-2.5 px-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="truncate">
+<p class="font-label-caps text-label-caps uppercase tracking-wider text-secondary">VIP Гость</p>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Michael Weber (Германия)</p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container-lowest px-2 py-1 rounded text-primary font-semibold">1/14 ночей</span>
+</div>
+<!-- Operational Meta: Maid & SmartLock Status -->
+<div class="grid grid-cols-2 gap-2 pt-1 font-body-sm text-body-sm">
+<div class="bg-surface-container-lowest p-2.5 rounded-lg">
+<div class="flex items-center gap-1.5 text-text-muted mb-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">cleaning_services</span>
+<span class="font-label-caps text-label-caps uppercase">Горничная</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">Noi S. (100%)</p>
+<p class="font-label-caps text-label-caps text-text-muted">11:30 – 13:15 • 1ч 45м</p>
+</div>
+<div class="bg-surface-container-lowest p-2.5 rounded-lg">
+<div class="flex items-center gap-1.5 text-text-muted mb-0.5">
+<span class="material-symbols-outlined text-[16px] text-status-instant">lock_clock</span>
+<span class="font-label-caps text-label-caps uppercase">SmartLock TT</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">PIN активен 15:00</p>
+<p class="font-label-caps text-label-caps text-secondary font-medium">Сервис истекает: 30м</p>
+</div>
+</div>
+<!-- Progress Meter -->
+<div class="space-y-1.5 pt-1">
+<div class="flex justify-between items-center font-label-md text-label-md">
+<span class="text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">fact_check</span>
+          Прогресс инспекции
+        </span>
+<span class="font-bold text-primary" id="inspection-counter">9 / 12 проверено (75%)</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-300" id="progress-bar-fill" style="width: 75%"></div>
+</div>
+</div>
+</div>
+<!-- Inspector Profile & Quick Defect Strip -->
+<div class="flex items-center justify-between bg-surface-container-low px-3 py-2 rounded-xl">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+</div>
+<div class="leading-none">
+<span class="font-label-caps text-label-caps text-text-muted block">Инспектор</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Somchai V. (Quality Lead)</span>
+</div>
+</div>
+<!-- Defect Action Button -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-on-surface active:scale-95 transition-all" onclick="reportDefectAlert()" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">warning</span>
+<span class="font-label-md text-label-md font-semibold text-secondary">0 замечаний</span>
+</button>
+</div>
+<!-- Inspection Zone Checklist Title -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">checklist_rtl</span>
+<h2 class="font-title-md text-title-md text-primary font-bold">Чек-лист 5★ Luxury Стандарта</h2>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted">myUNO SOP 2025</span>
+</div>
+<!-- Zone 1: Спальня & Текстиль -->
+<div class="bg-surface-container-low rounded-xl p-3.5 space-y-2.5 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">bed</span>
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Зона 1: Спальня &amp; Текстиль</h3>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> 3 / 3
+      </span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Заправка постели сатином 500TC</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Конверт под 45 градусов, натяжение полотна без складок, 2 отпаренные подушки</p>
+</div>
+</label>
+<!-- Item 2 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Комплект подушек премиум</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Гипоаллергенный микропух (2 шт) + ортопедическая подушка с эффектом памяти</p>
+</div>
+</label>
+<!-- Item 3 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Кондиционер Daikin Inverter</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Сетки фильтра промыты, выставлен режим 23°C Quiet, пульт в док-станции</p>
+</div>
+</label>
+</div>
+</div>
+<!-- Zone 2: Ванная комната & Amenities -->
+<div class="bg-surface-container-low rounded-xl p-3.5 space-y-2.5 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">bathtub</span>
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Зона 2: Ванная комната &amp; Amenities</h3>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> 3 / 3
+      </span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Линейка косметики myUNO Botanicals</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Шампунь, кондиционер, гель lemongrass, лосьон, запечатанные зубные эко-наборы</p>
+</div>
+</label>
+<!-- Item 2 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Текстиль ванной (650 GSM)</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">4 банных махровых полотенца, 2 полотенца для лица, 2 фирменных изумрудных для бассейна</p>
+</div>
+</label>
+<!-- Item 3 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Сантехника и стеклянная перегородка</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Стекло обработано антидождем, напор тропического душа проверен, хром отполирован</p>
+</div>
+</label>
+</div>
+</div>
+<!-- Zone 3: Гостиная, Кухня & Мини-бар -->
+<div class="bg-surface-container-low rounded-xl p-3.5 space-y-2.5 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">coffee_maker</span>
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Зона 3: Гостиная, Кухня &amp; Терраса</h3>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps font-bold" id="zone-3-badge">
+<span class="material-symbols-outlined text-[12px]">pending</span> 2 / 3
+      </span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Nespresso &amp; Welcome Set</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">6 капсул Nespresso, 4 бут. myUNO Artesian Glass, свежее манго и драгонфрут на столе</p>
+</div>
+</label>
+<!-- Item 2 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Смарт-ТВ &amp; Wi-Fi 6 (450 Mbps)</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Приветственный экран с именем Michael Weber активен, QR код сети проверен</p>
+</div>
+</label>
+<!-- Item 3 (PENDING) -->
+<label class="flex items-start gap-3 p-2.5 bg-accent-gold-muted/40 rounded-lg cursor-pointer transition-colors" id="terrace-check-container">
+<input class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" id="terrace-checkbox" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<p class="font-label-md text-label-md text-on-surface font-semibold leading-snug">Терраса и прямой выход к бассейну</p>
+<span class="font-label-caps text-label-caps text-secondary font-bold">ТРЕБУЕТСЯ ФОТО</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Деревянный настил сухой, ротанговые шезлонги протерты, шторы блэкаут на электроприводе</p>
+</div>
+</label>
+</div>
+</div>
+<!-- Zone 4: Технический аудит & Безопасность -->
+<div class="bg-surface-container-low rounded-xl p-3.5 space-y-2.5 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">lock_reset</span>
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Зона 4: Технический аудит</h3>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps font-bold" id="zone-4-badge">
+<span class="material-symbols-outlined text-[12px]">pending</span> 1 / 3
+      </span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Электронный сейф в мастер-гардеробе</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Дверца распахнута, мастер-код сброшен на 0000, внутренняя подсветка исправна</p>
+</div>
+</label>
+<!-- Item 2 (PENDING) -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" id="sensors-checkbox" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Датчики протечки (ванная/кухня) &amp; дыма</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Зеленый статус Zigbee в хабе квартиры, отсутствие следов конденсата под мойкой</p>
+</div>
+</label>
+<!-- Item 3 (PENDING) -->
+<label class="flex items-start gap-3 p-2.5 bg-surface-container-lowest rounded-lg cursor-pointer">
+<input class="mt-0.5 w-4 h-4 rounded text-primary accent-primary flex-shrink-0" id="doors-checkbox" onchange="toggleCheck(this)" type="checkbox"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium leading-snug">Раздвижные панорамные слайдеры террасы</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-tight">Плавный ход направляющих, магнитный замок защелкивается плотно</p>
+</div>
+</label>
+</div>
+</div>
+<!-- Photo Evidence Module -->
+<div class="bg-surface-container-low rounded-xl p-3.5 space-y-3 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">photo_camera</span>
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Фотофиксация приемки</h3>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted" id="photo-count-text">3 / 4 фото зафиксировано</span>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Photo 1: Bedroom -->
+<div class="relative bg-surface-container-lowest rounded-lg overflow-hidden group shadow-sm">
+<img class="w-full h-28 object-cover" data-alt="Impeccably made luxury king size bed with crisp 500 thread count white satin linens folded at 45 degree hospital corners, fluffy designer pillows in tropical modern Phuket villa bedroom, natural limestone and warm teakwood accents, sunlit atmospheric luxury." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYgoP-5ZYpMyJTt5JS0MDJozx0dQK_YBQ_wzJZQeau32LDUdKZW4EGK6eh63dywn80oNDhrscLr0mF7Z9s0kxjAcETTzs2Avz3Np3j8Zyf9SUkB2bd1y_Wo019YvC6mHdkz-SKYgcjrm27HvqzpisQnyTlkVjfCa7W5viklohQq4w9A9ii-ziyvJkmLTJokQ-w1sC2O3hCAHhXbo9dAYCNWdlHMYjlBKeSawptTLmlzvqDzQa_ylBt"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent flex flex-col justify-end p-2 text-on-primary">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps truncate">Спальня сатин</span>
+<span class="w-4 h-4 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+</div>
+<span class="font-label-caps text-[10px] opacity-80">13:22 • Авто-GPS</span>
+</div>
+</div>
+<!-- Photo 2: Bathroom -->
+<div class="relative bg-surface-container-lowest rounded-lg overflow-hidden group shadow-sm">
+<img class="w-full h-28 object-cover" data-alt="High-end stone countertop in modern villa bathroom with neatly organized bespoke myUNO Botanicals amenity bottles, rolled crisp white waffle towels, warm travertine tile background, sunlit and gleaming chrome faucets, pristine tropical cleanliness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9uTC7QG95NLA_8oVE9O-jo-n4ACgEefYEleVoZHyFL2-TVU7w3Hi1S4zf7rzGP_8_kzyPGt92uR4WoFkoKfkVE21blx4AeCIgAdqZFLo8-vcTFREzysPUoVziyxmfjdixtnF-9K8hPDUabYGYAvYk56dT8mjS456georkVrvhAX9YontXMImtNyhHdCVUlgd1KIJ0YkGsm6b-68ydjij4UIzqkx-rVlLQUBeAok3-0JTDEOorqkTY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent flex flex-col justify-end p-2 text-on-primary">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps truncate">Ванная &amp; Amenities</span>
+<span class="w-4 h-4 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+</div>
+<span class="font-label-caps text-[10px] opacity-80">13:28 • Авто-GPS</span>
+</div>
+</div>
+<!-- Photo 3: Kitchen / Welcome -->
+<div class="relative bg-surface-container-lowest rounded-lg overflow-hidden group shadow-sm">
+<img class="w-full h-28 object-cover" data-alt="Chic island kitchen in Phuket luxury residence featuring a crystal glass bowl with ripe fresh mango and dragonfruit, four glass bottles of artesian water, chrome Nespresso machine with coffee pods neatly arranged in a wooden box, warm natural daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuArpSfyN_xt4qdMAl4Qx4YZUD53mYSjEig0N1oV0ZmhUe5hyB7rc3MxfURee2dNNyEAhLstMKpaVWkrAIpJ-nGWbLzfatBEJRnR2FXoJfaLle66Md_IczznU-2I7wcfslsMUKPK5wateEKnSoFcRiIFHjUwQwPrm5C9tg0ujPD9as7eltmBeBvqwbOtc-PpvoAxLD68idVypfvz8M3WvyNZ4SzWtluE1m8vQjZPWZJuDQpJvnMBhIyo"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent flex flex-col justify-end p-2 text-on-primary">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps truncate">Кухня &amp; Приветствие</span>
+<span class="w-4 h-4 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+</div>
+<span class="font-label-caps text-[10px] opacity-80">13:35 • Авто-GPS</span>
+</div>
+</div>
+<!-- Photo 4: Active Slot (Camera Trigger) -->
+<div class="h-28 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle flex flex-col items-center justify-center text-center p-2 cursor-pointer transition-all active:scale-95 group" id="camera-slot" onclick="triggerCameraCapture()">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add_a_photo</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold leading-tight">Снять террасу</span>
+<span class="font-label-caps text-label-caps text-secondary mt-0.5 font-semibold">Обязательно для сдачи</span>
+</div>
+</div>
+</div>
+<!-- Supervisor Quick Defect Ticket Modal trigger button -->
+<div class="p-3 bg-surface-container rounded-xl flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-lg bg-error-container text-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold leading-none">Обнаружен дефект мебели или техники?</p>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] mt-0.5">Создает экспресс-тикет в службу хаусмена/инженера</p>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-primary font-label-md text-label-md font-semibold whitespace-nowrap active:scale-95 transition-all" onclick="openDefectPrompt()" type="button">
+      Вызвать
+    </button>
+</div>
+<!-- Audit Sign-off Note -->
+<div class="bg-surface-sand-subtle/50 rounded-xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-primary flex-shrink-0 mt-0.5">sync_alt</span>
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-relaxed">
+      После финального подтверждения статус мгновенно синхронизируется в шахматке <strong class="text-on-surface">myUNO PMS</strong>, сформирует Welcome-SMS для консьержа и снимет временную блокировку заезда в Airbnb &amp; Booking.
+    </p>
+</div>
+<!-- FIXED BOTTOM ACTION DOCK -->
+<div class="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur-xl p-3 pb-safe shadow-[0_-4px_24px_rgba(17,56,46,0.08)] z-40">
+<div class="max-w-lg mx-auto space-y-2">
+<!-- Main Approval Action -->
+<button class="w-full h-12 bg-primary hover:bg-tertiary text-on-primary rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-2 font-bold shadow-md transition-all active:scale-[0.99]" id="approve-unit-btn" onclick="submitFinalInspection()" type="button">
+<span class="material-symbols-outlined text-[20px]">task_alt</span>
+<span>Принять юнит: «Чисто / Готов к заезду»</span>
+</button>
+<!-- Secondary Fallback: Send back to maid -->
+<button class="w-full py-2 bg-transparent text-secondary hover:bg-surface-container rounded-lg font-label-md text-label-md flex items-center justify-center gap-1.5 transition-colors" onclick="reworkWithMaid()" type="button">
+<span class="material-symbols-outlined text-[16px]">reply</span>
+<span>Вернуть горничной Noi S. на доработку</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Client-side Interactive Logic -->
+<script>
+  let totalItems = 12;
+  let checkedCount = 9;
+  let photoAttached = false;
+
+  function updateStatusReadout() {
+    const counter = document.getElementById('inspection-counter');
+    const progressBar = document.getElementById('progress-bar-fill');
+    const pct = Math.round((checkedCount / totalItems) * 100);
+    
+    if (counter) counter.innerText = `${checkedCount} / ${totalItems} проверено (${pct}%)`;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+
+    const approveBtn = document.getElementById('approve-unit-btn');
+    if (approveBtn) {
+      if (checkedCount === totalItems && photoAttached) {
+        approveBtn.classList.remove('bg-primary');
+        approveBtn.classList.add('bg-status-verified');
+        approveBtn.innerHTML = `<span class="material-symbols-outlined text-[20px]">verified</span><span>Все пункты проверены • Подтвердить готовность</span>`;
+      }
+    }
+  }
+
+  function toggleCheck(checkbox) {
+    if (checkbox.checked) {
+      checkedCount = Math.min(totalItems, checkedCount + 1);
+    } else {
+      checkedCount = Math.max(0, checkedCount - 1);
+    }
+    updateStatusReadout();
+  }
+
+  function triggerCameraCapture() {
+    const slot = document.getElementById('camera-slot');
+    if (!slot) return;
+
+    // Simulate instant tactile photo capture feedback
+    slot.innerHTML = `
+      <div class="relative w-full h-full rounded-lg overflow-hidden flex flex-col justify-end p-2 bg-primary text-on-primary">
+        <div class="flex items-center justify-between">
+          <span class="font-label-caps text-label-caps">Терраса бассейн</span>
+          <span class="w-4 h-4 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+            <span class="material-symbols-outlined text-[12px]">check</span>
+          </span>
+        </div>
+        <span class="font-label-caps text-[10px] text-primary-fixed">13:46 • Зафиксировано</span>
+      </div>
+    `;
+
+    photoAttached = true;
+    document.getElementById('photo-count-text').innerText = '4 / 4 фото зафиксировано';
+
+    // Auto-check the terrace checkbox if not already checked
+    const terraceCb = document.getElementById('terrace-checkbox');
+    if (terraceCb && !terraceCb.checked) {
+      terraceCb.checked = true;
+      toggleCheck(terraceCb);
+      const container = document.getElementById('terrace-check-container');
+      if (container) {
+        container.classList.remove('bg-accent-gold-muted/40');
+        container.classList.add('bg-surface-container-lowest');
+      }
+      const b3 = document.getElementById('zone-3-badge');
+      if (b3) {
+        b3.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold";
+        b3.innerHTML = `<span class="material-symbols-outlined text-[12px]">check_circle</span> 3 / 3`;
+      }
+    }
+
+    // Auto-check the remaining safety sensors for quick supervisor approval
+    const sCb = document.getElementById('sensors-checkbox');
+    const dCb = document.getElementById('doors-checkbox');
+    if (sCb && !sCb.checked) { sCb.checked = true; toggleCheck(sCb); }
+    if (dCb && !dCb.checked) { dCb.checked = true; toggleCheck(dCb); }
+    
+    const b4 = document.getElementById('zone-4-badge');
+    if (b4) {
+      b4.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold";
+      b4.innerHTML = `<span class="material-symbols-outlined text-[12px]">check_circle</span> 3 / 3`;
+    }
+  }
+
+  function reportDefectAlert() {
+    alert("Замечаний нет. Все стандарты чистоты myUNO соблюдены горничной Noi S.");
+  }
+
+  function openDefectPrompt() {
+    const desc = prompt("Укажите категорию (Сантехника / Кондиционер / Электрика / Мебель):", "Кондиционер");
+    if (desc) {
+      alert(`Срочный тикет для юнита #F-302 зарегистрирован. Дежурный техник Bang Tao оповещен через Telegram бота.`);
+    }
+  }
+
+  function reworkWithMaid() {
+    confirm("Отправить замечание горничной Noi S.? Текущее время клининга будет возобновлено.");
+  }
+
+  function submitFinalInspection() {
+    if (checkedCount < totalItems || !photoAttached) {
+      // Trigger smooth autofill for inspection showcase
+      triggerCameraCapture();
+      return;
+    }
+    const btn = document.getElementById('approve-unit-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span><span>Синхронизация с myUNO PMS...</span>`;
+    
+    setTimeout(() => {
+      btn.className = "w-full h-12 bg-status-verified text-on-primary rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-2 font-bold shadow-md";
+      btn.innerHTML = `<span class="material-symbols-outlined text-[22px]">verified</span><span>Успешно! Юнит #F-302 готов к заезду</span>`;
+      alert("✅ Юнит #F-302 успешно переведен в статус «Чисто / Принят». VIP-гость Michael Weber получит Welcome SMS с персональным кодом замка в 14:50.");
+    }, 600);
+  }
+</script></main></body></html>

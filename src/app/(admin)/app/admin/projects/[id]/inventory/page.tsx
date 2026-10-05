@@ -1,4 +1,5 @@
 /* eslint-disable local-rules/no-literal-ui-text */
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -56,7 +57,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
             <p className="mt-4 text-small text-text-secondary">{category.categoryKey} · {category.bedrooms} bd / {category.bathrooms} ba · up to {category.maxGuests} guests · {category.status}</p>
           </div>
           <div className="text-right text-small">
-            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString()} base</p>
+            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString(UI_LOCALE)} base</p>
             <p className="text-text-secondary">{category.minNights} night minimum · {category.units.length} units</p>
           </div>
         </div>

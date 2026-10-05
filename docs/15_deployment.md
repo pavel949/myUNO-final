@@ -185,6 +185,10 @@ The nightly run proves a dump restores. This is how a person uses one under pres
 8. **Point `DATABASE_URL` at the restore, redeploy, and walk a booking round-trip** before telling anyone it is over.
 9. **Write down what was lost.** The window between the dump and the incident is real data — bookings taken, payments recorded — and somebody has to reconcile it by hand. Name it explicitly rather than hoping it was empty.
 
+## 5b. Vercel deployment quota
+
+The free plan allows 100 deployments per day, and every push to any branch used to count (preview builds for `feat/*`, `claude/*`, dependabot…). `vercel.json` now sets `git.deploymentEnabled` to `{"**": false, "main": true}`: only `main` (production) deploys from Git. Disabled branches create no deployment and use no quota — unlike an Ignored Build Step, whose cancelled builds still count. Pull-request previews come from Netlify. To get a Vercel preview for one branch, add its exact name with `true`. A preview needs its own test database (`DATABASE_URL`); never point a preview at production.
+
 ## 6. Costs (order of magnitude)
 
 Loop one runs comfortably on the hobby-to-team tiers of the pieces above — roughly the price of a nice dinner per month, scaling with traffic. The expensive things (payment provider fees, the WhatsApp Business line) are per-use commercial choices already flagged in `open_questions.md` (Q8, Q9).

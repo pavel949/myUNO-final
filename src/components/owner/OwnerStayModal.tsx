@@ -70,7 +70,7 @@ export const OwnerStayModal = React.forwardRef<HTMLDivElement, OwnerStayModalPro
         }}
       >
         <div className="bg-surface-ivory rounded-lg shadow-float max-w-md w-full mx-4 p-32">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-24">Book Your Stay</h2>
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-24">Book Your Stay</h2>
 
           <form onSubmit={handleSubmit} className="space-y-20">
             <div>

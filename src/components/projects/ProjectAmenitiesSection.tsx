@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -34,7 +35,7 @@ function human(value: string) {
 function priceLabel(amenity: PublicProjectAmenity, labels: { included: string; free: string }) {
   if (amenity.pricingType === 'included') return labels.included;
   if (amenity.pricingType === 'free') return labels.free;
-  if (amenity.priceThb !== null) return `฿${Math.round(amenity.priceThb / 100).toLocaleString()}`;
+  if (amenity.priceThb !== null) return `฿${Math.round(amenity.priceThb / 100).toLocaleString(UI_LOCALE)}`;
   return human(amenity.pricingType);
 }
 
@@ -67,7 +68,7 @@ export default function ProjectAmenitiesSection({
   const visible = (featured.length ? featured : amenities).slice(0, 8);
 
   return (
-    <section className="mx-auto max-w-6xl px-24 py-48 md:py-64" id="amenities">
+    <section className="mx-auto max-w-content px-20 py-48 md:px-32 md:py-64" id="amenities">
       <div className="mb-24 flex flex-wrap items-end justify-between gap-12">
         <div>
           <p className="text-kicker font-semibold uppercase text-brand-andaman">{labels.kicker}</p>
@@ -86,34 +87,34 @@ export default function ProjectAmenitiesSection({
           <Link
             key={amenity.id}
             href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}${bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : ''}`}
-            className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card"
+            className="overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
           >
             {amenity.coverUrl ? (
               <Image
                 src={amenity.coverUrl}
                 alt={amenity.name}
                 width={640}
-                height={360}
-                className="aspect-video w-full object-cover"
+                height={480}
+                className="aspect-[4/3] w-full object-cover"
               />
             ) : (
-              <div className="aspect-video bg-surface-muted" />
+              <div className="aspect-[4/3] bg-surface-sand" />
             )}
             <div className="p-16">
               {amenity.categoryKey ? (
                 <p className="text-kicker uppercase text-brand-andaman">{human(amenity.categoryKey)}</p>
               ) : null}
-              <h3 className="mt-4 font-semibold text-text-ink">{amenity.name}</h3>
+              <h3 className="mt-4 font-display text-subtitle font-semibold text-text-ink">{amenity.name}</h3>
               {amenity.shortDescription ? (
                 <p className="mt-8 line-clamp-3 text-small text-text-secondary">{amenity.shortDescription}</p>
               ) : null}
               <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
-                <span className="rounded-full bg-surface-ivory px-8 py-4">{priceLabel(amenity, labels)}</span>
+                <span className="rounded-full bg-surface-sand px-12 py-4">{priceLabel(amenity, labels)}</span>
                 {amenity.bookingRequired ? (
-                  <span className="rounded-full bg-surface-ivory px-8 py-4">{labels.bookingRequired}</span>
+                  <span className="rounded-full bg-surface-sand px-12 py-4">{labels.bookingRequired}</span>
                 ) : null}
                 {amenity.accessType !== 'open' ? (
-                  <span className="rounded-full bg-surface-ivory px-8 py-4">{human(amenity.accessType)}</span>
+                  <span className="rounded-full bg-surface-sand px-12 py-4">{human(amenity.accessType)}</span>
                 ) : null}
               </div>
             </div>

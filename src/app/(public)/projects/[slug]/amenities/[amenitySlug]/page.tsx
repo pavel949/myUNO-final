@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -72,7 +73,7 @@ export default async function AmenityDetailPage({
             {amenity.locationLabel ? <div><dt className="text-text-secondary">{labels['project_amenity.location']}</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
             <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>
             {amenity.accessInstructions ? <div><dt className="text-text-secondary">{labels['project_amenity.how_access']}</dt><dd className="font-medium">{amenity.accessInstructions}</dd></div> : null}
-            <div><dt className="text-text-secondary">{labels['project_amenity.cost']}</dt><dd className="font-medium">{amenity.pricingType === 'included' ? labels['project_amenity.included'] : amenity.pricingType === 'free' ? labels['project_amenity.free'] : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString()}` : human(amenity.pricingType)}</dd></div>
+            <div><dt className="text-text-secondary">{labels['project_amenity.cost']}</dt><dd className="font-medium">{amenity.pricingType === 'included' ? labels['project_amenity.included'] : amenity.pricingType === 'free' ? labels['project_amenity.free'] : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString(UI_LOCALE)}` : human(amenity.pricingType)}</dd></div>
             {amenity.capacity ? <div><dt className="text-text-secondary">{labels['project_amenity.capacity']}</dt><dd className="font-medium">{amenity.capacity}</dd></div> : null}
             {amenity.minAge !== null ? <div><dt className="text-text-secondary">{labels['project_amenity.min_age']}</dt><dd className="font-medium">{amenity.minAge}</dd></div> : null}
             {amenity.bookingRequired ? <div><dt className="text-text-secondary">{labels['project_amenity.booking']}</dt><dd className="font-medium">{human(amenity.bookingMode)}</dd></div> : null}

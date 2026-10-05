@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
@@ -85,7 +87,7 @@ export default function BankTransferInstructions({
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-12 text-body mb-16">
         <div>
           <dt className="text-small text-text-secondary">{labels['booking.detail.transfer_amount']}</dt>
-          <dd className="font-semibold text-text-ink">฿{amountBaht.toLocaleString()}</dd>
+          <dd className="font-semibold text-text-ink">฿{amountBaht.toLocaleString(UI_LOCALE)}</dd>
         </div>
         <div>
           <dt className="text-small text-text-secondary">{labels['booking.detail.transfer_reference']}</dt>

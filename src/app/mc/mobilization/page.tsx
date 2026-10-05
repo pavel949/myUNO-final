@@ -106,7 +106,7 @@ export default async function McMobilizationPage({ searchParams }: McMobilizatio
     )}`;
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['mc.mobilization.back']}
@@ -143,7 +143,7 @@ export default async function McMobilizationPage({ searchParams }: McMobilizatio
             {units.map((unit) => (
               <li
                 key={unit.id}
-                className="bg-surface-paper border border-border-line rounded-lg p-20 flex items-center justify-between gap-16"
+                className="stitch-panel p-20 flex items-center justify-between gap-16"
               >
                 <div>
                   <p className="text-body font-semibold text-text-ink">{unit.name}</p>

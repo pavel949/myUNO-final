@@ -40,3 +40,18 @@ Status values below describe `feat/canonical-platform-v3`. `already fixed` means
 ## Agent rule
 
 Before touching a finding: inspect current branch code and this matrix. Do not rebuild an `already fixed` domain. A branch-level implementation becomes production-complete only after applicable build, migration, runtime and acceptance evidence is recorded.
+
+
+## Project Portal reconciliation — 2026-10-05
+
+| Concern | Disposition | Evidence / target |
+|---|---|---|
+| Homepage → project selection | **already fixed / preserve** | `ProjectCard` links directly to canonical `/projects/[slug]`. |
+| Project stay availability | **already fixed / preserve** | Project Space passes canonical `projectId` into Stay Search; quote/booking remains the single Booking/Pricing/BlockedDate path. |
+| Project story + galleries | **already fixed / preserve** | Existing project media + ContentKey editorial stay authoritative. |
+| On-property amenities and F&B | **extend** | Existing `ProjectAmenity` remains open-vocabulary and gains no duplicate model; Project Experience is the authoring surface. |
+| Services / experiences | **already fixed / preserve** | Existing `Service` + `ServiceProject` catalogue remains the only orderable service supply and pricing source. |
+| Nearby context + distances | **fix** | Additive `ProjectNearbyPlace` model, public projection, admin CRUD and preview. Derived coordinate distance wins; manual distance is fallback. |
+| Project inquiry → CRM | **fix** | Existing public lead path accepts a validated live `projectId`; resulting CRM opportunity is bound to that Project. |
+| Public portal navigation | **extend** | One sticky in-page portal navigation over the existing Project Space; no parallel portal route. |
+| Production migration/runtime | **not checked until deployment** | Additive Prisma migration must be applied before the new nearby-place reads are exercised in production. |

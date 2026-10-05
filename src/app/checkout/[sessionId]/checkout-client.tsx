@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -114,7 +116,7 @@ export default function CheckoutClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-ivory">
+      <div className="stitch-workspace flex min-h-screen items-center justify-center">
         <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
       </div>
     );
@@ -122,8 +124,8 @@ export default function CheckoutClient({
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
-        <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full text-center">
+      <div className="stitch-workspace flex min-h-screen items-center justify-center bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32">
+        <div className="stitch-panel w-full max-w-lg p-32 text-center shadow-float">
           <div className="text-heading-1 mb-16" aria-hidden="true">
             ✓
           </div>
@@ -139,9 +141,9 @@ export default function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
+    <div className="stitch-workspace flex min-h-screen items-center justify-center bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32">
+      <div className="stitch-panel w-full max-w-lg p-24 shadow-float md:p-32">
+        <h1 className="mb-24 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">
           {labels['payments.checkout.title']}
         </h1>
 
@@ -153,7 +155,7 @@ export default function CheckoutClient({
         )}
 
         {session && (
-          <div className="mb-24 p-16 bg-surface-ivory rounded-lg border border-border-line space-y-8">
+          <div className="mb-24 space-y-12 rounded-lg border border-border-line bg-surface-ivory/80 p-20">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">
@@ -188,7 +190,7 @@ export default function CheckoutClient({
                     {labels['payments.checkout.dates_label']}
                   </span>
                   <span className="text-text-ink">
-                    {new Date(session.serviceOrder.scheduledStart).toLocaleString()}
+                    {new Date(session.serviceOrder.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                   </span>
                 </div>
               </>
@@ -196,7 +198,7 @@ export default function CheckoutClient({
             <div className="flex justify-between text-body font-semibold pt-8 border-t border-border-line">
               <span className="text-text-ink">{labels['payments.checkout.amount_label']}</span>
               <span className="font-display text-title text-brand-andaman tabular-nums">
-                ฿{session.amountThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ฿{session.amountThb.toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2  })}
               </span>
             </div>
           </div>

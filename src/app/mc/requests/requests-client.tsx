@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import Link from 'next/link';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
@@ -73,7 +75,7 @@ export default function McRequestsClient({
               {request.requestExpiresAt ? (
                 <p className="text-small text-state-warning mt-4">
                   {labels['mc.requests.expires']}:{' '}
-                  {new Date(request.requestExpiresAt).toLocaleString()}
+                  {new Date(request.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                 </p>
               ) : null}
               <BookingRequestInboxDetails

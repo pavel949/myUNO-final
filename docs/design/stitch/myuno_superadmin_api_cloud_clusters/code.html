@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><title>myUNO Global Platform OS</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary":"#ffffff","inverse-surface":"#273331","primary-fixed":"#c2ebdc","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","border-subtle":"#E5DFD3","surface-sand-subtle":"#EAE4D7","on-primary-fixed":"#002019","error-container":"#ffdad6","surface-container":"#e3f1ed","on-secondary-fixed":"#2b1700","surface-container-lowest":"#ffffff","tertiary-fixed":"#c7eadd","accent-gold-muted":"#F5EAD9","primary":"#00221a","surface-tint":"#40665a","on-surface-variant":"#414845","on-tertiary":"#ffffff","status-verified-bg":"#E9F1EE","on-secondary":"#ffffff","surface-container-highest":"#d8e5e2","on-background":"#121e1c","status-instant-bg":"#FAF3E8","secondary-fixed-dim":"#f6bb79","on-secondary-fixed-variant":"#663e04","on-error":"#ffffff","primary-fixed-dim":"#a7cfc1","accent-gold-soft":"#E4BE8D","surface-container-high":"#ddebe8","error":"#ba1a1a","inverse-on-surface":"#e6f4f0","on-tertiary-container":"#7fa195","text-muted":"#566360","surface-bright":"#effcf9","secondary-container":"#fdc17e","surface-ivory":"#FBF9F5","surface-sand":"#F4F0E8","background":"#effcf9","on-tertiary-fixed-variant":"#2d4d44","primary-container":"#11382e","on-error-container":"#93000a","status-instant":"#9A6B32","outline":"#717975","on-surface":"#121e1c","surface-dim":"#cfddd9","surface":"#effcf9","on-secondary-container":"#784d14","tertiary-fixed-dim":"#accec2","tertiary":"#01221a","status-verified":"#1E5848","tertiary-container":"#17372f","on-primary-container":"#7ba295","secondary":"#81551c","secondary-fixed":"#ffddba","on-primary-fixed-variant":"#284e43","inverse-primary":"#a7cfc1","on-tertiary-fixed":"#002019","surface-container-low":"#e9f7f3"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-2xl":"4rem","space-md":"1rem","margin-mobile":"1.25rem","gutter-mobile":"1rem","space-xl":"2.5rem","margin":"3rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xs":"0.25rem","gutter":"1.5rem"},"fontFamily":{"title-md":["Outfit"],"headline-sm":["Outfit"],"body-sm":["Manrope"],"headline-lg-mobile":["Outfit"],"label-md":["Manrope"],"label-caps":["Manrope"],"body-lg":["Manrope"],"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-md":["Outfit"],"display-hero":["Outfit"],"label-lg":["Manrope"],"body-md":["Manrope"]},"fontSize":{"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-screen w-72 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,18,14,0.18)]"><div class="flex flex-col h-full overflow-hidden"><div class="px-space-lg pt-space-lg pb-space-md border-b border-tertiary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md tracking-tight text-on-primary leading-none">myUNO</span><span class="font-label-caps text-label-caps text-on-primary-container tracking-wider uppercase mt-space-xs">GLOBAL OS v4.2</span></div></div><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container"><span class="w-1.5 h-1.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-caps text-label-caps text-accent-gold-soft tracking-wider">PROD</span></div></div><button class="w-full mt-space-sm flex items-center justify-between px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-tertiary-container hover:text-on-primary transition-all text-left group" type="button"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px] text-accent-gold-soft">terminal</span><span class="font-body-sm text-body-sm text-on-primary-container group-hover:text-on-primary">Jump / Command</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container text-on-primary-container font-mono">⌘K</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-md space-y-space-lg"><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ОБЗОР &amp; УПРАВЛЕНИЕ</span><span class="font-label-caps text-label-caps text-on-primary-container">01</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">public</span>Глобальный дашборд</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="portfolio-and-projects" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">domain</span>Дестинации &amp; Комплексы</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="vendor-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">storefront</span>Маркетплейс &amp; Вендоры</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ФИНАНСЫ &amp; КЛИРИНГ</span><span class="font-label-caps text-label-caps text-on-primary-container">02</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="ledger-and-payouts" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">account_balance_wallet</span>Клиринг &amp; Выплаты</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="owners-and-reporting" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">insights</span>Отчетность инвесторов</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">БЕЗОПАСНОСТЬ &amp; СИСТЕМА</span><span class="font-label-caps text-label-caps text-on-primary-container">03</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="iam-and-rbac" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">shield_person</span>Роли &amp; Доступ (IAM)</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">history_edu</span>Аудит-лог &amp; События</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="infrastructure-monitoring" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">network_check</span>Инфраструктура &amp; API</a></nav></div><div class="p-space-md bg-tertiary-container m-space-md rounded-xl border border-primary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Asset Registry</span><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-on-primary">LIVE</span></div><div class="grid grid-cols-3 gap-space-xs text-center py-1 bg-primary/40 rounded-lg"><div class="flex flex-col"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">4</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Зоны</span></div><div class="flex flex-col border-x border-primary-container"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">18</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Компл.</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-accent-gold-soft font-bold leading-tight">342</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Юнита</span></div></div><div class="flex items-center justify-between pt-1 border-t border-primary-container/80"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-body-sm text-body-sm text-on-primary-container text-[11px]">All Systems Operational</span></div><span class="font-label-caps text-label-caps text-on-primary font-mono">99.98%</span></div></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container z-40 px-space-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Platform</span><span class="material-symbols-outlined text-[16px] text-outline-variant">chevron_right</span><span class="font-label-lg text-label-lg text-on-surface font-semibold">myUNO Executive Hub</span></div><div class="h-4 w-[1px] bg-outline-variant"></div><button class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-sand text-on-surface font-body-sm text-body-sm hover:bg-surface-sand-subtle transition-colors" type="button"><span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span><span class="material-symbols-outlined text-[16px] text-status-verified">calendar_today</span><span class="font-semibold text-on-surface">Q4 2026 • Ноябрь</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></button></div><div class="flex-1 max-w-md mx-space-lg"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-text-muted pointer-events-none">search</span><input class="w-full h-9 pl-10 pr-12 rounded-lg bg-surface-sand/70 text-on-surface placeholder:text-text-muted font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:border-primary-container focus:bg-surface-container-lowest transition-all" placeholder="Поиск по инвесторам, виллам, транзакциям..." type="search"/><kbd class="absolute right-space-sm px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-text-muted uppercase">⌘K</kbd></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-status-verified-bg text-status-verified font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">show_chart</span><span class="font-semibold">GMV Today:</span><span class="font-bold font-mono">฿1.48M</span><span class="text-[11px] text-status-verified/80">• 100% Sync</span></div><div class="flex items-center bg-surface-sand p-0.5 rounded-lg border border-border-subtle"><button class="px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">THB ฿</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USD $</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">RUB ₽</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USDT</button></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span></button><div class="h-6 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ring-2 ring-accent-gold-soft"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden 2xl:flex flex-col text-left"><div class="flex items-center gap-1.5"><span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight">Александр В.</span><span class="font-label-caps text-label-caps px-1 py-0.2 rounded bg-primary text-on-primary text-[9px]">COO</span></div><span class="font-label-caps text-label-caps text-text-muted text-[10px]">SuperAdmin Root</span></div></div></div></header><main class="relative pt-16 flex-1 w-full bg-surface-bright"><div class="flex flex-col w-full">
+<!-- Top Command & Status Bar -->
+<div class="px-space-lg pt-space-lg pb-space-md flex flex-col gap-space-md">
+<!-- Breadcrumb & Critical Status Ribbon -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-space-xs text-text-muted font-label-caps text-label-caps tracking-widest uppercase">
+<span class="text-primary font-bold">myUNO INFRASTRUCTURE OS</span>
+<span class="text-outline-variant">•</span>
+<span>DISTRIBUTED SYSTEMS &amp; INTEGRATIONS</span>
+<span class="text-outline-variant">•</span>
+<span class="text-accent-gold-soft font-mono">BKK-AP-SOUTHEAST-1</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary font-bold tracking-tight">
+          Инфраструктура, облачные кластеры &amp; API Gateway
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+          Мониторинг распределенных узлов, отказоустойчивость синхронизации OTA Channel Managers, криптографические шлюзы SmartLock IoT и платежный клиринг в реальном времени.
+        </p>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center flex-wrap gap-space-xs pt-space-xs lg:pt-0">
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+<span>Экспорт Grafana / Prometheus</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">key</span>
+<span>+ Создать API-ключ / Webhook</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-error-container hover:bg-error/20 text-error font-label-lg text-label-lg transition-all shadow-sm" id="failoverBtn" type="button">
+<span class="material-symbols-outlined text-[18px]">emergency_home</span>
+<span id="failoverText">Failover Drill (Safe Mode)</span>
+</button>
+</div>
+</div>
+<!-- Cluster Telemetry Strip -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md flex-wrap">
+<div class="flex items-center gap-2">
+<div class="relative flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified"></span>
+<span class="absolute w-4 h-4 rounded-full bg-status-verified opacity-40 animate-ping"></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Основной Кластер</span>
+<span class="font-label-lg text-label-lg text-primary font-bold">AWS ap-southeast-1 (Singapore) &amp; BKK Direct Connect</span>
+</div>
+</div>
+<div class="h-8 w-[1px] bg-surface-container hidden md:block"></div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">SLA Uptime (30d)</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold font-mono">99.984% (Passed)</span>
+</div>
+<div class="h-8 w-[1px] bg-surface-container hidden md:block"></div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">P99 Edge Latency</span>
+<span class="font-label-lg text-label-lg text-primary font-bold font-mono">42ms <span class="font-body-sm text-body-sm text-text-muted font-normal">(Cloudflare Argo)</span></span>
+</div>
+<div class="h-8 w-[1px] bg-surface-container hidden md:block"></div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Health Status</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold">28 / 28 Microservices Healthy</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[14px]">encrypted</span>
+          TLS 1.3 / mTLS Mesh Active
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-sand text-secondary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+          AWS WAF: Zero Breaches
+        </span>
+</div>
+</div>
+</div>
+<!-- KPI Row: 4 Metric Cards -->
+<div class="px-space-lg pb-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">API Запросы (RPS &amp; Нагрузка)</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md font-bold text-primary">4.8M</span>
+<span class="font-label-md text-label-md text-text-muted">/ 24 часа</span>
+</div>
+</div>
+<div class="p-2 rounded-lg bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</div>
+</div>
+<div class="my-space-sm">
+<!-- Inline Sparkline Curve (Micro-chart) -->
+<svg class="w-full h-10 text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 200 40">
+<defs>
+<lineargradient id="metricGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="currentColor" stop-opacity="0.18"></stop>
+<stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 32 Q 25 15, 50 24 T 100 8 T 150 20 T 200 12 L 200 40 L 0 40 Z" fill="url(#metricGrad)"></path>
+<path d="M0 32 Q 25 15, 50 24 T 100 8 T 150 20 T 200 12" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between pt-space-xs border-t border-surface-container">
+<span class="font-body-sm text-body-sm text-text-muted">Avg: <strong class="text-primary font-mono font-semibold">142 req/s</strong></span>
+<span class="font-label-caps text-label-caps text-status-verified font-mono bg-status-verified-bg px-1.5 py-0.5 rounded">0.008% Errors (4xx/5xx)</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Channel Managers Sync (OTA)</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md font-bold text-status-verified">100%</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold">Паритет тарифов</span>
+</div>
+</div>
+<div class="p-2 rounded-lg bg-status-verified-bg text-status-verified">
+<span class="material-symbols-outlined text-[20px]">sync_saved_locally</span>
+</div>
+</div>
+<div class="my-space-sm space-y-1.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-text-muted">Инвентарь в синхронизации:</span>
+<span class="font-bold text-primary font-mono">342 / 342 юнита</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-status-verified rounded-full w-full"></div>
+</div>
+<div class="flex items-center justify-between text-[11px] font-label-caps text-text-muted">
+<span>AirBnb • Booking • Expedia • Trip • Agoda</span>
+<span class="text-primary font-mono font-bold">1.2s push</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs border-t border-surface-container">
+<span class="font-body-sm text-body-sm text-text-muted">Anti-Overbooking Lock:</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold uppercase">Активен (0 коллизий)</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">SmartLock IoT Периметр</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md font-bold text-primary">342</span>
+<span class="font-label-md text-label-md text-text-muted">замка онлайн (99.8%)</span>
+</div>
+</div>
+<div class="p-2 rounded-lg bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[20px]">door_sliding</span>
+</div>
+</div>
+<div class="my-space-sm space-y-1.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-text-muted">Валидных токенов &amp; PIN:</span>
+<span class="font-bold text-primary font-mono">1,420 Active PINs</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-accent-gold-soft rounded-full w-[98%]"></div>
+</div>
+<div class="flex items-center justify-between text-[11px] font-label-caps text-text-muted">
+<span>Broker: AWS IoT Core</span>
+<span class="text-primary font-mono font-bold">TTLock / Salto Mesh</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs border-t border-surface-container">
+<span class="font-body-sm text-body-sm text-text-muted">Ср. доставка PIN:</span>
+<span class="font-label-caps text-label-caps text-status-instant font-mono font-bold bg-status-instant-bg px-1.5 py-0.5 rounded">480ms (MQTT QoS 1)</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Платежные &amp; Банк. Шлюзы</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md font-bold text-primary">4 / 4</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold">100% Online</span>
+</div>
+</div>
+<div class="p-2 rounded-lg bg-surface-sand text-secondary">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+</div>
+<div class="my-space-sm space-y-1.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-text-muted">Клиринг Webhook ACK:</span>
+<span class="font-bold text-primary font-mono">0.8 сек (P95)</span>
+</div>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="px-2 py-0.5 rounded bg-surface-sand text-secondary font-label-caps text-label-caps">K-Bank Direct</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-secondary font-label-caps text-label-caps">Stripe 3DS</span>
+<span class="px-2 py-0.5 rounded bg-surface-sand text-secondary font-label-caps text-label-caps">СБП / МИР</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs border-t border-surface-container">
+<span class="font-body-sm text-body-sm text-text-muted">Settlement Escrow:</span>
+<span class="font-label-caps text-label-caps text-status-verified font-mono font-bold">Синхронизирован</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 1: Main Gateway & Integration Matrix -->
+<div class="px-space-lg pb-space-lg">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">router</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">Интерактивная матрица интеграций &amp; API-шлюзов</h2>
+<span class="px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-semibold">8 Active Endpoints</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Двусторонний обмен данными: PMS inventory push, dynamic yield rates, IoT door events &amp; auto-banking settlement.</span>
+</div>
+</div>
+<!-- Filter & Search Controls -->
+<div class="flex items-center gap-space-xs">
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-sm" type="button">Все (8)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-md text-label-md transition-colors" type="button">OTA Каналы (3)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-md text-label-md transition-colors" type="button">Банки &amp; Платежи (3)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-md text-label-md transition-colors" type="button">IoT &amp; Comms (2)</button>
+<button class="ml-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" onclick="testAllGateways()" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Ping All</span>
+</button>
+</div>
+</div>
+<!-- Table of Integrations -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container/60 text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-3 px-4 rounded-l-lg">Интеграционный Узел &amp; Провайдер</th>
+<th class="py-3 px-4">Протокол / Метод</th>
+<th class="py-3 px-4">Связанные Комплексы / Ресурс</th>
+<th class="py-3 px-4">Частота / Задержка</th>
+<th class="py-3 px-4">Статус Синхронизации</th>
+<th class="py-3 px-4 rounded-r-lg text-right">Управление</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container font-body-sm text-body-sm text-on-surface">
+<!-- 1. Airbnb -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FF5A5F]/10 text-[#FF5A5F] flex items-center justify-center font-bold text-xs">
+                    Ab
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Airbnb Live Parity API</span>
+<span class="font-label-caps text-label-caps text-text-muted">Official Partner XML Push &amp; iCal Instant Sync</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">REST / Webhooks (JSON)</td>
+<td class="py-3.5 px-4">
+<span class="font-semibold text-primary">52 юнита</span> The Title Legendary + <span class="font-semibold text-primary">18 вилл</span> Layantara
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">60s poll / 1.1s push</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  ОТЛИЧНО • 100% SYNC (0 коллизий)
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Тест канала
+                </button>
+</td>
+</tr>
+<!-- 2. Booking.com -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#003580]/10 text-[#003580] flex items-center justify-center font-bold text-xs">
+                    Bk
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Booking.com Connectivity Partner API</span>
+<span class="font-label-caps text-label-caps text-text-muted">Dynamic Stop-Sell &amp; Restriction Matrix Direct</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">SOAP / XML Direct (mTLS)</td>
+<td class="py-3.5 px-4">
+<span class="font-semibold text-primary">342 юнита</span> (Все резиденции myUNO)
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">Realtime Push / 0.9s</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  ОТЛИЧНО • 100% SYNC (Stop-Sell OK)
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Логи тарифов
+                </button>
+</td>
+</tr>
+<!-- 3. Expedia -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FFCC00]/20 text-secondary flex items-center justify-center font-bold text-xs">
+                    Ex
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Expedia Partner Central API</span>
+<span class="font-label-caps text-label-caps text-text-muted">Rate Availability &amp; Booking Retrieval (EPC)</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">REST JSON v3</td>
+<td class="py-3.5 px-4">
+<span class="font-semibold text-primary">280 юнитов</span> (Phuket Leisure Pool)
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">120s sync / 1.4s push</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  В НОРМЕ • Синхронизировано
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Настройки
+                </button>
+</td>
+</tr>
+<!-- 4. Kasikorn Bank -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#138f2d]/10 text-[#138f2d] flex items-center justify-center font-bold text-xs">
+                    KB
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Kasikorn Bank (K-Bank Corporate Open API)</span>
+<span class="font-label-caps text-label-caps text-text-muted">THB PromptPay QR, Direct Debit &amp; Escrow Splitting</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">mTLS OAuth2.0 Banking API</td>
+<td class="py-3.5 px-4">
+                Корпоративный счет THB ฿ / Клиринг инвесторов
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">0.4s Instant Callback</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  БАНКОВСКИЙ ШЛЮЗ АКТИВЕН
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Проверить выписку
+                </button>
+</td>
+</tr>
+<!-- 5. Stripe -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#635bff]/10 text-[#635bff] flex items-center justify-center font-bold text-xs">
+                    St
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Stripe 3D-Secure Payments &amp; Radar</span>
+<span class="font-label-caps text-label-caps text-text-muted">Global International Cards (USD/EUR/AUD/GBP)</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">Webhook Sig SHA-256</td>
+<td class="py-3.5 px-4">
+                Международный процессинг &amp; Онлайн бронирования
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">0.7s Webhook ACK</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  АКТИВЕН • Radar Score &lt; 12
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Radar Logs
+                </button>
+</td>
+</tr>
+<!-- 6. МИР / СБП QR -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-sand text-secondary flex items-center justify-center font-bold text-xs">
+                    QR
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">МИР / СБП Российский эквайринг (Инвайтинг)</span>
+<span class="font-label-caps text-label-caps text-text-muted">Авто-конверсия RUB в THB по курсу K-Bank + 1.2%</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">Rest API / QR Callback</td>
+<td class="py-3.5 px-4">
+                Прямые депозиты гостей &amp; Инвесторские транши
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">1.8s Settlement Rate</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  ОПЕРАЦИОНЕН • Курс 1 THB = 2.68 ₽
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Спред &amp; Маржа
+                </button>
+</td>
+</tr>
+<!-- 7. Salto & TTLock IoT -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container text-primary flex items-center justify-center font-bold text-xs">
+                    IoT
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Salto &amp; TTLock IoT Smart Gateway</span>
+<span class="font-label-caps text-label-caps text-text-muted">AWS IoT Core MQTT Broker / Пин-коды заезда</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">MQTT TLS 8883 (QoS 1)</td>
+<td class="py-3.5 px-4">
+<span class="font-semibold text-primary">342 виллы и апартамента</span>
+</td>
+<td class="py-3.5 px-4 font-mono text-text-muted">Keep-alive 15s / 480ms PIN</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  342 ЗАМКА НА СВЯЗИ • Батареи &gt; 68%
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Сброс кодов
+                </button>
+</td>
+</tr>
+<!-- 8. Twilio & Meta WhatsApp -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs">
+                    WA
+                  </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary font-bold">Twilio &amp; Meta Cloud WhatsApp Business API</span>
+<span class="font-label-caps text-label-caps text-text-muted">Мгновенные ваучеры, PIN-коды и AI-консьерж Нараяна</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[12px] text-primary">Graph API v19.0 / Webhooks</td>
+<td class="py-3.5 px-4">
+                Служба заботы о гостях &amp; Инвесторские алерты
+              </td>
+<td class="py-3.5 px-4 font-mono text-text-muted">0.2s Direct Dispatch</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  ДОСТАВКА 99.9% • Шаблоны Approved
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" type="button">
+                  Очередь SMS
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Section 2: Two Columns: API Key Management & Live Telemetry Stream -->
+<div class="px-space-lg pb-space-2xl">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Left Column: API Keys & Webhook Rate Limiting (5 cols on lg, 6 on xl) -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-primary">vpn_key</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Активные API Ключи &amp; Токены Доступа</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Криптографические сигнатуры SHA-256 и профили Rate Limiting для сервисов myUNO</p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-primary font-mono">5 ACTIVE</span>
+</div>
+<!-- Keys List -->
+<div class="space-y-space-sm">
+<!-- Key 1 -->
+<div class="p-space-sm rounded-lg bg-surface-bright flex flex-col gap-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-lg text-label-lg text-primary font-bold">myUNO PMS Desktop Client v2.4</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container px-2 py-0.5 rounded font-mono">Rate Limit: 500 req/min</span>
+</div>
+<div class="flex items-center justify-between font-mono text-[11px] text-text-muted">
+<span>Key: pk_live_8f0a39...e8421c (Full Write)</span>
+<span class="text-status-verified">Ротация через 42 дня</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-[12px] font-body-sm text-text-muted">Использование сегодня: <strong class="text-primary">184,209 вызовов</strong></span>
+<button class="text-secondary hover:text-primary font-label-md text-label-md transition-colors" type="button">Отозвать токен</button>
+</div>
+</div>
+<!-- Key 2 -->
+<div class="p-space-sm rounded-lg bg-surface-bright flex flex-col gap-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-lg text-label-lg text-primary font-bold">myUNO Mobile App iOS / Android</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container px-2 py-0.5 rounded font-mono">Rate Limit: 2,000 req/min</span>
+</div>
+<div class="flex items-center justify-between font-mono text-[11px] text-text-muted">
+<span>Key: pk_live_client_02a...98b7 (Guest &amp; Owner Scope)</span>
+<span class="text-status-verified">Ротация через 88 дней</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-[12px] font-body-sm text-text-muted">Использование сегодня: <strong class="text-primary">1,120,400 вызовов</strong></span>
+<button class="text-secondary hover:text-primary font-label-md text-label-md transition-colors" type="button">Отозвать токен</button>
+</div>
+</div>
+<!-- Key 3 -->
+<div class="p-space-sm rounded-lg bg-surface-bright flex flex-col gap-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-lg text-label-lg text-primary font-bold">Cleaning Supervisor PWA (Клининг)</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container px-2 py-0.5 rounded font-mono">Rate Limit: 100 req/min</span>
+</div>
+<div class="flex items-center justify-between font-mono text-[11px] text-text-muted">
+<span>Key: pk_live_clean_91c...10f2 (Housekeeping Auth)</span>
+<span class="text-status-verified">Ротация через 14 дней</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-[12px] font-body-sm text-text-muted">Использование сегодня: <strong class="text-primary">14,890 вызовов</strong></span>
+<button class="text-secondary hover:text-primary font-label-md text-label-md transition-colors" type="button">Отозвать токен</button>
+</div>
+</div>
+<!-- Key 4 -->
+<div class="p-space-sm rounded-lg bg-surface-bright flex flex-col gap-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-accent-gold-soft"></span>
+<span class="font-label-lg text-label-lg text-primary font-bold">External Vendor API (Andaman Luxury Drive)</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container px-2 py-0.5 rounded font-mono">Rate Limit: 60 req/min</span>
+</div>
+<div class="flex items-center justify-between font-mono text-[11px] text-text-muted">
+<span>Key: pk_live_partner_transfer...881a (Transfer Orders)</span>
+<span class="text-accent-gold-soft">Требует обновления (3 дня)</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-[12px] font-body-sm text-text-muted">Использование сегодня: <strong class="text-primary">420 вызовов</strong></span>
+<button class="text-secondary hover:text-primary font-label-md text-label-md transition-colors" type="button">Регенерировать</button>
+</div>
+</div>
+<!-- Key 5 -->
+<div class="p-space-sm rounded-lg bg-surface-bright flex flex-col gap-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-lg text-label-lg text-primary font-bold">BI &amp; Data Warehouse ETL Pipeline</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container px-2 py-0.5 rounded font-mono">Rate Limit: 5,000 req/min</span>
+</div>
+<div class="flex items-center justify-between font-mono text-[11px] text-text-muted">
+<span>Key: pk_live_analytics_snowflake...310f (Read-Only Bulk)</span>
+<span class="text-status-verified">Ротация через 180 дней</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="text-[12px] font-body-sm text-text-muted">Использование сегодня: <strong class="text-primary">2,410,000 вызовов</strong></span>
+<button class="text-secondary hover:text-primary font-label-md text-label-md transition-colors" type="button">Отозвать токен</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Live Event Stream & Telemetry (6 cols) -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="relative flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="absolute w-4 h-4 rounded-full bg-error opacity-40 animate-ping"></span>
+</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Журнал телеметрии в реальном времени</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Потоковый лог событий API-шлюза, очередей бронирования и аппаратных замков</p>
+</div>
+</div>
+<!-- Filter Pills -->
+<div class="flex items-center gap-1">
+<button class="px-2 py-0.5 rounded bg-primary text-on-primary font-label-caps text-label-caps" onclick="filterLogs('ALL')" type="button">ALL</button>
+<button class="px-2 py-0.5 rounded bg-surface-container text-text-muted font-label-caps text-label-caps hover:text-primary" onclick="filterLogs('SUCCESS')" type="button">INFO</button>
+<button class="px-2 py-0.5 rounded bg-surface-container text-text-muted font-label-caps text-label-caps hover:text-primary" onclick="filterLogs('WARN')" type="button">WARN</button>
+</div>
+</div>
+<!-- Terminal Style Log Container -->
+<div class="h-[430px] overflow-y-auto rounded-lg bg-inverse-surface p-space-md font-mono text-[12px] leading-relaxed flex flex-col gap-2 text-inverse-on-surface shadow-inner" id="logStream">
+<!-- Event 1 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:18:02</span>
+<span class="px-1.5 py-0.2 rounded bg-status-verified/20 text-accent-gold-soft font-bold text-[10px] shrink-0">[OTA Sync]</span>
+<span class="text-surface-bright">Airbnb Webhook: Rate push successful for #F-302 (The Title Legendary). ฿7,400/night confirmed. ACK: 42ms.</span>
+</div>
+<!-- Event 2 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:17:45</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary/30 text-secondary-fixed shrink-0 font-bold text-[10px]">[IoT Gateway]</span>
+<span class="text-surface-bright">SmartLock PIN assigned via MQTT: Unit #E-101 (Layantara Villa 4BR). Valid for 7 nights. Guest phone: +66 81 *** 4492.</span>
+</div>
+<!-- Event 3 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:16:30</span>
+<span class="px-1.5 py-0.2 rounded bg-status-verified-bg/20 text-status-verified-bg shrink-0 font-bold text-[10px]">[Payment]</span>
+<span class="text-surface-bright">KasikornBank Callback: ฿37,350 escrow confirmed. TX: KB-9810248-TH. Automated split to owner pool executed.</span>
+</div>
+<!-- Event 4 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="WARN">
+<span class="text-outline-variant shrink-0">14:14:11</span>
+<span class="px-1.5 py-0.2 rounded bg-status-instant-bg/20 text-secondary-fixed-dim shrink-0 font-bold text-[10px]">[Rate Limit]</span>
+<span class="text-secondary-fixed-dim">External Vendor API (Andaman Luxury Drive): 48 req/min approaching ceiling limit (60 req/min). Burst throttle active.</span>
+</div>
+<!-- Event 5 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:12:05</span>
+<span class="px-1.5 py-0.2 rounded bg-primary-fixed/20 text-primary-fixed shrink-0 font-bold text-[10px]">[Twilio WA]</span>
+<span class="text-surface-bright">WhatsApp Concierge Narayana message delivered: Digital Key QR sent to guest Mikhail S. Read status: ACK.</span>
+</div>
+<!-- Event 6 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:09:50</span>
+<span class="px-1.5 py-0.2 rounded bg-status-verified/20 text-accent-gold-soft font-bold text-[10px] shrink-0">[OTA Sync]</span>
+<span class="text-surface-bright">Booking.com Stop-Sell Broadcast completed: 342 units verified. 0 overbooking locks triggered.</span>
+</div>
+<!-- Event 7 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:07:18</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary/30 text-secondary-fixed shrink-0 font-bold text-[10px]">[IoT Gateway]</span>
+<span class="text-surface-bright">Salto Mesh Gateway #04 battery ping: 84% healthy. Signal strength RSSI -58 dBm (Strong).</span>
+</div>
+<!-- Event 8 -->
+<div class="flex items-start gap-2 border-b border-white/5 pb-1 log-entry" data-level="SUCCESS">
+<span class="text-outline-variant shrink-0">14:05:00</span>
+<span class="px-1.5 py-0.2 rounded bg-status-verified-bg/20 text-status-verified-bg shrink-0 font-bold text-[10px]">[Payment]</span>
+<span class="text-surface-bright">Stripe Radar: charge_3N01a... authorized $1,280 USD with 3DS v2.0 verification. Fraud Score: 4 (Clean).</span>
+</div>
+</div>
+<!-- Bottom Stream Controls -->
+<div class="flex items-center justify-between pt-space-xs border-t border-surface-container">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span>
+<span class="text-body-sm font-body-sm text-text-muted">Live WebSocket: <strong class="text-primary font-mono">wss://gateway.myuno.global/telemetry</strong></span>
+</div>
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors" onclick="clearLogs()" type="button">
+              Очистить консоль
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function testAllGateways() {
+    const stream = document.getElementById('logStream');
+    if (!stream) return;
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const newEntry = document.createElement('div');
+    newEntry.className = "flex items-start gap-2 border-b border-white/5 pb-1 log-entry";
+    newEntry.setAttribute('data-level', 'SUCCESS');
+    newEntry.innerHTML = `
+      <span class="text-outline-variant shrink-0">${timeStr}</span>
+      <span class="px-1.5 py-0.2 rounded bg-status-verified/20 text-accent-gold-soft font-bold text-[10px] shrink-0">[Manual Ping]</span>
+      <span class="text-surface-bright">SuperAdmin triggered full gateway ping. All 8 endpoints responded within 120ms. Health: 100%.</span>
+    `;
+    stream.insertBefore(newEntry, stream.firstChild);
+  }
+
+  function clearLogs() {
+    const stream = document.getElementById('logStream');
+    if (stream) stream.innerHTML = '<div class="text-text-muted italic">Консоль телеметрии очищена администратором. Ожидание входящих событий...</div>';
+  }
+
+  function filterLogs(level) {
+    const entries = document.querySelectorAll('.log-entry');
+    entries.forEach(entry => {
+      if (level === 'ALL' || entry.getAttribute('data-level') === level) {
+        entry.style.display = 'flex';
+      } else {
+        entry.style.display = 'none';
+      }
+    });
+  }
+
+  // Toggle Failover Safe Mode
+  const failoverBtn = document.getElementById('failoverBtn');
+  const failoverText = document.getElementById('failoverText');
+  let isFailoverActive = false;
+
+  if (failoverBtn) {
+    failoverBtn.addEventListener('click', () => {
+      isFailoverActive = !isFailoverActive;
+      if (isFailoverActive) {
+        failoverBtn.className = "inline-flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-error text-on-error font-label-lg text-label-lg transition-all shadow-md";
+        failoverText.innerText = "FAILOVER DRILL ACTIVE (Safe Mode On)";
+      } else {
+        failoverBtn.className = "inline-flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-error-container hover:bg-error/20 text-error font-label-lg text-label-lg transition-all shadow-sm";
+        failoverText.innerText = "Failover Drill (Safe Mode)";
+      }
+    });
+  }
+</script></main><footer class="w-full bg-surface-container-lowest border-t border-surface-container py-space-sm px-space-lg"><div class="flex flex-col md:flex-row items-center justify-between text-on-surface-variant font-body-sm text-body-sm gap-space-xs"><div><span class="font-semibold text-primary">myUNO Platform OS</span> © 2026 myUNO Hospitality &amp; Asset Management Ltd. All rights reserved.</div><div class="flex items-center gap-space-md"><span class="flex items-center gap-1 text-[12px]"><span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span> Bangkok (BKK-1) Cluster Sync</span><span class="text-[12px] text-outline">Latency: 18ms</span><a class="hover:text-primary transition-colors text-[12px]" data-path="infrastructure-monitoring" href="#">Status Ledger</a></div></div></footer></div></body></html>

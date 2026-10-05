@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-tertiary-container": "#7fa195", "accent-gold-muted": "#F5EAD9", "surface-variant": "#d8e5e2", "accent-gold-soft": "#E4BE8D", "surface-bright": "#effcf9", "on-surface-variant": "#414845", "inverse-on-surface": "#e6f4f0", "surface-ivory": "#FBF9F5", "on-background": "#121e1c", "primary": "#00221a", "surface-container-high": "#ddebe8", "on-tertiary-fixed": "#002019", "status-verified-bg": "#E9F1EE", "primary-container": "#11382e", "surface-container": "#e3f1ed", "on-surface": "#121e1c", "text-muted": "#566360", "primary-fixed": "#c2ebdc", "inverse-surface": "#273331", "on-tertiary-fixed-variant": "#2d4d44", "on-tertiary": "#ffffff", "on-secondary-container": "#784d14", "status-instant-bg": "#FAF3E8", "surface-sand-subtle": "#EAE4D7", "on-secondary-fixed-variant": "#663e04", "tertiary-fixed-dim": "#accec2", "inverse-primary": "#a7cfc1", "error": "#ba1a1a", "surface-container-highest": "#d8e5e2", "on-secondary-fixed": "#2b1700", "outline": "#717975", "status-verified": "#1E5848", "on-secondary": "#ffffff", "outline-variant": "#c1c8c4", "secondary-container": "#fdc17e", "error-container": "#ffdad6", "surface-container-lowest": "#ffffff", "secondary": "#81551c", "surface-tint": "#40665a", "tertiary-fixed": "#c7eadd", "border-subtle": "#E5DFD3", "on-primary-fixed-variant": "#284e43", "surface": "#effcf9", "tertiary": "#01221a", "primary-fixed-dim": "#a7cfc1", "secondary-fixed": "#ffddba", "surface-container-low": "#e9f7f3", "on-primary-container": "#7ba295", "surface-sand": "#F4F0E8", "background": "#effcf9", "on-primary-fixed": "#002019", "tertiary-container": "#17372f", "on-error-container": "#93000a", "surface-dim": "#cfddd9", "secondary-fixed-dim": "#f6bb79", "status-instant": "#9A6B32", "on-error": "#ffffff", "on-primary": "#ffffff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "gutter": "1.5rem", "space-xl": "2.5rem", "space-2xl": "4rem", "margin": "3rem", "space-sm": "0.5rem", "gutter-mobile": "1rem", "space-md": "1rem", "margin-mobile": "1.25rem", "space-lg": "1.5rem" }, fontFamily: { "body-sm": ["Manrope"], "headline-lg": ["Outfit"], "label-caps": ["Manrope"], "display-hero": ["Outfit"], "display-hero-mobile": ["Outfit"], "title-md": ["Outfit"], "label-md": ["Manrope"], "body-md": ["Manrope"], "label-lg": ["Manrope"], "headline-md": ["Outfit"], "headline-sm": ["Outfit"], "headline-lg-mobile": ["Outfit"], "body-lg": ["Manrope"] }, fontSize: { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 0.5rem);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface-ivory/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0 flex-1"><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-title-md text-title-md text-primary font-semibold truncate">The Title Legendary</span><span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded-full flex-shrink-0 font-bold uppercase tracking-wider">Активно</span></div><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-text-muted">meeting_room</span><span class="font-body-sm text-body-sm text-text-muted truncate">Резиденция #F-302</span><span class="hidden">Stay</span></div></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Уведомления" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-sand transition-colors relative"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-status-instant"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ring-2 ring-surface-sand"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-28 bg-surface px-margin-mobile flex-1"><div class="flex flex-col w-full pb-6 space-y-space-md">
+<!-- 1. Active Stay Status & Tropical Weather Bar -->
+<div class="bg-surface-sand rounded-xl p-space-md shadow-sm relative overflow-hidden">
+<div class="flex flex-col gap-space-xs relative z-10">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-status-verified uppercase tracking-wider font-bold">Бронирование #UNO-78249</span>
+<div class="flex items-center gap-1.5 bg-status-verified-bg text-status-verified px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified animate-ping"></span>
+<span class="font-label-caps text-label-caps font-bold">День 4 из 13</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-semibold mt-1">Доброе утро, Александр</h2>
+<p class="font-body-sm text-body-sm text-text-muted">The Title Legendary Bang Tao · 15–28 ноября 2026</p>
+<!-- Weather & Check-out Bento Strip -->
+<div class="grid grid-cols-2 gap-space-xs mt-2">
+<div class="bg-surface-ivory rounded-lg p-2.5 flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">sunny</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted leading-tight">Банг Тао</span>
+<span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight">29°C · Штиль</span>
+</div>
+</div>
+<div class="bg-surface-ivory rounded-lg p-2.5 flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-surface-sand-subtle flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]">event_upcoming</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted leading-tight">Выезд через 9 дней</span>
+<span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight truncate">28 ноя, 12:00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. Master Key Access Hub (Smart Lock & Access Passes) -->
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md shadow-md relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-sm relative z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-fixed text-[24px]">key</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-primary font-semibold">Апартаменты #F-302</h3>
+<p class="font-body-sm text-body-sm text-on-primary-container">Корпус F · 3 этаж · Smart Lock</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-surface-ivory text-label-caps font-bold">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span>Онлайн</span>
+</div>
+</div>
+<!-- Main Tap-to-Unlock Action -->
+<div class="my-space-md relative z-10 flex flex-col items-center">
+<button class="w-full bg-surface-ivory hover:bg-surface-sand text-primary rounded-xl py-3.5 px-4 font-label-lg text-label-lg font-bold flex items-center justify-center gap-3 transition-transform active:scale-[0.98] shadow-sm" id="unlock-btn">
+<span class="material-symbols-outlined text-status-verified text-[26px]" id="unlock-icon">contactless</span>
+<span id="unlock-text">Открыть дверь (NFC / Bluetooth)</span>
+</button>
+<p class="font-label-caps text-label-caps text-on-primary-container mt-2" id="unlock-status">Поднесите смартфон к замку или нажмите для открытия</p>
+</div>
+<!-- Codes Bento Grid -->
+<div class="grid grid-cols-2 gap-space-xs pt-space-xs relative z-10">
+<!-- Unit Pin Code -->
+<div class="bg-white/10 rounded-lg p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-primary-container">PIN замка двери</span>
+<button class="text-secondary-fixed text-label-caps font-semibold flex items-center gap-0.5" onclick="copyToClipboard('9482', this)">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+<div class="mt-1 flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm font-bold tracking-widest text-surface-ivory">9482</span>
+<span class="font-body-sm text-body-sm text-on-primary-container">сенсор</span>
+</div>
+</div>
+<!-- Complex & Pool Gate Pass -->
+<div class="bg-white/10 rounded-lg p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-primary-container">Ворота и лагуна</span>
+<span class="material-symbols-outlined text-secondary-fixed text-[16px]">pool</span>
+</div>
+<div class="mt-1 flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm font-bold tracking-widest text-surface-ivory">4102</span>
+<span class="font-body-sm text-body-sm text-on-primary-container">PIN код</span>
+</div>
+</div>
+</div>
+<!-- Share Key Prompt -->
+<button class="w-full mt-3 py-2 px-3 rounded-lg bg-surface-ivory/10 hover:bg-surface-ivory/15 text-surface-ivory font-label-md text-label-md flex items-center justify-center gap-2 transition-colors" onclick="shareGuestPass()">
+<span class="material-symbols-outlined text-[18px]">share_windows</span>
+<span>Поделиться ключом с семьей (Passlink)</span>
+</button>
+</div>
+<!-- 3. In-Room Services Grid -->
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between px-1">
+<h3 class="font-title-md text-title-md text-primary font-semibold">Управление апартаментами</h3>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Сервис 24/7</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Cleaning -->
+<div class="bg-surface-sand rounded-xl p-space-sm flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-ivory flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">mop</span>
+</div>
+<span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded-full font-bold">Включено</span>
+</div>
+<div class="mt-3">
+<h4 class="font-label-lg text-label-lg text-primary font-semibold">Уборка номера</h4>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Завтра, 11:00 (эко-смена)</p>
+</div>
+<button class="mt-2.5 w-full py-1.5 rounded-lg bg-surface-ivory font-label-md text-label-md text-primary font-bold hover:bg-surface-sand-subtle transition-colors">
+          Изменить время
+        </button>
+</div>
+<!-- Wi-Fi -->
+<div class="bg-surface-sand rounded-xl p-space-sm flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-ivory flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">wifi</span>
+</div>
+<span class="font-label-caps text-label-caps bg-accent-gold-muted text-secondary px-1.5 py-0.5 rounded-full font-bold">500 Мбит</span>
+</div>
+<div class="mt-3">
+<h4 class="font-label-lg text-label-lg text-primary font-semibold">Wi-Fi в номере</h4>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5 truncate">Legendary_F302_5G</p>
+</div>
+<button class="mt-2.5 w-full py-1.5 rounded-lg bg-surface-ivory font-label-md text-label-md text-primary font-bold hover:bg-surface-sand-subtle transition-colors flex items-center justify-center gap-1" onclick="copyToClipboard('andaman2026', this)">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Пароль сети</span>
+</button>
+</div>
+<!-- Towels & Spa Delivery -->
+<div class="bg-surface-sand rounded-xl p-space-sm flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-ivory flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">dry_cleaning</span>
+</div>
+<span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded-full font-bold">15 минут</span>
+</div>
+<div class="mt-3">
+<h4 class="font-label-lg text-label-lg text-primary font-semibold">Полотенца &amp; SPA</h4>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Доставка к шезлонгу</p>
+</div>
+<button class="mt-2.5 w-full py-1.5 rounded-lg bg-surface-ivory font-label-md text-label-md text-primary font-bold hover:bg-surface-sand-subtle transition-colors">
+          Заказать к бассейну
+        </button>
+</div>
+<!-- Ice & Refreshments -->
+<div class="bg-surface-sand rounded-xl p-space-sm flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-ivory flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">local_bar</span>
+</div>
+<span class="font-label-caps text-label-caps bg-accent-gold-muted text-secondary px-1.5 py-0.5 rounded-full font-bold">Бесплатно</span>
+</div>
+<div class="mt-3">
+<h4 class="font-label-lg text-label-lg text-primary font-semibold">Лед и напитки</h4>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Подача в номер #F-302</p>
+</div>
+<button class="mt-2.5 w-full py-1.5 rounded-lg bg-surface-ivory font-label-md text-label-md text-primary font-bold hover:bg-surface-sand-subtle transition-colors">
+          Вызвать батлера
+        </button>
+</div>
+</div>
+</div>
+<!-- 4. Dedicated Host & Butler Module -->
+<div class="bg-surface-sand rounded-xl p-space-md shadow-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-14 h-14 rounded-full object-cover shadow-sm" data-alt="Professional portrait of a high-end luxury resort private butler Narayan wearing crisp linen hospitality uniform against soft green tropical leaves in Phuket morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDi4caQarwPek1R_F_MeP_7G3fXcVbfBbqkIuW5Rv1WsEtQFV5D4idVeEIKdgeg_FVyUkoHYJ9QLwoVREXhSxXmZMv9IhlWinMA00i4t9dQ59smIlk0VX2bPoV6xPBIohPnyoPbkPfNQrk0bl9OnxLDEJF-5CdqgAbLC1uSF_AsS37dsJJZbCn5c6SrNo-hl-QQyVgrkAiwzFX8S1BSFtprx27z06-vOYVsPHbOFaXlo3qb4126LGpC"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-status-verified ring-2 ring-surface-sand"></span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h4 class="font-title-md text-title-md text-primary font-bold">Нараян К.</h4>
+<span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-1.5 py-0.2 rounded font-bold">myUNO Pro</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">Персональный батлер · Лобби F</p>
+</div>
+</div>
+</div>
+<!-- Butler message bubble -->
+<div class="bg-surface-ivory rounded-lg p-3 mt-3 relative text-on-surface">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-status-instant text-[18px] flex-shrink-0 mt-0.5">format_quote</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed">
+          «Добро пожаловать на остров! Страховой депозит ฿10,000 успешно авторизован, чек-ин подтвержден. Я на связи в лобби Корпуса F для любых поручений.»
+        </p>
+</div>
+</div>
+<!-- Quick Contact Actions -->
+<div class="grid grid-cols-3 gap-space-xs mt-3">
+<a class="bg-surface-ivory hover:bg-surface-sand-subtle rounded-lg py-2.5 px-2 flex flex-col items-center justify-center text-primary transition-colors" href="https://t.me" target="_blank">
+<span class="material-symbols-outlined text-[20px] text-sky-600">send</span>
+<span class="font-label-md text-label-md font-semibold mt-1">Telegram</span>
+</a>
+<button class="bg-surface-ivory hover:bg-surface-sand-subtle rounded-lg py-2.5 px-2 flex flex-col items-center justify-center text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] text-status-verified">forum</span>
+<span class="font-label-md text-label-md font-semibold mt-1">Чат в app</span>
+</button>
+<a class="bg-surface-ivory hover:bg-surface-sand-subtle rounded-lg py-2.5 px-2 flex flex-col items-center justify-center text-primary transition-colors" href="tel:+66812345678">
+<span class="material-symbols-outlined text-[20px] text-secondary">call</span>
+<span class="font-label-md text-label-md font-semibold mt-1">Звонок</span>
+</a>
+</div>
+</div>
+<!-- 5. TM.30 Immigration Official Clearance Card -->
+<div class="bg-surface-ivory rounded-xl p-space-md shadow-sm">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 rounded-full bg-status-verified-bg flex items-center justify-center text-status-verified flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">verified_user</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h4 class="font-label-lg text-label-lg text-primary font-bold">Регистрация TM.30</h4>
+<span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-2 py-0.5 rounded-full font-bold">Одобрено</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Phuket Immigration · #TM30-88421</p>
+</div>
+</div>
+<button class="p-2 rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle transition-colors" title="Скачать PDF">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+<div class="mt-2.5 pt-2.5 border-t border-transparent flex items-center justify-between text-body-sm">
+<span class="font-body-sm text-body-sm text-text-muted">Для банка, аренды авто и визовых служб</span>
+<span class="font-label-caps text-label-caps text-primary font-bold underline cursor-pointer">Открыть форму TM30</span>
+</div>
+</div>
+<!-- 6. Curated Guest Experiences & Concierge Add-ons -->
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between px-1">
+<h3 class="font-title-md text-title-md text-primary font-semibold">Эксклюзивно для гостей #F-302</h3>
+<span class="font-label-caps text-label-caps text-secondary font-bold">Привилегии</span>
+</div>
+<!-- Horizontal Swipe Carousel -->
+<div class="flex space-x-space-sm overflow-x-auto pb-2 -mx-margin-mobile px-margin-mobile no-scrollbar">
+<!-- Car Rental Card -->
+<div class="w-64 flex-shrink-0 bg-surface-sand rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+<div class="relative h-32 w-full">
+<img class="w-full h-full object-cover" data-alt="Luxury charcoal Porsche Macan SUV parked outside high end tropical pavilion with lush palm trees and Andaman sunshine, sleek automotive photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnyrt0e0mMFkXDcGLFJRLyYk8j-2f2grPqpN8tpb0LY3XpWD7Qzu5BiSo74Srt67L1I_AJUN5iKga-NPYYOHRN5MQ_UQ8kZvS_2kjJSGWdIAX2DZG0vml4P8YWm72MiWzVAR8PU-MQOSGB01vnUrDGsn_8H8BaYyVJbkNZGrTnjwdr7GRRzMyYI3y52MzFxOeTO4hZ7-gVkSgxJ7nM8iODbq1I3NnlMROhCawKfKYntsQ774MSsBZ3"/>
+<span class="absolute top-2 left-2 bg-primary/90 text-on-primary font-label-caps text-label-caps px-2 py-0.5 rounded-full">К лобби Корпуса F</span>
+</div>
+<div class="p-3 flex flex-col flex-1 justify-between">
+<div>
+<h5 class="font-label-lg text-label-lg text-primary font-bold">Автомобиль к подъезду</h5>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Porsche Macan / Fortuner без залога паспорта</p>
+</div>
+<div class="flex items-center justify-between mt-3">
+<span class="font-title-md text-title-md font-bold text-primary">от ฿2,800<span class="text-label-caps font-normal text-text-muted">/день</span></span>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-label-md text-label-md font-bold hover:bg-primary/90">Заказать</button>
+</div>
+</div>
+</div>
+<!-- Yacht Sunset Charter -->
+<div class="w-64 flex-shrink-0 bg-surface-sand rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+<div class="relative h-32 w-full">
+<img class="w-full h-full object-cover" data-alt="Modern luxury sailing catamaran cruising turquoise waters around Phang Nga Bay limestone cliffs at golden hour sunset with champagne glass on deck" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7NCYuOOt9FP_HpNzfgAkHWaqgXKRQVCcFNMm1GN29BY7D3lA_s7EeSOHxhSXTe2ISXRlUTcJgVDPXUd3zNwbRmxEKYrWvcscMuyqrsD9AcIE6twmIIQ4oOcyfekJKLiqQgJqlQShyQ8N2B_kYdm-8OXT5P6qnZWHiOlcJjC2ARzoxlPyPPPsEN4pO9yqeShkdJ6UJAxSjND9fudWvRZ4k-5cK5pjssldCm729CYMemeMzoSwNpLdm"/>
+<span class="absolute top-2 left-2 bg-secondary text-on-secondary font-label-caps text-label-caps px-2 py-0.5 rounded-full">-15% резиденту</span>
+</div>
+<div class="p-3 flex flex-col flex-1 justify-between">
+<div>
+<h5 class="font-label-lg text-label-lg text-primary font-bold">Приватный катамаран</h5>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Острова Пхи-Пхи на закате с экипажем</p>
+</div>
+<div class="flex items-center justify-between mt-3">
+<span class="font-title-md text-title-md font-bold text-primary">฿18,500<span class="text-label-caps font-normal text-text-muted">/тур</span></span>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-label-md text-label-md font-bold hover:bg-primary/90">Бронь</button>
+</div>
+</div>
+</div>
+<!-- Private In-Villa Chef -->
+<div class="w-64 flex-shrink-0 bg-surface-sand rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+<div class="relative h-32 w-full">
+<img class="w-full h-full object-cover" data-alt="Gourmet grilled Andaman rock lobster and tiger prawns elegantly plated by private chef with lemongrass garnish on teak outdoor dining terrace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoMS0RXz6IJvPG38icYdYJsuwWo6eW1ddd7xkBd2-QecV4gXX7rxVnyXtay4sVlsx-PsnvAR9bo9JO-1GkZB24gDtnlSkOdYO99AvaIC9ekw193Avi6acy31JptOZSAVLUs-Ol9dRdFSeKLIb3E1v3n0MV1-9MrgjkXj6Gqt8sVkqq1uqeXPcCNkhocelgLmP9syG_mpFbzW97U2R9KuJs6JcOSlv0e4SCjEeEd4XhJ3FVwh01RSMY"/>
+<span class="absolute top-2 left-2 bg-status-verified text-on-primary font-label-caps text-label-caps px-2 py-0.5 rounded-full">Ужин в номере</span>
+</div>
+<div class="p-3 flex flex-col flex-1 justify-between">
+<div>
+<h5 class="font-label-lg text-label-lg text-primary font-bold">Шеф на террасу</h5>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Свежие морепродукты и тайский сет</p>
+</div>
+<div class="flex items-center justify-between mt-3">
+<span class="font-title-md text-title-md font-bold text-primary">฿4,200<span class="text-label-caps font-normal text-text-muted">/сет</span></span>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-label-md text-label-md font-bold hover:bg-primary/90">Выбрать</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 7. Deposit & Transparent Settlement Overview -->
+<div class="bg-surface-sand rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<h4 class="font-title-md text-title-md text-primary font-bold">Депозит и расчеты</h4>
+<span class="font-label-caps text-label-caps bg-status-verified-bg text-status-verified px-2 py-0.5 rounded-full font-bold">Все прозрачно</span>
+</div>
+<div class="space-y-2.5">
+<!-- Deposit Item -->
+<div class="bg-surface-ivory rounded-lg p-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_balance_wallet</span>
+<div>
+<p class="font-label-md text-label-md text-primary font-semibold">Страховой депозит</p>
+<p class="font-body-sm text-body-sm text-text-muted">Возврат 28 ноября при чек-ауте</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-lg text-label-lg text-primary font-bold">฿10,000</span>
+<span class="block font-label-caps text-label-caps text-status-verified font-bold">На удержании</span>
+</div>
+</div>
+<!-- Utilities Metric -->
+<div class="bg-surface-ivory rounded-lg p-2.5">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">bolt</span>
+<span class="font-label-md text-label-md text-primary font-semibold">Пакет электричества &amp; воды</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">28% (Зеленая зона)</span>
+</div>
+<!-- Metric Bar -->
+<div class="w-full bg-surface-sand-subtle rounded-full h-2 overflow-hidden">
+<div class="bg-status-verified h-2 rounded-full" style="width: 28%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1.5 text-right">Потрачено 84 кВт из включенных 300 кВт</p>
+</div>
+</div>
+<button class="w-full mt-3 py-2 px-3 rounded-lg bg-surface-ivory text-primary font-label-md text-label-md font-bold flex items-center justify-center gap-1.5 hover:bg-surface-sand-subtle transition-colors">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Открыть электронный ваучер и счет-фактуру</span>
+</button>
+</div>
+<!-- 8. Residence Guide & Emergency Support -->
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="bg-surface-sand hover:bg-surface-sand-subtle rounded-xl p-space-sm text-left shadow-sm flex flex-col justify-between transition-colors">
+<div class="w-8 h-8 rounded-lg bg-surface-ivory flex items-center justify-center text-primary mb-2">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+</div>
+<div>
+<h5 class="font-label-lg text-label-lg text-primary font-semibold leading-tight">Гид The Title Legendary</h5>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Бассейны, спортзал, тишина</p>
+</div>
+</button>
+<a class="bg-status-verified-bg hover:bg-surface-container rounded-xl p-space-sm text-left shadow-sm flex flex-col justify-between transition-colors" href="tel:+66810009999">
+<div class="w-8 h-8 rounded-lg bg-surface-ivory flex items-center justify-center text-status-verified mb-2">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<div>
+<h5 class="font-label-lg text-label-lg text-status-verified font-semibold leading-tight">Служба заботы 24/7</h5>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Круглосуточный саппорт</p>
+</div>
+</a>
+</div>
+</div>
+<!-- Client-side Delight Micro-Interactions -->
+<script>
+  (function() {
+    const unlockBtn = document.getElementById('unlock-btn');
+    const unlockText = document.getElementById('unlock-text');
+    const unlockIcon = document.getElementById('unlock-icon');
+    const unlockStatus = document.getElementById('unlock-status');
+
+    let isUnlocked = false;
+
+    if (unlockBtn) {
+      unlockBtn.addEventListener('click', function() {
+        if (isUnlocked) return;
+        
+        // Simulating Bluetooth connection handshake
+        unlockText.textContent = 'Подключение к замку...';
+        unlockIcon.textContent = 'sensors';
+        unlockIcon.classList.add('animate-spin');
+        unlockStatus.textContent = 'Шифрованный Bluetooth ключ отправлен...';
+
+        setTimeout(() => {
+          unlockIcon.classList.remove('animate-spin');
+          unlockIcon.textContent = 'lock_open';
+          unlockText.textContent = 'Дверь #F-302 открыта!';
+          unlockBtn.classList.remove('bg-surface-ivory', 'text-primary');
+          unlockBtn.classList.add('bg-status-verified', 'text-on-primary');
+          unlockStatus.textContent = 'Замок разблокирован на 10 секунд';
+          isUnlocked = true;
+
+          setTimeout(() => {
+            unlockIcon.textContent = 'contactless';
+            unlockText.textContent = 'Открыть дверь (NFC / Bluetooth)';
+            unlockBtn.classList.remove('bg-status-verified', 'text-on-primary');
+            unlockBtn.classList.add('bg-surface-ivory', 'text-primary');
+            unlockStatus.textContent = 'Поднесите смартфон к замку или нажмите для открытия';
+            isUnlocked = false;
+          }, 6000);
+        }, 1200);
+      });
+    }
+
+    window.copyToClipboard = function(text, triggerEl) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalContent = triggerEl.innerHTML;
+        triggerEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">done</span>';
+        setTimeout(() => {
+          triggerEl.innerHTML = originalContent;
+        }, 1500);
+      }).catch(() => {
+        alert('Скопировано: ' + text);
+      });
+    };
+
+    window.shareGuestPass = function() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Ключ доступа к резиденции The Title Legendary #F-302',
+          text: 'Гостевой доступ в #F-302. Дверной код: 9482, код ворот: 4102.',
+          url: window.location.href,
+        }).catch(() => {});
+      } else {
+        alert('Ссылка на гостевой доступ скопирована в буфер обмена.');
+      }
+    };
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface-ivory/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(17,56,46,0.06)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-sm"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[64px] h-12 transition-colors text-primary font-semibold" data-path="stay" href="#"><span class="material-symbols-outlined text-[24px]">villa</span><span class="font-label-md text-label-md mt-0.5">Поездка</span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-colors" data-path="services" href="#"><span class="material-symbols-outlined text-[24px]">concierge</span><span class="font-label-md text-label-md mt-0.5">Услуги</span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-colors relative" data-path="chat" href="#"><div class="relative"><span class="material-symbols-outlined text-[24px]">forum</span><span class="absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-status-verified ring-2 ring-surface-ivory"></span></div><span class="font-label-md text-label-md mt-0.5">Чат 24/7</span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-colors" data-path="profile" href="#"><span class="material-symbols-outlined text-[24px]">person_pin</span><span class="font-label-md text-label-md mt-0.5">Профиль</span></a></div></nav></body></html>

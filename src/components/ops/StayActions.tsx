@@ -35,7 +35,7 @@ export default function StayActions({
   const canCash=status==='pending_payment'&&canRecordMoney;
   const canCheckIn=status==='confirmed'&&canManageFrontDesk;
   const canCheckOut=status==='checked_in'&&canManageFrontDesk;
-  return <section className="rounded-lg border border-border-line bg-surface-paper p-20" aria-label={labels['staff.stay_360.actions']}>
+  return <section className="stitch-panel p-20" aria-label={labels['staff.stay_360.actions']}>
     <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.actions']}</h2>
     <p className="my-12 text-small text-text-secondary">{labels['staff.stay_360.warning']}</p>
     {message&&<p role={failed?'alert':'status'} className={'mb-12 rounded-md p-12 text-small '+(failed?'bg-red-50 text-red-800':'bg-emerald-50 text-emerald-800')}>{message}</p>}

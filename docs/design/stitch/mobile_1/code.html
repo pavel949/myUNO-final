@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#effcf9;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-error": "#ffffff", "inverse-surface": "#273331", "primary-fixed-dim": "#a7cfc1", "on-secondary-fixed-variant": "#663e04", "inverse-on-surface": "#e6f4f0", "accent-gold-soft": "#E4BE8D", "surface-container-lowest": "#ffffff", "primary-fixed": "#c2ebdc", "status-instant": "#9A6B32", "on-surface-variant": "#414845", "on-secondary-fixed": "#2b1700", "secondary-fixed": "#ffddba", "surface-dim": "#cfddd9", "surface-sand": "#F4F0E8", "status-instant-bg": "#FAF3E8", "outline-variant": "#c1c8c4", "surface-tint": "#40665a", "background": "#effcf9", "surface-container": "#e3f1ed", "on-primary": "#ffffff", "primary-container": "#11382e", "tertiary-fixed": "#c7eadd", "text-muted": "#566360", "on-tertiary-fixed-variant": "#2d4d44", "on-secondary": "#ffffff", "on-tertiary-fixed": "#002019", "on-primary-container": "#7ba295", "on-error-container": "#93000a", "error": "#ba1a1a", "status-verified": "#1E5848", "on-secondary-container": "#784d14", "surface-container-low": "#e9f7f3", "on-primary-fixed-variant": "#284e43", "surface-container-highest": "#d8e5e2", "secondary-container": "#fdc17e", "tertiary-container": "#17372f", "surface": "#effcf9", "surface-variant": "#d8e5e2", "outline": "#717975", "tertiary-fixed-dim": "#accec2", "surface-sand-subtle": "#EAE4D7", "on-primary-fixed": "#002019", "accent-gold-muted": "#F5EAD9", "inverse-primary": "#a7cfc1", "secondary": "#81551c", "surface-container-high": "#ddebe8", "on-surface": "#121e1c", "secondary-fixed-dim": "#f6bb79", "surface-ivory": "#FBF9F5", "error-container": "#ffdad6", "primary": "#00221a", "status-verified-bg": "#E9F1EE", "border-subtle": "#E5DFD3", "surface-bright": "#effcf9", "on-tertiary-container": "#7fa195", "on-tertiary": "#ffffff", "tertiary": "#01221a", "on-background": "#121e1c" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin": "3rem", "margin-mobile": "1.25rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-mobile": "1rem", "space-md": "1rem", "gutter": "1.5rem", "space-xl": "2.5rem", "space-lg": "1.5rem", "space-2xl": "4rem" }, fontFamily: { "headline-sm": ["Outfit"], "body-md": ["Manrope"], "body-sm": ["Manrope"], "display-hero-mobile": ["Outfit"], "headline-lg": ["Outfit"], "headline-md": ["Outfit"], "label-caps": ["Manrope"], "title-md": ["Outfit"], "body-lg": ["Manrope"], "display-hero": ["Outfit"], "headline-lg-mobile": ["Outfit"], "label-md": ["Manrope"], "label-lg": ["Manrope"] }, fontSize: { "headline-sm": ["22px", { lineHeight: "30px", letterSpacing: "-0.005em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }], "body-sm": ["13px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "400" }], "display-hero-mobile": ["36px", { lineHeight: "44px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "500" }], "headline-md": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500" }], "label-caps": ["11px", { lineHeight: "14px", letterSpacing: "0.08em", fontWeight: "700" }], "title-md": ["18px", { lineHeight: "26px", letterSpacing: "0em", fontWeight: "600" }], "body-lg": ["18px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "400" }], "display-hero": ["56px", { lineHeight: "64px", letterSpacing: "-0.02em", fontWeight: "600" }], "headline-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.03em", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen selection:bg-accent-gold-soft selection:text-primary"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Назад" class="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-on-surface hover:text-primary transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-title-md text-title-md text-on-surface tracking-tight truncate max-w-[200px]">Service Detail &amp; Booking</h1></div><div class="flex items-center gap-space-sm"><button aria-label="Поделиться услугой" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">share</span></button><button aria-label="Консьерж-сервис" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">support_agent</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-32">
+<!-- Hero Gallery Section -->
+<div class="relative w-full overflow-hidden bg-surface-container-high">
+<div class="relative w-full aspect-[4/3]">
+<img class="w-full h-full object-cover" data-alt="Deep metallic emerald green Porsche Macan GTS parked elegantly on a warm travertine driveway before a contemporary luxury tropical villa in Bang Tao Phuket. Lush palm fronds, gentle golden hour morning sunlight reflecting on polished car paint, pristine architectural glass facade, minimalist aesthetic, serene tropical sanctuary atmosphere, highly photorealistic 8k." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFMCVDOYiAnQGQn8-3InqDXdQEvAcJvgCl-0nv8GqbKxpBNuj_Smz0SD0NTMxdEEwJER2rVrDwp2x2GRDPJSPuvUYOKioeHvCJuu9pFzZelvkzW-5pxS-b0Rhp9ISpeVT3TtG8qDYWuVzxL1zHmYiOhWEm900YfoJoaVoSULhLQ5ebbZ0DuHhGsaoBUWKuKg3brP200gG6UOHU3rhuK4cIvTa2ojoWwvXNeatSYrjv0PzosSEKJgDF"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-primary/20 pointer-events-none"></div>
+<!-- Overlaid Badges Top -->
+<div class="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-ivory/95 backdrop-blur-md shadow-sm text-status-verified font-label-caps text-label-caps tracking-wider uppercase">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+          Без залога паспорта
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-primary/70 backdrop-blur-md text-on-primary font-label-caps text-label-caps tracking-wider">
+          1 / 6
+        </span>
+</div>
+<!-- Overlaid Badges Bottom -->
+<div class="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 pointer-events-none">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-sand/90 backdrop-blur-md text-on-surface font-body-sm text-body-sm shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">location_on</span>
+          Подача к корпусу F
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-sand/90 backdrop-blur-md text-on-surface font-body-sm text-body-sm shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-status-verified">shield</span>
+          Парк myUNO Drive
+        </span>
+</div>
+</div>
+</div>
+<div class="px-margin-mobile flex flex-col gap-space-lg -mt-3 relative z-10">
+<!-- Header & Value Props Module -->
+<div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+              Мгновенное подтверждение
+            </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Porsche Macan GTS (2024)</h2>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+        Премиальный кроссовер с подачей прямо к лобби вашей резиденции The Title Legendary.
+      </p>
+<div class="flex items-center gap-2 pt-1">
+<div class="flex items-center gap-1 text-secondary font-label-lg text-label-lg">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-on-surface font-semibold">4.98</span>
+</div>
+<span class="text-text-muted font-body-sm text-body-sm">(42 поездки)</span>
+<span class="text-text-muted text-body-sm">•</span>
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-status-verified">
+<span class="material-symbols-outlined text-[15px]">verified</span>
+          myUNO Drive Platinum
+        </span>
+</div>
+<!-- Feature Tags Scrollable / Wrapping -->
+<div class="flex flex-wrap gap-1.5 pt-2">
+<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">speed</span>
+          2.9L Twin-Turbo (380 л.с.)
+        </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">all_inclusive</span>
+          Полный привод AWD
+        </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">airline_seat_recline_extra</span>
+          Кожаный салон Nappa
+        </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">smartphone</span>
+          Apple CarPlay
+        </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">child_friendly</span>
+          Isofix
+        </span>
+</div>
+</div>
+<!-- Trust & Frictionless Terms Module -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between px-1">
+<h3 class="font-title-md text-title-md text-on-surface tracking-tight">Безупречный сервис myUNO</h3>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Стандарты 5★</span>
+</div>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Benefit 1 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-start gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-status-verified-bg text-status-verified flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">no_accounts</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-label-lg text-label-lg text-on-surface mb-0.5">Без паспорта в залог</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Ваш оригинал паспорта остается у вас. Для договора достаточно быстрой фотоверификации прав и паспорта в приложении.
+            </p>
+</div>
+</div>
+<!-- Benefit 2 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-start gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-status-instant-bg text-status-instant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">health_and_safety</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-label-lg text-label-lg text-on-surface mb-0.5">First Class Insurance (0฿ франшиза)</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Полная тайская страховка 1-го класса. Защита от царапин, ДТП и стекол с нулевой ответственностью арендатора (No excess).
+            </p>
+</div>
+</div>
+<!-- Benefit 3 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-start gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">door_front</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-label-lg text-label-lg text-on-surface mb-0.5">Бесплатная подача к лобби</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Личный батлер myUNO привезет автомобиль к корпусу F резиденции The Title Legendary к указанному времени: чистый кузов и полный бак 95 Gasohol.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Rental Dates & Time Picker -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md text-on-surface">Период аренды</h3>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-sand text-secondary font-label-md text-label-md font-semibold">
+          3 суток
+        </span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col cursor-pointer active:scale-98 transition-transform">
+<span class="font-label-caps text-label-caps text-text-muted uppercase mb-1">Получение</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Пт, 20 нояб.</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 10:00 утра
+          </span>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col cursor-pointer active:scale-98 transition-transform">
+<span class="font-label-caps text-label-caps text-text-muted uppercase mb-1">Возврат</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Пн, 23 нояб.</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 10:00 утра
+          </span>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-status-verified-bg flex items-center gap-2.5">
+<span class="material-symbols-outlined text-status-verified text-[20px]">loyalty</span>
+<span class="font-body-sm text-body-sm text-status-verified font-medium">
+          Скидка резидента The Title Legendary (-10%) уже применена
+        </span>
+</div>
+</div>
+<!-- Pickup & Drop-off Location -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-4">
+<h3 class="font-title-md text-title-md text-on-surface">Локация подачи и сдачи</h3>
+<div class="flex flex-col gap-2.5">
+<!-- Selected Option: Lobby -->
+<label class="p-3.5 rounded-xl bg-surface-sand/60 flex items-start justify-between cursor-pointer">
+<div class="flex items-start gap-3">
+<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center mt-0.5 shrink-0">
+<span class="w-2 h-2 rounded-full bg-surface-ivory"></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Лобби The Title Legendary (Корпус F)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Батлер встретит у входа с ключами</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-status-verified font-bold shrink-0">Бесплатно</span>
+</label>
+<!-- Unselected Option: Airport -->
+<label class="p-3.5 rounded-xl bg-surface-container-low flex items-start justify-between cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex items-start gap-3">
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center mt-0.5 shrink-0"></div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Аэропорт Пхукета (HKT)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Встреча в терминале прилета</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant font-semibold shrink-0">+฿500</span>
+</label>
+</div>
+<!-- Drop-off toggle -->
+<div class="pt-2 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-[18px]">sync_alt</span>
+<span class="font-body-md text-body-md text-on-surface">Возврат в том же месте (Корпус F)</span>
+</div>
+<div class="w-10 h-6 bg-primary rounded-full relative p-0.5 cursor-pointer">
+<div class="w-5 h-5 rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Add-ons & Extras -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md text-on-surface">Дополнительные опции</h3>
+<span class="font-body-sm text-body-sm text-text-muted">4 опции</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Add-on 1 (Included) -->
+<div class="p-3.5 rounded-xl bg-surface-sand/40 flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0 pr-2">
+<div class="w-6 h-6 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Кресло Britax Römer (Isofix)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Премиальная безопасность для ребенка</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-status-verified font-bold shrink-0">Включено</span>
+</div>
+<!-- Add-on 2 (Selected) -->
+<div class="p-3.5 rounded-xl bg-surface-sand/40 flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0 pr-2">
+<div class="w-6 h-6 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Безлимитный 5G Wi-Fi роутер</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">До 10 устройств в поездках по острову</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-bold">+฿600</span>
+<span class="font-body-sm text-body-sm text-text-muted">฿200/день</span>
+</div>
+</div>
+<!-- Add-on 3 (Not Selected) -->
+<div class="p-3.5 rounded-xl bg-surface-container-low flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0 pr-2">
+<div class="w-6 h-6 rounded-lg bg-surface-container-highest text-on-surface-variant flex items-center justify-center shrink-0 mt-0.5"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Второй водитель в страховке</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Официальное внесение в полис</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold shrink-0">+฿300</span>
+</div>
+<!-- Add-on 4 (Selected - Express Wash) -->
+<div class="p-3.5 rounded-xl bg-surface-sand/40 flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0 pr-2">
+<div class="w-6 h-6 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Экспресс-мойка перед сдачей</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Сдавайте машину после пляжа не моя кузов</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-bold shrink-0">+฿400</span>
+</div>
+</div>
+</div>
+<!-- Transparent Price Breakdown -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-3.5">
+<h3 class="font-title-md text-title-md text-on-surface">Детализация расчета</h3>
+<div class="flex flex-col gap-2.5 font-body-md text-body-md text-on-surface-variant">
+<div class="flex justify-between items-center">
+<span>Аренда Porsche Macan (3 суток × ฿3,800)</span>
+<span class="font-semibold text-on-surface">฿11,400</span>
+</div>
+<div class="flex justify-between items-center text-status-verified font-medium">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">high_res</span>
+            Скидка резидента (-10%)
+          </span>
+<span>-฿1,140</span>
+</div>
+<div class="flex justify-between items-center">
+<span>Подача и встреча у лобби Корпуса F</span>
+<span class="text-status-verified font-semibold">฿0 (Бесплатно)</span>
+</div>
+<div class="flex justify-between items-center">
+<span>Детское кресло Britax Römer</span>
+<span class="text-status-verified font-semibold">฿0 (Включено)</span>
+</div>
+<div class="flex justify-between items-center">
+<span>Wi-Fi 5G роутер в салон (3 суток)</span>
+<span class="font-semibold text-on-surface">฿600</span>
+</div>
+<div class="flex justify-between items-center">
+<span>Экспресс-клининг перед возвратом</span>
+<span class="font-semibold text-on-surface">฿400</span>
+</div>
+<div class="h-px bg-surface-sand my-1"></div>
+<div class="flex justify-between items-baseline">
+<span class="font-title-md text-title-md text-on-surface">К оплате онлайн сейчас</span>
+<div class="flex flex-col items-end">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿11,260</span>
+<span class="font-body-sm text-body-sm text-text-muted">≈ 31,528 ₽ / $312</span>
+</div>
+</div>
+</div>
+<!-- Deposit Informational Notice -->
+<div class="p-3.5 rounded-xl bg-surface-container-low flex items-start gap-3 mt-1">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+<span class="font-semibold text-on-surface">Возвратный депозит ฿5,000</span> (топливо и дорожные штрафы). Оплачивается картой РФ, USDT или наличными батлеру при передаче ключей и моментально возвращается при сдаче авто.
+        </p>
+</div>
+</div>
+<!-- Payment Methods Preview -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-3">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Способы оплаты в myUNO</span>
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2.5 rounded-xl bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">credit_card</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate">МИР / Карты РФ</span>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">payments</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate">Foreign Visa/MC</span>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-status-verified">qr_code_2</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate">Thai QR PromptPay</span>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">currency_bitcoin</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate">USDT (TRC-20)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Booking Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-surface-ivory/95 backdrop-blur-xl border-t border-border-subtle shadow-xl pb-safe">
+<div class="px-margin-mobile py-3.5 flex items-center justify-between gap-4">
+<div class="flex flex-col min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted truncate">Итого за 3 суток</span>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿11,260</span>
+<span class="font-body-sm text-body-sm text-text-muted hidden min-[360px]:inline">31,528 ₽</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<button class="h-12 px-6 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center gap-2 shadow-md active:scale-98 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">key</span>
+<span>Забронировать</span>
+</button>
+<span class="font-body-sm text-[11px] text-status-verified mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+          Бесплатная отмена за 24 ч
+        </span>
+</div>
+</div>
+</div>
+</div></main></body></html>

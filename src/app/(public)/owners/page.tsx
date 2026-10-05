@@ -116,7 +116,7 @@ export default async function OwnersPage() {
   const faqJsonLd = faqPageJsonLd(faqs.map((f) => ({ question: f.q, answer: f.a })));
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       {faqJsonLd ? (
         <script
           type="application/ld+json"
@@ -169,7 +169,7 @@ export default async function OwnersPage() {
       </section>
 
       <section className="max-w-4xl mx-auto py-64 px-24">
-        <h2 className="text-heading-2 font-bold text-text-ink mb-16">
+        <h2 className="font-display text-heading-2 font-bold text-text-ink mb-16">
           {labels['audience.owners.problem.title']}
         </h2>
         <p className="text-body text-text-secondary mb-40">
@@ -178,7 +178,7 @@ export default async function OwnersPage() {
         <div className="space-y-24 mb-40">
           {questions.map((q) => (
             <div key={q.n} className="flex gap-32">
-              <div className="text-heading-2 font-bold text-brand-andaman min-w-16">Q{q.n}</div>
+              <div className="font-display text-heading-2 font-bold text-brand-andaman min-w-16">Q{q.n}</div>
               <p className="text-body text-text-ink self-center">{q.text}</p>
             </div>
           ))}
@@ -190,7 +190,7 @@ export default async function OwnersPage() {
 
       <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-heading-2 font-bold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-bold text-text-ink mb-16">
             {labels['audience.owners.see.title']}
           </h2>
           <p className="text-body text-text-secondary mb-40">
@@ -208,13 +208,13 @@ export default async function OwnersPage() {
       </section>
 
       <section className="max-w-4xl mx-auto py-64 px-24">
-        <h2 className="text-heading-2 font-bold text-text-ink mb-40">
+        <h2 className="font-display text-heading-2 font-bold text-text-ink mb-40">
           {labels['audience.owners.record.title']}
         </h2>
         <div className="space-y-24">
           {record.map((item) => (
             <div key={item.title}>
-              <h3 className="text-heading-3 font-bold text-text-ink mb-12">{item.title}</h3>
+              <h3 className="font-display text-heading-3 font-bold text-text-ink mb-12">{item.title}</h3>
               <p className="text-body text-text-secondary">{item.body}</p>
             </div>
           ))}
@@ -223,13 +223,13 @@ export default async function OwnersPage() {
 
       <section className="bg-surface-ivory py-64 px-24">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-heading-2 font-bold text-text-ink mb-40">
+          <h2 className="font-display text-heading-2 font-bold text-text-ink mb-40">
             {labels['audience.owners.faq.title']}
           </h2>
           <div className="space-y-24">
             {faqs.map((faq) => (
               <div key={faq.q}>
-                <h3 className="text-heading-3 font-bold text-text-ink mb-12">{faq.q}</h3>
+                <h3 className="font-display text-heading-3 font-bold text-text-ink mb-12">{faq.q}</h3>
                 <p className="text-body text-text-secondary">{faq.a}</p>
               </div>
             ))}

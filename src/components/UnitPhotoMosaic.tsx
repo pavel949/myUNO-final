@@ -117,7 +117,7 @@ export function UnitPhotoMosaic({
                 than being a number only a sighted guest benefits from. */}
             <span
               aria-live="polite"
-              className="px-12 py-4 rounded-full bg-[rgba(22,33,31,0.6)] text-surface-ivory text-small"
+              className="px-12 py-4 rounded-full bg-brand-deep/70 backdrop-blur-sm text-surface-ivory text-small"
             >
               {current + 1} / {images.length}
             </span>
@@ -143,7 +143,7 @@ export function UnitPhotoMosaic({
       {expanded && rest.length > 0 && (
         <div className="mt-12 hidden md:grid grid-cols-2 md:grid-cols-4 gap-8">
           {rest.map((src, index) => (
-            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-sm">
+            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-md">
               <Image
                 src={src}
                 alt={`${alt} (${index + 6}/${images.length})`}

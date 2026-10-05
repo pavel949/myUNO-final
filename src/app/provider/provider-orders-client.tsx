@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
@@ -197,23 +199,23 @@ export default function ProviderOrdersClient({
   };
 
   return (
-    <div>
+    <div className="stitch-workspace rounded-lg">
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
           <p className="text-body text-state-error">{error}</p>
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
-        <div className="flex flex-wrap items-start justify-between gap-12 mb-16">
+      <section className="stitch-panel overflow-hidden p-24">
+        <div className="-m-24 mb-20 flex flex-wrap items-start justify-between gap-12 bg-brand-deep p-24 text-white">
           <div>
-            <h2 className="font-display text-title font-semibold text-text-ink">
+            <h2 className="font-display text-title font-semibold text-white">
               {labels['provider.orders.title']}
               {providerName ? (
                 <span className="text-body font-normal text-text-secondary"> · {providerName}</span>
               ) : null}
             </h2>
-            <p className="text-small text-text-secondary mt-4" role="status" aria-live="polite">
+            <p className="mt-4 text-small text-white/70" role="status" aria-live="polite">
               {labels['provider.orders.needs_response']}: <strong>{needsResponse.length}</strong>
               {' · '}{labels['provider.orders.to_fulfil']}: <strong>{toFulfil.length}</strong>
             </p>
@@ -236,7 +238,7 @@ export default function ProviderOrdersClient({
             return (
               <div
                 key={order.id}
-                className="flex flex-col md:flex-row md:items-start gap-12 py-16 border-b border-border-line last:border-b-0"
+                className="stitch-list-row flex flex-col gap-12 border-b border-border-line last:border-b-0 md:flex-row md:items-start"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-body font-semibold text-text-ink">
@@ -250,7 +252,7 @@ export default function ProviderOrdersClient({
                   </p>
                   <p className="text-small text-text-secondary">
                     {formatScheduledStart(order.scheduledStart, locale)} · ×{order.quantity} · ฿
-                    {(order.totalThb / 100).toLocaleString()}
+                    {(order.totalThb / 100).toLocaleString(UI_LOCALE)}
                   </p>
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">

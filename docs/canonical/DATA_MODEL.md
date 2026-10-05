@@ -53,3 +53,10 @@ Represent exactly which earning/refund obligation a payout satisfies. One obliga
 
 ## 18. Scoped CRM privacy
 Identity is global; relationship/read visibility is scope-aware and never exposes another operator’s confidential CRM context by default.
+
+
+## 19. Project portal descriptive locality
+
+`ProjectNearbyPlace` is **CANONICAL descriptive project data** for external places useful to a guest or buyer: beaches, dining, retail, attractions, transport, schools and similar local context. It belongs to one Project and may carry coordinates, a manual distance fallback, travel-time estimates and an external map URL.
+
+It is not inventory, availability, a service offering, an operating scope or commercial authority. Coordinate-derived distance takes precedence over a manual fallback. On-property facilities remain `ProjectAmenity`; orderable experiences and food/service commerce remain in the Services domain.

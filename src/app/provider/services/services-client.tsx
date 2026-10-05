@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -141,7 +143,7 @@ export default function ProviderServicesClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-8">
           {labels['provider.services.title']}
         </h2>
@@ -209,7 +211,7 @@ export default function ProviderServicesClient({
                         form above does the same conversion, both ways
                         (Q49). */}
                     {service.basePriceThb != null &&
-                      ` · ฿${(service.basePriceThb / 100).toLocaleString()}`}
+                      ` · ฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`}
                   </p>
                 </div>
               )}
@@ -232,7 +234,7 @@ export default function ProviderServicesClient({
 
       <form
         onSubmit={create}
-        className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-12"
+        className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-12"
       >
         <div>
           <h2 className="text-heading-3 font-bold text-text-ink mb-4">

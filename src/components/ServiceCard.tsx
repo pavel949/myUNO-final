@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -59,7 +60,7 @@ export function ServiceCard({
         {service.description ? <p className="mt-12 line-clamp-2 text-small text-text-secondary">{service.description}</p> : null}
         {service.basePriceThb !== null ? (
           <p className="mt-16 text-body font-semibold text-brand-andaman">
-            {labels.from} ฿{Math.round(service.basePriceThb / 100).toLocaleString()}
+            {labels.from} ฿{Math.round(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}
           </p>
         ) : null}
         {children}

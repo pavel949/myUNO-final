@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import '@fontsource-variable/outfit/wght.css';
 import '@fontsource-variable/manrope/wght.css';
 import '@fontsource-variable/noto-sans-thai/wght.css';
+import '@fontsource-variable/source-serif-4/wght.css';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -12,6 +13,7 @@ import { LocaleProvider } from '@/components/LocaleProvider';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileTabBar } from '@/components/MobileTabBar';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
@@ -53,7 +55,7 @@ export default async function RootLayout({
     'nav.find_stay': 'Stay',
     'nav.monthly': 'Monthly',
     'nav.buy': 'Buy',
-    'nav.homes': 'Homes',
+    'nav.homes': 'Rent',
     'nav.sell': 'Sell',
     'nav.list_property': locale === 'ru' ? 'Разместить объект' : locale === 'th' ? 'ลงประกาศที่พัก' : 'List your property',
     'nav.request_management': locale === 'ru' ? 'Передать в управление' : locale === 'th' ? 'ให้ myUNO จัดการ' : 'Property management',
@@ -61,7 +63,7 @@ export default async function RootLayout({
     'nav.areas': 'Areas',
     'nav.projects': 'Projects',
     'nav.services': 'Services',
-    'nav.owners': 'Own',
+    'nav.owners': 'Owners',
     'nav.partners': 'Partners',
     'nav.about': 'About',
     'nav.language': 'Language',
@@ -218,7 +220,18 @@ export default async function RootLayout({
           }}
         />
 
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 pb-56 md:pb-0">{children}</div>
+
+        <MobileTabBar
+          labels={{
+            residences: navLabels['nav.projects'],
+            explore: navLabels['nav.explore'],
+            saved: navLabels['nav.saved'],
+            concierge: navLabels['nav.services'],
+            profile: navLabels['nav.my_uno'],
+          }}
+          profileHref={user ? '/app' : '/login'}
+        />
 
         <Footer
           locale={locale}

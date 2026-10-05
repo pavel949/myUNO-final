@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -99,7 +101,7 @@ export default function UnitsAdminClient({
   };
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
       <input
         ref={fileInputRef}
         type="file"
@@ -141,7 +143,7 @@ export default function UnitsAdminClient({
             <p className="text-small font-medium text-brand-andaman">{labels['admin.units.category']}: {unit.categoryName || labels['admin.units.no_category']}</p>
             <p className="text-small text-text-secondary">
               {labels['admin.units.owner']}: {unit.ownerName} · {labels['admin.units.price']}: ฿
-              {unit.baseNightlyThb.toLocaleString()} · {labels['admin.units.status']}:{' '}
+              {unit.baseNightlyThb.toLocaleString(UI_LOCALE)} · {labels['admin.units.status']}:{' '}
               <span className="font-semibold text-text-ink">{unit.status}</span>
               {' · '}
               {labels['admin.units.permitted_use']}:{' '}

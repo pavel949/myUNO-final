@@ -17,14 +17,14 @@ export const LatestStatementCard = React.forwardRef<HTMLDivElement, LatestStatem
     const formatDate = (dateStr: string): string => formatDateIn(dateStr, locale, 'monthYear');
     if (!statementId) {
       return (
-        <div ref={ref} className="border border-border-line rounded-md p-24 bg-surface-paper-soft">
+        <div ref={ref} className="stitch-panel p-24 -soft">
           <p className="text-body text-text-secondary">No statement available yet</p>
         </div>
       );
     }
 
     return (
-      <div ref={ref} className="border border-border-line rounded-md p-24 bg-surface-paper hover:bg-surface-paper-soft transition-colors">
+      <div ref={ref} className="stitch-panel p-24 hover:bg-surface-paper-soft transition-colors">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-body font-medium text-text-ink">Latest Statement</p>

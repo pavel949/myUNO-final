@@ -9,7 +9,7 @@ import React from 'react';
  */
 export default function McLoading() {
   return (
-    <main className="min-h-screen bg-surface-ivory" aria-busy="true">
+    <main className="stitch-workspace" aria-busy="true">
       <div className="max-w-6xl mx-auto px-24 py-40">
         <div className="h-40 w-64 md:w-96 bg-border-line rounded-sm mb-32 animate-pulse" />
 

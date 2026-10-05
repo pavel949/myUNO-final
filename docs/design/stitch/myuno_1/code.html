@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary-container":"#11382e","on-primary":"#ffffff","surface-bright":"#effcf9","secondary":"#81551c","accent-gold-soft":"#E4BE8D","secondary-container":"#fdc17e","on-secondary-fixed-variant":"#663e04","surface-tint":"#40665a","tertiary-container":"#17372f","tertiary-fixed-dim":"#accec2","on-secondary":"#ffffff","inverse-surface":"#273331","inverse-on-surface":"#e6f4f0","on-primary-fixed-variant":"#284e43","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","on-tertiary-fixed":"#002019","on-tertiary":"#ffffff","status-instant":"#9A6B32","on-primary-container":"#7ba295","on-error":"#ffffff","surface-ivory":"#FBF9F5","on-error-container":"#93000a","on-tertiary-fixed-variant":"#2d4d44","error-container":"#ffdad6","primary":"#00221a","on-primary-fixed":"#002019","error":"#ba1a1a","status-verified-bg":"#E9F1EE","outline":"#717975","accent-gold-muted":"#F5EAD9","surface-container":"#e3f1ed","surface-container-lowest":"#ffffff","on-surface-variant":"#414845","text-muted":"#566360","surface-sand-subtle":"#EAE4D7","surface":"#effcf9","on-background":"#121e1c","inverse-primary":"#a7cfc1","secondary-fixed":"#ffddba","tertiary-fixed":"#c7eadd","background":"#effcf9","status-verified":"#1E5848","surface-container-high":"#ddebe8","surface-container-highest":"#d8e5e2","on-tertiary-container":"#7fa195","tertiary":"#01221a","surface-sand":"#F4F0E8","on-surface":"#121e1c","primary-fixed-dim":"#a7cfc1","status-instant-bg":"#FAF3E8","surface-container-low":"#e9f7f3","surface-dim":"#cfddd9","primary-fixed":"#c2ebdc","border-subtle":"#E5DFD3","on-secondary-container":"#784d14","secondary-fixed-dim":"#f6bb79","on-secondary-fixed":"#2b1700"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-sm":"0.5rem","space-xs":"0.25rem",margin:"3rem","space-2xl":"4rem","space-md":"1rem","space-lg":"1.5rem","margin-mobile":"1.25rem","space-xl":"2.5rem",gutter:"1.5rem","gutter-mobile":"1rem"},fontFamily:{"body-md":["Manrope"],"headline-lg":["Outfit"],"headline-lg-mobile":["Outfit"],"title-md":["Outfit"],"body-lg":["Manrope"],"display-hero-mobile":["Outfit"],"headline-md":["Outfit"],"display-hero":["Outfit"],"label-lg":["Manrope"],"headline-sm":["Outfit"],"label-md":["Manrope"],"body-sm":["Manrope"],"label-caps":["Manrope"]},fontSize:{"body-md":["15px",{lineHeight:"24px",letterSpacing:"0em",fontWeight:"400"}],"headline-lg":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"500"}],"headline-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"title-md":["18px",{lineHeight:"26px",letterSpacing:"0em",fontWeight:"600"}],"body-lg":["18px",{lineHeight:"28px",letterSpacing:"0em",fontWeight:"400"}],"display-hero-mobile":["36px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-md":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"display-hero":["56px",{lineHeight:"64px",letterSpacing:"-0.02em",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.02em",fontWeight:"600"}],"headline-sm":["22px",{lineHeight:"30px",letterSpacing:"-0.005em",fontWeight:"600"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.03em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"400"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.08em",fontWeight:"700"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-ivory/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-margin-mobile md:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><a class="flex items-center gap-space-sm focus:outline-none" href="#"><span class="font-title-md text-title-md tracking-tight font-semibold text-primary">myUNO</span><span class="h-4 w-px bg-border-subtle"></span><span class="px-space-xs py-0.5 rounded bg-surface-sand text-primary text-label-caps font-label-caps uppercase tracking-wider">Owner Studio</span></a></div><nav class="hidden md:flex items-center gap-space-sm bg-surface-sand/60 px-space-xs py-1 rounded-full" data-active-classes="bg-surface-container text-primary font-semibold"><a aria-current="page" class="px-space-md py-1 rounded-full transition-colors bg-surface-container text-primary font-semibold" data-path="residence-foundation" href="#">1. Residence</a><a class="px-space-md py-1 rounded-full text-on-surface-variant hover:text-on-surface transition-colors text-label-md font-label-md" data-path="yield-and-mandate" href="#">2. Mandate</a><a class="px-space-md py-1 rounded-full text-on-surface-variant hover:text-on-surface transition-colors text-label-md font-label-md" data-path="architectural-records" href="#">3. Documentation</a><a class="px-space-md py-1 rounded-full text-on-surface-variant hover:text-on-surface transition-colors text-label-md font-label-md" data-path="onboarding-review" href="#">4. Confirmation</a></nav><div class="flex items-center gap-space-md"><a class="hidden sm:flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-sand text-primary text-label-md font-label-md hover:bg-surface-sand-subtle transition-colors" href="https://wa.me/66824491000" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[16px] text-status-verified">support_agent</span><span>Concierge +66 82 449 1000</span></a><button class="px-space-md py-2 rounded-lg text-primary hover:bg-surface-sand text-label-md font-label-md transition-colors" type="button">Save draft</button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]"><div class="flex flex-col w-full">
+<!-- Interactive Step 1 Viewport Container -->
+<div class="max-w-[1280px] mx-auto w-full px-margin-mobile md:px-margin py-space-xl">
+<!-- SUB-NAV / STEPPER BAR -->
+<section class="mb-space-xl">
+<div class="bg-surface-sand/70 p-space-sm md:p-space-md rounded-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-sm shadow-sm">
+<!-- Step 1: Active -->
+<div class="flex items-center gap-space-sm bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-sm">
+<div class="w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-md text-label-md">
+            1
+          </div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-primary tracking-wider">Шаг 1 из 4</span>
+<span class="font-title-md text-body-md font-semibold text-primary">Выбор объекта & Комплекс</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px] ml-auto md:ml-2">verified</span>
+</div>
+<div class="hidden md:block w-8 h-px bg-border-subtle"></div>
+<!-- Step 2 -->
+<div class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-text-muted opacity-70">
+<div class="w-7 h-7 rounded-full bg-surface-sand text-on-surface-variant flex items-center justify-center font-label-md text-label-md">
+            2
+          </div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Шаг 2</span>
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">Номер юнита & Чанот</span>
+</div>
+</div>
+<div class="hidden md:block w-8 h-px bg-border-subtle"></div>
+<!-- Step 3 -->
+<div class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-text-muted opacity-70">
+<div class="w-7 h-7 rounded-full bg-surface-sand text-on-surface-variant flex items-center justify-center font-label-md text-label-md">
+            3
+          </div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Шаг 3</span>
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">Фото и Модель дохода</span>
+</div>
+</div>
+<div class="hidden md:block w-8 h-px bg-border-subtle"></div>
+<!-- Step 4 -->
+<div class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-text-muted opacity-70">
+<div class="w-7 h-7 rounded-full bg-surface-sand text-on-surface-variant flex items-center justify-center font-label-md text-label-md">
+            4
+          </div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-text-muted">Шаг 4</span>
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">Аудит & Смарт-замок</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION TITLE & CONTEXT OVERLINE -->
+<div class="mb-space-lg flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-status-verified-bg text-status-verified text-label-caps font-label-caps tracking-widest uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+            Консьерж-онбординг резиденций
+          </span>
+<span class="text-text-muted text-body-sm">• Пхукет, Таиланд</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-medium">
+          Идентификация объекта недвижимости
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mt-1">
+          Выберите ваш кондоминиум из единого реестра myUNO для мгновенного подтягивания кадастровых данных или передайте базовые параметры новой виллы нашему инспектору.
+        </p>
+</div>
+<!-- Quick stats chip -->
+<div class="hidden lg:flex items-center gap-space-md bg-surface-container-low px-space-md py-space-sm rounded-xl shadow-sm">
+<div class="text-right">
+<div class="font-title-md text-title-md text-primary font-semibold">148 комплексов</div>
+<div class="font-label-caps text-label-caps uppercase text-text-muted">В каталоге Пхукета</div>
+</div>
+<span class="material-symbols-outlined text-primary-container text-[28px]">apartment</span>
+</div>
+</div>
+<!-- MAIN TWO-COLUMN CONTENT GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT PRIMARY WORKSPACE (8 Columns) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- TWO CORE PATHS SWITCHER (TABS) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- PATH A BUTTON: Existing Catalog (ACTIVE STATE) -->
+<button class="relative flex flex-col text-left p-space-lg rounded-2xl bg-surface-container-lowest shadow-md transition-all group ring-2 ring-primary-container" id="btn-path-a" onclick="switchPath('A')" type="button">
+<div class="flex items-start justify-between w-full mb-space-sm">
+<div class="w-10 h-10 rounded-xl bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">domain_verification</span>
+</div>
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-full bg-status-verified text-on-primary font-label-caps text-label-caps uppercase" id="badge-path-a">
+                Рекомендовано
+              </span>
+</div>
+<div class="font-title-md text-title-md text-primary font-semibold mb-1">
+              Проект есть в реестре myUNO
+            </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Мгновенное автозаполнение: инфраструктура, геолокация, фото мастер-плана, бассейны и регламенты подтянутся за 1 клик.
+            </p>
+<div class="mt-space-md flex items-center gap-2 font-label-md text-label-md text-primary">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>Готово за 2 минуты (90% данных в базе)</span>
+</div>
+</button>
+<!-- PATH B BUTTON: Standalone or New Project -->
+<button class="relative flex flex-col text-left p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all group" id="btn-path-b" onclick="switchPath('B')" type="button">
+<div class="flex items-start justify-between w-full mb-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-sand text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">villa</span>
+</div>
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-full bg-surface-sand text-text-muted font-label-caps text-label-caps uppercase">
+                Экспресс-форма
+              </span>
+</div>
+<div class="font-title-md text-title-md text-primary font-semibold mb-1">
+              Новый проект или частная вилла
+            </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Нет в списке? Укажите только локацию и контакты. Команда myUNO выедет на объект, выполнит аудит и заполнит 50+ параметров.
+            </p>
+<div class="mt-space-md flex items-center gap-2 font-label-md text-label-md text-text-muted">
+<span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+<span>White-glove сопровождение под ключ</span>
+</div>
+</button>
+</div>
+<!-- =================== PATH A CONTENT CONTAINER =================== -->
+<div class="flex flex-col gap-space-lg" id="content-path-a">
+<!-- SEARCH & SELECT CONTAINER -->
+<div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="project-search">
+                Умный поиск по базе резиденций Пхукета
+              </label>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[22px]">search</span>
+<input class="w-full pl-11 pr-10 py-3 rounded-xl bg-surface-sand/40 text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all" id="project-search" placeholder="Введите название (напр. The Title Legendary, Layantara, Oceanstone...)" type="text" value="The Title Legendary Bang Tao"/>
+<button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</button>
+</div>
+</div>
+<!-- QUICK SUGGESTIONS FILTER TAGS -->
+<div class="flex flex-wrap items-center gap-space-xs pt-1">
+<span class="font-label-caps text-label-caps uppercase text-text-muted mr-1">Популярные локации:</span>
+<button class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-md text-label-md hover:bg-surface-sand transition-colors" type="button">Бан Tao (48)</button>
+<button class="px-space-sm py-1 rounded-full bg-surface-sand text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors" type="button">Лаян (24)</button>
+<button class="px-space-sm py-1 rounded-full bg-surface-sand text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors" type="button">Камала (19)</button>
+<button class="px-space-sm py-1 rounded-full bg-surface-sand text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors" type="button">Раваи & Най Харн (31)</button>
+</div>
+<!-- POPULAR VERIFIED RESIDENCES SELECTION GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm pt-2">
+<!-- Card 1: SELECTED STATE (The Title Legendary) -->
+<div class="relative p-space-md rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between cursor-pointer ring-2 ring-primary transition-all">
+<div class="flex items-start justify-between mb-2">
+<div>
+<span class="inline-flex items-center gap-1 text-status-verified font-label-caps text-label-caps uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]">verified</span> Верифицирован myUNO
+                    </span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">The Title Legendary</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Бан Тао • Cherngtalay, Thalang</p>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-2 font-label-md text-label-md text-text-muted">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">apartment</span> 52 юнита в системе</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">waves</span> 350 м до моря</span>
+</div>
+</div>
+<!-- Card 2: Layantara Luxury -->
+<div class="p-space-md rounded-xl bg-surface-sand/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between">
+<div class="flex items-start justify-between mb-2">
+<div>
+<span class="inline-flex items-center gap-1 text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+                      Private Villas
+                    </span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Layantara Luxury Villas</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Лаян • Choeng Thale</p>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-sand text-transparent flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-2 font-label-md text-label-md text-text-muted">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">pool</span> Частные бассейны</span>
+<span>•</span>
+<span>14 вилл в реестре</span>
+</div>
+</div>
+<!-- Card 3: Oceanstone Bang Tao -->
+<div class="p-space-md rounded-xl bg-surface-sand/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between">
+<div class="flex items-start justify-between mb-2">
+<div>
+<span class="inline-flex items-center gap-1 text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+                      Condominium
+                    </span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Oceanstone Bang Tao</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cherngtalay • Laguna Entrance</p>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-sand text-transparent flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-2 font-label-md text-label-md text-text-muted">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">hotel</span> 402 апартамента</span>
+<span>•</span>
+<span>Rooftop бассейн</span>
+</div>
+</div>
+<!-- Card 4: Botanica Foresta -->
+<div class="p-space-md rounded-xl bg-surface-sand/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between">
+<div class="flex items-start justify-between mb-2">
+<div>
+<span class="inline-flex items-center gap-1 text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+                      Master Community
+                    </span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Botanica Foresta</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Лаян • Nature Sanctuary</p>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-sand text-transparent flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-2 font-label-md text-label-md text-text-muted">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">nature_people</span> Forest Villas</span>
+<span>•</span>
+<span>Охрана 24/7</span>
+</div>
+</div>
+</div>
+</div>
+<!-- REFINED IDENTIFICATION & UNIT SELECTION (ACTIVE DEMO CONTEXT) -->
+<div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">key</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Спецификация апартамента в The Title Legendary</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Уточните корпус и номер юнита для привязки планировок</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 px-space-xs py-1 rounded-lg bg-status-verified-bg text-status-verified font-label-md text-label-md mt-2 sm:mt-0">
+<span class="material-symbols-outlined text-[16px]">auto_awesome</span> 90% данных синхронизировано
+              </span>
+</div>
+<!-- UNIT SPECIFICATION FORM -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md pt-2">
+<!-- Building Selector -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="building-select">Корпус (Building)</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-title-md text-body-md font-semibold focus:outline-none focus:ring-2 focus:ring-primary-container pr-10" id="building-select">
+<option selected="">Корпус F (Lagoon Front)</option>
+<option>Корпус E (Pool Garden)</option>
+<option>Корпус D (Main Courtyard)</option>
+<option>Корпус C (Clubhouse Wing)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Floor Selector -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="floor-select">Этаж</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-title-md text-body-md font-semibold focus:outline-none focus:ring-2 focus:ring-primary-container pr-10" id="floor-select">
+<option>1 этаж (Прямой выход к воде)</option>
+<option>2 этаж</option>
+<option selected="">3 этаж</option>
+<option>4 этаж</option>
+<option>5 этаж (Пентхаус)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Unit Number -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="unit-number-input">Номер юнита (Door / Unit #)</label>
+<div class="relative">
+<input class="w-full px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-title-md text-body-md font-semibold focus:outline-none focus:ring-2 focus:ring-primary-container" id="unit-number-input" placeholder="напр. F-302" type="text" value="F-302"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-status-verified text-[20px]">check_circle</span>
+</div>
+</div>
+</div>
+<!-- AUTO-LOADED PROJECT INFRASTRUCTURE PREVIEW -->
+<div class="p-space-md rounded-xl bg-surface-sand/60 flex flex-col sm:flex-row items-center gap-space-md mt-space-sm">
+<div class="w-full sm:w-36 h-24 rounded-lg overflow-hidden shrink-0 shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Modern tropical architecture of The Title Legendary condominium in Bang Tao Phuket with calm turquoise resort swimming pool, palm trees, sun loungers and elegant stone facade under golden morning daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5GxGMNaqeveUpxUCHCyKY2SftarNG6S2s7-x0ljsj3cFMcC-exNErS7czUgql83H-ctX0t86zX8qUyTluS-fLDILD12kKfKqMg9SRZcpidcttuZzV7KGHfz0jN0siqpO_Sw13Y5SOfNMHWigERoWOYbe6vQrvFu0qPj5JknpZ4KPqUXXFD_qqlbNRtgTTvJD4pAp9MM1MzhtMGOA9PRPwjn1wX_fP11BbvnvLM2u6TeIMj4zhLZEY"/>
+</div>
+<div class="flex flex-col justify-center gap-1 w-full">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-body-md font-semibold text-primary">Автоматически привязано к мастер-паспорту комплекса:</span>
+</div>
+<div class="flex flex-wrap gap-2 text-text-muted font-body-sm text-body-sm">
+<span class="inline-flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded text-primary text-label-md">
+<span class="material-symbols-outlined text-[14px] text-status-verified">check</span> 4 лагунных бассейна
+                  </span>
+<span class="inline-flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded text-primary text-label-md">
+<span class="material-symbols-outlined text-[14px] text-status-verified">check</span> Фитнес & SPA
+                  </span>
+<span class="inline-flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded text-primary text-label-md">
+<span class="material-symbols-outlined text-[14px] text-status-verified">check</span> Охрана & Консьерж 24/7
+                  </span>
+<span class="inline-flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded text-primary text-label-md">
+<span class="material-symbols-outlined text-[14px] text-status-verified">check</span> Кадастровый округ Cherngtalay
+                  </span>
+</div>
+<p class="font-label-caps text-label-caps text-text-muted mt-1">
+                  На следующем шаге вам останется лишь подтвердить площадь по чаноту (54 м²) и загрузить номер свидетельства.
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- =================== PATH B CONTENT CONTAINER (HIDDEN INITIALLY) =================== -->
+<div class="hidden flex flex-col gap-space-lg" id="content-path-b">
+<div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm pb-space-xs">
+<div class="w-10 h-10 rounded-xl bg-accent-gold-muted text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">contact_support</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Экспресс-добавление: минимум усилий от вас</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Оставьте базовые координаты объекта — остальную работу выполнит штатная команда myUNO</p>
+</div>
+</div>
+<!-- MINIMAL OWNER INPUT FORM -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="b-residence-name">Название комплекса или частной виллы *</label>
+<input class="px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container" id="b-residence-name" placeholder="напр. Villa Surin Sunset или Grand Condotel" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="b-location-district">Район острова Пхукет *</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container pr-10" id="b-location-district">
+<option selected="">Bang Tao / Laguna (Чернгталей)</option>
+<option>Layan Beach</option>
+<option>Surin Beach</option>
+<option>Kamala (Millionaire's Mile)</option>
+<option>Rawai / Nai Harn</option>
+<option>Kata / Karon</option>
+<option>Другой район Пхукета</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-[20px]">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="b-unit-type">Тип недвижимости и спальни *</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container pr-10" id="b-unit-type">
+<option>Кондоминиум / Апартаменты (1 Bedroom)</option>
+<option>Кондоминиум / Апартаменты (2 Bedrooms)</option>
+<option selected="">Приватная вилла с бассейном (3 Bedrooms)</option>
+<option>Премиальная вилла (4+ Bedrooms)</option>
+<option>Пентхаус</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-[20px]">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps uppercase text-text-muted" for="b-phone-whatsapp">Контактный WhatsApp / Телефон *</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-status-verified text-[18px]">chat</span>
+<input class="w-full pl-10 pr-space-md py-2.5 rounded-xl bg-surface-sand/40 text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container" id="b-phone-whatsapp" placeholder="+66 82 000 0000 или +7 999 000 0000" type="tel"/>
+</div>
+</div>
+</div>
+<!-- OPTIONAL FAST DROPZONE -->
+<div class="p-space-md rounded-xl bg-surface-sand/40 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-sand/70 transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-1">upload_file</span>
+<p class="font-title-md text-body-md font-semibold text-primary">Фото объекта или фото Чанота (Опционально)</p>
+<p class="font-body-sm text-body-sm text-text-muted max-w-md mt-0.5">
+                Перетащите файл сюда или сделайте снимок на телефон. Если документов под рукой нет — пропустите этот шаг.
+              </p>
+</div>
+<!-- WHITE GLOVE AUDIT HAND-OFF GUARANTEE -->
+<div class="p-space-md rounded-xl bg-primary-container text-on-primary flex flex-col sm:flex-row items-start sm:items-center gap-space-md shadow-md">
+<div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-accent-gold-soft text-[28px]">shield_person</span>
+</div>
+<div class="flex flex-col">
+<div class="font-title-md text-title-md font-semibold text-on-primary">
+                  Что myUNO сделает для вашей резиденции бесплатно:
+                </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-x-space-md gap-y-1 mt-1 text-surface-container-high font-body-sm text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">check_circle</span>
+<span>Выездной технический аудит</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">check_circle</span>
+<span>3D Matterport виртуальный тур</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">check_circle</span>
+<span>Проверка в Земельном Департаменте</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">check_circle</span>
+<span>Монтаж и настройка смарт-замка</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ACTION FOOTER BAR -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-xs">
+<button class="w-full sm:w-auto px-space-lg py-3 rounded-xl bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+<span>Сохранить черновик</span>
+</button>
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<button class="w-full sm:w-auto px-space-xl py-3 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg shadow-md transition-all flex items-center justify-center gap-2" type="button">
+<span id="next-step-label">Продолжить к номеру юнита и документам</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- RIGHT SIDEBAR: CONTEXT, SPEED COMPARISON & WHITE-GLOVE CURATOR (4 Columns) -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- COMPARISON CARD: Why it takes 2 minutes -->
+<div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-status-verified text-[20px]">timer</span>
+<h4 class="font-title-md text-body-md font-semibold text-primary">Скорость онбординга myUNO</h4>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            Благодаря оцифрованной базе кондоминиумов Пхукета собственники не тратят часы на рутинный ввод параметров.
+          </p>
+<!-- Timeline Mini-Graphic -->
+<div class="flex flex-col gap-space-sm pt-2">
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified"></span>
+<span class="font-label-md text-label-md text-primary font-semibold">Объект в каталоге</span>
+</div>
+<span class="font-label-caps text-label-caps uppercase text-status-verified font-bold">2 минуты</span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-sand/50 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-primary font-semibold">Новая вилла / Комплекс</span>
+</div>
+<span class="font-label-caps text-label-caps uppercase text-secondary font-bold">3 мин + Аудит</span>
+</div>
+</div>
+<div class="pt-2 text-text-muted font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">check</span>
+<span>Автоматический расчет прогноза арендной доходности</span>
+</div>
+</div>
+<!-- PERSONAL ONBOARDING CURATOR PROFILE CARD -->
+<div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-text-muted tracking-wider">Куратор резиденций</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps uppercase">
+              Online
+            </span>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Professional portrait of Christopher Wong, Managing Director of residential onboarding at Bang Tao desk Phuket, wearing elegant crisp linen shirt with warm welcoming smile, soft natural architectural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZIlaSbIKKGnrSUXPgSGdBKdYX1BGiGATMgwdaYNsYxrGkead0UW4Eb6M88HpTvPvbxUh5or5_Cq4qLFShmcWLNIU68jW5WwFWwDOgL3tdZBwCcmWfYpDA5XjSPQKkIAebWt-Qq1M04Cx1GbMiu-c65mR84spTEiGxfnQoD91RBrTH-KoDSCbRbrsxPcfb5vkC1ryb8bCSA0nplkzPBsuzb19ATDVPg0KNqqdzq0ginT-hdeAhPKyt"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-status-verified rounded-full border-2 border-surface-container-lowest"></span>
+</div>
+<div class="flex flex-col">
+<h5 class="font-title-md text-body-md font-semibold text-primary">Кристофер Вонг</h5>
+<p class="font-body-sm text-body-sm text-text-muted">Head of Onboarding • Bang Tao Desk</p>
+<span class="font-label-md text-label-md text-secondary mt-0.5">Личное сопровождение 120+ вилл</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            «Если вы сомневаетесь в названии комплекса по чаноту или находитесь вне Таиланда — просто напишите мне в мессенджер. Я лично найду объект в кадастре.»
+          </p>
+<div class="flex flex-col gap-2 pt-1">
+<a class="w-full py-2.5 px-space-md rounded-xl bg-status-verified-bg hover:bg-status-verified text-status-verified hover:text-on-primary font-label-md text-label-md transition-colors flex items-center justify-center gap-2" href="https://wa.me/66824491000" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span>Написать куратору в WhatsApp</span>
+</a>
+<a class="w-full py-2 px-space-md rounded-xl bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-md text-label-md transition-colors flex items-center justify-center gap-2" href="tel:+66824491000">
+<span class="material-symbols-outlined text-[16px]">call</span>
+<span>+66 82 449 1000 (Пхукет)</span>
+</a>
+</div>
+</div>
+<!-- LEGAL & PRIVACY GUARANTEE MODULE -->
+<div class="bg-surface-sand/50 p-space-md rounded-2xl flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px] mt-0.5">verified_user</span>
+<div class="flex flex-col gap-0.5">
+<h6 class="font-label-md text-label-md font-semibold text-primary">Стандарт защиты PDPA Thailand</h6>
+<p class="font-body-sm text-[12px] text-text-muted leading-relaxed">
+              Все правоустанавливающие документы, номера Чанотов и паспортные данные собственников шифруются по банковскому протоколу и не передаются третьим лицам.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SCRIPT FOR SEAMLESS PATH SWITCHING -->
+<script>
+    function switchPath(path) {
+      const btnA = document.getElementById('btn-path-a');
+      const btnB = document.getElementById('btn-path-b');
+      const contentA = document.getElementById('content-path-a');
+      const contentB = document.getElementById('content-path-b');
+      const nextLabel = document.getElementById('next-step-label');
+
+      if (path === 'A') {
+        // Activate Path A
+        btnA.classList.remove('bg-surface-container-low');
+        btnA.classList.add('bg-surface-container-lowest', 'shadow-md', 'ring-2', 'ring-primary-container');
+        
+        btnB.classList.remove('bg-surface-container-lowest', 'shadow-md', 'ring-2', 'ring-primary-container');
+        btnB.classList.add('bg-surface-container-low');
+        
+        contentA.classList.remove('hidden');
+        contentB.classList.add('hidden');
+        
+        nextLabel.textContent = 'Продолжить к номеру юнита и документам';
+      } else {
+        // Activate Path B
+        btnB.classList.remove('bg-surface-container-low');
+        btnB.classList.add('bg-surface-container-lowest', 'shadow-md', 'ring-2', 'ring-primary-container');
+        
+        btnA.classList.remove('bg-surface-container-lowest', 'shadow-md', 'ring-2', 'ring-primary-container');
+        btnA.classList.add('bg-surface-container-low');
+        
+        contentB.classList.remove('hidden');
+        contentA.classList.add('hidden');
+        
+        nextLabel.textContent = 'Отправить заявку куратору на аудит объекта';
+      }
+    }
+  </script>
+</div></main><footer class="w-full bg-surface-ivory py-space-xl shadow-[0_-1px_6px_rgba(0,0,0,0.02)]"><div class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin flex flex-col sm:flex-row items-center justify-between gap-space-md text-text-muted text-body-sm font-body-sm"><div class="flex items-center gap-space-sm"><span>© myUNO Phuket. White-Glove Residential Stewardship.</span></div><div class="flex items-center gap-space-lg"><span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-status-verified text-[16px]">lock</span>Institutional Privacy & Data Safeguard</span><a class="hover:text-primary transition-colors" href="https://wa.me/66824491000" rel="noopener noreferrer" target="_blank">Concierge Desk</a></div></div></footer></body></html>

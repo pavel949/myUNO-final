@@ -31,6 +31,12 @@
 - A donor/legacy services repo is optional evidence, not a required dependency.
 - Public redesign does not outrank P0 money/migration/order correctness.
 
+## Homepage v4 (2026-10-05, founder request; brief `MYUNO_HOMEPAGE_STRATEGY_RU`)
+- Homepage reorganised around one chosen task (Holiday / Long-term / Buy) shared by the search form and the offers shelf; one search box for areas **and** complexes; owner goals (sell / rent out / list yourself / hand to management) are separate paths with separate destinations; services shown as situations over the one catalogue; "My UNO" continuity block.
+- Price honesty: a holiday card shows an **indicative base rate** with the note "total is calculated for your dates" — never a total. Long-term shows monthly rent, buy shows the sale price, otherwise "terms on request". Placeholder photos are flagged illustrative.
+- Project/unit ordering no longer depends on project display names (rank = real cover photo → live inventory → name; shelf units are spread across projects).
+- **Implemented in follow-on releases:** (1) task-first header IA `Rent · Buy · Projects · Services · Owners · My UNO`; (2) long-term move-in / lease term / pet requirements and canonical lease-term display; (3) destination/locale-scoped `HomepagePlacement` editorial ordering by canonical entity ID; (4) evidence-based project/unit responsibility resolver over existing mandates and verified project organization roles; (5) Stitch design/flow reconciliation. **Still tracked:** complete homepage funnel instrumentation and reviewed TH/ZH parity.
+
 ## Commercial decisions requiring real evidence
 - seller/merchant/collector by category;
 - provider payout timing;

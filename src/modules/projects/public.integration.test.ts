@@ -34,14 +34,15 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(projects.map((p) => p.slug)).toEqual(['live-p']);
     });
 
-    it('counts only live units and computes the from-price over them', async () => {
+    it('counts visible units (live plus managed drafts) but computes the from-price only over bookable live units', async () => {
       const project = await createProjectWithMedia({ slug: 'live-p', status: 'live' });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 3000 });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 2500 });
       await createUnit({ projectId: project.id, status: 'draft', baseNightlyThb: 100 });
 
       const [card] = await listPublicProjects();
-      expect(card.liveUnitCount).toBe(2);
+      // The managed draft is publicly visible as inquiry-only inventory, never priced into the from-price.
+      expect(card.liveUnitCount).toBe(3);
       expect(card.fromNightlyThb).toBe(2500);
     });
 
@@ -51,6 +52,56 @@ describe('Projects public read seam (discovery pages)', () => {
       const [card] = await listPublicProjects();
       expect(card.liveUnitCount).toBe(0);
       expect(card.fromNightlyThb).toBeNull();
+    });
+
+    it('publishes provenance-backed managed draft inventory without publishing unrelated drafts', async () => {
+      const imported = await createProjectWithMedia({ slug: 'imported-draft', status: 'draft' });
+      const unrelated = await createProjectWithMedia({ slug: 'unrelated-draft', status: 'draft' });
+      const importedUnit = await createUnit({
+        projectId: imported.id,
+        status: 'draft',
+        assetStatus: 'managed',
+        name: 'Imported managed home',
+      });
+      await createUnit({
+        projectId: unrelated.id,
+        status: 'draft',
+        assetStatus: 'managed',
+        name: 'Unrelated draft home',
+      });
+
+      const source = await prisma.externalSystem.create({
+        data: {
+          system_key: 'yandex_disk_public_media',
+          environment: 'test-import',
+          display_name: 'Managed import provenance',
+          config: { authority: 'media_source_only' },
+        },
+      });
+      await prisma.externalMapping.createMany({
+        data: [
+          {
+            external_system_id: source.id,
+            entity_type: 'project',
+            internal_id: imported.id,
+            external_id: 'imported-project',
+          },
+          {
+            external_system_id: source.id,
+            entity_type: 'unit',
+            internal_id: importedUnit.id,
+            external_id: 'imported-unit',
+          },
+        ],
+      });
+
+      const projects = await listPublicProjects();
+      expect(projects.map(project => project.slug)).toEqual(['imported-draft']);
+      expect(projects[0].liveUnitCount).toBe(1);
+
+      const detail = await getPublicProjectBySlug(imported.slug);
+      expect(detail?.units.map(unit => unit.id)).toEqual([importedUnit.id]);
+      expect(await getPublicProjectBySlug(unrelated.slug)).toBeNull();
     });
   });
 
@@ -64,7 +115,7 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(await getPublicProjectBySlug('draft-p')).toBeNull();
     });
 
-    it('keeps a live but media-incomplete unit out of Project Space and sitemap', async () => {
+    it('keeps a live media-incomplete unit visible for inquiry but out of bookable sitemap', async () => {
       const project = await createProjectWithMedia({ slug: 'media-gated-p', status: 'live' });
       const hidden = await createUnit({
         projectId: project.id,
@@ -79,8 +130,15 @@ describe('Projects public read seam (discovery pages)', () => {
       });
 
       const detail = await getPublicProjectBySlug(project.slug);
-      expect(detail?.units.map((unit) => unit.id)).toEqual([visible.id]);
-      expect(detail?.units.map((unit) => unit.id)).not.toContain(hidden.id);
+      expect(detail?.units.map((unit) => unit.id)).toEqual([hidden.id, visible.id]);
+      expect(detail?.units.find((unit) => unit.id === hidden.id)).toMatchObject({
+        mediaReady: false,
+        bookable: false,
+      });
+      expect(detail?.units.find((unit) => unit.id === visible.id)).toMatchObject({
+        mediaReady: true,
+        bookable: true,
+      });
       expect(await listPublicUnitIds()).toEqual([visible.id]);
     });
 
@@ -242,13 +300,16 @@ describe('Projects public read seam (discovery pages)', () => {
       ] });
       const [card] = await listPublicProjects();
       const detail = await getPublicProjectBySlug(project.slug);
-      expect(card.liveUnitCount).toBe(1);
-      expect(detail?.units.map(u => u.id)).toEqual([stay.id]);
-      expect(detail?.categories.reduce((sum, c) => sum + c.unitCount, 0)).toBe(1);
+      expect(card.liveUnitCount).toBe(3);
+      expect(detail?.units.map(u => u.id).sort()).toEqual([sale.id, lease.id, stay.id].sort());
+      expect(detail?.units.find(u => u.id === sale.id)?.bookable).toBe(false);
+      expect(detail?.units.find(u => u.id === lease.id)?.bookable).toBe(false);
+      expect(detail?.units.find(u => u.id === stay.id)?.bookable).toBe(true);
+      expect(detail?.categories.reduce((sum, c) => sum + c.unitCount, 0)).toBe(3);
       expect(await listPublicUnitIds()).toEqual([stay.id]);
     });
 
-    it('excludes source-owned inventory from the project page and sitemap until signed cutover', async () => {
+    it('keeps source-owned inventory visible for inquiry but excludes it from booking until signed cutover', async () => {
       const project = await createProjectWithMedia({ slug: 'source-project', status: 'live' });
       const sourceUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Protected source' });
       const localUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Local unit' });
@@ -260,12 +321,16 @@ describe('Projects public read seam (discovery pages)', () => {
         external_system_id: source.id, entity_type: 'unit',
         internal_id: sourceUnit.id, external_id: 'source-villa',
       } });
-      expect((await getPublicProjectBySlug(project.slug))?.units.map(u => u.id)).toEqual([localUnit.id]);
-      expect((await listPublicProjects())[0].liveUnitCount).toBe(1);
+      const beforeCutover = await getPublicProjectBySlug(project.slug);
+      expect(beforeCutover?.units.map(u => u.id).sort()).toEqual([sourceUnit.id, localUnit.id].sort());
+      expect(beforeCutover?.units.find(u => u.id === sourceUnit.id)?.bookable).toBe(false);
+      expect((await listPublicProjects())[0].liveUnitCount).toBe(2);
       expect(await listPublicUnitIds()).toEqual([localUnit.id]);
       await prisma.externalSystem.update({ where: { id: source.id },
         data: { config: { bookingAuthority: 'myuno', cutoverVerified: true } } });
-      expect((await getPublicProjectBySlug(project.slug))?.units).toHaveLength(2);
+      const afterCutover = await getPublicProjectBySlug(project.slug);
+      expect(afterCutover?.units).toHaveLength(2);
+      expect(afterCutover?.units.find(u => u.id === sourceUnit.id)?.bookable).toBe(true);
     });
   });
 

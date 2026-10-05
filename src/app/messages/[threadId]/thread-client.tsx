@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -125,7 +127,7 @@ export default function ThreadClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-32">
+      <main className="min-h-screen bg-surface-mint p-32">
         <p className="text-center text-body text-text-secondary">
           {labels['messages.thread.loading']}
         </p>
@@ -135,7 +137,7 @@ export default function ThreadClient({
 
   if (!thread) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-32">
+      <main className="min-h-screen bg-surface-mint p-32">
         <div className="mx-auto max-w-2xl">
           <p className="mb-16 text-body text-state-error">
             {error || labels['messages.thread.not_found']}
@@ -199,7 +201,7 @@ export default function ThreadClient({
                 </p>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-8">
                   <p className={`text-small ${mine ? 'text-on-dark-muted' : 'text-text-stone'}`}>
-                    {new Date(message.createdAt).toLocaleString()}
+                    {new Date(message.createdAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                   </p>
                   {isStaff && !mine && message.sender ? (
                     <button

@@ -127,7 +127,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
       searchParams.to
   );
 
-  const field = 'px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink text-small';
+  const field = 'px-12 py-8 border border-border-line rounded-lg bg-surface-paper shadow-card text-text-ink text-small';
 
   return (
     <div>
@@ -239,7 +239,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
       </div>
 
       {result.entries.length === 0 ? (
-        <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+        <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
           <p className="text-body text-text-secondary">
             {filtered ? labels['admin.audit.empty'] : labels['admin.audit.empty_all']}
           </p>
@@ -247,7 +247,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-small">
-            <thead className="bg-surface-paper">
+            <thead className="bg-surface-sand">
               <tr className="text-left text-text-secondary border-b border-border-line">
                 <th className="px-12 py-12 font-semibold">{labels['admin.audit.when']}</th>
                 <th className="px-12 py-12 font-semibold">{labels['admin.audit.who']}</th>

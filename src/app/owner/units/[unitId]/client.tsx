@@ -174,7 +174,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
     labels[`owner.contract.basis.${basis}`] || basis;
 
   return (
-    <div className="min-h-screen bg-surface-ivory">
+    <div className="stitch-workspace">
       <div className="max-w-4xl mx-auto px-24 py-40">
         <Link href="/owner" className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['owner.unit.back']}
@@ -232,7 +232,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
 
         {alerts.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.alerts.title']}
             </h2>
             <div className="space-y-12">
@@ -298,8 +298,8 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
         </div>
 
         {compliance && (
-          <div className="bg-surface-paper border border-border-line rounded-md p-24 mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-8">
+          <div className="stitch-panel p-24 mb-40">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-8">
               {labels['owner.compliance.title']}
             </h2>
             <p className="text-body text-text-secondary mb-16">
@@ -362,8 +362,8 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           {contractLoading ? (
             <p className="text-small text-text-secondary">{labels['owner.contract.loading']}</p>
           ) : contract ? (
-            <div className="bg-surface-paper border border-border-line rounded-md p-24">
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <div className="stitch-panel p-24">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.contract.title']}
               </h2>
               <dl className="grid md:grid-cols-2 gap-12 text-small">
@@ -409,7 +409,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           ) : null}
 
           <div id="operations" className="scroll-mt-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.sections.bookings']}
             </h2>
             <BookingsList
@@ -423,7 +423,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           </div>
 
           <div>
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.sections.statement']}
             </h2>
             <LatestStatementCard statementId={summary.latestStatementId} />
@@ -432,7 +432,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           {statements.length > 0 && (
             <div>
               <div className="flex items-center justify-between gap-16 mb-16">
-                <h2 className="text-heading-2 font-semibold text-text-ink">
+                <h2 className="font-display text-heading-2 font-semibold text-text-ink">
                   {labels['owner.statement.title']}
                 </h2>
                 <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
@@ -443,7 +443,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
                 {statements.map((statement) => (
                   <div
                     key={statement.id}
-                    className="bg-surface-paper border border-border-line rounded-md p-24"
+                    className="stitch-panel p-24"
                   >
                     <div className="flex items-start justify-between gap-12">
                       <div>
@@ -487,7 +487,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           )}
 
           <div>
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.sections.tickets']}
             </h2>
             <OpenTicketsList
@@ -511,7 +511,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           </div>
 
           <div id="decisions" className="scroll-mt-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.actions.title']}
             </h2>
             <div className="flex flex-col sm:flex-row gap-12">

@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_SORTS } from '@/modules/browse';
 import SearchResults from './search-results';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SearchPage() {
+  const locale = getRequestLocale();
   // Fetch all sort labels from the content layer (no fallbacks — labelKey must exist)
   const sortLabels = await getLabels(
     Object.fromEntries(UNIT_SORTS.map((sort) => [sort.labelKey, sort.key]))
@@ -62,6 +63,7 @@ export default async function SearchPage() {
       }
     >
       <SearchResults
+        locale={locale}
         labels={{
           title: labels['search.title'],
           resultsSummary: labels['search.results_summary'],

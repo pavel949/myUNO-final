@@ -59,16 +59,16 @@ export default function OwnerStatementsClient({ labels }: { labels: Labels }) {
   }
 
   return (
-    <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg">
+    <div className="stitch-panel overflow-x-auto">
       <table className="w-full text-small">
-        <thead>
+        <thead className="bg-surface-sand">
           <tr className="border-b border-border-line">
-            <th className="px-16 py-12 text-left">{labels['owner.statements.col_period']}</th>
-            <th className="px-16 py-12 text-left">{labels['owner.statements.col_unit']}</th>
-            <th className="px-16 py-12 text-right">{labels['owner.statements.col_noi']}</th>
-            <th className="px-16 py-12 text-right">{labels['owner.statements.col_share']}</th>
-            <th className="px-16 py-12 text-left">{labels['owner.statements.col_status']}</th>
-            <th className="px-16 py-12 text-left" />
+            <th className="px-16 py-12 text-left text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary">{labels['owner.statements.col_period']}</th>
+            <th className="px-16 py-12 text-left text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary">{labels['owner.statements.col_unit']}</th>
+            <th className="px-16 py-12 text-right text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary">{labels['owner.statements.col_noi']}</th>
+            <th className="px-16 py-12 text-right text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary">{labels['owner.statements.col_share']}</th>
+            <th className="px-16 py-12 text-left text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary">{labels['owner.statements.col_status']}</th>
+            <th className="px-16 py-12 text-left text-kicker font-semibold uppercase tracking-[0.12em] text-text-secondary" />
           </tr>
         </thead>
         <tbody>
@@ -79,8 +79,8 @@ export default function OwnerStatementsClient({ labels }: { labels: Labels }) {
                 <LocalDate value={s.periodEnd} />
               </td>
               <td className="px-16 py-12">{s.unitName}</td>
-              <td className="px-16 py-12 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
-              <td className="px-16 py-12 text-right font-mono">{(s.ownerShareTh / 100).toFixed(2)}</td>
+              <td className="px-16 py-12 text-right font-tabular">{(s.noiTh / 100).toFixed(2)}</td>
+              <td className="px-16 py-12 text-right font-tabular">{(s.ownerShareTh / 100).toFixed(2)}</td>
               <td className="px-16 py-12">
                 {labels[`owner.statements.status.${s.status}`] || s.status}
               </td>

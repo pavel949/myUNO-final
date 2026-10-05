@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>myUNO Phuket — Долгосрочная аренда недвижимости</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#effcf9",
+            "accent-gold-muted": "#F5EAD9",
+            "on-primary-container": "#7ba295",
+            "on-surface-variant": "#414845",
+            "surface-container-highest": "#d8e5e2",
+            "on-primary-fixed": "#002019",
+            "primary": "#11382e",
+            "status-verified-bg": "#E9F1EE",
+            "text-muted": "#566360",
+            "primary-fixed": "#c2ebdc",
+            "status-instant-bg": "#FAF3E8",
+            "tertiary-container": "#17372f",
+            "surface": "#effcf9",
+            "surface-container": "#e3f1ed",
+            "on-background": "#121e1c",
+            "surface-bright": "#effcf9",
+            "primary-container": "#11382e",
+            "surface-tint": "#40665a",
+            "outline": "#717975",
+            "on-surface": "#121e1c",
+            "secondary-container": "#fdc17e",
+            "secondary": "#81551c",
+            "surface-dim": "#cfddd9",
+            "surface-sand": "#F4F0E8",
+            "status-verified": "#1E5848",
+            "surface-sand-subtle": "#EAE4D7",
+            "surface-container-low": "#e9f7f3",
+            "surface-container-lowest": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "surface-ivory": "#FBF9F5",
+            "status-instant": "#9A6B32",
+            "border-subtle": "#E5DFD3"
+          },
+          fontFamily: {
+            sans: ["Manrope", "sans-serif"],
+            display: ["Outfit", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #effcf9;
+      color: #121e1c;
+      margin: 0;
+      padding: 0;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Smooth custom styling */
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-[#effcf9] text-on-surface antialiased flex flex-col min-h-screen">
+<!-- 1. Top Navigation Bar -->
+<header class="sticky top-0 w-full z-50 bg-[#FBF9F5]/95 backdrop-blur-md border-b border-border-subtle/80">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<!-- Left: Logo & Nav items -->
+<div class="flex items-center gap-10">
+<a class="flex items-baseline gap-1.5 focus:outline-none" href="#">
+<span class="font-heading text-2xl font-bold text-primary tracking-tight">myUNO</span>
+<span class="text-xs uppercase font-bold tracking-widest text-secondary font-heading">Phuket</span>
+</a>
+<nav class="hidden md:flex items-center gap-7">
+<a class="text-sm font-bold text-primary border-b-2 border-primary py-1 tracking-tight" href="#">Аренда</a>
+<a class="text-sm font-medium text-text-muted hover:text-primary transition-colors py-1" href="#">Купить</a>
+<a class="text-sm font-medium text-text-muted hover:text-primary transition-colors py-1" href="#">Комплексы</a>
+<a class="text-sm font-medium text-text-muted hover:text-primary transition-colors py-1" href="#">Услуги</a>
+<a class="text-sm font-medium text-text-muted hover:text-primary transition-colors py-1" href="#">Собственникам</a>
+</nav>
+</div>
+<!-- Right: Currencies & Auth -->
+<div class="flex items-center gap-4">
+<!-- Currency segmented toggle -->
+<div class="flex items-center bg-surface-sand p-1 rounded-full text-xs font-semibold">
+<button class="px-3 py-1 rounded-full bg-white text-primary shadow-sm" type="button">THB</button>
+<button class="px-2.5 py-1 text-text-muted hover:text-primary transition-colors" type="button">USD</button>
+<button class="px-2.5 py-1 text-text-muted hover:text-primary transition-colors" type="button">RUB</button>
+</div>
+<div class="h-5 w-px bg-border-subtle hidden sm:block"></div>
+<!-- User account CTA -->
+<a class="inline-flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full bg-surface-sand hover:bg-surface-sand-subtle transition text-xs font-bold text-primary" href="#">
+<div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">person</span>
+</div>
+<span class="hidden sm:inline">Мой UNO</span>
+</a>
+</div>
+</div>
+</header>
+<main class="flex-1 w-full pb-20">
+<!-- 2. Hero & Sub-header / Intent Switcher -->
+<div class="bg-gradient-to-b from-[#FBF9F5] to-[#effcf9] border-b border-border-subtle/50 py-8">
+<div class="max-w-7xl mx-auto px-6">
+<!-- Category & Mode Selector -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-status-verified-bg text-status-verified text-xs font-bold tracking-wide uppercase">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+              Seasonal &amp; Multi-Month Living
+            </span>
+<span class="text-xs text-text-muted hidden sm:inline">• Остров Пхукет, Таиланд</span>
+</div>
+<!-- Segmented Intent Switcher -->
+<div class="inline-flex p-1 rounded-xl bg-surface-sand self-start md:self-auto shadow-sm">
+<a class="px-4 py-1.5 rounded-lg text-xs font-semibold text-text-muted hover:text-on-surface transition-colors" href="#">
+              Для отдыха
+            </a>
+<button class="px-4 py-1.5 rounded-lg bg-white text-primary text-xs font-bold shadow-sm flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+              Надолго (1–12 мес)
+            </button>
+<a class="px-4 py-1.5 rounded-lg text-xs font-semibold text-text-muted hover:text-on-surface transition-colors" href="#">
+              Купить
+            </a>
+</div>
+</div>
+<!-- Clean, Structured Filter Control Center -->
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-border-subtle/60">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
+<!-- 1. District & Complex -->
+<div class="lg:col-span-4 bg-[#FBF9F5] rounded-xl p-3 border border-border-subtle/50">
+<div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">
+<span class="material-symbols-outlined text-[15px] text-primary">apartment</span>
+                Район / Комплекс
+              </div>
+<div class="relative">
+<select class="w-full bg-transparent text-sm font-bold text-primary focus:outline-none appearance-none pr-6 cursor-pointer">
+<option value="cherngtalay">Банг Тао и Лаян (Cherngtalay)</option>
+<option value="legendary">The Title Legendary (Bang Tao)</option>
+<option value="layantara">Layantara Villas (Layan Valley)</option>
+<option value="oceanstone">Oceanstone Residences (Laguna)</option>
+<option value="rawai">Раваи и Най Харн (South Phuket)</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-0.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- 2. Move-in Target -->
+<div class="lg:col-span-3 bg-[#FBF9F5] rounded-xl p-3 border border-border-subtle/50">
+<div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">
+<span class="material-symbols-outlined text-[15px] text-primary">event_available</span>
+                Месяц въезда
+              </div>
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-primary">Ноябрь 2026</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-sand text-secondary">Высокий сезон</span>
+</div>
+</div>
+<!-- 3. Duration Selector -->
+<div class="lg:col-span-3 bg-[#FBF9F5] rounded-xl p-3 border border-border-subtle/50">
+<div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">
+<span class="material-symbols-outlined text-[15px] text-primary">timelapse</span>
+                Длительность контракта
+              </div>
+<div class="flex items-center gap-1.5">
+<button class="flex-1 py-1 px-2 rounded-lg text-xs font-semibold bg-surface-sand hover:bg-surface-sand-subtle text-text-muted transition" type="button">
+                  1–3 мес
+                </button>
+<button class="flex-1 py-1 px-2 rounded-lg text-xs font-bold bg-primary text-white shadow-sm transition" type="button">
+                  6 мес
+                </button>
+<button class="flex-1 py-1 px-2 rounded-lg text-xs font-semibold bg-surface-sand hover:bg-surface-sand-subtle text-primary transition" type="button">
+                  1 год <span class="text-secondary font-bold">-25%</span>
+</button>
+</div>
+</div>
+<!-- 4. Budget & Apply -->
+<div class="lg:col-span-2 flex flex-col justify-between gap-1.5">
+<div class="flex justify-between items-baseline px-1">
+<span class="text-[11px] text-text-muted uppercase font-bold tracking-wider">Бюджет</span>
+<span class="text-xs font-bold text-primary">฿60k – ฿150k</span>
+</div>
+<button class="w-full h-11 rounded-xl bg-primary hover:bg-[#17372f] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>18 вариантов</span>
+</button>
+</div>
+</div>
+<!-- Feature Filter Badges -->
+<div class="mt-4 pt-4 border-t border-border-subtle/50 flex flex-wrap items-center gap-2">
+<span class="text-xs text-text-muted font-medium mr-1">Оснащение для экспатов:</span>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-sand hover:bg-surface-sand-subtle text-xs font-medium text-on-surface transition" type="button">
+<span class="material-symbols-outlined text-[15px] text-secondary">pets</span>
+<span>Pet-friendly</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-status-verified-bg text-status-verified text-xs font-bold border border-status-verified/20" type="button">
+<span class="material-symbols-outlined text-[15px]">wifi</span>
+<span>Рабочее место: монитор + 500 Mbps</span>
+<span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-sand hover:bg-surface-sand-subtle text-xs font-medium text-on-surface transition" type="button">
+<span class="material-symbols-outlined text-[15px] text-secondary">cleaning_services</span>
+<span>Включена уборка 2 раза/нед</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-sand hover:bg-surface-sand-subtle text-xs font-medium text-on-surface transition" type="button">
+<span class="material-symbols-outlined text-[15px] text-secondary">electric_car</span>
+<span>Зарядка EV</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Standards of Living / Guarantees -->
+<section class="max-w-7xl mx-auto px-6 pt-10 pb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<span class="text-xs font-bold uppercase tracking-widest text-secondary font-heading">Стандарты аренды myUNO</span>
+<h2 class="font-heading text-2xl md:text-3xl font-bold text-primary mt-1">Безопасность каждого долгосрочного контракта</h2>
+</div>
+<p class="text-sm text-text-muted max-w-md">
+          Мы исключили посреднические наценки и юридическую неопределенность. Все юниты прошли аудит инженеров и инспекцию прав собственности.
+        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Guarantee Card 1 -->
+<div class="bg-white rounded-2xl p-6 border border-border-subtle/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+<div>
+<div class="w-12 h-12 rounded-xl bg-status-verified-bg text-status-verified flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-[24px]">gavel</span>
+</div>
+<h3 class="font-heading text-lg font-bold text-primary mb-2">Тайский договор + TM.30</h3>
+<p class="text-sm text-text-muted leading-relaxed">
+              Официальный двуязычный Lease Agreement. Бесплатная своевременная подача формы TM.30 в Immigration Bureau для оформления виз любого типа (LTR, DTV, Ed, Non-O).
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle/40 flex items-center gap-2 text-status-verified text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Юридическая поддержка 24/7</span>
+</div>
+</div>
+<!-- Guarantee Card 2 -->
+<div class="bg-white rounded-2xl p-6 border border-border-subtle/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+<div>
+<div class="w-12 h-12 rounded-xl bg-status-instant-bg text-status-instant flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-[24px]">account_balance</span>
+</div>
+<h3 class="font-heading text-lg font-bold text-primary mb-2">Депозит на эскроу-счете</h3>
+<p class="text-sm text-text-muted leading-relaxed">
+              Страховой депозит хранится на защищенном эскроу-счете в Kasikorn Bank. Возврат производится строго в день чекаута после акта приема-передачи без споров.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle/40 flex items-center gap-2 text-primary text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span>Kasikorn Bank Escrow Guarantee</span>
+</div>
+</div>
+<!-- Guarantee Card 3 -->
+<div class="bg-white rounded-2xl p-6 border border-border-subtle/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+<div>
+<div class="w-12 h-12 rounded-xl bg-surface-sand text-secondary flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-[24px]">bolt</span>
+</div>
+<h3 class="font-heading text-lg font-bold text-primary mb-2">Государственный тариф PEA</h3>
+<p class="text-sm text-text-muted leading-relaxed">
+              Честные счета за электричество: от ฿5.0 до ฿6.0 за кВт⋅ч напрямую по квитанции Provincial Electricity Authority. Без завышений отельных управляющих компаний (х2–х3).
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle/40 flex items-center gap-2 text-secondary text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Оплата по оригинальному QR-коду PEA</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Two-Column Workspace: Property Catalog (Left 8) + Sticky Breakdown Calculator (Right 4) -->
+<section class="max-w-7xl mx-auto px-6">
+<!-- Catalog Section Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+<div>
+<span class="text-xs font-bold uppercase tracking-wider text-secondary font-heading">Каталог проверенных резиденций</span>
+<h2 class="font-heading text-2xl md:text-3xl font-bold text-primary mt-0.5">Резиденции в Cherngtalay &amp; Bang Tao</h2>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-text-muted font-medium">Сортировка:</span>
+<button class="px-3 py-1.5 rounded-lg bg-white border border-border-subtle text-primary text-xs font-bold flex items-center gap-1 shadow-sm" type="button">
+<span>Рекомендованные myUNO</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left: Property Catalog (8 columns) -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Card 1: The Title Legendary -->
+<article class="bg-white rounded-2xl overflow-hidden border border-border-subtle/80 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row">
+<!-- Image Frame -->
+<div class="md:w-5/12 relative aspect-[4/3] md:aspect-auto min-h-[240px]">
+<img alt="The Title Legendary Bang Tao 1BR Lagoon Access" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHOmb6M4BusYRx3ZdvMjQ_xHqS9Y6__oJtNfwpb-1xuKDZGo8rKVmG8nmF64uhnnNVM8YzRIRnz2weynlJb3IO8nCKOAfMe8vRDwxlataQ6wMTEeq8mOb9D2qhSgOI3uo8Tm-CnQbd_4ZNmPVR2iK7QTgTlPzUyX_AXCpqDGC_6PFU7VavkelHsZJQPQckCtnLCrIrNNHS5RjlR2FHABgUAvJ6OgetST4gkG2yMClRtlZfCMCRnu6K"/>
+<div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+<span class="px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-status-verified font-bold text-[11px] shadow-sm">
+                  Фактический юнит #F-302
+                </span>
+<span class="px-2.5 py-1 rounded-md bg-primary/90 text-white font-medium text-[11px] shadow-sm">
+                  Lagoon Access
+                </span>
+</div>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-primary text-xs font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">verified</span>
+<span>Mandate by myUNO</span>
+</div>
+</div>
+<!-- Details Container -->
+<div class="md:w-7/12 p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-2 mb-1">
+<div>
+<span class="text-[11px] uppercase tracking-wider font-semibold text-text-muted">Банг Тао • 350 м до моря</span>
+<h3 class="font-heading text-lg font-bold text-primary mt-0.5">The Title Legendary — 1BR Lagoon Access</h3>
+</div>
+<button aria-label="Add to favorites" class="w-8 h-8 rounded-full bg-surface-sand hover:bg-surface-sand-subtle flex items-center justify-center text-primary transition shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<!-- Specs -->
+<div class="flex items-center gap-4 py-2 text-xs text-text-muted font-medium border-b border-border-subtle/50 mb-3">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">king_bed</span> 1 спальня</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">square_foot</span> 54 м²</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">countertops</span> Franke кухня</span>
+</div>
+<!-- Features list -->
+<ul class="space-y-1.5 text-xs text-on-surface">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Депозит 1 мес. • Wi-Fi 500 Mbps включен</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Уборка 1 раз в неделю от myUNO Clean (смена белья)</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Доступ к 4 лагунным бассейнам, сауне и gym</span>
+</li>
+</ul>
+</div>
+<!-- Price & Actions Footer -->
+<div class="mt-5 pt-4 border-t border-border-subtle/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FBF9F5] -mx-6 -mb-6 p-4">
+<div>
+<div class="flex items-baseline gap-1">
+<span class="font-heading text-xl font-bold text-primary">฿85,000</span>
+<span class="text-xs text-text-muted font-medium">THB / мес</span>
+</div>
+<span class="text-[11px] text-secondary font-semibold">Контракт 6+ мес (в сезон ฿110,000)</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-4 py-2 rounded-xl bg-surface-sand hover:bg-surface-sand-subtle text-primary font-bold text-xs transition" type="button">
+                    Просмотр
+                  </button>
+<button class="px-4 py-2 rounded-xl bg-primary hover:bg-[#17372f] text-white font-bold text-xs shadow-sm transition" type="button">
+                    Забронировать
+                  </button>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2: Layantara Luxury Pool Villa -->
+<article class="bg-white rounded-2xl overflow-hidden border border-border-subtle/80 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row">
+<!-- Image Frame -->
+<div class="md:w-5/12 relative aspect-[4/3] md:aspect-auto min-h-[240px]">
+<img alt="Layantara Luxury Pool Villa Layan Phuket" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe9KZy8awoiY8MhHcI3OsvXFpVR4h235xtXSY9-jAP39sgLqeVa77FPtHEySKO5N_PStDqZiKbhAGY88hhooOCKJTSq7HPEh_-bhOYTNm7MjkxC_3U0vixZVTd6CfUdU3dcacq33PB6cHQnPQTGtaab6I5Bykm6atLG12lt_fYXLOcBsxRysTVUGsxLk1Li7mghysh4HG5evECf53Ksh0sFGltlQhiDZIsHHQkX2YMPAnU9_K7BUr8"/>
+<div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+<span class="px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-status-verified font-bold text-[11px] shadow-sm">
+                  Вилла проверена инженером
+                </span>
+<span class="px-2.5 py-1 rounded-md bg-accent-gold-muted text-secondary font-bold text-[11px] shadow-sm">
+                  High-End Collection
+                </span>
+</div>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-primary text-xs font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">shield</span>
+<span>Охрана 24/7 + CCTV</span>
+</div>
+</div>
+<!-- Details Container -->
+<div class="md:w-7/12 p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-2 mb-1">
+<div>
+<span class="text-[11px] uppercase tracking-wider font-semibold text-text-muted">Лаян Вэлли • 5 мин до пляжа</span>
+<h3 class="font-heading text-lg font-bold text-primary mt-0.5">Layantara Luxury — 3BR Signature Garden Villa</h3>
+</div>
+<button aria-label="Add to favorites" class="w-8 h-8 rounded-full bg-surface-sand hover:bg-surface-sand-subtle flex items-center justify-center text-primary transition shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<!-- Specs -->
+<div class="flex items-center gap-4 py-2 text-xs text-text-muted font-medium border-b border-border-subtle/50 mb-3">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">pool</span> Бассейн 12м</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">square_foot</span> 385 м²</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">bedroom_parent</span> 3 Master BR</span>
+</div>
+<!-- Features list -->
+<ul class="space-y-1.5 text-xs text-on-surface">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Садовник и чистка бассейна 2 раза в неделю включены</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Прямой счет PEA (без наценок) • Депозит 2 мес</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Полная приватность, закрытая охраняемая территория</span>
+</li>
+</ul>
+</div>
+<!-- Price & Actions Footer -->
+<div class="mt-5 pt-4 border-t border-border-subtle/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FBF9F5] -mx-6 -mb-6 p-4">
+<div>
+<div class="flex items-baseline gap-1">
+<span class="font-heading text-xl font-bold text-primary">฿240,000</span>
+<span class="text-xs text-text-muted font-medium">THB / мес</span>
+</div>
+<span class="text-[11px] text-text-muted font-semibold">Годовой или сезонный контракт</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-4 py-2 rounded-xl bg-surface-sand hover:bg-surface-sand-subtle text-primary font-bold text-xs flex items-center gap-1 transition" type="button">
+<span class="material-symbols-outlined text-[16px]">videocam</span>
+<span>Видео-тур</span>
+</button>
+<button class="px-4 py-2 rounded-xl bg-primary hover:bg-[#17372f] text-white font-bold text-xs shadow-sm transition" type="button">
+                    Забронировать
+                  </button>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3: Oceanstone Residences -->
+<article class="bg-white rounded-2xl overflow-hidden border border-border-subtle/80 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row">
+<!-- Image Frame -->
+<div class="md:w-5/12 relative aspect-[4/3] md:aspect-auto min-h-[240px]">
+<img alt="Oceanstone Residences 2BR Penthouse Laguna Phuket" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDTyi50MJxfvjbvmsnuAZdGexSlsz6XvKH0YLF1cBZm7KmntL-2VPn24WWLveSVADYWktm0HFBrF2sDumRq7inR4qyR4DWRQ1LmZe99Rk7VDsGMORUESKntGUpOYZcmvHcapsMpaBWIjakrhikyNHkgW37Qydo9r1Q0Ckcxn8FoatEY4vmZPNgcX5bDyjpZ3w0dPMI25VZ6UktUQvK22ELKFzMKATf2uWfr8i3go_XkI7XfQlnKthT"/>
+<div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+<span class="px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-status-verified font-bold text-[11px] shadow-sm">
+                  Pet-friendly (до 10 кг)
+                </span>
+<span class="px-2.5 py-1 rounded-md bg-primary/90 text-white font-medium text-[11px] shadow-sm">
+                  Rooftop Penthouse
+                </span>
+</div>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-primary text-xs font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">workspace_premium</span>
+<span>Коворкинг в здании</span>
+</div>
+</div>
+<!-- Details Container -->
+<div class="md:w-7/12 p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-2 mb-1">
+<div>
+<span class="text-[11px] uppercase tracking-wider font-semibold text-text-muted">Лагуна • 400 м до Boat Avenue</span>
+<h3 class="font-heading text-lg font-bold text-primary mt-0.5">Oceanstone — 2BR Penthouse с джакузи</h3>
+</div>
+<button aria-label="Add to favorites" class="w-8 h-8 rounded-full bg-surface-sand hover:bg-surface-sand-subtle flex items-center justify-center text-primary transition shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<!-- Specs -->
+<div class="flex items-center gap-4 py-2 text-xs text-text-muted font-medium border-b border-border-subtle/50 mb-3">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">hot_tub</span> Джакузи</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">square_foot</span> 92 м²</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">bed</span> 2 спальни</span>
+</div>
+<!-- Features list -->
+<ul class="space-y-1.5 text-xs text-on-surface">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Разрешено проживание с воспитанными собаками/кошками</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Тихий коворкинг с переговорной комнатой на 1-м этаже</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-verified shrink-0">check_circle</span>
+<span>Панорамный вид на горы и закаты</span>
+</li>
+</ul>
+</div>
+<!-- Price & Actions Footer -->
+<div class="mt-5 pt-4 border-t border-border-subtle/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FBF9F5] -mx-6 -mb-6 p-4">
+<div>
+<div class="flex items-baseline gap-1">
+<span class="font-heading text-xl font-bold text-primary">฿95,000</span>
+<span class="text-xs text-text-muted font-medium">THB / мес</span>
+</div>
+<span class="text-[11px] text-text-muted font-semibold">Годовой контракт (3 мес — ฿130k/мес)</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-full sm:w-auto px-5 py-2 rounded-xl bg-primary hover:bg-[#17372f] text-white font-bold text-xs shadow-sm transition" type="button">
+                    Запросить просмотр
+                  </button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Right: Sticky Move-in Calculator (4 columns) -->
+<aside class="lg:col-span-4 sticky top-28">
+<div class="bg-white rounded-2xl p-6 border border-border-subtle shadow-md">
+<!-- Widget Header -->
+<div class="flex items-center justify-between pb-3 border-b border-border-subtle/60">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">calculate</span>
+</div>
+<span class="font-heading text-base font-bold text-primary">Калькулятор первого платежа</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified text-[10px] font-bold uppercase tracking-wider">
+                100% Прозрачно
+              </span>
+</div>
+<p class="text-xs text-text-muted mt-3 mb-4 leading-relaxed">
+              Точный расчет суммы для заселения без скрытых комиссий агентов и неожиданных доплат.
+            </p>
+<!-- Selected Object Mini-Card -->
+<div class="p-3 rounded-xl bg-[#FBF9F5] border border-border-subtle/60 mb-5 flex items-center gap-3">
+<img alt="Selected unit bedroom" class="w-14 h-14 rounded-lg object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiiQhffGNwv1uICRz6vrXr-qrqpZqzvY6wLtzdttqKkGCr6oE3ydrYwjRO6NltO9QxuEQCduMhVeDfUIH3AvXNO2eoPl6Scuff6xvc_FXleT0Gri-AF5BF53ecwZAoVPnfCh9KTB-wCvUg4V-4cz6SbTX4O_cs3L39mzkDjTr0K5ehFaGarA5phAdjy7TCw14z98yDQcWS49SDoN4O4oQLc7nHa_BH5mAic389rDU1yMdTRmYe6jp1"/>
+<div class="min-w-0">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-wider block">Выбранный объект</span>
+<div class="font-heading text-xs font-bold text-primary truncate">The Title Legendary #F-302</div>
+<div class="text-[11px] text-text-muted mt-0.5">6 месяцев • Ноябрь — Апрель</div>
+</div>
+</div>
+<!-- Financial Breakdown Table -->
+<div class="space-y-3 pb-4 text-xs">
+<div class="flex items-center justify-between">
+<span class="text-on-surface">Арендная плата (1-й месяц)</span>
+<span class="font-bold text-primary font-mono text-sm">฿85,000</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-on-surface block">Возвратный гарантийный депозит</span>
+<span class="text-[11px] text-status-verified flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[13px]">security</span>
+                    Эскроу Kasikorn (1 мес)
+                  </span>
+</div>
+<span class="font-bold text-primary font-mono text-sm">฿85,000</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-on-surface block">Сервисный сбор myUNO</span>
+<span class="text-[11px] text-text-muted">Договор, TM.30, сопровождение</span>
+</div>
+<span class="font-bold text-status-verified font-mono text-sm">฿0 (Бесплатно)</span>
+</div>
+<div class="flex items-start justify-between pt-1 border-t border-border-subtle/50">
+<div>
+<span class="text-text-muted block">Коммунальные (по счетчикам)</span>
+<span class="text-[11px] text-text-muted">Вода ~฿400 • PEA свет ~฿3,500/мес</span>
+</div>
+<span class="text-text-muted font-medium">По факту</span>
+</div>
+</div>
+<!-- Total Banner -->
+<div class="p-4 rounded-xl bg-surface-sand/80 border border-secondary/15 mb-5">
+<div class="flex items-baseline justify-between mb-1">
+<span class="text-xs font-bold text-primary uppercase tracking-wide">Итого при заселении:</span>
+<span class="font-heading text-xl font-bold text-primary font-mono">฿170,000 THB</span>
+</div>
+<p class="text-[11px] text-text-muted leading-tight mt-1">
+                Включает 1 месяц проживания и <span class="text-primary font-semibold">100% возвратный депозит (฿85k)</span>, возвращаемый в день выезда.
+              </p>
+</div>
+<!-- Primary CTAs -->
+<div class="space-y-2.5">
+<button class="w-full py-3 px-4 rounded-xl bg-primary hover:bg-[#17372f] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">assignment</span>
+<span>Подать заявку на контракт</span>
+</button>
+<a class="w-full py-2.5 px-4 rounded-xl bg-surface-sand hover:bg-surface-sand-subtle text-primary font-bold text-xs transition flex items-center justify-center gap-2 border border-border-subtle" href="https://wa.me/" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px] text-status-verified">chat</span>
+<span>Консультация в WhatsApp</span>
+</a>
+</div>
+<!-- Trust Badge -->
+<div class="mt-4 pt-3 border-t border-border-subtle/50 flex items-center justify-center gap-1.5 text-[11px] text-text-muted font-medium">
+<span class="material-symbols-outlined text-[15px] text-secondary">verified</span>
+<span>Лицензия агентства DBD #0835565011942</span>
+</div>
+</div>
+</aside>
+</div>
+</section>
+<!-- 5. Phuket Long-Term Living FAQ -->
+<section class="max-w-4xl mx-auto px-6 pt-20">
+<div class="text-center mb-10">
+<span class="text-xs font-bold uppercase tracking-widest text-secondary font-heading">Прозрачность и визы</span>
+<h2 class="font-heading text-2xl md:text-3xl font-bold text-primary mt-1">Частые вопросы о долгосрочной аренде на Пхукете</h2>
+</div>
+<div class="space-y-3">
+<!-- FAQ 1 -->
+<details class="group bg-white rounded-2xl p-5 border border-border-subtle shadow-sm transition-all" open="">
+<summary class="flex items-center justify-between font-heading text-base font-bold text-primary cursor-pointer select-none">
+<span>Как оформляется регистрация TM.30 для тайской визы?</span>
+<span class="material-symbols-outlined text-secondary transition-transform group-open:rotate-180 text-[20px]">expand_more</span>
+</summary>
+<div class="mt-3 text-sm text-text-muted leading-relaxed border-t border-border-subtle/50 pt-3">
+            В течение 24 часов после заселения юридический отдел myUNO загружает данные вашего паспорта в официальный портал Иммиграционного Бюро Таиланда. Готовую квитанцию с QR-кодом TM.30 мы высылаем вам в PDF для подачи в иммиграционный офис на продление туристической визы или регистрацию Non-Immigrant/DTV.
+          </div>
+</details>
+<!-- FAQ 2 -->
+<details class="group bg-white rounded-2xl p-5 border border-border-subtle shadow-sm transition-all">
+<summary class="flex items-center justify-between font-heading text-base font-bold text-primary cursor-pointer select-none">
+<span>Как происходит возврат депозита?</span>
+<span class="material-symbols-outlined text-secondary transition-transform group-open:rotate-180 text-[20px]">expand_more</span>
+</summary>
+<div class="mt-3 text-sm text-text-muted leading-relaxed border-t border-border-subtle/50 pt-3">
+            В день выезда наш инспектор проводит совместный чек-аут по чек-листу и фиксирует показатели электросчетчика PEA. Сумма депозита за вычетом фактических финальных квитанций перечисляется с эскроу-счета на ваш тайский или международный счет (включая USDT) в течение 2-4 часов.
+          </div>
+</details>
+<!-- FAQ 3 -->
+<details class="group bg-white rounded-2xl p-5 border border-border-subtle shadow-sm transition-all">
+<summary class="flex items-center justify-between font-heading text-base font-bold text-primary cursor-pointer select-none">
+<span>Можно ли забронировать объект удаленно до прилета на остров?</span>
+<span class="material-symbols-outlined text-secondary transition-transform group-open:rotate-180 text-[20px]">expand_more</span>
+</summary>
+<div class="mt-3 text-sm text-text-muted leading-relaxed border-t border-border-subtle/50 pt-3">
+            Да. Мы проводим детальный живой видео-тур по WhatsApp/Telegram, проверяем скорость Wi-Fi через speedtest и подписываем электронный договор через DocuSign с бронированием даты заезда.
+          </div>
+</details>
+</div>
+</section>
+</main>
+<!-- 6. Full Footer -->
+<footer class="w-full bg-[#F4F0E8] border-t border-border-subtle">
+<div class="max-w-7xl mx-auto px-6 py-14">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-border-subtle/80">
+<!-- Company Info -->
+<div class="md:col-span-1">
+<div class="flex items-baseline gap-1.5 mb-3">
+<span class="font-heading text-xl font-bold text-primary">myUNO</span>
+<span class="text-xs uppercase font-bold tracking-widest text-secondary font-heading">Phuket</span>
+</div>
+<p class="text-xs text-text-muted leading-relaxed">
+            Лицензированное агентство недвижимости и премиального сервиса на Пхукете. Долгосрочная аренда, покупка и доверительное управление объектами.
+          </p>
+</div>
+<!-- Links: Real Estate -->
+<div>
+<h4 class="font-heading text-sm font-bold text-primary mb-3">Недвижимость</h4>
+<ul class="space-y-2 text-xs text-text-muted">
+<li><a class="hover:text-primary transition-colors" href="#">Долгосрочная аренда</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Купить виллу или апартаменты</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Каталог комплексов</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Сдать виллу через myUNO</a></li>
+</ul>
+</div>
+<!-- Links: Services & Legal -->
+<div>
+<h4 class="font-heading text-sm font-bold text-primary mb-3">Сервисы &amp; Инфо</h4>
+<ul class="space-y-2 text-xs text-text-muted">
+<li><a class="hover:text-primary transition-colors" href="#">Консьерж-сервис и трансферы</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Партнерская сеть myUNO</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Юридическая экспертиза и TM.30</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Правила и налоги Таиланда</a></li>
+</ul>
+</div>
+<!-- Office & Contacts -->
+<div>
+<h4 class="font-heading text-sm font-bold text-primary mb-3">Офис на Пхукете</h4>
+<address class="not-italic text-xs text-text-muted space-y-1.5 leading-relaxed">
+<p>Boat Avenue, Cherngtalay, Thalang, Phuket 83110</p>
+<p class="font-semibold text-primary">+66 (0) 76 000 000</p>
+<p><a class="hover:underline text-primary" href="mailto:welcome@myuno.estate">welcome@myuno.estate</a></p>
+</address>
+</div>
+</div>
+<!-- Bottom Bar -->
+<div class="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-text-muted gap-4">
+<p>© 2024 myUNO Real Estate &amp; Services Co., Ltd. Все права защищены.</p>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">Политика конфиденциальности</a>
+<a class="hover:text-primary transition-colors" href="#">Условия обслуживания</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -494,7 +496,7 @@ export function MCDashboardClient({
               if (
                 window.confirm(
                   fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
+                    amount: booking.totalThb.toLocaleString(UI_LOCALE),
                   })
                 )
               ) {
@@ -577,7 +579,7 @@ export function MCDashboardClient({
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       {/* MC workspace shell */}
       <section className="bg-surface-paper border-b border-border-line">
         <div className="max-w-[1600px] mx-auto px-16 lg:px-24 py-16">
@@ -729,11 +731,11 @@ export function MCDashboardClient({
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
               <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
-                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="stitch-panel p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
                     <div>
                       <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
-                      <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
+                      <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <Link
                       href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
@@ -757,9 +759,9 @@ export function MCDashboardClient({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="stitch-panel p-20">
                   <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.attention.title']}</p>
-                  <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
+                  <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
                   <div className="mt-16 space-y-8">
                     {[
                       [labels['mc.attention.requests'], requestedBookings, 'bookings' as const],
@@ -781,13 +783,13 @@ export function MCDashboardClient({
                 </div>
               </div>
 
-              <div className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20">
+              <div className="stitch-panel mt-16 p-20">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
                       {labels['mc.workspace.health']}
                     </p>
-                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                    <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">
                       {labels['mc.workspace.health_title']}
                     </h2>
                   </div>
@@ -823,7 +825,7 @@ export function MCDashboardClient({
                 <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
                   {labels['mc.workspace.reservations']}
                 </p>
-                <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">
                   {labels['mc.bookings.title']}
                 </h2>
               </div>
@@ -897,7 +899,7 @@ export function MCDashboardClient({
                             <LocalDate value={booking.endDate} />
                           </td>
                           <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
+                            ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
                           </td>
                           <td className="p-16">
                             <span
@@ -910,7 +912,7 @@ export function MCDashboardClient({
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                                {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                               </p>
                             ) : null}
                           </td>
@@ -928,7 +930,7 @@ export function MCDashboardClient({
         {/* Tickets Tab */}
         {activeTab === 'tickets' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
+            <h2 className="font-display text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.tickets.title']}
             </h2>
             {ticketError && (
@@ -938,14 +940,14 @@ export function MCDashboardClient({
             )}
             <div className="space-y-16">
               {tickets.length === 0 ? (
-                <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
+                <div className="stitch-panel p-24 text-center">
                   <p className="text-text-secondary">{labels['mc.tickets.empty']}</p>
                 </div>
               ) : (
                 tickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    className="bg-surface-paper border border-border-line rounded-lg p-20 hover:shadow-card transition"
+                    className="stitch-panel p-20 hover:shadow-card transition"
                   >
                     <div className="flex justify-between items-start mb-12">
                       <div>
@@ -958,7 +960,7 @@ export function MCDashboardClient({
                             {statusLabel(ticket.status)}
                           </span>
                         </div>
-                        <h3 className="text-heading-3 font-bold text-text-ink mt-8">
+                        <h3 className="font-display text-heading-3 font-bold text-text-ink mt-8">
                           {ticket.title}
                         </h3>
                       </div>
@@ -1006,10 +1008,10 @@ export function MCDashboardClient({
         {/* Calendar Tab — month heat strip per unit */}
         {activeTab === 'service_orders' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
+            <h2 className="font-display text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.service_orders.title']}
             </h2>
-            <div className="bg-surface-paper border border-border-line rounded-lg p-20 mb-20">
+            <div className="stitch-panel p-20 mb-20">
               <p className="text-body text-text-secondary mb-12">
                 {labels['mc.service_orders.order_hint']}
               </p>
@@ -1049,18 +1051,18 @@ export function MCDashboardClient({
             )}
             <div className="space-y-16">
               {serviceOrders.length === 0 ? (
-                <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
+                <div className="stitch-panel p-24 text-center">
                   <p className="text-text-secondary">{labels['mc.service_orders.empty']}</p>
                 </div>
               ) : (
                 serviceOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-surface-paper border border-border-line rounded-lg p-20"
+                    className="stitch-panel p-20"
                   >
                     <div className="flex items-start justify-between gap-12">
                       <div>
-                        <h3 className="text-heading-3 font-bold text-text-ink">
+                        <h3 className="font-display text-heading-3 font-bold text-text-ink">
                           {order.service?.title || labels['mc.service_orders.unknown_service']}
                         </h3>
                         <p className="text-small text-text-secondary mt-4">
@@ -1070,8 +1072,8 @@ export function MCDashboardClient({
                             : labels['mc.service_orders.unknown_orderer']}
                         </p>
                         <p className="text-small text-text-secondary mt-4">
-                          {new Date(order.scheduledStart).toLocaleString()} · ฿
-                          {order.totalThb.toLocaleString()}
+                          {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+                          {order.totalThb.toLocaleString(UI_LOCALE)}
                         </p>
                         {order.noteToProvider && (
                           <p className="text-small text-text-secondary mt-4">
@@ -1112,7 +1114,7 @@ export function MCDashboardClient({
                               if (
                                 window.confirm(
                                   fill(labels['mc.service_orders.confirm_cash'], {
-                                    amount: order.totalThb.toLocaleString(),
+                                    amount: order.totalThb.toLocaleString(UI_LOCALE),
                                   })
                                 )
                               ) {
@@ -1152,9 +1154,9 @@ export function MCDashboardClient({
 
         {/* Reports Tab */}
         {activeTab === 'reports' && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-16 mb-20">
-              <h2 className="text-heading-2 font-bold text-text-ink">
+              <h2 className="font-display text-heading-2 font-bold text-text-ink">
                 {labels['mc.reports.title']}
               </h2>
               <div className="flex flex-wrap items-end gap-12">
@@ -1206,7 +1208,7 @@ export function MCDashboardClient({
                     label={labels['mc.reports.fees']}
                   />
                 </div>
-                <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                <h3 className="font-display text-heading-3 font-semibold text-text-ink mb-16">
                   {labels['mc.reports.by_unit']}
                 </h3>
                 <HBarStack

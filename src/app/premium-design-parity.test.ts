@@ -59,24 +59,22 @@ describe('premium design-system surface parity', () => {
     expect(readModel).toContain('listPublicCommercialHomes(prisma)');
     expect(readModel).toContain('listPublicMarketplaceServices(prisma, locale');
     expect(home).not.toContain('id="start-heading"');
-    const discovery = source('src/components/DiscoverySearch.tsx');
-    // Consumer search is deliberately Stay / Monthly / Buy; supplier intents live beside it on the homepage.
-    expect(discovery).toContain("{ id: 'stay', title: labels.stay }");
-    expect(discovery).toContain("{ id: 'monthly', title: labels.monthly }");
-    expect(discovery).toContain("{ id: 'buy', title: labels.buy }");
+    const discovery = source('src/components/home/HomeFinder.tsx');
+    // Consumer search is deliberately Holiday / Long-term / Buy; owner goals live beside it on the homepage.
+    expect(source('src/components/home/home-intent.ts')).toContain("['stay', 'monthly', 'buy']");
     expect(discovery).toContain("router.push('/homes?' + params.toString())");
     expect(home).toContain('href="/sell"');
     expect(home).toContain('href="/rent-out"');
     expect(home).toContain('href="/manage"');
-    expect(home).toContain("landing.units.title");
-    expect(home).toContain("landing.areas.title");
-    expect(home).toContain('GLOBAL_DESKS.map');
+    expect(home).toContain("landing.hp.offers.kicker");
+    expect(home).toContain("landing.hp.areas.title");
+    expect(home).toContain('href="/desks"');
     expect(home).not.toContain('bg-white');
   });
 
   it('keeps the homepage on the canonical typography, width and colour system', () => {
     const home = source('src/app/(public)/page.tsx');
-    const search = source('src/components/DiscoverySearch.tsx');
+    const search = source('src/components/home/HomeFinder.tsx');
     const footer = source('src/components/Footer.tsx');
     const globals = source('src/app/globals.css');
     const tailwind = source('tailwind.config.ts');
@@ -100,7 +98,7 @@ describe('premium design-system surface parity', () => {
     const rentOut = source('src/app/(public)/rent-out/page.tsx');
     const mc = source('src/app/mc/client.tsx');
 
-    expect(home).toContain("landing.vacation.title");
+    expect(home).toContain("landing.hp.owners.rent.title");
     expect(home).toContain('href="/rent-out"');
     expect(rentOut).toContain('copy.goalShort');
     expect(rentOut).toContain('copy.howEligibility');
@@ -126,7 +124,6 @@ describe('premium design-system surface parity', () => {
     expect(map).toContain('onBoundsChange');
     expect(map).toContain('tile.openstreetmap.org');
     const middleware = source('src/middleware.ts');
-    // MapLibre is bundled; no third-party script or style origin is allowed.
     expect(middleware).not.toContain('https://unpkg.com');
     expect(middleware).toContain('https://tile.openstreetmap.org');
     expect(middleware).toContain("worker-src 'self' blob:");

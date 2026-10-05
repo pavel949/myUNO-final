@@ -26,7 +26,7 @@ export default function ComplianceProjectFilter({
       <select
         name="projectId"
         defaultValue={activeProjectId}
-        className="px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink"
+        className="px-12 py-8 border border-border-line rounded-lg bg-surface-paper shadow-card text-text-ink"
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
       >
         <option value="">{labels['admin.compliance.all_projects']}</option>

@@ -70,11 +70,13 @@ describe('Guest PII encryption (doc 02 §3.2 🔒, doc 12)', () => {
     const raw = await db.bookingGuest.findUnique({ where: { id: guest.id } });
     expect(raw!.fullName).not.toContain('Anna');
     expect(raw!.passportNumber).not.toContain('AB1234567');
-    expect(raw!.dateOfBirth).not.toContain('1990');
+    expect(raw!.dateOfBirth).not.toBe('1990-07-01');
+    expect(isEncrypted(raw!.dateOfBirth!)).toBe(true);
     // Nationality stays queryable plaintext (TM30 SQL predicate)
     expect(raw!.nationality).toBe('RU');
 
     expect(safeDecrypt(raw!.fullName)).toBe('Anna Sokolova');
+    expect(safeDecrypt(raw!.dateOfBirth)).toBe('1990-07-01');
     expect(decryptPassportNumber(raw!.passportNumber)).toBe('AB1234567');
   });
 });

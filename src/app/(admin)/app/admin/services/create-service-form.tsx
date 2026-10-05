@@ -91,7 +91,7 @@ export default function CreateServiceForm({
 
   if (providers.length === 0) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-8">
           {labels['admin.services.create_title']}
         </h2>
@@ -103,7 +103,7 @@ export default function CreateServiceForm({
   return (
     <form
       onSubmit={submit}
-      className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 flex flex-col gap-12"
+      className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24 flex flex-col gap-12"
     >
       <div>
         <h2 className="text-heading-3 font-bold text-text-ink mb-4">

@@ -13,9 +13,20 @@ import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 interface Unit {
   id: string;
   name: string;
+  marketingTitle?: string | null;
   images?: string[];
   amenityKeys?: string[];
-  description?: string;
+  description?: string | null;
+  floor?: string | null;
+  sizeSqm?: number | null;
+  usableAreaSqm?: number | null;
+  grossAreaSqm?: number | null;
+  outdoorAreaSqm?: number | null;
+  plotAreaSqm?: number | null;
+  unitFeatures?: string[];
+  views?: string[];
+  viewLabels?: string[];
+  featureLabels?: string[];
   baseNightlyThb: number;
   maxGuests?: number;
   minNights?: number;
@@ -55,12 +66,13 @@ export interface UnitDetailLabels {
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
+  sizeUnit: string;
+  floor: string;
   notChargedYet: string;
   fewerGuests: string;
   moreGuests: string;
   checkIn: string;
   checkOut: string;
-  defaultDescription: string;
   maxGuests: string;
   minStay: string;
   nights: string;
@@ -209,7 +221,7 @@ export default function UnitDetailClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <p className="text-body text-text-secondary text-center">{labels.loading}</p>
       </div>
     );
@@ -217,7 +229,7 @@ export default function UnitDetailClient({
 
   if (!unit) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <div className="max-w-4xl mx-auto">
           <div className="bg-state-error/10 border border-state-error rounded-lg p-16">
             <p className="text-body text-state-error">{error || labels.notFound}</p>
@@ -233,9 +245,9 @@ export default function UnitDetailClient({
   }
 
   return (
-    <div className="min-h-screen bg-surface-ivory p-16 md:p-32 pb-96 lg:pb-32">
+    <div className="stitch-workspace p-16 pb-96 md:p-32 lg:pb-32">
       <div className="mx-auto max-w-content">
-        <p className="mb-16">
+        <p className="mb-20 inline-flex rounded-full border border-border-line bg-surface-paper px-16 py-8 shadow-card">
           <Link
             href={backToSearch}
             className="text-brand-andaman font-semibold hover:underline"
@@ -243,7 +255,7 @@ export default function UnitDetailClient({
             {labels.backToResults}
           </Link>
         </p>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-40">
+        <div className="grid grid-cols-1 gap-32 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-48">
           <div className="lg:col-span-2">
             <UnitPhotoMosaic
               images={unit.images ?? []}
@@ -256,10 +268,15 @@ export default function UnitDetailClient({
                 {labels.representativeMedia}
               </p>
             ) : null}
-            <div className="mt-32">
-              <h1 className="font-display text-display font-semibold text-text-ink mb-4">
+            <div className="stitch-panel mt-32 p-20 md:p-32">
+              <h1 className="font-display text-display font-semibold tracking-[-0.02em] text-brand-deep mb-4">
                 {unit.name}
               </h1>
+              {unit.marketingTitle ? (
+                <p className="mb-12 max-w-3xl font-display text-heading-3 font-semibold text-brand-andaman">
+                  {unit.marketingTitle}
+                </p>
+              ) : null}
               {unit.project?.name && (
                 <p className="text-body text-text-stone mb-20">
                   {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
@@ -267,7 +284,7 @@ export default function UnitDetailClient({
                   <span className="text-text-stone-2">· {labels.onMyUno}</span>
                 </p>
               )}
-              <div className="flex flex-wrap gap-12 mb-32">
+              <div className="flex flex-wrap gap-12 mb-20">
                 <Chip variant="neutral">
                   {fill(labels.guestsCount, { count: unit.maxGuests || 2 })}
                 </Chip>
@@ -279,17 +296,29 @@ export default function UnitDetailClient({
                 <Chip variant="neutral">
                   {fill(labels.minNightsCount, { count: unit.minNights || 1 })}
                 </Chip>
-                {unit.amenityKeys?.slice(0, 3).map((key) => (
-                  <Chip key={key} variant="neutral">
-                    {labels.amenityLabels[key] || key}
+                {(unit.grossAreaSqm || unit.sizeSqm) ? (
+                  <Chip variant="neutral">
+                    {String(unit.grossAreaSqm || unit.sizeSqm)} {labels.sizeUnit}
                   </Chip>
-                ))}
+                ) : null}
+                {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}
               </div>
-              <p className="text-body text-text-ink mb-32 max-w-[620px]">
-                {unit.description || labels.defaultDescription}
-              </p>
+              {(unit.viewLabels?.length || unit.featureLabels?.length) ? (
+                <div className="mb-24 flex flex-wrap gap-8">
+                  {[...(unit.viewLabels ?? []), ...(unit.featureLabels ?? [])].map((fact) => (
+                    <span key={fact} className="rounded-full border border-brand-sun/40 bg-surface-sand px-12 py-8 text-small text-text-ink">
+                      {fact}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {unit.description ? (
+                <p className="text-body text-text-ink mb-32 max-w-[720px] leading-relaxed">
+                  {unit.description}
+                </p>
+              ) : null}
               {unit.amenityKeys && unit.amenityKeys.length > 0 && (
-                <div className="mb-32">
+                <div className="stitch-panel-soft mb-32 p-20">
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
                     {labels.amenitiesTitle}
                   </p>
@@ -318,7 +347,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-96 rounded-md border border-border-line bg-surface-paper p-24 shadow-card">
+            <div className="stitch-panel sticky top-96 p-24 shadow-float">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote
@@ -343,7 +372,7 @@ export default function UnitDetailClient({
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>
               ) : (
-                <div className="border border-border-line rounded-sm mb-20">
+                <div className="mb-20 overflow-hidden rounded-md border border-border-line bg-surface-sand/60">
                   <div className="grid grid-cols-2">
                     <div className="p-12 border-r border-border-line">
                       <p className="text-small text-text-stone m-0 mb-4">{labels.checkIn}</p>
@@ -424,7 +453,7 @@ export default function UnitDetailClient({
         </div>
       </div>
       {breakdown && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface-paper border-t border-border-line px-16 py-12 flex items-center justify-between gap-16">
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-16 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur-xl lg:hidden">
           <MoneyAmount
             satang={Math.round((breakdown.total || 0) * 100)}
             className="text-title font-semibold"

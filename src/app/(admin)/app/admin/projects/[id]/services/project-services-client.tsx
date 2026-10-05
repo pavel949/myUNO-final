@@ -1,6 +1,8 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -70,7 +72,7 @@ export default function ProjectServicesClient({
             <h2 className="font-semibold text-text-ink">{service.title}</h2>
             <p className="mt-4 text-small text-text-secondary">{service.providerName} · {service.categoryKey.replace(/_/g, ' ')}</p>
             <p className="mt-8 text-small text-text-secondary">
-              {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? 'quote' : `฿${(service.basePriceThb / 100).toLocaleString()}`} · {service.baseLeadTimeHours}h
+              {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? 'quote' : `฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`} · {service.baseLeadTimeHours}h
             </p>
             {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-brand-sand px-8 py-4 text-small">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
           </div>

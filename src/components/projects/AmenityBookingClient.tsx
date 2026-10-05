@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 type Reservation = {
@@ -123,7 +125,7 @@ export default function AmenityBookingClient({
       <h2 className="font-semibold text-text-ink">{labels['amenity_booking.upcoming']}</h2>
       <div className="mt-12 space-y-12">
         {reservations.map(row => <article key={row.id} className="rounded-lg bg-surface-ivory p-12">
-          <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString()}</p>
+          <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}</p>
           <p className="mt-8 text-small text-text-secondary">{labels['amenity_booking.party_count'].replace('{count}', String(row.partySize))} · {row.status}</p>
           <button type="button" disabled={busy} onClick={()=>cancel(row.id)} className="mt-8 text-small font-semibold text-state-error">{labels['amenity_booking.cancel']}</button>
         </article>)}

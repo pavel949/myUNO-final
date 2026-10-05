@@ -364,7 +364,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   );
 
   return (
-    <div className="min-h-screen bg-surface-ivory">
+    <div className="stitch-workspace">
       <div className="max-w-6xl mx-auto px-24 py-40">
         {/* Header */}
         <div className="mb-40">
@@ -405,7 +405,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Summary tiles */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.summary_title']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20">
@@ -450,7 +450,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Breakdown — every figure opens onto the lines behind it */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-8">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-8">
             {labels['owner.statement.breakdown_title']}
           </h2>
           <p className="text-body text-text-secondary mb-16">
@@ -565,10 +565,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* The split — owner share, myUNO share, and the cap when it bound */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.split_title']}
           </h2>
-          <div className="bg-surface-paper border border-border-line rounded-md p-24 space-y-12">
+          <div className="stitch-panel p-24 space-y-12">
             <div className="flex justify-between gap-16">
               <span className="text-body text-text-secondary">
                 {labels['owner.statement.your_share']}
@@ -600,10 +600,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Sign-off */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.signoff_title']}
           </h2>
-          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+          <div className="stitch-panel p-24">
             <div className="space-y-12 mb-16">
               <div className="flex justify-between gap-16">
                 <span className="text-body text-text-secondary">
@@ -675,10 +675,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Payout */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.payout_title']}
           </h2>
-          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+          <div className="stitch-panel p-24">
             {statement.payout ? (
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-12 text-body">
                 <div>
@@ -713,10 +713,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Question thread */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.question_title']}
           </h2>
-          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+          <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary mb-16">
               {labels['owner.statement.question_hint']}
             </p>
@@ -772,10 +772,10 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
 
         {/* Dispute */}
         <div className="mb-40">
-          <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+          <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
             {labels['owner.statement.dispute_title']}
           </h2>
-          <div className="bg-surface-paper border border-border-line rounded-md p-24">
+          <div className="stitch-panel p-24">
             {disputeSent && !disputeOpen && (
               <p className="text-body text-state-success mb-16">
                 {labels['owner.statement.dispute_sent']}

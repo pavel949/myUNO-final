@@ -18,10 +18,15 @@ describe('connected public homepage', () => {
     expect(landing).toContain('<ProjectCard');
     expect(landing).toContain('<ServiceCard');
   });
-  it('provides connected entry points to the five primary intents and discovery', () => {
-    for (const route of ['/search', '/projects', '/homes?', '/owners', '/partners', '/sell', '/rent-out', '/manage', '/services', '/areas', '/property/onboard', '/app', '/trips', '/help', '/desks', '/trust', '/developers', '/management-companies', '/providers']) {
+  it('provides connected entry points to primary discovery and owner task paths', () => {
+    for (const route of ['/search', '/projects', '/homes?', '/partners', '/sell', '/rent-out', '/manage', '/services', '/areas', '/property/onboard', '/app', '/trips', '/help', '/desks', '/trust', '/developers', '/management-companies', '/providers']) {
       expect(landing + navbar + discovery + rail + intentState).toContain(route);
     }
+    expect(navbar).toContain('labels.owners');
+    expect(navbar).toContain("href: '/sell'");
+    expect(navbar).toContain("href: '/rent-out'");
+    expect(navbar).toContain("href: '/property/onboard?kind=home'");
+    expect(navbar).toContain("href: '/manage'");
   });
   it('keeps consumer discovery focused on stay monthly and buy', () => {
     expect(discovery).toContain("router.push('/search?' + params.toString())");

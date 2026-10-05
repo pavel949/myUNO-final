@@ -61,3 +61,51 @@ body {
 .font-tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * Stitch / Andaman Sanctuary surface language.
+ * These are compositional primitives only: domain components keep ownership
+ * of data, actions, RBAC and state. The classes let public, portal and ops
+ * surfaces share one visual grammar without duplicating bespoke CSS.
+ */
+@layer components {
+  .stitch-workspace {
+    @apply min-h-screen bg-surface-mint text-text-ink;
+  }
+
+  .stitch-page {
+    @apply mx-auto w-full max-w-7xl px-20 py-32 md:px-32 md:py-40;
+  }
+
+  .stitch-hero {
+    @apply rounded-2xl border border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint p-24 shadow-card md:p-32;
+  }
+
+  .stitch-hero-dark {
+    @apply rounded-2xl border border-brand-andaman/30 bg-brand-deep p-24 text-white shadow-float md:p-32;
+  }
+
+  .stitch-panel {
+    @apply rounded-2xl border border-border-line bg-surface-paper shadow-card;
+  }
+
+  .stitch-panel-soft {
+    @apply rounded-2xl border border-border-line bg-surface-ivory/80;
+  }
+
+  .stitch-kicker {
+    @apply text-kicker font-semibold uppercase tracking-[0.16em] text-brand-andaman;
+  }
+
+  .stitch-segmented {
+    @apply inline-flex items-center gap-4 rounded-xl border border-border-line bg-surface-sand p-4;
+  }
+
+  .stitch-control {
+    @apply h-48 rounded-xl border border-border-line bg-surface-paper px-12 text-body text-text-ink shadow-sm outline-none transition focus:border-brand-andaman;
+  }
+
+  .stitch-list-row {
+    @apply rounded-xl border border-transparent px-12 py-14 transition hover:border-border-line hover:bg-surface-ivory;
+  }
+}

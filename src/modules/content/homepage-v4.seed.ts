@@ -150,4 +150,5 @@ export const HOMEPAGE_V4_KEYS = [
   { key: 'homes.detail.responsibility', namespace: 'homes', description: 'Commercial home detail responsibility', en: 'Managed by {org}', ru: 'Под управлением {org}', th: 'บริหารโดย {org}', zh: '由 {org} 管理', status: 'needs_review' as const },
   { key: 'homes.detail.per_month', namespace: 'homes', description: 'Commercial home detail per month unit', en: 'per month', ru: 'в месяц', th: 'ต่อเดือน', zh: '每月', status: 'needs_review' as const },
   { key: 'homes.detail.months_unit', namespace: 'homes', description: 'Commercial home detail months unit', en: '{count} months', ru: '{count} мес.', th: '{count} เดือน', zh: '{count} 个月', status: 'needs_review' as const },
+  { key: 'admin.content.homepage_placements', namespace: 'admin', description: 'Content admin link to homepage placement editor', en: 'Homepage placements', ru: 'Выкладка главной', th: 'การจัดวางหน้าแรก', zh: '首页编排', status: 'needs_review' as const },
 ];

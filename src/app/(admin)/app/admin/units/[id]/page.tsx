@@ -166,7 +166,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         {labels['admin.gallery.manage']} →
       </Link>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">
           <div>
             <h2 className="text-heading-3 font-semibold text-text-ink">

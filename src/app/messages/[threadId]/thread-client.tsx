@@ -127,7 +127,7 @@ export default function ThreadClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-32">
+      <main className="min-h-screen bg-surface-mint p-32">
         <p className="text-center text-body text-text-secondary">
           {labels['messages.thread.loading']}
         </p>
@@ -137,7 +137,7 @@ export default function ThreadClient({
 
   if (!thread) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-32">
+      <main className="min-h-screen bg-surface-mint p-32">
         <div className="mx-auto max-w-2xl">
           <p className="mb-16 text-body text-state-error">
             {error || labels['messages.thread.not_found']}

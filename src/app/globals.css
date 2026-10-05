@@ -106,6 +106,6 @@ body {
   }
 
   .stitch-list-row {
-    @apply rounded-xl border border-transparent px-12 py-14 transition hover:border-border-line hover:bg-surface-ivory;
+    @apply rounded-xl border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
   }
 }

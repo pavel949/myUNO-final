@@ -64,7 +64,7 @@ export default function ClaimsAdminClient({
 
   if (claims.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+      <div className="p-24 bg-surface-paper border border-border-line rounded-2xl shadow-card text-center">
         <p className="text-body text-text-secondary">{labels['admin.claims.empty']}</p>
       </div>
     );
@@ -88,7 +88,7 @@ export default function ClaimsAdminClient({
             claim.preauthAmountThb !== null && claim.claimedAmountThb > claim.preauthAmountThb;
 
           return (
-            <li key={claim.id} className="p-16 bg-surface-paper border border-border-line rounded-lg">
+            <li key={claim.id} className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card">
               <div className="flex flex-wrap gap-16 mb-12 text-small text-text-secondary">
                 <span>{`${labels['admin.claims.guest']}: ${claim.guestName}`}</span>
                 <span>{`${labels['admin.claims.unit']}: ${claim.unitName}`}</span>

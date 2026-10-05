@@ -61,19 +61,19 @@ export default function NewTicketClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="max-w-xl mx-auto">
         <p className="mb-8">
           <Link href="/tickets" className="text-brand-andaman font-semibold hover:underline">
             {labels['tickets.new.back']}
           </Link>
         </p>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
+        <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg mb-24">
           {labels['tickets.new.title']}
         </h1>
 
         {!projectId ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
             <p className="text-body text-text-secondary">
               {labels['tickets.new.missing_context']}
             </p>
@@ -81,7 +81,7 @@ export default function NewTicketClient({
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-16"
+            className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 flex flex-col gap-16"
           >
             <div className="flex flex-col gap-8">
               <p className="text-small text-text-stone">{labels['tickets.new.category']}</p>

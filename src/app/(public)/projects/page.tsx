@@ -42,7 +42,7 @@ export default async function ProjectsHubPage() {
 
   return (
     <main className="stitch-workspace">
-      <section className="mx-auto max-w-7xl px-20 pt-32 md:px-32 md:pt-48">
+      <section className="mx-auto max-w-content px-20 pt-32 md:px-32 md:pt-48">
         <div className="stitch-hero-dark">
           <p className="text-kicker uppercase tracking-[0.16em] text-white/70">{labels['projects.hub.kicker']}</p>
           <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-white">{labels['projects.hub.title']}</h1>
@@ -50,10 +50,10 @@ export default async function ProjectsHubPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-20 py-40 md:px-32 md:py-56">
+      <section className="mx-auto max-w-content px-20 py-40 md:px-32 md:py-56">
         {projects.length === 0 ? (
           <div className="text-center py-64">
-            <p className="text-heading-2 font-bold text-text-ink mb-12">
+            <p className="mb-12 font-display text-heading-2 font-semibold text-text-ink">
               {labels['projects.hub.empty']}
             </p>
             <p className="text-body text-text-secondary mb-32">
@@ -61,7 +61,7 @@ export default async function ProjectsHubPage() {
             </p>
             <Link
               href="/search"
-              className="inline-flex items-center justify-center bg-brand-andaman text-surface-ivory px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
+              className="inline-flex items-center justify-center bg-brand-andaman text-white px-32 py-16 rounded-xl font-semibold hover:bg-brand-deep"
             >
               {labels['projects.hub.search_cta']}
             </Link>

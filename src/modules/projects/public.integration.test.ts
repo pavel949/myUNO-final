@@ -34,14 +34,15 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(projects.map((p) => p.slug)).toEqual(['live-p']);
     });
 
-    it('counts only live units and computes the from-price over them', async () => {
+    it('counts visible units (live plus managed drafts) but computes the from-price only over bookable live units', async () => {
       const project = await createProjectWithMedia({ slug: 'live-p', status: 'live' });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 3000 });
       await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 2500 });
       await createUnit({ projectId: project.id, status: 'draft', baseNightlyThb: 100 });
 
       const [card] = await listPublicProjects();
-      expect(card.liveUnitCount).toBe(2);
+      // The managed draft is publicly visible as inquiry-only inventory, never priced into the from-price.
+      expect(card.liveUnitCount).toBe(3);
       expect(card.fromNightlyThb).toBe(2500);
     });
 

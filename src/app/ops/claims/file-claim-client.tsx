@@ -67,7 +67,7 @@ export default function FileClaimClient({
 
   if (stays.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
+      <div className="p-24 stitch-panel text-center">
         <p className="text-body text-text-secondary">{labels['staff.claims.empty']}</p>
       </div>
     );
@@ -98,7 +98,7 @@ export default function FileClaimClient({
           return (
             <li
               key={stay.bookingId}
-              className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card"
+              className="p-16 stitch-panel"
             >
               <div className="flex flex-wrap gap-16 mb-12 text-small text-text-stone">
                 <span>{`${labels['staff.claims.guest']}: ${stay.guestName}`}</span>

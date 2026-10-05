@@ -98,7 +98,7 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
     return (
       <div
         ref={ref}
-        className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24 lg:grid lg:grid-cols-[1fr_200px] lg:gap-24 lg:items-start"
+        className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24 lg:grid lg:grid-cols-[1fr_200px] lg:gap-24 lg:items-start"
       >
         <div>
           <p className="font-display text-kicker uppercase text-brand-sun m-0 mb-12">

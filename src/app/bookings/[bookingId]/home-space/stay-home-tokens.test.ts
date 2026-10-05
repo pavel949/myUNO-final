@@ -13,8 +13,8 @@ const actions = readFileSync(
 );
 
 describe('in-stay home tokens (Claude Design board 06)', () => {
-  it('sits on ivory and uses a two-column desktop feed', () => {
-    expect(home).toContain('bg-surface-ivory');
+  it('sits on the Stitch workspace surface and uses a two-column desktop feed', () => {
+    expect(home).toContain('stitch-workspace');
     expect(home).toContain('lg:grid-cols-[1fr_320px]');
     expect(home).not.toContain('bg-surface-background');
   });

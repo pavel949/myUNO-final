@@ -8,7 +8,7 @@ const destination = getDestination();
 export const metadata = { title: `Property management in ${destination.name} | myUNO` };
 export default async function ManagePage() {
   const copy = supplierCopy(getRequestLocale());
-  return <main className="min-h-screen bg-surface-ivory">
+  return <main className="stitch-workspace">
     <section className="mx-auto max-w-content px-20 py-56">
       <h1 className="max-w-3xl font-display text-display-xl font-semibold text-text-ink">{copy.managementTitle}</h1>
       <p className="mt-16 max-w-3xl text-body text-text-secondary">{copy.managementBody}</p>

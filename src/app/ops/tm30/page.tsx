@@ -121,7 +121,7 @@ export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps
   const switcherBasePath = '/ops/tm30';
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
           <Link

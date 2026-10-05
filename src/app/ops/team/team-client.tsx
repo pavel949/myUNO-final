@@ -52,7 +52,7 @@ export default function ProjectTeamClient({ projects, labels }: { projects: Proj
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not revoke access'); setLoading(false); }
   };
 
-  return <section className="mt-24 rounded-lg border border-border-line bg-surface-paper p-24">
+  return <section className="mt-24 stitch-panel p-24">
     <label className="block text-small font-semibold text-text-ink" htmlFor="team-project">{labels['ops.team.project']}</label>
     <select id="team-project" value={projectId} onChange={e => setProjectId(e.target.value)}
       className="mt-8 w-full rounded-lg border border-border-line bg-surface-ivory p-12">

@@ -22,6 +22,8 @@ import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { getDestination } from '@/modules/destinations';
 
+const HERO_IMAGE_SIZES = '(max-width: 1080px) 100vw, 1080px';
+
 export const dynamic = 'force-dynamic';
 
 /** Resolve a project content key, returning '' when the key has no copy yet. */
@@ -327,30 +329,41 @@ export default async function ProjectLandingPage({
       />
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint">
-        {project.coverUrl ? (
-          <Image
-            src={project.coverUrl}
-            alt={project.name}
-            fill
-            priority
-            className="absolute inset-0 object-cover opacity-[0.10]"
-          />
-        ) : null}
-        <div className="relative mx-auto max-w-6xl px-24 py-48 md:py-56">
-          {areaLabel ? <p className="stitch-kicker mb-12">{areaLabel}</p> : null}
-          <h1 className="max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-brand-deep">{project.name}</h1>
-          {editorial.headline && <p className="mt-12 max-w-3xl text-body text-text-ink">{editorial.headline}</p>}
-          <p className="mt-8 text-body text-text-secondary">{project.address}</p>
+      <section className="mx-auto max-w-content px-20 pt-24 md:px-32 md:pt-40">
+        <div className="relative isolate overflow-hidden rounded-2xl bg-brand-deep shadow-float">
+          {project.coverUrl ? (
+            <Image
+              src={project.coverUrl}
+              alt={project.name}
+              fill
+              priority
+              sizes={HERO_IMAGE_SIZES}
+              className="absolute inset-0 -z-10 object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+          <div className="flex min-h-[320px] flex-col justify-end p-24 text-white md:min-h-[440px] md:p-40">
+            <div className="flex flex-wrap gap-8">
+              {areaLabel ? (
+                <span className="rounded-full bg-surface-paper/20 px-12 py-4 text-small font-semibold text-surface-paper backdrop-blur">{areaLabel}</span>
+              ) : null}
+              {editorial.eyebrow ? (
+                <span className="rounded-full bg-brand-sun px-12 py-4 text-small font-semibold text-brand-deep">{editorial.eyebrow}</span>
+              ) : null}
+            </div>
+            <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-white md:text-display-hero-lg">{project.name}</h1>
+            {editorial.headline && <p className="mt-12 max-w-3xl text-body text-white/90">{editorial.headline}</p>}
+            <p className="mt-8 text-small text-white/75">{project.address}</p>
+          </div>
         </div>
       </section>
 
       {/* Project-level editorial gallery. Unit galleries remain separate. */}
       {project.galleryUrls.length > 0 ? (
-        <section className="mx-auto max-w-6xl px-24 py-24 md:py-40" aria-label={project.name}>
-          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-2xl border border-border-line bg-surface-paper p-8 shadow-card md:grid-cols-4 md:gap-12">
+        <section className="mx-auto max-w-content px-20 py-24 md:px-32 md:py-40" aria-label={project.name}>
+          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-2xl bg-surface-sand p-8 shadow-card md:grid-cols-4 md:gap-12">
             {project.galleryUrls.slice(0, 5).map((url, index) => (
-              <div key={url + index} className={`relative overflow-hidden bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
+              <div key={url + index} className={`relative overflow-hidden rounded-xl bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
                 <Image src={url} alt={`${project.name} — photo ${index + 1}`} fill sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'} className="object-cover" />
               </div>
             ))}
@@ -364,9 +377,9 @@ export default async function ProjectLandingPage({
       <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
-      {bookableStayCount > 0 && <section id="availability" className="border-y border-border-line bg-surface-paper px-24 py-40">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
+      {bookableStayCount > 0 && <section id="availability" className="px-20 py-40 md:px-32">
+        <div className="mx-auto max-w-content rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card md:p-32">
+          <h2 className="mb-24 font-display text-heading-2 font-semibold text-text-ink">
             {labels['project_page.availability.title']}
           </h2>
           <SearchBar
@@ -383,8 +396,8 @@ export default async function ProjectLandingPage({
       </section>}
 
       {(buyHomeCount > 0 || rentHomeCount > 0) ? (
-        <section id="homes" className="mx-auto max-w-6xl px-24 py-40">
-          <div className="rounded-2xl border border-border-line bg-surface-paper p-24 md:p-32">
+        <section id="homes" className="mx-auto max-w-content px-20 py-40 md:px-32">
+          <div className="rounded-2xl border border-border-line bg-surface-paper p-24 shadow-card md:p-32">
             <h2 className="font-display text-heading-2 font-semibold text-text-ink">
               {labels['project_page.commercial.title']}
             </h2>
@@ -395,7 +408,7 @@ export default async function ProjectLandingPage({
               {buyHomeCount > 0 ? (
                 <Link
                   href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
-                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                  className="rounded-2xl border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
                   <p className="font-display text-heading-3 font-semibold text-text-ink">
                     {labels['project_page.commercial.buy']}
@@ -411,7 +424,7 @@ export default async function ProjectLandingPage({
               {rentHomeCount > 0 ? (
                 <Link
                   href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
-                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                  className="rounded-2xl border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
                   <p className="font-display text-heading-3 font-semibold text-text-ink">
                     {labels['project_page.commercial.rent']}
@@ -432,7 +445,7 @@ export default async function ProjectLandingPage({
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}
       {project.categories.length > 0 ? (
-        <section className="max-w-6xl mx-auto py-64 px-24">
+        <section className="mx-auto max-w-content px-20 py-64 md:px-32">
           {styleKeys.length > 1 ? (
             <>
               <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
@@ -442,7 +455,7 @@ export default async function ProjectLandingPage({
                 {styleKeys.map((styleKey) => (
                   <span
                     key={styleKey}
-                    className="bg-surface-ivory border border-border-line rounded-lg px-24 py-12 text-body text-text-ink"
+                    className="rounded-full border border-border-line bg-surface-paper px-20 py-8 text-small font-semibold text-text-ink"
                   >
                     {styleLabels[styleKey] || styleKey}
                   </span>
@@ -453,20 +466,20 @@ export default async function ProjectLandingPage({
           <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
             {labels['project_page.categories.generic_title']}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
+          <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.categories.map((category) => (
               <Link
                 key={category.key}
                 href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}`}
-                className="block bg-surface-paper border border-border-line rounded-lg p-24 transition hover:shadow-card"
+                className="block overflow-hidden rounded-2xl border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
               >
                 {category.coverUrl ? (
                   <Image src={category.coverUrl}
                     alt={categoryLabels[category.key] || category.key}
-                    width={640} height={360}
-                    className="mb-16 aspect-video w-full rounded-md object-cover" />
+                    width={640} height={480}
+                    className="mb-16 aspect-[4/3] w-full rounded-xl object-cover" />
                 ) : null}
-                <h3 className="text-heading-3 font-bold text-text-ink mb-8">
+                <h3 className="mb-8 font-display text-heading-3 font-semibold text-text-ink">
                   {category.name}
                 </h3>
                 {editorialCopy[category.titleKey] && (
@@ -502,8 +515,8 @@ export default async function ProjectLandingPage({
 
       {/* Long-stay block (renders when any category sells monthly) */}
       {monthlyCategories.length > 0 ? (
-        <section className="bg-surface-ivory py-64 px-24">
-          <div className="max-w-4xl mx-auto text-center">
+        <section className="bg-surface-sand px-20 py-64 md:px-32">
+          <div className="mx-auto max-w-4xl text-center">
             <h2 className="font-display text-display-xl font-semibold text-text-ink mb-16">
               {labels['project_page.longstay.title']}
             </h2>
@@ -514,7 +527,7 @@ export default async function ProjectLandingPage({
               {monthlyCategories.map((category) => (
                 <div
                   key={category.key}
-                  className="bg-surface-paper border border-border-line rounded-lg px-24 py-16"
+                  className="rounded-2xl border border-border-line bg-surface-paper px-24 py-16 shadow-card"
                 >
                   <p className="text-small text-text-secondary mb-4">
                     {categoryLabels[category.key] || category.key}
@@ -532,7 +545,7 @@ export default async function ProjectLandingPage({
               href={longStayCtaHref}
               target={whatsappNumber ? '_blank' : undefined}
               rel={whatsappNumber ? 'noopener noreferrer' : undefined}
-              className="text-brand-andaman font-semibold"
+              className="inline-flex min-h-44 items-center rounded-xl bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
             >
               {labels['project_page.longstay.cta']}
             </a>
@@ -541,8 +554,8 @@ export default async function ProjectLandingPage({
       ) : null}
 
       {/* Units grid */}
-      <section id={(buyHomeCount > 0 || rentHomeCount > 0) ? undefined : 'homes'} className="max-w-6xl mx-auto py-64 px-24">
-        <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40">
+      <section id={(buyHomeCount > 0 || rentHomeCount > 0) ? undefined : 'homes'} className="mx-auto max-w-content px-20 py-64 md:px-32">
+        <h2 className="mb-40 font-display text-display-xl font-semibold text-text-ink">
           {labels['project_page.units.title']}
         </h2>
         {project.units.length === 0 ? (
@@ -550,35 +563,35 @@ export default async function ProjectLandingPage({
             {labels['project_page.units.empty']}
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
+          <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.units.map((unit) => (
               <Link
                 key={unit.id}
                 href={unit.bookable
                   ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
                   : '#lead-form'}
-                className="bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:shadow-card transition"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
                 {unit.coverUrl ? (
                   <Image
                     src={unit.coverUrl}
                     alt={unit.name}
                     width={640}
-                    height={176}
-                    className="w-full h-44 object-cover"
+                    height={480}
+                    className="aspect-[4/3] w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-44 items-center justify-center bg-surface-ivory px-16 text-center text-small text-text-secondary">
+                  <div className="flex aspect-[4/3] items-center justify-center bg-surface-sand px-16 text-center text-small text-text-secondary">
                     {labels['project_page.units.details_pending']}
                   </div>
                 )}
-                <div className="p-24">
+                <div className="flex flex-1 flex-col p-20">
                   {unit.photoScope === 'room_type' ? (
                     <p className="mb-8 text-small font-medium text-brand-andaman">
                       {labels['project_page.units.representative_media']}
                     </p>
                   ) : null}
-                  <h3 className="text-heading-3 font-bold text-text-ink mb-4">{unit.name}</h3>
+                  <h3 className="mb-4 font-display text-heading-3 font-semibold text-text-ink">{unit.name}</h3>
                   {unit.titleKey && editorialCopy[unit.titleKey] ? (
                     <p className="mb-8 text-small font-semibold text-brand-andaman">
                       {editorialCopy[unit.titleKey]}
@@ -600,7 +613,7 @@ export default async function ProjectLandingPage({
                     </p>
                   ) : null}
                   {(unit.views.length > 0 || unit.unitFeatures.some(feature => /^[a-z0-9_]+$/.test(feature))) ? (
-                    <div className="mb-12 flex flex-wrap gap-6">
+                    <div className="mb-12 flex flex-wrap gap-8">
                       {[
                         ...unit.views.map(view => ({
                           key: `view:${view}`,
@@ -613,7 +626,7 @@ export default async function ProjectLandingPage({
                             label: editorialCopy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' '),
                           })),
                       ].slice(0, 4).map((fact) => (
-                        <span key={fact.key} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] text-text-secondary">
+                        <span key={fact.key} className="rounded-full bg-surface-sand px-12 py-4 text-[12px] text-text-secondary">
                           {fact.label}
                         </span>
                       ))}
@@ -631,7 +644,7 @@ export default async function ProjectLandingPage({
                       {labels['project_page.units.details_pending']}
                     </p>
                   )}
-                  <span className="text-brand-andaman font-semibold text-small">
+                  <span className="mt-auto inline-flex min-h-44 items-center justify-center rounded-xl bg-brand-andaman px-20 text-small font-semibold text-white transition group-hover:bg-brand-deep">
                     {unit.bookable ? labels['project_page.units.view'] : labels['project_page.units.inquiry']}
                   </span>
                 </div>
@@ -639,13 +652,13 @@ export default async function ProjectLandingPage({
             ))}
           </div>
         )}
-        <div className="mt-40 flex flex-wrap items-center justify-between gap-16 rounded-xl border border-border-line bg-surface-ivory p-24">
+        <div className="mt-40 flex flex-wrap items-center justify-between gap-16 rounded-2xl border border-border-line bg-surface-sand p-24">
           <div>
             <h3 className="font-display text-heading-3 font-semibold text-text-ink">{labels['project_page.owner_intake.title']}</h3>
             <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
           </div>
           <Link href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
-            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 py-12 text-small font-semibold text-white hover:opacity-90">
+            className="inline-flex min-h-44 items-center rounded-xl bg-brand-andaman px-20 py-12 text-small font-semibold text-white hover:bg-brand-deep">
             {labels['project_page.owner_intake.cta']}
           </Link>
         </div>
@@ -653,8 +666,8 @@ export default async function ProjectLandingPage({
 
       {/* Project story */}
       {story ? (
-        <section className="bg-surface-ivory py-64 px-24">
-          <div className="max-w-4xl mx-auto">
+        <section className="bg-surface-sand px-20 py-64 md:px-32">
+          <div className="mx-auto max-w-4xl">
             <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
               {labels['project_page.story.title']}
             </h2>
@@ -688,7 +701,7 @@ export default async function ProjectLandingPage({
 
 
       {(houseRules || shuttleSchedule) ? (
-        <section className="mx-auto grid max-w-6xl gap-16 px-24 py-48 md:grid-cols-2 md:py-64">
+        <section className="mx-auto grid max-w-content gap-16 px-20 py-48 md:grid-cols-2 md:px-32 md:py-64">
           {houseRules ? (
             <article className="rounded-xl border border-border-line bg-surface-paper p-24">
               <h2 className="font-display text-heading-2 font-semibold text-text-ink">
@@ -709,7 +722,7 @@ export default async function ProjectLandingPage({
       ) : null}
 
       {/* Location */}
-      <section id="location" className="max-w-4xl mx-auto py-64 px-24">
+      <section id="location" className="mx-auto max-w-4xl px-20 py-64 md:px-32">
         <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
           {labels['project_page.location.title']}
         </h2>
@@ -718,7 +731,7 @@ export default async function ProjectLandingPage({
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand-andaman font-semibold"
+          className="inline-flex min-h-44 items-center rounded-xl border border-border-line bg-surface-paper px-20 text-small font-semibold text-brand-andaman shadow-card hover:shadow-float"
         >
           {labels['project_page.location.open_map']}
         </a>
@@ -741,8 +754,8 @@ export default async function ProjectLandingPage({
 
       {/* Handbook teaser */}
       {handbookTeaser ? (
-        <section className="bg-surface-ivory py-64 px-24">
-          <div className="max-w-4xl mx-auto">
+        <section className="bg-surface-sand px-20 py-64 md:px-32">
+          <div className="mx-auto max-w-4xl">
             <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
               {labels['project_page.handbook.title']}
             </h2>
@@ -757,7 +770,7 @@ export default async function ProjectLandingPage({
 
       {/* Guest reviews (dynamic from the DB; renders only when they exist) */}
       {project.reviews.count > 0 ? (
-        <section className="max-w-6xl mx-auto py-64 px-24">
+        <section className="mx-auto max-w-content px-20 py-64 md:px-32">
           <div className="flex items-baseline gap-16 mb-40">
             <h2 className="font-display text-display-xl font-semibold text-text-ink">
               {labels['project_page.reviews.title']}
@@ -771,9 +784,9 @@ export default async function ProjectLandingPage({
               )}
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
+          <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.reviews.items.map((review, i) => (
-              <div key={i} className="bg-surface-paper border border-border-line rounded-lg p-24">
+              <div key={i} className="rounded-2xl border border-border-line bg-surface-paper p-24 shadow-card">
                 <p className="text-small text-brand-andaman mb-8">
                   {'★'.repeat(review.rating)}
                 </p>
@@ -796,7 +809,7 @@ export default async function ProjectLandingPage({
       ) : null}
 
       {/* Trust band */}
-      <section className="max-w-6xl mx-auto py-64 px-24">
+      <section className="mx-auto max-w-content px-20 py-64 md:px-32">
         <h2 className="font-display text-display-xl font-semibold text-text-ink mb-40 text-center">
           {labels['project_page.trust.title']}
         </h2>
@@ -805,11 +818,11 @@ export default async function ProjectLandingPage({
             {licenceLine}
           </p>
         ) : null}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-40 mb-40">
+        <div className="grid grid-cols-1 gap-24 md:grid-cols-3 mb-40">
           {trustPoints.map((point) => (
-            <div key={point.title} className="text-center">
+            <div key={point.title} className="rounded-2xl border border-border-line bg-surface-paper p-24 text-center shadow-card">
               <div className="text-heading-2 mb-16" aria-hidden="true">·</div>
-              <h3 className="text-heading-2 font-bold text-text-ink mb-12">{point.title}</h3>
+              <h3 className="mb-12 font-display text-heading-3 font-semibold text-text-ink">{point.title}</h3>
               <p className="text-body text-text-secondary">{point.body}</p>
             </div>
           ))}
@@ -817,7 +830,7 @@ export default async function ProjectLandingPage({
         <div className="flex flex-col items-center justify-center gap-12 text-center sm:flex-row">
           <Link
             href={`/projects/${project.slug}/passport`}
-            className="inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep"
+            className="inline-flex min-h-44 items-center rounded-xl bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
           >
             {labels['project_page.trust.passport']}
           </Link>

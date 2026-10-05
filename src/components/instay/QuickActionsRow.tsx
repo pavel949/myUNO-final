@@ -24,7 +24,7 @@ function ActionTile({
     <button
       type="button"
       onClick={onClick}
-      className="min-h-80 bg-surface-paper border border-border-line rounded-md p-16 flex flex-col justify-between text-left hover:border-brand-andaman transition-colors"
+      className="min-h-80 bg-surface-paper border border-border-line rounded-2xl shadow-card p-16 flex flex-col justify-between text-left hover:border-brand-andaman transition-colors"
     >
       <span className="text-brand-andaman" aria-hidden>
         {icon}

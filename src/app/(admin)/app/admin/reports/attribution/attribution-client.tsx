@@ -97,10 +97,10 @@ export default function AdminAttributionClient({ labels }: { labels: Labels }) {
                 <tr key={m.channelId} className="border-b border-border-line">
                   <td className="px-12 py-8">{m.channelName}</td>
                   <td className="px-12 py-8">{m.channelCategory}</td>
-                  <td className="px-12 py-8 text-right font-mono">{m.profileCount}</td>
-                  <td className="px-12 py-8 text-right font-mono">{m.guestCount}</td>
-                  <td className="px-12 py-8 text-right font-mono">{m.buyerCount}</td>
-                  <td className="px-12 py-8 text-right font-mono">{m.ownerCount}</td>
+                  <td className="px-12 py-8 text-right font-tabular">{m.profileCount}</td>
+                  <td className="px-12 py-8 text-right font-tabular">{m.guestCount}</td>
+                  <td className="px-12 py-8 text-right font-tabular">{m.buyerCount}</td>
+                  <td className="px-12 py-8 text-right font-tabular">{m.ownerCount}</td>
                   <td className="px-12 py-8 text-right">{m.conversionRate.toGuest}%</td>
                   <td className="px-12 py-8 text-right">{m.conversionRate.toBuyer}%</td>
                   <td className="px-12 py-8 text-right">{m.conversionRate.toOwner}%</td>

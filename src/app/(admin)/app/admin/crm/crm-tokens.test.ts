@@ -19,7 +19,7 @@ const residence = readFileSync(join(process.cwd(), 'src/app/residence/page.tsx')
 describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   it('keeps admin nav hrefs in the layout file', () => {
     expect(layout).toContain("href: '/app/admin/crm'");
-    expect(layout).toContain('bg-surface-ivory');
+    expect(layout).toContain('bg-surface-mint');
     expect(layout).toContain('bg-brand-deep');
   });
 
@@ -48,8 +48,8 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   });
 
   it('sits provider and MC portals on ivory', () => {
-    expect(provider).toContain('bg-surface-ivory');
-    expect(provider).toContain('text-display-xl');
+    expect(provider).toContain('stitch-workspace');
+    expect(provider).toContain('bg-brand-deep');
     expect(mc).toContain('bg-surface-ivory');
     expect(mc).toContain('text-display-xl');
   });

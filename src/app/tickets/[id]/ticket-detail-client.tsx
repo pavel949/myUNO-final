@@ -169,7 +169,7 @@ export default function TicketDetailClient({
   };
 
   return (
-    <section className="bg-surface-paper border border-border-line rounded-lg p-20">
+    <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-20">
       <div className="flex flex-wrap items-start justify-between gap-12">
         <div>
           <h2 className="font-display text-display font-semibold text-text-ink">{ticket.title}</h2>

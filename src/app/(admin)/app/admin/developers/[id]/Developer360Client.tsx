@@ -75,7 +75,7 @@ export default function Developer360Client({
 
   return (
     <div className="space-y-24">
-      <div className="p-16 bg-surface-paper border border-border-line rounded-lg flex flex-col md:flex-row md:justify-between md:items-center gap-16">
+      <div className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card flex flex-col md:flex-row md:justify-between md:items-center gap-16">
         <div>
           <p className="text-small text-text-secondary">{labels['admin.dev360.score_label']}</p>
           <div className="flex items-center gap-8 mt-4">
@@ -102,7 +102,7 @@ export default function Developer360Client({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">
             {labels['admin.dev360.identity_title']}
           </h2>
@@ -132,7 +132,7 @@ export default function Developer360Client({
           </dl>
         </section>
 
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.dev360.contact_title']}</h2>
           <dl className="space-y-8 text-small">
             <div className="border-b border-border-line pb-8">
@@ -154,7 +154,7 @@ export default function Developer360Client({
           </dl>
         </section>
 
-        <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+        <section className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card space-y-12">
           <h2 className="font-semibold text-subtitle text-text-ink">{labels['admin.dev360.track_record_title']}</h2>
           <div className="grid grid-cols-2 gap-8">
             {[
@@ -172,7 +172,7 @@ export default function Developer360Client({
         </section>
       </div>
 
-      <section className="p-16 bg-surface-paper border border-border-line rounded-lg space-y-12">
+      <section className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card space-y-12">
         <div className="flex items-center justify-between gap-12">
           <h2 className="font-semibold text-subtitle text-text-ink">
             {labels['admin.dev360.portfolio_title']}

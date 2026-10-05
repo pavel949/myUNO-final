@@ -74,7 +74,7 @@ export default async function OpsMobilizationPage({ searchParams }: OpsMobilizat
     opsHref(`/ops/mobilization/${unitId}`, validActiveProjectId ?? projectId);
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link
           href={opsHref('/ops', validActiveProjectId)}
@@ -102,7 +102,7 @@ export default async function OpsMobilizationPage({ searchParams }: OpsMobilizat
             {units.map((unit) => (
               <li
                 key={unit.id}
-                className="bg-surface-paper border border-border-line rounded-lg shadow-card p-20 flex items-center justify-between gap-16"
+                className="stitch-panel p-20 flex items-center justify-between gap-16"
               >
                 <div>
                   <p className="text-body font-semibold text-text-ink">{unit.name}</p>

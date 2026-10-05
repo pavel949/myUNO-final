@@ -181,10 +181,6 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
               managementOrg: { select: { name: true, status: true } },
             },
           },
-          commercialOfferings: {
-            where: { status: 'active' },
-            select: { offeringType: true, status: true },
-          },
           inventoryCategory: {
             select: {
               status: true,
@@ -292,6 +288,10 @@ export async function getPublicProjectBySlug(
           media: {
             orderBy: { sort: 'asc' },
             include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
+          },
+          commercialOfferings: {
+            where: { status: 'active' },
+            select: { offeringType: true, status: true },
           },
           inventoryCategory: {
             select: {

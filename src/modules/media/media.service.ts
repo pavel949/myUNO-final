@@ -29,17 +29,36 @@ async function putToStorage(
   mimeType: string,
   fileName: string
 ): Promise<string> {
+  const { put } = await import('@vercel/blob');
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const { put } = await import('@vercel/blob');
     const blob = await put(`media/${fileName}`, buffer, {
       access: 'public',
       contentType: mimeType,
       addRandomSuffix: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     return blob.url;
   }
 
-  // Dev fallback: data URI (no storage service required)
+  // Vercel deployments receive a short-lived OIDC token automatically.
+  // Use it with the configured canonical Blob store so production never
+  // falls back to embedding image bytes in the database.
+  if (process.env.VERCEL_OIDC_TOKEN && process.env.BLOB_STORE_ID) {
+    const blob = await put(`media/${fileName}`, buffer, {
+      access: 'public',
+      contentType: mimeType,
+      addRandomSuffix: true,
+      oidcToken: process.env.VERCEL_OIDC_TOKEN,
+      storeId: process.env.BLOB_STORE_ID,
+    });
+    return blob.url;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Durable media storage is not configured');
+  }
+
+  // Local-development fallback only.
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 }
 

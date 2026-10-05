@@ -61,7 +61,7 @@ describe('premium design-system surface parity', () => {
     expect(home).not.toContain('id="start-heading"');
     const discovery = source('src/components/home/HomeFinder.tsx');
     // Consumer search is deliberately Holiday / Long-term / Buy; owner goals live beside it on the homepage.
-    expect(source('src/components/home/HomeIntentProvider.tsx')).toContain("['stay', 'monthly', 'buy']");
+    expect(source('src/components/home/home-intent.ts')).toContain("['stay', 'monthly', 'buy']");
     expect(discovery).toContain("router.push('/homes?' + params.toString())");
     expect(home).toContain('href="/sell"');
     expect(home).toContain('href="/rent-out"');

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><title>myUNO Global Platform OS</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary":"#ffffff","inverse-surface":"#273331","primary-fixed":"#c2ebdc","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","border-subtle":"#E5DFD3","surface-sand-subtle":"#EAE4D7","on-primary-fixed":"#002019","error-container":"#ffdad6","surface-container":"#e3f1ed","on-secondary-fixed":"#2b1700","surface-container-lowest":"#ffffff","tertiary-fixed":"#c7eadd","accent-gold-muted":"#F5EAD9","primary":"#00221a","surface-tint":"#40665a","on-surface-variant":"#414845","on-tertiary":"#ffffff","status-verified-bg":"#E9F1EE","on-secondary":"#ffffff","surface-container-highest":"#d8e5e2","on-background":"#121e1c","status-instant-bg":"#FAF3E8","secondary-fixed-dim":"#f6bb79","on-secondary-fixed-variant":"#663e04","on-error":"#ffffff","primary-fixed-dim":"#a7cfc1","accent-gold-soft":"#E4BE8D","surface-container-high":"#ddebe8","error":"#ba1a1a","inverse-on-surface":"#e6f4f0","on-tertiary-container":"#7fa195","text-muted":"#566360","surface-bright":"#effcf9","secondary-container":"#fdc17e","surface-ivory":"#FBF9F5","surface-sand":"#F4F0E8","background":"#effcf9","on-tertiary-fixed-variant":"#2d4d44","primary-container":"#11382e","on-error-container":"#93000a","status-instant":"#9A6B32","outline":"#717975","on-surface":"#121e1c","surface-dim":"#cfddd9","surface":"#effcf9","on-secondary-container":"#784d14","tertiary-fixed-dim":"#accec2","tertiary":"#01221a","status-verified":"#1E5848","tertiary-container":"#17372f","on-primary-container":"#7ba295","secondary":"#81551c","secondary-fixed":"#ffddba","on-primary-fixed-variant":"#284e43","inverse-primary":"#a7cfc1","on-tertiary-fixed":"#002019","surface-container-low":"#e9f7f3"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-2xl":"4rem","space-md":"1rem","margin-mobile":"1.25rem","gutter-mobile":"1rem","space-xl":"2.5rem","margin":"3rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xs":"0.25rem","gutter":"1.5rem"},"fontFamily":{"title-md":["Outfit"],"headline-sm":["Outfit"],"body-sm":["Manrope"],"headline-lg-mobile":["Outfit"],"label-md":["Manrope"],"label-caps":["Manrope"],"body-lg":["Manrope"],"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-md":["Outfit"],"display-hero":["Outfit"],"label-lg":["Manrope"],"body-md":["Manrope"]},"fontSize":{"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-screen w-72 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,18,14,0.18)]"><div class="flex flex-col h-full overflow-hidden"><div class="px-space-lg pt-space-lg pb-space-md border-b border-tertiary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md tracking-tight text-on-primary leading-none">myUNO</span><span class="font-label-caps text-label-caps text-on-primary-container tracking-wider uppercase mt-space-xs">GLOBAL OS v4.2</span></div></div><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container"><span class="w-1.5 h-1.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-caps text-label-caps text-accent-gold-soft tracking-wider">PROD</span></div></div><button class="w-full mt-space-sm flex items-center justify-between px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-tertiary-container hover:text-on-primary transition-all text-left group" type="button"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px] text-accent-gold-soft">terminal</span><span class="font-body-sm text-body-sm text-on-primary-container group-hover:text-on-primary">Jump / Command</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container text-on-primary-container font-mono">⌘K</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-md space-y-space-lg"><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ОБЗОР &amp; УПРАВЛЕНИЕ</span><span class="font-label-caps text-label-caps text-on-primary-container">01</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">public</span>Глобальный дашборд</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="portfolio-and-projects" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">domain</span>Дестинации &amp; Комплексы</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="vendor-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">storefront</span>Маркетплейс &amp; Вендоры</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ФИНАНСЫ &amp; КЛИРИНГ</span><span class="font-label-caps text-label-caps text-on-primary-container">02</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="ledger-and-payouts" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">account_balance_wallet</span>Клиринг &amp; Выплаты</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="owners-and-reporting" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">insights</span>Отчетность инвесторов</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">БЕЗОПАСНОСТЬ &amp; СИСТЕМА</span><span class="font-label-caps text-label-caps text-on-primary-container">03</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="iam-and-rbac" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">shield_person</span>Роли &amp; Доступ (IAM)</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">history_edu</span>Аудит-лог &amp; События</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="infrastructure-monitoring" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">network_check</span>Инфраструктура &amp; API</a></nav></div><div class="p-space-md bg-tertiary-container m-space-md rounded-xl border border-primary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Asset Registry</span><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-on-primary">LIVE</span></div><div class="grid grid-cols-3 gap-space-xs text-center py-1 bg-primary/40 rounded-lg"><div class="flex flex-col"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">4</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Зоны</span></div><div class="flex flex-col border-x border-primary-container"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">18</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Компл.</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-accent-gold-soft font-bold leading-tight">342</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Юнита</span></div></div><div class="flex items-center justify-between pt-1 border-t border-primary-container/80"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-body-sm text-body-sm text-on-primary-container text-[11px]">All Systems Operational</span></div><span class="font-label-caps text-label-caps text-on-primary font-mono">99.98%</span></div></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container z-40 px-space-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Platform</span><span class="material-symbols-outlined text-[16px] text-outline-variant">chevron_right</span><span class="font-label-lg text-label-lg text-on-surface font-semibold">myUNO Executive Hub</span></div><div class="h-4 w-[1px] bg-outline-variant"></div><button class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-sand text-on-surface font-body-sm text-body-sm hover:bg-surface-sand-subtle transition-colors" type="button"><span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span><span class="material-symbols-outlined text-[16px] text-status-verified">calendar_today</span><span class="font-semibold text-on-surface">Q4 2026 • Ноябрь</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></button></div><div class="flex-1 max-w-md mx-space-lg"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-text-muted pointer-events-none">search</span><input class="w-full h-9 pl-10 pr-12 rounded-lg bg-surface-sand/70 text-on-surface placeholder:text-text-muted font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:border-primary-container focus:bg-surface-container-lowest transition-all" placeholder="Поиск по инвесторам, виллам, транзакциям..." type="search"/><kbd class="absolute right-space-sm px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-text-muted uppercase">⌘K</kbd></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-status-verified-bg text-status-verified font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">show_chart</span><span class="font-semibold">GMV Today:</span><span class="font-bold font-mono">฿1.48M</span><span class="text-[11px] text-status-verified/80">• 100% Sync</span></div><div class="flex items-center bg-surface-sand p-0.5 rounded-lg border border-border-subtle"><button class="px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">THB ฿</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USD $</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">RUB ₽</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USDT</button></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span></button><div class="h-6 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ring-2 ring-accent-gold-soft"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden 2xl:flex flex-col text-left"><div class="flex items-center gap-1.5"><span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight">Александр В.</span><span class="font-label-caps text-label-caps px-1 py-0.2 rounded bg-primary text-on-primary text-[9px]">COO</span></div><span class="font-label-caps text-label-caps text-text-muted text-[10px]">SuperAdmin Root</span></div></div></div></header><main class="relative pt-16 flex-1 w-full bg-surface-bright"><div class="w-full px-space-lg py-space-lg" id="screen-content"><div class="flex flex-col w-full">
+<!-- Governance Control Header -->
+<section class="flex flex-col gap-space-lg mb-space-xl">
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg">
+<div class="flex flex-col max-w-3xl">
+<div class="flex items-center gap-space-xs text-text-muted mb-space-xs">
+<span class="font-label-caps text-label-caps tracking-wider text-accent-gold-soft uppercase">myUNO Infrastructure OS</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="font-label-caps text-label-caps uppercase text-primary">Master Registry</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+          Портфель недвижимости и управление резиденциями
+        </h1>
+<p class="font-body-md text-body-md text-text-muted mt-space-xs">
+          Иерархия каталога myUNO Platform: Страны, Направления, Девелоперские комплексы и активные мандаты управления (<span class="font-semibold text-primary">342 юнита под контролем</span>).
+        </p>
+</div>
+<!-- Action Suite -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand transition-all font-label-lg text-label-lg shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+          Настройка мандатов
+        </button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand transition-all font-label-lg text-label-lg shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+          Экспорт реестра
+        </button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-tertiary-container transition-all font-label-lg text-label-lg shadow-md" type="button">
+<span class="material-symbols-outlined text-[20px] text-accent-gold-soft">add_circle</span>
+          + Подключить новый комплекс
+        </button>
+</div>
+</div>
+<!-- Filter & Destination Tabs Switcher -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pt-space-xs">
+<!-- Destination segmented filter -->
+<div class="flex items-center p-1 bg-surface-container-high rounded-xl overflow-x-auto">
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm whitespace-nowrap" type="button">
+<span>Все дестинации</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-sand font-label-caps text-label-caps text-text-muted">4</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-text-muted hover:text-primary transition-colors font-label-lg text-label-lg whitespace-nowrap" type="button">
+<span>Bang Tao</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-label-caps text-label-caps">142</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-text-muted hover:text-primary transition-colors font-label-lg text-label-lg whitespace-nowrap" type="button">
+<span>Rawai &amp; Nai Harn</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-label-caps text-label-caps">98</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-text-muted hover:text-primary transition-colors font-label-lg text-label-lg whitespace-nowrap" type="button">
+<span>Surin &amp; Kamala</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-label-caps text-label-caps">64</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-text-muted hover:text-primary transition-colors font-label-lg text-label-lg whitespace-nowrap" type="button">
+<span>Layan</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-text-muted font-label-caps text-label-caps">38</span>
+</button>
+</div>
+<!-- State & Verification Filters -->
+<div class="flex items-center gap-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Статус:</span>
+<div class="flex items-center bg-surface-sand p-1 rounded-lg">
+<button class="px-2.5 py-1 rounded-md bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">Все</button>
+<button class="px-2.5 py-1 rounded-md text-text-muted hover:text-primary font-label-caps text-label-caps transition-colors" type="button">Активен (16)</button>
+<button class="px-2.5 py-1 rounded-md text-text-muted hover:text-primary font-label-caps text-label-caps transition-colors" type="button">На модерации (2)</button>
+<button class="px-2.5 py-1 rounded-md text-text-muted hover:text-primary font-label-caps text-label-caps transition-colors" type="button">Черновик (0)</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Portfolio KPI Executive Bar (Asymmetric Data Architecture) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-2xl">
+<!-- Active Complexes -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Active Complexes</span>
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">apartment</span>
+</div>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-hero text-headline-lg font-bold text-primary leading-none">18</span>
+<span class="font-body-sm text-body-sm text-text-muted">резиденций</span>
+</div>
+<div class="flex items-center gap-1.5 mt-space-sm text-status-verified font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-semibold">97% синхронизированы</span>
+<span class="text-text-muted text-[11px]">(PMS &amp; Engine)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-space-md overflow-hidden">
+<div class="bg-status-verified h-full rounded-full" style="width: 97%;"></div>
+</div>
+</div>
+<!-- Inventory Scope -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Total Units Portfolio</span>
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</div>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-hero text-headline-lg font-bold text-primary leading-none">342</span>
+<span class="font-body-sm text-body-sm text-text-muted">апартамента &amp; виллы</span>
+</div>
+<div class="grid grid-cols-3 gap-1 mt-space-sm text-center">
+<div class="flex flex-col bg-surface-bright py-1 px-1.5 rounded">
+<span class="font-label-caps text-label-caps text-status-verified font-mono">286</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[9px] uppercase">Букинг</span>
+</div>
+<div class="flex flex-col bg-surface-bright py-1 px-1.5 rounded">
+<span class="font-label-caps text-label-caps text-secondary font-mono">44</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[9px] uppercase">Долгосрок</span>
+</div>
+<div class="flex flex-col bg-surface-bright py-1 px-1.5 rounded">
+<span class="font-label-caps text-label-caps text-error font-mono">12</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[9px] uppercase">ТО / Ремонт</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-text-muted font-body-sm text-body-sm mt-space-xs pt-space-xs">
+<span class="text-[11px]">Готовность фонда:</span>
+<span class="font-semibold text-primary text-[12px]">96.5%</span>
+</div>
+</div>
+<!-- Mandate Governance Split -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Mandate Distribution</span>
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">pie_chart</span>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-1 text-on-surface">
+<span class="font-label-lg text-label-lg font-bold">58%</span>
+<span class="font-body-sm text-body-sm text-text-muted">Full Asset Mgmt (20% fee)</span>
+</div>
+<div class="flex w-full h-2 rounded-full overflow-hidden bg-surface-container gap-0.5">
+<div class="bg-primary h-full" style="width: 58%;" title="Full Asset Management: 58%"></div>
+<div class="bg-accent-gold-soft h-full" style="width: 28%;" title="Rental Pool Only: 28%"></div>
+<div class="bg-outline-variant h-full" style="width: 14%;" title="Self-Listed Owners: 14%"></div>
+</div>
+<div class="flex items-center justify-between mt-space-sm text-[11px] text-text-muted">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span>Full (58%)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-accent-gold-soft"></span>Pool (28%)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-outline-variant"></span>Self (14%)</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-[11px] text-primary font-medium mt-space-xs">
+<span class="material-symbols-outlined text-[14px]">shield_with_house</span>
+        294 юнита с эксклюзивным правом
+      </div>
+</div>
+<!-- Average Portfolio Yield -->
+<div class="p-space-lg rounded-xl bg-primary text-on-primary shadow-sm flex flex-col justify-between relative overflow-hidden">
+<!-- Decorative background accent -->
+<div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[140px] text-accent-gold-soft">trending_up</span>
+</div>
+<div class="flex items-center justify-between mb-space-sm relative z-10">
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Avg Portfolio Yield</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-accent-gold-soft font-label-caps text-label-caps">Q4 NET</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-hero text-headline-lg font-bold text-on-primary leading-none">8.4%</span>
+<span class="font-body-sm text-body-sm text-on-primary-container">годовых ROI</span>
+</div>
+<div class="flex items-center gap-space-xs mt-space-xs text-[12px] text-on-primary-container">
+<span class="text-accent-gold-soft font-semibold">+0.9% YoY</span>
+<span>с учетом капитализации</span>
+</div>
+</div>
+<div class="relative z-10 flex items-center justify-between pt-space-xs text-[11px] text-on-primary-container">
+<span>Регулярные выплаты:</span>
+<span class="font-mono text-accent-gold-soft">15 числа каждого мес.</span>
+</div>
+</div>
+</section>
+<!-- Detailed Projects & Residence Master Catalog Section -->
+<section class="flex flex-col gap-space-lg mb-space-2xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight">Активные комплексы и мастер-резиденции</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-sand text-text-muted font-label-caps text-label-caps">18 ОБЪЕКТОВ</span>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span>Сортировка:</span>
+<button class="flex items-center gap-1 font-semibold text-primary hover:underline" type="button">
+          По объему GMV <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Catalog Bento Mosaic Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-space-lg">
+<!-- Card 1: The Title Legendary Residences -->
+<article class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+<!-- Visual and Header Bar -->
+<div class="relative h-60 w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="High-end tropical condominium architecture in Bang Tao Phuket, modern organic pavilion style, lush palm landscape surrounding a serene turquoise lagoon pool under warm afternoon sun, warm sandstone and teak materials, cinematic architectural photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARVGFJH4IEh1RCQVUozNOzys4sBaB4OSTXcYhsDLtOn2wAq24v5ie7hvtYEhmXJvOjgq0EnTa4gvsRQpCCg4wwUUyIMbkDMgE5sC0ME2T8-lC3vTiOsrJpxpvX9TFr7Hm1WZ8Bl5CpbR1ZiMRx05buJjOWBW1iaDAtlasz-BnUYO1Kp13bDmWWLe_cxoaNY3E7-xpFzyuG0Qced0dc4cTf95dxFwb-hLvw0e9dvV7sjA-rv_GxCykC"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent"></div>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-1.5">
+<span class="px-2.5 py-1 rounded-md bg-status-verified text-on-primary font-label-caps text-label-caps shadow-sm">Flagship PMS V2.4</span>
+<span class="px-2.5 py-1 rounded-md bg-primary-container text-on-primary font-label-caps text-label-caps shadow-sm">Full Management</span>
+<span class="px-2.5 py-1 rounded-md bg-surface-sand text-primary font-label-caps text-label-caps shadow-sm">Bang Tao Beach</span>
+</div>
+<div class="absolute top-space-md right-space-md">
+<span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-caps text-label-caps font-bold">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+              52 Units
+            </span>
+</div>
+<div class="absolute bottom-space-md left-space-md right-space-md text-on-primary">
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Laguna Cluster • Complex ID: #BT-LEG-01</span>
+<h3 class="font-title-md text-headline-sm font-bold leading-tight drop-shadow-sm">The Title Legendary Residences</h3>
+</div>
+</div>
+<!-- Metrics Strip -->
+<div class="grid grid-cols-4 bg-surface-bright p-space-md text-center">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">ADR (Ноябрь)</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">฿12,450</span>
+<span class="font-label-caps text-label-caps text-status-verified text-[10px]">+6.2% vs Plan</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Occupancy</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">91.2%</span>
+<span class="font-label-caps text-label-caps text-status-verified text-[10px]">Peak Season</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">GMV MoM</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">+14%</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[10px]">฿18.4M Gross</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Concierge Attach</span>
+<span class="font-title-md text-title-md font-bold text-accent-gold-soft font-mono mt-0.5">74%</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[10px]">High Yield</span>
+</div>
+</div>
+<!-- Operational Architecture & Details -->
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Конфигурация инфраструктуры:</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+              3 жилых корпуса (F, E, D), доступ к пляжной линии Банг Тао, закрытый Executive Club, 2 бассейна с баром, спа-зона myUNO Wellness.
+            </p>
+</div>
+<!-- Managed Unit Breakdown Pill grid -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted mr-1">Фонд в мандате:</span>
+<span class="px-2 py-1 rounded bg-surface-sand text-primary font-body-sm text-body-sm">
+<span class="font-bold">18</span> × 1BR Ground Pool Access
+            </span>
+<span class="px-2 py-1 rounded bg-surface-sand text-primary font-body-sm text-body-sm">
+<span class="font-bold">24</span> × 2BR Deluxe Family
+            </span>
+<span class="px-2 py-1 rounded bg-status-instant-bg text-status-instant font-body-sm text-body-sm font-semibold">
+<span class="font-bold">10</span> × Sky Penthouse Duplex
+            </span>
+</div>
+<!-- Duty Operations GM contact & PMS Sync Badge -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-sand/60">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs">
+                НК
+              </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary leading-tight">Нараян К.</span>
+<span class="font-label-caps text-label-caps text-text-muted">Duty General Manager (On-Site)</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-status-verified font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified animate-pulse"></span>
+              Siteminder / Mews Active
+            </div>
+</div>
+</div>
+<!-- Action Strip -->
+<div class="px-space-lg py-space-md bg-surface-container-high/40 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-2 rounded-lg bg-primary-container text-on-primary hover:bg-tertiary-container transition-all font-label-lg text-label-lg" type="button">
+              Открыть PMS
+            </button>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand transition-all font-label-lg text-label-lg shadow-sm" type="button">
+              Настройки тарифов
+            </button>
+</div>
+<button class="flex items-center gap-1 text-primary hover:text-primary-container font-label-lg text-label-lg font-semibold" type="button">
+<span>Фолио комплекса</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Layantara Luxury Pool Villas -->
+<article class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+<!-- Visual and Header Bar -->
+<div class="relative h-60 w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Ultra-luxury private pavilion villa in Layan Phuket, expansive 15 meter infinity pool reflecting jungle palms, contemporary brutalist wood and travertine architecture, butler staging area, golden hour soft coastal light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaTywi_iXgWWFXC03YkQBgyOdJjAhaKBPtzymV2s50FJieuVthWUMhYvr4NmQc2_mmitL7H6ZAUw3Ye4QuygGd9_GRpopXmhPFanyu_V3n_LDzhNWaMYdxUxUtK7mv7nsbnVwbujcrSNhnwpr29LdTjZ93577pkfFpzmmQv8_u85RjoeVIpALSdv9hww1DhtZlYVtrN3DSnMliAxJsoxazPrXxQ04McVBPUzHNGdpN5HiWOLbe5-Q_"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent"></div>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-1.5">
+<span class="px-2.5 py-1 rounded-md bg-accent-gold-soft text-primary font-label-caps text-label-caps font-bold shadow-sm">Ultra-Luxury Tier</span>
+<span class="px-2.5 py-1 rounded-md bg-primary-container text-on-primary font-label-caps text-label-caps shadow-sm">Master Mandate</span>
+<span class="px-2.5 py-1 rounded-md bg-surface-sand text-primary font-label-caps text-label-caps shadow-sm">Layan Hillside</span>
+</div>
+<div class="absolute top-space-md right-space-md">
+<span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-caps text-label-caps font-bold">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+              18 Villas
+            </span>
+</div>
+<div class="absolute bottom-space-md left-space-md right-space-md text-on-primary">
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Exclusive Enclave • Complex ID: #LYN-VIL-04</span>
+<h3 class="font-title-md text-headline-sm font-bold leading-tight drop-shadow-sm">Layantara Luxury Pool Villas</h3>
+</div>
+</div>
+<!-- Metrics Strip -->
+<div class="grid grid-cols-4 bg-surface-bright p-space-md text-center">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">ADR (Ноябрь)</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">฿38,500</span>
+<span class="font-label-caps text-label-caps text-status-verified text-[10px]">+18% YoY</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Occupancy</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">94.0%</span>
+<span class="font-label-caps text-label-caps text-status-verified text-[10px]">High Demand</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">GMV MoM</span>
+<span class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">+22%</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[10px]">฿26.1M Gross</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Concierge Attach</span>
+<span class="font-title-md text-title-md font-bold text-accent-gold-soft font-mono mt-0.5">92%</span>
+<span class="font-label-caps text-label-caps text-text-muted text-[10px]">Private Butler</span>
+</div>
+</div>
+<!-- Operational Architecture & Details -->
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Конфигурация инфраструктуры:</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+              3–5BR приватные резиденции с бассейнами 15м, собственный шеф-сервис myUNO Fine Dining, охраняемый периметр, вертолетная площадка.
+            </p>
+</div>
+<!-- Managed Unit Breakdown Pill grid -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted mr-1">Фонд в мандате:</span>
+<span class="px-2 py-1 rounded bg-surface-sand text-primary font-body-sm text-body-sm">
+<span class="font-bold">6</span> × 3BR Forest View
+            </span>
+<span class="px-2 py-1 rounded bg-surface-sand text-primary font-body-sm text-body-sm">
+<span class="font-bold">8</span> × 4BR Ocean Vista Villa
+            </span>
+<span class="px-2 py-1 rounded bg-accent-gold-muted text-primary font-body-sm text-body-sm font-semibold">
+<span class="font-bold">4</span> × 5BR Grand Presidential
+            </span>
+</div>
+<!-- Duty Operations GM contact & PMS Sync Badge -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-sand/60">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs">
+                СТ
+              </div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary leading-tight">Сомчай Т.</span>
+<span class="font-label-caps text-label-caps text-text-muted">Head Resident Butler &amp; Estate Manager</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-accent-gold-soft font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">verified</span>
+              100% White Glove Protocol
+            </div>
+</div>
+</div>
+<!-- Action Strip -->
+<div class="px-space-lg py-space-md bg-surface-container-high/40 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-2 rounded-lg bg-primary-container text-on-primary hover:bg-tertiary-container transition-all font-label-lg text-label-lg" type="button">
+              Инспекции &amp; QA
+            </button>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand transition-all font-label-lg text-label-lg shadow-sm" type="button">
+              Управление тарифами
+            </button>
+</div>
+<button class="flex items-center gap-1 text-primary hover:text-primary-container font-label-lg text-label-lg font-semibold" type="button">
+<span>Договор мандата</span>
+<span class="material-symbols-outlined text-[16px]">description</span>
+</button>
+</div>
+</article>
+<!-- Card 3: Oceanstone Residences -->
+<article class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="px-2 py-0.5 rounded bg-surface-sand text-primary font-label-caps text-label-caps">Laguna Phuket</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-text-muted font-label-caps text-label-caps">OTA Parity Sync</span>
+</div>
+<h3 class="font-title-md text-headline-sm font-bold text-primary">Oceanstone Residences</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">38 юнитов в арендном пуле • 1BR, 2BR Suites</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-bold">
+              Rental Pool Direct
+            </span>
+</div>
+<div class="grid grid-cols-3 gap-space-sm bg-surface-bright p-space-md rounded-xl text-center">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">ADR</span>
+<div class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">฿6,800</div>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Occupancy</span>
+<div class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">86.4%</div>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">GMV MoM</span>
+<div class="font-title-md text-title-md font-bold text-status-verified font-mono mt-0.5">+8.0%</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">sync</span>
+              iCal &amp; XML Parity Active
+            </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">cleaning_services</span>
+              myUNO Clean: Дежурная смена
+            </span>
+</div>
+</div>
+<div class="px-space-lg py-space-md bg-surface-container-high/40 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">ID: #LAG-OCS-02</span>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand text-label-md font-label-md shadow-sm" type="button">
+              Календарь занятости
+            </button>
+<button class="px-space-md py-1.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-label-md font-label-md" type="button">
+              Управление
+            </button>
+</div>
+</div>
+</article>
+<!-- Card 4: Wyndham Grand Residences -->
+<article class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="px-2 py-0.5 rounded bg-surface-sand text-primary font-label-caps text-label-caps">Rawai Beach</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-text-muted font-label-caps text-label-caps">B2B Agreement</span>
+</div>
+<h3 class="font-title-md text-headline-sm font-bold text-primary">Wyndham Grand Residences</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">24 юнита • Семейные виллы и люксы с джакузи</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps font-bold">
+              Concierge Partner
+            </span>
+</div>
+<div class="grid grid-cols-3 gap-space-sm bg-surface-bright p-space-md rounded-xl text-center">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">ADR</span>
+<div class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">฿9,200</div>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Occupancy</span>
+<div class="font-title-md text-title-md font-bold text-primary font-mono mt-0.5">89.0%</div>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Take-Rate</span>
+<div class="font-title-md text-title-md font-bold text-secondary font-mono mt-0.5">15% Net</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">room_service</span>
+              Эксклюзивный доступ к консьерж-деску
+            </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">verified_user</span>
+              Escrow Guaranteed
+            </span>
+</div>
+</div>
+<div class="px-space-lg py-space-md bg-surface-container-high/40 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">ID: #RAW-WND-09</span>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-sand text-label-md font-label-md shadow-sm" type="button">
+              Сверка расчетов
+            </button>
+<button class="px-space-md py-1.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-label-md font-label-md" type="button">
+              Управление
+            </button>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Mandate Governance & Onboarding Drawer Section -->
+<section class="flex flex-col gap-space-md bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-secondary">inbox</span>
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight">Новые заявки собственников на передачу в управление</h2>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+          Owner Onboarding Queue: Входящие запросы на аудит объектов, юридическую экспертизу Chanote и подключение к пулу myUNO.
+        </p>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-2.5 py-1 rounded-md bg-status-instant-bg text-status-instant font-label-caps text-label-caps font-bold">
+          2 ТРЕБУЮТ РЕШЕНИЯ
+        </span>
+</div>
+</div>
+<!-- Onboarding Intake Table Container -->
+<div class="overflow-x-auto mt-space-sm">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead>
+<tr class="bg-surface-sand text-text-muted font-label-caps text-label-caps uppercase">
+<th class="py-3 px-space-md rounded-l-lg">ID Заявки</th>
+<th class="py-3 px-space-md">Объект &amp; Параметры</th>
+<th class="py-3 px-space-md">Собственник</th>
+<th class="py-3 px-space-md">Желаемая модель</th>
+<th class="py-3 px-space-md">Текущий статус</th>
+<th class="py-3 px-space-md rounded-r-lg text-right">Действия</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-transparent">
+<!-- Request 1 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="py-4 px-space-md font-mono font-bold text-primary">#MN-304</td>
+<td class="py-4 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Пентхаус в The Title Legendary</span>
+<span class="text-text-muted text-[12px]">Корпус F, Юнит #F-502 • 115 м² (2BR + Rooftop Jacuzzi)</span>
+</div>
+</td>
+<td class="py-4 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-[10px]">
+                  МВ
+                </div>
+<div class="flex flex-col">
+<span class="font-semibold text-primary">Михаил Волков</span>
+<span class="text-text-muted text-[11px]">Инвестор (2 объекта в пуле)</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-space-md">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary font-label-caps text-label-caps">
+                Full Management (80/20)
+              </span>
+</td>
+<td class="py-4 px-space-md">
+<div class="flex items-center gap-1.5 text-status-instant font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-status-instant animate-ping"></span>
+<span>Ожидает выездной QA-инспекции (24 нояб.)</span>
+</div>
+</td>
+<td class="py-4 px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle transition-colors font-label-md text-label-md" type="button">
+                  Назначить инспектора
+                </button>
+<button class="px-space-sm py-1.5 rounded-lg bg-status-verified text-on-primary hover:bg-primary transition-colors font-label-md text-label-md shadow-sm" type="button">
+                  Одобрить мандат
+                </button>
+</div>
+</td>
+</tr>
+<!-- Request 2 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="py-4 px-space-md font-mono font-bold text-primary">#MN-305</td>
+<td class="py-4 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Вилла в Layan Hills</span>
+<span class="text-text-muted text-[12px]">Приватная вилла #LH-12 • 4BR • 420 м² со своим садом</span>
+</div>
+</td>
+<td class="py-4 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-surface-sand text-primary flex items-center justify-center font-bold text-[10px]">
+                  ER
+                </div>
+<div class="flex flex-col">
+<span class="font-semibold text-primary">Elena Rostova</span>
+<span class="text-text-muted text-[11px]">Новый собственник (KYC Пройден)</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-sand text-primary font-label-caps text-label-caps">
+                Rental Pool (85/15)
+              </span>
+</td>
+<td class="py-4 px-space-md">
+<div class="flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">gavel</span>
+<span>Проверка правоустанавливающих (Chanote)</span>
+</div>
+</td>
+<td class="py-4 px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle transition-colors font-label-md text-label-md" type="button">
+                  Открыть документы
+                </button>
+<button class="px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-tertiary-container transition-colors font-label-md text-label-md" type="button">
+                  Запросить аудит
+                </button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Legal & Compliance Operational Notice Banner -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-md bg-surface-sand/70 rounded-xl mt-space-sm gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-status-verified text-[20px]">verified</span>
+<span class="font-body-sm text-body-sm text-text-muted">
+          Все мандаты myUNO подлежат двойной нотариальной верификации в земельном департаменте Пхукета (Amphoe Thalang &amp; Mueang Phuket).
+        </span>
+</div>
+<a class="font-label-caps text-label-caps text-primary hover:underline uppercase tracking-wider whitespace-nowrap" href="#">
+        Стандарты аудита v2.4 →
+      </a>
+</div>
+</section>
+</div></div></main><footer class="w-full bg-surface-container-lowest border-t border-surface-container py-space-sm px-space-lg"><div class="flex flex-col md:flex-row items-center justify-between text-on-surface-variant font-body-sm text-body-sm gap-space-xs"><div><span class="font-semibold text-primary">myUNO Platform OS</span> © 2026 myUNO Hospitality &amp; Asset Management Ltd. All rights reserved.</div><div class="flex items-center gap-space-md"><span class="flex items-center gap-1 text-[12px]"><span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span> Bangkok (BKK-1) Cluster Sync</span><span class="text-[12px] text-outline">Latency: 18ms</span><a class="hover:text-primary transition-colors text-[12px]" data-path="infrastructure-monitoring" href="#">Status Ledger</a></div></div></footer></div></body></html>

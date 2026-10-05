@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"status-instant":"#9A6B32","border-subtle":"#E5DFD3","on-tertiary-container":"#7fa195","accent-gold-soft":"#E4BE8D","surface-container-lowest":"#ffffff","on-secondary":"#ffffff","surface-sand":"#F4F0E8","background":"#effcf9","tertiary":"#01221a","surface-container-high":"#ddebe8","error":"#ba1a1a","on-primary":"#ffffff","tertiary-fixed-dim":"#accec2","inverse-surface":"#273331","surface-container-low":"#e9f7f3","secondary-fixed-dim":"#f6bb79","tertiary-container":"#17372f","on-error-container":"#93000a","surface-tint":"#40665a","on-secondary-fixed-variant":"#663e04","surface-bright":"#effcf9","tertiary-fixed":"#c7eadd","on-secondary-fixed":"#2b1700","on-tertiary-fixed-variant":"#2d4d44","outline":"#717975","primary-fixed":"#c2ebdc","status-verified-bg":"#E9F1EE","surface-ivory":"#FBF9F5","on-surface":"#121e1c","surface-variant":"#d8e5e2","status-instant-bg":"#FAF3E8","on-error":"#ffffff","inverse-primary":"#a7cfc1","text-muted":"#566360","surface":"#effcf9","surface-dim":"#cfddd9","surface-sand-subtle":"#EAE4D7","on-tertiary":"#ffffff","inverse-on-surface":"#e6f4f0","on-surface-variant":"#414845","surface-container":"#e3f1ed","accent-gold-muted":"#F5EAD9","secondary":"#81551c","on-primary-fixed":"#002019","status-verified":"#1E5848","primary-fixed-dim":"#a7cfc1","surface-container-highest":"#d8e5e2","on-primary-container":"#7ba295","on-primary-fixed-variant":"#284e43","error-container":"#ffdad6","on-background":"#121e1c","primary":"#00221a","outline-variant":"#c1c8c4","secondary-container":"#fdc17e","secondary-fixed":"#ffddba","on-tertiary-fixed":"#002019","on-secondary-container":"#784d14","primary-container":"#11382e"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","space-2xl":"4rem","space-sm":"0.5rem","gutter":"1.5rem","gutter-mobile":"1rem","space-lg":"1.5rem","margin-mobile":"1.25rem","space-md":"1rem","space-xl":"2.5rem","margin":"3rem"},fontFamily:{"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-lg-mobile":["Outfit"],"headline-md":["Outfit"],"label-lg":["Manrope"],"label-caps":["Manrope"],"title-md":["Outfit"],"body-lg":["Manrope"],"display-hero":["Outfit"],"body-sm":["Manrope"],"body-md":["Manrope"],"headline-sm":["Outfit"],"label-md":["Manrope"]},fontSize:{"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col flex-1 min-h-0"><div class="h-20 px-space-lg flex items-center justify-between bg-surface-container-low"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md text-primary tracking-tight font-bold leading-none">myUNO</span><span class="font-label-caps text-label-caps text-text-muted mt-1 uppercase tracking-wider">PMS Operations v2.4</span></div></div><span class="material-symbols-outlined text-outline cursor-pointer hover:text-on-surface text-[20px]">menu_open</span></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Управление курортом</div><nav class="flex flex-col gap-1 mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-bold shadow-sm"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="tape-chart" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">calendar_month</span><span>Шахматка (Tape Chart)</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="reservations" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">luggage</span><span>Бронирования</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg transition-all group bg-primary-container text-on-primary font-bold shadow-sm" data-path="housekeeping" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">cleaning_services</span><span>Клининг &amp; Хаускипинг</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="inventory-rates" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">vpn_key</span><span>Номерной фонд &amp; Тарифы</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="concierge-services" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">room_service</span><span>Консьерж &amp; Доп. услуги</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="reports-payouts" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">payments</span><span>Отчеты &amp; Выплаты</span></a></nav></div></div><div class="p-space-md bg-surface-container-low flex flex-col gap-space-sm"><div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-1.5"><span class="font-label-caps text-label-caps text-text-muted uppercase">Локация портфеля</span><span class="font-label-caps text-label-caps text-status-verified font-bold">3 объекта</span></div><div class="flex items-center justify-between gap-space-sm p-1.5 rounded-lg bg-surface-container-low cursor-pointer hover:bg-surface-container-high transition-colors"><div class="flex items-center gap-2 overflow-hidden"><span class="material-symbols-outlined text-[18px] text-primary">villa</span><div class="flex flex-col truncate"><span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Title Legendary</span><span class="font-label-caps text-label-caps text-text-muted truncate">Bang Tao, Phuket</span></div></div><span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span></div></div><div class="px-space-sm py-2 rounded-lg bg-status-verified-bg flex items-center justify-between"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-status-verified animate-pulse"></span><span class="font-label-md text-label-md text-status-verified font-medium">Channel Manager: Активен</span></div><span class="font-label-caps text-label-caps text-status-verified font-bold">iCal / OTA</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md flex-1 max-w-xl"><div class="relative w-full"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span><input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface placeholder:text-text-muted focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary transition-all" placeholder="Поиск по номеру брони, гостю, телефону, апартаментам #F-302..." type="text"/></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-sm px-space-md py-2 rounded-full bg-surface-container-low"><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-md text-label-md text-on-surface-variant">Заезды:</span><span class="font-label-md text-label-md font-bold text-on-surface">8</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span class="font-label-md text-label-md text-on-surface-variant">Проживают:</span><span class="font-label-md text-label-md font-bold text-on-surface">42</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-instant"></span><span class="font-label-md text-label-md text-on-surface-variant">Выезды:</span><span class="font-label-md text-label-md font-bold text-on-surface">6</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="font-label-md text-label-md text-on-surface-variant">Загрузка:</span><span class="font-label-md text-label-md font-bold text-status-verified">86%</span></div></div><button class="h-11 px-space-md bg-primary hover:bg-tertiary text-on-primary rounded-lg font-label-lg text-label-lg font-semibold flex items-center gap-2 transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>Новое бронирование</span></button><div class="relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-container-low text-on-surface-variant cursor-pointer transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary-container ring-2 ring-surface-container-lowest"></span></div><div class="h-8 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-lg text-label-lg font-semibold text-on-surface leading-tight">Нараян К.</span><span class="font-label-caps text-label-caps text-text-muted leading-tight">Duty Operations Manager</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-20 bg-surface min-h-screen w-full px-space-lg py-space-lg"><div class="flex flex-col w-full">
+<!-- Section: Header Bar & KPI Ribbon -->
+<div class="flex flex-col gap-space-md mb-space-lg">
+<!-- Breadcrumb & Title Section -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-caps text-label-caps text-status-verified font-bold uppercase tracking-wider bg-status-verified-bg px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+            Live Dispatch PMS
+          </span>
+<span class="text-text-muted font-body-sm text-body-sm">•</span>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">The Title Legendary, Bang Tao</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight font-bold">
+          Диспетчерский пульт хаускипинга &amp; myUNO Clean Standard
+        </h1>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<div class="flex items-center p-1 rounded-lg bg-surface-container shadow-sm">
+<button class="px-3 py-1.5 rounded-md font-label-md text-label-md font-semibold bg-surface-container-lowest text-primary shadow-sm flex items-center gap-1.5 transition-all" id="viewBoardBtn" onclick="switchView('board')">
+<span class="material-symbols-outlined text-[16px]">view_kanban</span>
+<span>Канбан</span>
+</button>
+<button class="px-3 py-1.5 rounded-md font-label-md text-label-md font-medium text-text-muted hover:text-on-surface flex items-center gap-1.5 transition-all" id="viewListBtn" onclick="switchView('list')">
+<span class="material-symbols-outlined text-[16px]">format_list_bulleted</span>
+<span>Реестр нарядов</span>
+</button>
+</div>
+<button class="h-10 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+<span>Экспорт чек-листов</span>
+</button>
+<button class="h-10 px-space-md rounded-lg bg-primary hover:bg-tertiary text-on-primary font-label-md text-label-md font-semibold flex items-center gap-2 shadow-sm transition-colors" onclick="toggleDrawer(true)">
+<span class="material-symbols-outlined text-[18px]">assignment_add</span>
+<span>+ Создать наряд / Инспекцию</span>
+</button>
+</div>
+</div>
+<!-- 6-Metric High Impact Strategic Ribbon -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-sm">
+<!-- Metric 1: Total Units -->
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Всего юнитов</span>
+<span class="material-symbols-outlined text-[18px] text-primary">apartment</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">52</span>
+<span class="font-label-caps text-label-caps text-text-muted">в управлении</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full w-full"></div>
+</div>
+</div>
+<!-- Metric 2: Clean & Verified -->
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-status-verified">
+<span class="font-label-caps text-label-caps uppercase tracking-wider font-semibold">Проверены (QA)</span>
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-headline-sm text-headline-sm text-status-verified font-bold">34</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">65.4%</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-status-verified h-full" style="width: 65.4%;"></div>
+</div>
+</div>
+<!-- Metric 3: In Cleaning -->
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-caps text-label-caps uppercase tracking-wider font-semibold">В процессе</span>
+<span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">6</span>
+<span class="font-label-caps text-label-caps text-text-muted">активных бригад</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary h-full" style="width: 11.5%;"></div>
+</div>
+</div>
+<!-- Metric 4: Dirty / Turnover -->
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-status-instant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider font-semibold">Требуют уборки</span>
+<span class="material-symbols-outlined text-[18px]">bed</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-headline-sm text-headline-sm text-status-instant font-bold">8</span>
+<span class="font-label-caps text-label-caps text-error font-bold">1 срочный</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-status-instant h-full" style="width: 15.4%;"></div>
+</div>
+</div>
+<!-- Metric 5: Maintenance -->
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider font-semibold">Техобслуживание</span>
+<span class="material-symbols-outlined text-[18px]">home_repair_service</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">4</span>
+<span class="font-label-caps text-label-caps text-text-muted">A/C &amp; сантехника</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-outline h-full" style="width: 7.7%;"></div>
+</div>
+</div>
+<!-- Metric 6: Arrival Readiness -->
+<div class="p-3.5 rounded-xl bg-status-verified-bg shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-status-verified">
+<span class="font-label-caps text-label-caps uppercase tracking-wider font-bold">Готовность дня</span>
+<span class="material-symbols-outlined text-[18px]">task_alt</span>
+</div>
+<div class="flex items-baseline gap-1 mt-2">
+<span class="font-headline-sm text-headline-sm text-status-verified font-bold">100%</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified leading-tight mt-1">Все 8 заездов готовы</span>
+</div>
+</div>
+</div>
+<!-- Section: Control Filter Bar -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm mb-space-lg flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Shift Selector -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container">
+<span class="material-symbols-outlined text-[18px] text-text-muted">schedule</span>
+<select class="bg-transparent font-label-md text-label-md font-semibold text-on-surface focus:outline-none cursor-pointer">
+<option>Утренняя смена (08:00 - 16:00)</option>
+<option>Вечерний Turndown (17:00 - 21:00)</option>
+<option>Дежурный сан. контроль (Night Shift)</option>
+</select>
+</div>
+<!-- Building Pills -->
+<div class="flex items-center p-1 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary font-bold shadow-sm">Все корпуса (52)</button>
+<button class="px-2.5 py-1 rounded hover:text-on-surface transition-colors">Корпус F (18)</button>
+<button class="px-2.5 py-1 rounded hover:text-on-surface transition-colors">Корпус E (20)</button>
+<button class="px-2.5 py-1 rounded hover:text-on-surface transition-colors">Корпус D (14)</button>
+</div>
+<!-- Task Type Filter -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container">
+<span class="material-symbols-outlined text-[18px] text-text-muted">tune</span>
+<select class="bg-transparent font-label-md text-label-md text-on-surface focus:outline-none cursor-pointer">
+<option>Все типы клининга</option>
+<option>Выездная генеральная (Turnover Clean)</option>
+<option>Проживающая экспресс (Daily Touch-up)</option>
+<option>Пре-заездная инспекция (Arrival QA)</option>
+<option>Инженерный аудит (Maintenance)</option>
+</select>
+</div>
+</div>
+<!-- Quick Search & Attendant Status summary -->
+<div class="flex items-center gap-3">
+<div class="flex items-center -space-x-2 overflow-hidden">
+<div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-primary-container text-on-primary font-label-caps text-label-caps font-bold flex items-center justify-center" title="Сунита (4 наряда)">СК</div>
+<div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-secondary-container text-on-secondary-container font-label-caps text-label-caps font-bold flex items-center justify-center" title="Мали (3 наряда)">МТ</div>
+<div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-surface-container-highest text-on-surface font-label-caps text-label-caps font-bold flex items-center justify-center" title="Фатима (3 наряда)">ФА</div>
+<div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-status-verified text-on-primary font-label-caps text-label-caps font-bold flex items-center justify-center" title="Инспектор Сомбат">СР</div>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">6 горничных на линии</span>
+</div>
+</div>
+<!-- Main View Area (Kanban / List) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md items-start" id="kanbanContainer">
+<!-- COLUMN 1: TO DO / DIRTY -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<!-- Column Header -->
+<div class="flex items-center justify-between px-2 py-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-instant"></span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Требуют уборки</span>
+</div>
+<span class="font-label-caps text-label-caps font-bold px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">4</span>
+</div>
+<!-- Card 1: Urgent Priority -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('F-102')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-102</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-error-container text-on-error-container font-bold animate-pulse">Срочный заезд!</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Pool Access • 64 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-sand flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-label-caps text-label-caps text-text-muted uppercase">
+<span>Выезд: 11:30</span>
+<span class="text-error font-bold">Заезд: 15:00</span>
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface">Turnover 500TC Сатин • Полная стерилизация</span>
+</div>
+<!-- Attendant & Checklist Progress -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-text-muted font-label-md text-label-md">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+              Горничная Сунита
+            </span>
+<span class="font-bold text-on-surface">0/14 пунктов</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-instant h-full w-0"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-caps text-label-caps text-text-muted">Корпус F • 1 этаж</span>
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary font-label-caps text-label-caps font-bold transition-colors">Начать уборку</button>
+</div>
+</div>
+<!-- Card 2: E-204 Standard -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('E-204')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#E-204</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-sand text-secondary font-semibold">Выезд в 10:00</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Standard Garden • 48 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Плановая смена постельного белья, дезинфекция кухонного острова и балкона.</p>
+<div class="flex items-center justify-between text-text-muted font-label-md text-label-md">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+            Горничная Фатима
+          </span>
+<span class="font-bold text-on-surface">Ожидает старта</span>
+</div>
+</div>
+<!-- Card 3: D-302 Guest Request -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('D-302')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#D-302</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-bold">Запрос гостя</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">2BR Suite Lagoon View • 92 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-status-instant mt-0.5">room_service</span>
+<span>Дополнительная замена полотенец, 2 комплекта пляжных ковриков, капсулы Nespresso.</span>
+</div>
+</div>
+<!-- Card 4: F-410 Scheduled Turnover -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('F-410')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-410</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-text-muted">Заезд завтра</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">2BR Penthouse Terrace • 115 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<div class="flex items-center justify-between text-text-muted font-label-caps text-label-caps">
+<span>Назначение: Бригада Б</span>
+<span>В плане на 14:30</span>
+</div>
+</div>
+</div>
+<!-- COLUMN 2: IN CLEANING -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<!-- Column Header -->
+<div class="flex items-center justify-between px-2 py-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">В работе у горничных</span>
+</div>
+<span class="font-label-caps text-label-caps font-bold px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant">3</span>
+</div>
+<!-- Card 1: F-304 Mali In progress -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('F-304')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-304</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-bold">Таймер 42 мин</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Deluxe Sea View • 55 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<div class="flex flex-col gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center justify-between font-label-caps text-label-caps text-text-muted">
+<span>Начато: 12:15</span>
+<span>Расчет: 13:45</span>
+</div>
+<p>Дезинфекция ванной, смена сатина 500TC, пополнение набора Molton Brown / Panpuri.</p>
+</div>
+<!-- Attendant & Progress -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-label-md text-label-md">
+<span class="flex items-center gap-1.5 font-semibold text-primary">
+<span class="material-symbols-outlined text-[16px]">person</span>
+              Горничная Мали
+            </span>
+<span class="font-bold text-secondary">8 / 14 пунктов (57%)</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 57%;"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">sanitizer</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold uppercase">myUNO 5★ Standard Clean</span>
+</div>
+</div>
+<!-- Card 2: E-402 Maintenance + Ozone -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('E-402')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#E-402</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-sand text-on-surface-variant font-semibold">Студия • 38 m²</span>
+</div>
+<span class="font-label-caps text-label-caps text-error font-bold uppercase tracking-wider">A/C Ремонт + Озонирование</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Чистка дренажа кондиционера и антибактериальная обработка воздуха перед заездом.</p>
+<div class="flex items-center justify-between text-text-muted font-label-md text-label-md">
+<span class="flex items-center gap-1.5 font-medium">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">engineering</span>
+            Мастер Прасит + Нук
+          </span>
+<span class="font-bold text-on-surface">5 / 10 пунктов</span>
+</div>
+</div>
+<!-- Card 3: D-105 Daily Touch-up -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('D-105')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#D-105</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-primary font-semibold">Проживание</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Deluxe Garden • 52 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">chevron_right</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ежедневный легкий сервис, вынос мусора, заправка кровати, питьевая вода.</p>
+<div class="flex items-center justify-between font-label-caps text-label-caps text-text-muted">
+<span>Горничная Фатима</span>
+<span class="text-secondary font-bold">Завершение через 10 мин</span>
+</div>
+</div>
+</div>
+<!-- COLUMN 3: READY FOR QA INSPECTION -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<!-- Column Header -->
+<div class="flex items-center justify-between px-2 py-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-instant"></span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Ожидают инспекции QA</span>
+</div>
+<span class="font-label-caps text-label-caps font-bold px-2 py-0.5 rounded-full bg-accent-gold-muted text-status-instant">3</span>
+</div>
+<!-- Card 1: F-201 Supervisor QA Required -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
+<div class="flex items-start justify-between cursor-pointer" onclick="openInspectionDetail('F-201')">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-201</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-bold">Готов к проверке</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">2BR Family Suite • 84 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">fact_check</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-sand text-on-surface-variant font-body-sm text-body-sm flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-caps text-label-caps text-text-muted">
+<span>Уборка завершена (Мали)</span>
+<span class="text-status-verified font-bold">14/14 клининг</span>
+</div>
+<p>Инспекция супервайзером Сомбатом: чистота стекол террасы, бара, фруктовый сет.</p>
+</div>
+<!-- QA Actions Buttons -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold text-center transition-colors" onclick="openInspectionDetail('F-201')">
+            Чек-лист QA
+          </button>
+<button class="py-2 px-3 rounded-lg bg-status-verified hover:bg-primary text-on-primary font-label-md text-label-md font-semibold text-center transition-colors shadow-sm" onclick="verifyUnit('F-201')">
+            Одобрить (QA)
+          </button>
+</div>
+</div>
+<!-- Card 2: E-101 Pool Access -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
+<div class="flex items-start justify-between cursor-pointer" onclick="openInspectionDetail('E-101')">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#E-101</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-text-muted font-bold">Очередь QA</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Deluxe Swim-up • 62 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">fact_check</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Проверка шезлонгов террасы, уровня садовой приватности и работоспособности Smart TV.</p>
+<button class="w-full py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold text-center transition-colors" onclick="openInspectionDetail('E-101')">
+          Открыть чек-лист
+        </button>
+</div>
+<!-- Card 3: D-404 Panorama -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
+<div class="flex items-start justify-between cursor-pointer" onclick="openInspectionDetail('D-404')">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#D-404</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-text-muted font-bold">Очередь QA</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">3BR Signature Ocean • 140 m²</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">fact_check</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Проверка персонального джакузи и винного холодильника.</p>
+<button class="w-full py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold text-center transition-colors" onclick="openInspectionDetail('D-404')">
+          Открыть чек-лист
+        </button>
+</div>
+</div>
+<!-- COLUMN 4: VERIFIED / READY FOR ARRIVAL -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<!-- Column Header -->
+<div class="flex items-center justify-between px-2 py-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified"></span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">myUNO Clean Verified</span>
+</div>
+<span class="font-label-caps text-label-caps font-bold px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified">34</span>
+</div>
+<!-- Card 1: F-302 Just Checked-in -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group cursor-pointer" onclick="openInspectionDetail('F-302')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-302</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+                Verified
+              </span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Luxury Pool View • 58 m²</span>
+</div>
+<span class="material-symbols-outlined text-status-verified text-[22px]">lock_open</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low font-body-sm text-body-sm flex flex-col gap-1">
+<div class="flex items-center justify-between text-text-muted font-label-caps text-label-caps">
+<span>QA Сертификат: 13:10</span>
+<span>Инспектор: Сомбат Р.</span>
+</div>
+<div class="flex items-center gap-1.5 text-status-verified font-label-md text-label-md font-semibold mt-1">
+<span class="material-symbols-outlined text-[16px]">key</span>
+<span>Smart-код передан гостю</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm font-semibold text-primary">Гость: Алексей Смирнов</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-sand text-on-surface font-semibold">Заселен 14:15</span>
+</div>
+</div>
+<!-- Card 2: F-101 Verified -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-2.5 group cursor-pointer" onclick="openInspectionDetail('F-101')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#F-101</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold">Готов</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">2BR Pool Access • 88 m²</span>
+</div>
+<span class="material-symbols-outlined text-status-verified text-[20px]">check_circle</span>
+</div>
+<div class="flex items-center justify-between text-text-muted font-label-caps text-label-caps">
+<span>Стендбай к заезду</span>
+<span class="text-primary font-semibold">Заезд: 17:30</span>
+</div>
+</div>
+<!-- Card 3: E-305 Verified -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col gap-2.5 group cursor-pointer" onclick="openInspectionDetail('E-305')">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">#E-305</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold">Готов</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">1BR Superior Courtyard • 46 m²</span>
+</div>
+<span class="material-symbols-outlined text-status-verified text-[20px]">check_circle</span>
+</div>
+<div class="flex items-center justify-between text-text-muted font-label-caps text-label-caps">
+<span>Свободен / В продаже</span>
+<span class="text-status-verified font-bold">OTA Синхронизирован</span>
+</div>
+</div>
+<!-- Collapsed More Units Link -->
+<div class="p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-center cursor-pointer">
+<span class="font-label-md text-label-md font-semibold text-primary">+ Еще 31 проверенный юнит</span>
+</div>
+</div>
+</div>
+<!-- Alternate View: List View (Initially Hidden) -->
+<div class="hidden flex-col bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden" id="listContainer">
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-sand text-on-surface font-label-caps text-label-caps uppercase tracking-wider">
+<tr>
+<th class="py-3 px-4">Юнит</th>
+<th class="py-3 px-4">Тип апартаментов</th>
+<th class="py-3 px-4">Статус наряда</th>
+<th class="py-3 px-4">Исполнитель</th>
+<th class="py-3 px-4">Тип работ</th>
+<th class="py-3 px-4">Тайминг заезда</th>
+<th class="py-3 px-4">Прогресс QA</th>
+<th class="py-3 px-4 text-right">Действия</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle/40 text-on-surface">
+<tr class="hover:bg-surface-sand-subtle/30 transition-colors">
+<td class="py-3 px-4 font-bold text-primary">#F-102</td>
+<td class="py-3 px-4 text-text-muted">1BR Pool Access (64 m²)</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-bold font-label-caps text-label-caps">Срочный выезд</span></td>
+<td class="py-3 px-4 font-semibold">Сунита К.</td>
+<td class="py-3 px-4">Turnover 500TC</td>
+<td class="py-3 px-4 font-bold text-error">Заезд 15:00</td>
+<td class="py-3 px-4">0 / 14</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-tertiary font-label-md text-label-md font-semibold" onclick="openInspectionDetail('F-102')">Открыть наряд</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-sand-subtle/30 transition-colors">
+<td class="py-3 px-4 font-bold text-primary">#F-304</td>
+<td class="py-3 px-4 text-text-muted">1BR Deluxe Sea View (55 m²)</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-bold font-label-caps text-label-caps">В клининге</span></td>
+<td class="py-3 px-4 font-semibold">Мали Т.</td>
+<td class="py-3 px-4">myUNO 5★ Standard Clean</td>
+<td class="py-3 px-4 text-text-muted">Заезд 16:30</td>
+<td class="py-3 px-4 text-secondary font-bold">8 / 14 (57%)</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-tertiary font-label-md text-label-md font-semibold" onclick="openInspectionDetail('F-304')">Открыть наряд</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-sand-subtle/30 transition-colors">
+<td class="py-3 px-4 font-bold text-primary">#F-201</td>
+<td class="py-3 px-4 text-text-muted">2BR Family Suite (84 m²)</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-bold font-label-caps text-label-caps">Ожидает QA</span></td>
+<td class="py-3 px-4 font-semibold">Инспектор Сомбат</td>
+<td class="py-3 px-4">Arrival Inspection</td>
+<td class="py-3 px-4 text-text-muted">Заезд 18:00</td>
+<td class="py-3 px-4 font-bold text-status-instant">14 / 14 готов к приёмке</td>
+<td class="py-3 px-4 text-right">
+<button class="text-status-verified hover:text-primary font-label-md text-label-md font-semibold" onclick="openInspectionDetail('F-201')">Инспектировать</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-sand-subtle/30 transition-colors">
+<td class="py-3 px-4 font-bold text-primary">#F-302</td>
+<td class="py-3 px-4 text-text-muted">1BR Luxury Pool View (58 m²)</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold font-label-caps text-label-caps">Заселен</span></td>
+<td class="py-3 px-4 font-semibold">Сомбат Р.</td>
+<td class="py-3 px-4">Сдан гостю</td>
+<td class="py-3 px-4 font-semibold text-status-verified">Заселен 14:15</td>
+<td class="py-3 px-4 text-status-verified font-bold">14 / 14 (100%)</td>
+<td class="py-3 px-4 text-right">
+<button class="text-text-muted hover:text-on-surface font-label-md text-label-md" onclick="openInspectionDetail('F-302')">Архив чека</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Section: Live Quality & Laundry Insights Bento Footer -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md mt-space-lg">
+<!-- Panel 1: Linen & Amenities Vault Status -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">local_laundry_service</span>
+<span class="font-title-md text-title-md text-primary font-bold">Склад белья &amp; Косметика</span>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold">Норма 100%</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-4">Автоматический учет запасов сатина 500TC и премиальных сетов Panpuri в бельевых Корпуса F и E.</p>
+<div class="flex flex-col gap-2.5">
+<div>
+<div class="flex items-center justify-between font-label-md text-label-md mb-1">
+<span class="text-on-surface font-medium">Комплекты King Size (Сатин 500TC)</span>
+<span class="font-bold text-primary">68 / 80 комплектов</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 85%;"></div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between font-label-md text-label-md mb-1">
+<span class="text-on-surface font-medium">Сеты банные (Molton Brown / Panpuri)</span>
+<span class="font-bold text-secondary">114 флаконов</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 72%;"></div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between font-label-md text-label-md mb-1">
+<span class="text-on-surface font-medium">Фирменная минеральная вода myUNO</span>
+<span class="font-bold text-status-verified">142 бутылки</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full" style="width: 90%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">Следующая поставка из прачечной: 16:30</span>
+<button class="font-label-caps text-label-caps font-bold text-primary hover:underline uppercase tracking-wider">Заказ со склада</button>
+</div>
+</div>
+<!-- Panel 2: Verified Standard Photo Stream (Visual Richness) -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">photo_camera</span>
+<span class="font-title-md text-title-md text-primary font-bold">Фотофиксация готовности</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Сегодня (18 фото)</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-3">Обязательные ракурсы по регламенту myUNO 5★ перед активацией smart-замка гостя.</p>
+<div class="grid grid-cols-3 gap-2">
+<div class="relative group rounded-lg overflow-hidden h-24 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A pristine luxury modern hotel bedroom in Phuket with king-size bed made with crisp white 500TC satin linens, teak wood headboard, natural tropical daylight, Andaman resort luxury interior design photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwEIOOBoboY4-9oo9kK7FwV0yb7OcFnOAzfFrNAtguUdEaJosV8iGaoRx5Z04zmJBggWgm0s9-LwYZWA_7PVLsYVW9PI6_AOslgeKk-lM7POtn2EtoxkSRhX_4x1J9PSQJY1Tj0NUR_AiB3NEDHB6lu4l9_GnUgLwcrZ4aq2_-N8gmEnz05TV40plKkPMyG8lTE_EDfsHKvjIwAzW262UrmbCRx7Szb7qN9qXgpfZxTB9EK3z8axvu"/>
+<div class="absolute bottom-1 left-1 bg-primary/80 backdrop-blur-sm text-on-primary font-label-caps text-label-caps px-1.5 py-0.5 rounded">#F-302 Спальня</div>
+</div>
+<div class="relative group rounded-lg overflow-hidden h-24 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Minimalist luxury bathroom with travertine stone counter, high-end Thai organic toiletries Panpuri, folded fluffy towels, spotless mirror with warm backlighting, resort interior." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5fIf3cS5Q6VN7SwD9TWhnI1wkRn5zNoyTABn2dPzSlxf2HlvcIbq0r6ui_ywuVsehNIDUAl-9v210pcEqE3s8zDtf7PJwRMRu4yp_L7UIPtrpvVdXJD09P1vIn8ujbhsMz9YHbuMjDO_sqJIJTHomZtCBJk9BirnTU6_RhXUjjs6GIby-2fxld3eifsR4P78p22Gp49pCXhH1xg7JY9ySoqCcJFTfWDv6ZgznLFYVlUddTCNgRMcb"/>
+<div class="absolute bottom-1 left-1 bg-primary/80 backdrop-blur-sm text-on-primary font-label-caps text-label-caps px-1.5 py-0.5 rounded">#F-302 Ванная</div>
+</div>
+<div class="relative group rounded-lg overflow-hidden h-24 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Elegantly arranged welcome fruit platter with dragonfruit, mango, and passionfruit alongside chilled glass bottle of mineral water on a stone dining table overlooking private pool." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUV7LPH4l_H88g8crC2sYdmGlszYa_Lz4Au-KoYPlicdBcCbak_Y9uKpim2kwxk8hqj6n5v_P8EpBrnoU0f5A9TC73elx1clXhR8VLhEisXKyokICGHIfOzWh-Cw-dZvCvTH6HZVIa3H2O9VBA5lu7IfzF7iLe798m6hL-wXA4a08IPBnYgRbEKCGclafBhezZd06crU7JadOSN8WQGw-p0l1RIYScDAXiEnsN-6Hl-3Btfp17_ytj"/>
+<div class="absolute bottom-1 left-1 bg-primary/80 backdrop-blur-sm text-on-primary font-label-caps text-label-caps px-1.5 py-0.5 rounded">#F-201 Сет</div>
+</div>
+</div>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-status-verified font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">format_image_left</span>
+          Стандарт 100% подтвержден
+        </span>
+<button class="font-label-caps text-label-caps font-bold text-primary hover:underline uppercase tracking-wider">Все фотоотчеты</button>
+</div>
+</div>
+<!-- Panel 3: Supervisor Daily QA Velocity & Shift Score -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">analytics</span>
+<span class="font-title-md text-title-md text-primary font-bold">Эффективность смены</span>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-bold">Отлично (4.96/5.0)</span>
+</div>
+<div class="grid grid-cols-2 gap-3 mb-4">
+<div class="p-3 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Ср. время уборки</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold mt-1">44 мин</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">На 6 мин быстрее нормы</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Инспекция QA</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold mt-1">9.2 мин</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Нулевой процент брака</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-status-verified-bg flex items-center gap-3">
+<span class="material-symbols-outlined text-status-verified text-[28px]">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-status-verified">Ревизия myUNO Clean Certified</span>
+<span class="font-body-sm text-body-sm text-status-verified leading-tight">Все 34 проверенных юнита соответствуют стандарту кварцевания и подготовки белья.</span>
+</div>
+</div>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">Супервайзер: Сомбат Р.</span>
+<button class="font-label-caps text-label-caps font-bold text-primary hover:underline uppercase tracking-wider">Подробный лог</button>
+</div>
+</div>
+</div>
+<!-- INSPECTION & QA SLIDE-OVER DRAWER (MODAL OVERLAY) -->
+<div aria-labelledby="slide-over-title" aria-modal="true" class="fixed inset-0 z-50 overflow-hidden hidden" id="inspectorDrawer" role="dialog">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-primary/40 backdrop-blur-sm transition-opacity" onclick="toggleDrawer(false)"></div>
+<div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+<div class="w-screen max-w-xl bg-surface-container-lowest shadow-2xl flex flex-col">
+<!-- Drawer Header -->
+<div class="p-space-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">fact_check</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold" id="drawerUnitTitle">#F-201</h2>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-bold">Ready for QA</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">2BR Family Suite (84 m²) • Горничная: Мали Т.</span>
+</div>
+</div>
+<button class="p-2 rounded-lg hover:bg-surface-container text-text-muted hover:text-on-surface transition-colors" onclick="toggleDrawer(false)">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Drawer Content: Standard 5-Star Checklist -->
+<div class="p-space-lg flex-1 overflow-y-auto flex flex-col gap-space-lg">
+<!-- Verification Summary Card -->
+<div class="p-4 rounded-xl bg-surface-sand flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">Регламент проверки myUNO 5★</span>
+<span class="font-label-md text-label-md font-bold text-status-verified">6 ключевых зон</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Каждый пункт требует подтверждения инспектором. При отклонениях наряд мгновенно возвращается на доработку.</p>
+</div>
+<!-- Section 1: Sanitization -->
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">1. Санитарная обработка &amp; Воздух</span>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Кварцевание и озонирование спален (15 мин)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Обработка завершена, запах свежести, отсутствие сырости.</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Дезинфекция контактных поверхностей</span>
+<span class="font-body-sm text-body-sm text-text-muted">Дверные ручки, выключатели, пульты A/C и TV в защитных антибактериальных чехлах.</span>
+</div>
+</label>
+</div>
+<!-- Section 2: Bedding & Linen -->
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">2. Текстиль &amp; Спальные места</span>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Сатин 500TC King Size (Идеальное натяжение)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Белоснежное белье, отсутствие замятий, 4 подушки разной жесткости + меню подушек.</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Банный сет премиум (650 г/м²)</span>
+<span class="font-body-sm text-body-sm text-text-muted">2 банных халата myUNO, 4 полотенца для душа, 2 пляжных полотенца на террасе.</span>
+</div>
+</label>
+</div>
+<!-- Section 3: Toiletries -->
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">3. Косметика и Эко-аксессуары</span>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Диспенсеры Panpuri / Molton Brown заправлены на 100%</span>
+<span class="font-body-sm text-body-sm text-text-muted">Шампунь, кондиционер, лосьон для тела, органическое мыло лемонграсс.</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Зубные наборы из бамбука &amp; бритвенные сеты</span>
+<span class="font-body-sm text-body-sm text-text-muted">Экологичная крафт-упаковка с сургучной печатью myUNO.</span>
+</div>
+</label>
+</div>
+<!-- Section 4: Appliances & Connectivity -->
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">4. Техника, Сеть &amp; Климат</span>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Wi-Fi тест скорости (&gt;150 Mbps)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Роутер протестирован, QR-код подключения на прикроватной тумбе.</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Кофемашина Nespresso &amp; Капсульный набор</span>
+<span class="font-body-sm text-body-sm text-text-muted">Очищен контейнер капель, заправлено 6 капсул + тростниковый сахар.</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Предварительное охлаждение (+23°C Silent mode)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Фильтры промыты, жалюзи выставлены комфортно для гостя.</span>
+</div>
+</label>
+</div>
+<!-- Section 5: Welcome Amenity -->
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">5. Приветственный комплимент</span>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<input class="mt-1 w-4 h-4 rounded text-primary focus:ring-secondary accent-primary" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">Тарелка сезонных экзотических фруктов</span>
+<span class="font-body-sm text-body-sm text-text-muted">Спелое тайское манго, рамбутан, питахайя + именная карточка myUNO Welcome.</span>
+</div>
+</label>
+</div>
+<!-- Section 6: Photo Upload Archive -->
+<div class="flex flex-col gap-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-muted font-bold">6. Фотофиксация инспекции (Архив PMS)</span>
+<div class="p-4 rounded-xl border-2 border-dashed border-subtle flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-1">add_a_photo</span>
+<span class="font-label-md text-label-md font-bold text-primary">Сделать фото инспекции или прикрепить файлы</span>
+<span class="font-label-caps text-label-caps text-text-muted mt-0.5">Требуется минимум 3 фото (спальня, санузел, терраса)</span>
+</div>
+</div>
+</div>
+<!-- Drawer Action Footer -->
+<div class="p-space-lg bg-surface-container-low flex items-center justify-between gap-3">
+<button class="px-4 py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-error font-label-md text-label-md font-semibold flex items-center gap-1.5 transition-colors" onclick="returnToRework()">
+<span class="material-symbols-outlined text-[18px]">undo</span>
+<span>На доработку</span>
+</button>
+<button class="flex-1 py-2.5 px-4 rounded-lg bg-status-verified hover:bg-primary text-on-primary font-label-md text-label-md font-bold flex items-center justify-center gap-2 shadow-sm transition-colors" onclick="approveInspection()">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Выдать сертификат myUNO Clean &amp; Активировать Smart Lock</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Notification Toast Simulation -->
+<div class="fixed bottom-6 right-6 z-50 bg-primary text-on-primary px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300" id="toastNotification">
+<span class="material-symbols-outlined text-status-verified-bg text-[22px]">check_circle</span>
+<span class="font-label-md text-label-md font-semibold" id="toastMessage">Юнит #F-201 успешно верифицирован!</span>
+</div>
+</div>
+<script>
+  function switchView(view) {
+    const kanban = document.getElementById('kanbanContainer');
+    const list = document.getElementById('listContainer');
+    const boardBtn = document.getElementById('viewBoardBtn');
+    const listBtn = document.getElementById('viewListBtn');
+
+    if (view === 'board') {
+      kanban.classList.remove('hidden');
+      kanban.classList.add('grid');
+      list.classList.add('hidden');
+      list.classList.remove('flex');
+      boardBtn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+      boardBtn.classList.remove('text-text-muted');
+      listBtn.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+      listBtn.classList.add('text-text-muted');
+    } else {
+      kanban.classList.add('hidden');
+      kanban.classList.remove('grid');
+      list.classList.remove('hidden');
+      list.classList.add('flex');
+      listBtn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+      listBtn.classList.remove('text-text-muted');
+      boardBtn.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+      boardBtn.classList.add('text-text-muted');
+    }
+  }
+
+  function toggleDrawer(show) {
+    const drawer = document.getElementById('inspectorDrawer');
+    if (show) {
+      drawer.classList.remove('hidden');
+    } else {
+      drawer.classList.add('hidden');
+    }
+  }
+
+  function openInspectionDetail(unitCode) {
+    document.getElementById('drawerUnitTitle').innerText = unitCode.startsWith('#') ? unitCode : '#' + unitCode;
+    toggleDrawer(true);
+  }
+
+  function verifyUnit(unitCode) {
+    showToast('Юнит ' + unitCode + ' сертифицирован myUNO Clean. Замок активирован.');
+  }
+
+  function approveInspection() {
+    toggleDrawer(false);
+    const title = document.getElementById('drawerUnitTitle').innerText;
+    showToast('Сертификат качества выдан для ' + title + '! Гость уведомлен.');
+  }
+
+  function returnToRework() {
+    toggleDrawer(false);
+    showToast('Наряд отправлен на повторный клининг горничной.');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toastNotification');
+    const text = document.getElementById('toastMessage');
+    text.innerText = msg;
+    toast.classList.remove('translate-y-24', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-24', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+</script></main></div></body></html>

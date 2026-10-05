@@ -1,0 +1,999 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="web_dashboard" name="shell-type">
+<title>myUNO PMS — Шахматка бронирований</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    .custom-scrollbar::-webkit-scrollbar { height: 7px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #e9f7f3; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c8c4; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #717975; }
+    .striped-ood {
+      background: repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 8px, #f1f5f9 8px, #f1f5f9 16px);
+    }
+    /* Grid system: fixed 280px left room column, then exactly 14 equal day columns */
+    .tape-grid-row {
+      display: grid;
+      grid-template-columns: 280px repeat(14, minmax(88px, 1fr));
+      min-width: 1512px;
+    }
+    .day-cols-track {
+      display: grid;
+      grid-template-columns: repeat(14, minmax(88px, 1fr));
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "status-instant": "#9A6B32",
+            "on-primary-fixed-variant": "#284e43",
+            "secondary": "#81551c",
+            "primary-fixed-dim": "#a7cfc1",
+            "error-container": "#ffdad6",
+            "status-instant-bg": "#FAF3E8",
+            "surface": "#effcf9",
+            "text-muted": "#566360",
+            "inverse-on-surface": "#e6f4f0",
+            "secondary-fixed-dim": "#f6bb79",
+            "surface-variant": "#d8e5e2",
+            "error": "#ba1a1a",
+            "surface-container-low": "#e9f7f3",
+            "surface-tint": "#40665a",
+            "tertiary-container": "#17372f",
+            "status-verified-bg": "#E9F1EE",
+            "on-surface-variant": "#414845",
+            "outline-variant": "#c1c8c4",
+            "surface-container-high": "#ddebe8",
+            "on-secondary-fixed-variant": "#663e04",
+            "on-background": "#121e1c",
+            "secondary-fixed": "#ffddba",
+            "on-secondary-fixed": "#2b1700",
+            "on-primary-container": "#7ba295",
+            "outline": "#717975",
+            "surface-ivory": "#FBF9F5",
+            "surface-dim": "#cfddd9",
+            "inverse-primary": "#a7cfc1",
+            "surface-container-highest": "#d8e5e2",
+            "surface-container": "#e3f1ed",
+            "on-secondary-container": "#784d14",
+            "primary-fixed": "#c2ebdc",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#11382e",
+            "surface-sand-subtle": "#EAE4D7",
+            "primary": "#00221a",
+            "surface-sand": "#F4F0E8",
+            "on-surface": "#121e1c",
+            "on-tertiary": "#ffffff",
+            "accent-gold-soft": "#E4BE8D",
+            "on-tertiary-fixed-variant": "#2d4d44",
+            "on-secondary": "#ffffff",
+            "status-verified": "#1E5848",
+            "on-error": "#ffffff",
+            "on-tertiary-container": "#7fa195",
+            "on-primary-fixed": "#002019",
+            "border-subtle": "#E5DFD3",
+            "inverse-surface": "#273331",
+            "secondary-container": "#fdc17e",
+            "accent-gold-muted": "#F5EAD9",
+            "on-tertiary-fixed": "#002019",
+            "surface-bright": "#effcf9",
+            "background": "#effcf9",
+            "on-error-container": "#93000a",
+            "tertiary": "#01221a",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#c7eadd",
+            "tertiary-fixed-dim": "#accec2"
+          },
+          fontFamily: {
+            "title-md": ["Outfit", "sans-serif"],
+            "body-lg": ["Manrope", "sans-serif"],
+            "label-caps": ["Manrope", "sans-serif"],
+            "display-hero": ["Outfit", "sans-serif"],
+            "body-md": ["Manrope", "sans-serif"],
+            "headline-lg": ["Outfit", "sans-serif"],
+            "headline-md": ["Outfit", "sans-serif"],
+            "label-lg": ["Manrope", "sans-serif"],
+            "headline-sm": ["Outfit", "sans-serif"],
+            "label-md": ["Manrope", "sans-serif"],
+            "body-sm": ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased">
+<!-- LEFT PMS SIDEBAR -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-border-subtle/80">
+<div class="flex flex-col flex-1 min-h-0">
+<div class="h-16 px-5 flex items-center justify-between bg-surface-container-low border-b border-border-subtle/60">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-accent-gold-soft font-bold font-title-md text-base">
+          U
+        </div>
+<div class="flex flex-col">
+<span class="font-title-md text-base text-primary tracking-tight font-bold leading-none">myUNO</span>
+<span class="font-label-caps text-[10px] text-text-muted mt-0.5 uppercase tracking-wider">PMS Operations v2.4</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-on-surface text-[18px]">menu_open</span>
+</div>
+<div class="px-3 py-3">
+<div class="px-2 py-1 font-label-caps text-[10px] text-text-muted uppercase tracking-wider font-bold">Управление курортом</div>
+<nav class="flex flex-col gap-1 mt-1">
+<a aria-current="page" class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-primary-container text-on-primary font-semibold shadow-xs" href="#">
+<span class="material-symbols-outlined text-[19px] text-accent-gold-soft">calendar_month</span>
+<span class="font-label-md text-sm">Шахматка (Tape Chart)</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-sm" href="#">
+<span class="material-symbols-outlined text-[19px] text-outline">luggage</span>
+<span class="">Бронирования</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-sm" href="#">
+<span class="material-symbols-outlined text-[19px] text-outline">cleaning_services</span>
+<span class="">Клининг &amp; Хаускипинг</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-sm" href="#">
+<span class="material-symbols-outlined text-[19px] text-outline">vpn_key</span>
+<span class="">Номерной фонд &amp; Тарифы</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-sm" href="#">
+<span class="material-symbols-outlined text-[19px] text-outline">room_service</span>
+<span class="">Консьерж &amp; Доп. услуги</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-sm" href="#">
+<span class="material-symbols-outlined text-[19px] text-outline">payments</span>
+<span class="">Отчеты &amp; Выплаты</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Portfolio & Channel status widget -->
+<div class="p-3 bg-surface-container-low flex flex-col gap-2 border-t border-border-subtle/60"><div class="bg-surface-container-lowest p-2.5 rounded-lg shadow-xs border border-border-subtle/60"><div class="flex items-center justify-between mb-1"><span class="font-label-caps text-[10px] text-text-muted uppercase font-bold">Локация портфеля</span><span class="font-label-caps text-[10px] text-status-verified font-bold">52 юнита</span></div><div class="flex items-center justify-between gap-2 p-1 rounded bg-surface-container-low cursor-pointer hover:bg-surface-container-high transition-colors"><div class="flex items-center gap-1.5 overflow-hidden"><span class="material-symbols-outlined text-[17px] text-primary">villa</span><div class="flex flex-col truncate"><span class="font-label-md text-xs text-on-surface font-semibold truncate">The Title Legendary</span><span class="font-label-caps text-[10px] text-text-muted truncate">Bang Tao (52 юнита)</span></div></div><span class="material-symbols-outlined text-outline text-[16px]">unfold_more</span></div></div><div class="px-2.5 py-1.5 rounded-lg bg-status-verified-bg flex items-center justify-between border border-status-verified/20"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified animate-pulse"></span><span class="font-label-caps text-[11px] text-status-verified font-semibold">Channel Manager: Активен</span></div><span class="font-label-caps text-[10px] text-status-verified font-bold uppercase">iCal / OTA 100% Sync</span></div></div>
+</aside>
+<!-- MAIN VIEWPORT (Offset left by 64 = 16rem) -->
+<div class="pl-64 flex flex-col min-h-screen">
+<!-- TOP FIXED HEADER BAR -->
+<header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-xl shadow-xs z-40 flex items-center justify-between px-6 border-b border-border-subtle">
+<div class="flex items-center gap-4 flex-1 max-w-lg">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-container-low font-body-sm text-xs text-on-surface placeholder:text-text-muted focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary transition-all border border-border-subtle/70" placeholder="Поиск по номеру брони, гостю, телефону, апартаментам #F-302..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Live Occupancy Pill -->
+<div class="hidden xl:flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-border-subtle/70">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-caps text-[11px] text-on-surface-variant font-medium">Заезды:</span>
+<span class="font-label-caps text-[11px] font-bold text-on-surface">8</span>
+</div>
+<span class="text-outline-variant font-light">|</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-caps text-[11px] text-on-surface-variant font-medium">Проживают:</span>
+<span class="font-label-caps text-[11px] font-bold text-on-surface">42</span>
+</div>
+<span class="text-outline-variant font-light">|</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-caps text-[11px] text-on-surface-variant font-medium">Выезды:</span>
+<span class="font-label-caps text-[11px] font-bold text-on-surface">6</span>
+</div>
+<span class="text-outline-variant font-light">|</span>
+<div class="flex items-center gap-1.5">
+<span class="font-label-caps text-[11px] text-on-surface-variant font-medium">Загрузка:</span>
+<span class="font-label-caps text-[11px] font-bold text-status-verified">86%</span>
+</div>
+</div>
+<button class="h-9 px-3.5 bg-primary hover:bg-tertiary text-on-primary rounded-lg font-label-md text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs">
+<span class="material-symbols-outlined text-[17px]">add</span>
+<span class="">Новое бронирование</span>
+</button>
+<div class="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-low text-on-surface-variant cursor-pointer transition-colors border border-border-subtle/70">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="h-6 w-px bg-surface-container-high"></div>
+<div class="flex items-center gap-2">
+<div class="flex flex-col text-right hidden sm:flex">
+<span class="font-label-md text-xs font-semibold text-on-surface leading-tight">Нараян К.</span>
+<span class="font-label-caps text-[10px] text-text-muted leading-tight">Duty Operations Manager</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-title-md text-xs font-semibold">
+          НК
+        </div>
+</div>
+</div>
+</header>
+<!-- CONTENT WRAPPER -->
+<main class="pt-20 px-6 pb-8 flex-1 flex flex-col gap-4">
+<!-- TOOLBAR 1: TITLE, PERIOD PICKER, NAVIGATION -->
+<div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-xl shadow-xs border border-border-subtle">
+<div class="flex flex-wrap items-center gap-3">
+<div>
+<div class="flex items-center gap-2">
+<h1 class="font-title-md text-xl text-primary font-bold tracking-tight">Шахматка бронирований</h1>
+<span class="px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-[10px] uppercase tracking-wider font-bold border border-status-verified/20">The Title Legendary</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-sand text-on-surface font-label-caps text-[10px] font-semibold">14 номеров в выборке</span>
+</div>
+<p class="font-body-sm text-xs text-text-muted mt-0.5">Операционный горизонт: 15 Ноября — 28 Ноября 2026 (Высокий сезон Банг Тао, Пхукет)</p>
+</div>
+<!-- Horizon Period Switcher -->
+<div class="flex items-center gap-1 bg-surface-sand p-1 rounded-lg ml-2">
+<button class="px-3 py-1 rounded-md bg-surface-container-lowest font-label-md text-xs text-primary font-bold shadow-xs">2 недели</button>
+<button class="px-3 py-1 rounded-md font-label-md text-xs text-text-muted hover:text-on-surface transition-colors">1 месяц</button>
+<button class="px-3 py-1 rounded-md font-label-md text-xs text-text-muted hover:text-on-surface transition-colors">3 месяца</button>
+</div>
+</div>
+<!-- Date Range Navigator & Search -->
+<div class="flex flex-wrap items-center gap-2 w-full xl:w-auto justify-start xl:justify-end">
+<div class="flex items-center bg-surface-container-low rounded-lg p-0.5 border border-border-subtle/80">
+<button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-surface-container-high text-on-surface transition-colors" title="Предыдущий период">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<div class="px-2.5 py-1 flex items-center gap-1.5 text-primary font-label-md text-xs font-bold">
+<span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
+<span class="">15 Ноя — 28 Ноя 2026</span>
+</div>
+<button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-surface-container-high text-on-surface transition-colors" title="Следующий период">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+<button class="ml-1 px-2.5 py-1 bg-surface-container-lowest text-primary font-label-caps text-[10px] uppercase tracking-wider font-bold rounded-md shadow-xs hover:bg-surface-sand transition-colors border border-border-subtle/50">
+            Сегодня
+          </button>
+</div>
+<div class="relative w-44 md:w-52">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="w-full h-8 pl-8 pr-3 bg-surface-container-low rounded-lg font-body-sm text-xs text-on-surface placeholder:text-text-muted focus:outline-none focus:bg-surface-container-lowest border border-border-subtle/70 transition-all" placeholder="Поиск (Смирнов, F-302)..." type="text">
+</div>
+<button class="h-8 px-3 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-lg font-label-md text-xs font-semibold flex items-center gap-1 transition-colors border border-border-subtle">
+<span class="material-symbols-outlined text-[15px]">tune</span>
+<span class="">Фильтры</span>
+</button>
+</div>
+</div>
+<!-- TOOLBAR 2: FILTERS & COLOR LEGEND -->
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5 bg-surface-container-lowest p-2.5 px-4 rounded-xl shadow-xs border border-border-subtle">
+<!-- Building & Unit Category Chips -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider mr-1">Корпуса:</span>
+<button class="px-2.5 py-1 rounded-md bg-primary text-on-primary font-label-md text-xs font-semibold shadow-xs">Все (A–F)</button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-md text-xs hover:bg-surface-container-high transition-colors">Корпус F (Pool View)</button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-md text-xs hover:bg-surface-container-high transition-colors">Корпус E (Garden)</button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-md text-xs hover:bg-surface-container-high transition-colors">Корпус D (Lagoon)</button>
+<span class="w-px h-4 bg-outline-variant mx-1"></span>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider mr-1">Тип:</span>
+<button class="px-2 py-0.5 rounded-md bg-surface-sand text-on-surface font-label-caps text-[10px] font-semibold hover:bg-surface-sand-subtle">1BR (8)</button>
+<button class="px-2 py-0.5 rounded-md bg-surface-sand text-on-surface font-label-caps text-[10px] font-semibold hover:bg-surface-sand-subtle">2BR Suite (4)</button>
+<button class="px-2 py-0.5 rounded-md bg-surface-sand text-on-surface font-label-caps text-[10px] font-semibold hover:bg-surface-sand-subtle">Penthouse (2)</button>
+</div>
+<!-- Color Legend Status Indicators -->
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-label-caps text-[11px]">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#11382e]"></span>
+<span class="text-on-surface font-medium">Проживают (In-House)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#1e5848]"></span>
+<span class="text-on-surface font-medium">Заезд сегодня</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#b47818]"></span>
+<span class="text-on-surface font-medium">Выезд сегодня</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#31574d]"></span>
+<span class="text-on-surface font-medium">Подтверждено</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-accent-gold-soft border border-secondary/40"></span>
+<span class="text-on-surface font-medium">Клининг / Инспекция</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full striped-ood border border-slate-300"></span>
+<span class="text-text-muted font-medium">Ремонт / OOD</span>
+</div>
+</div>
+</div>
+<!-- MAIN FULL-WIDTH TAPE CHART / MULTI-CALENDAR TABLE -->
+<div class="bg-surface-container-lowest rounded-xl shadow-xs border border-border-subtle overflow-hidden flex flex-col">
+<div class="overflow-x-auto custom-scrollbar select-none">
+<!-- HEADER ROW: Room Header + 14 Calendar Day Columns -->
+<div class="tape-grid-row bg-surface-container-low border-b border-border-subtle sticky top-0 z-30 shadow-xs">
+<!-- Room Column Title -->
+<div class="sticky left-0 z-40 bg-surface-container px-4 py-2.5 border-r border-border-subtle flex items-center justify-between shadow-[2px_0_4px_rgba(0,0,0,0.03)]">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-text-muted uppercase tracking-wider font-bold">Номерной фонд</span>
+<span class="font-title-md text-xs text-primary font-bold">Апартаменты &amp; Статус</span>
+</div>
+<div class="flex items-center gap-0.5 text-text-muted bg-surface-container-lowest px-1.5 py-0.5 rounded border border-border-subtle cursor-pointer hover:bg-surface-sand transition-colors">
+<span class="material-symbols-outlined text-[13px]">swap_vert</span>
+<span class="font-label-caps text-[9px] font-bold">Этаж</span>
+</div>
+</div>
+<!-- Day 1: Sun 15 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle bg-surface-sand/30">
+<span class="font-label-caps text-[10px] text-secondary font-bold">ВС</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">15</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">88%</span>
+</div>
+<!-- Day 2: Mon 16 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ПН</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">16</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">90%</span>
+</div>
+<!-- Day 3: Tue 17 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ВТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">17</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">85%</span>
+</div>
+<!-- Day 4: Wed 18 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">СР</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">18</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">82%</span>
+</div>
+<!-- Day 5: Thu 19 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ЧТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">19</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">84%</span>
+</div>
+<!-- Day 6: Fri 20 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ПТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">20</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-status-verified font-bold">92%</span>
+</div>
+<!-- Day 7: Sat 21 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle bg-surface-sand/40">
+<span class="font-label-caps text-[10px] text-secondary font-bold">СБ</span>
+<span class="font-title-md text-sm font-bold text-secondary leading-tight">21</span>
+<span class="font-label-caps text-[9px] text-secondary font-semibold">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-status-verified font-bold">96%</span>
+</div>
+<!-- Day 8: Sun 22 (TODAY - HIGHLIGHTED) -->
+<div class="py-1.5 px-1 flex flex-col items-center justify-center border-r border-border-subtle bg-primary-container text-on-primary relative shadow-inner">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-gold-soft animate-ping"></span>
+<span class="font-label-caps text-[9px] uppercase text-accent-gold-soft font-bold tracking-wider">Сегодня</span>
+</div>
+<span class="font-title-md text-sm font-bold text-on-primary leading-tight">22 ВС</span>
+<span class="font-label-caps text-[9px] text-accent-gold-soft">Ноя</span>
+<span class="mt-0.5 px-1.5 py-0.2 rounded bg-status-verified font-label-caps text-[9px] text-white font-bold">94%</span>
+</div>
+<!-- Day 9: Mon 23 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ПН</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">23</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">90%</span>
+</div>
+<!-- Day 10: Tue 24 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ВТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">24</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">86%</span>
+</div>
+<!-- Day 11: Wed 25 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">СР</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">25</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">80%</span>
+</div>
+<!-- Day 12: Thu 26 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ЧТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">26</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-text-muted font-bold">78%</span>
+</div>
+<!-- Day 13: Fri 27 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted font-bold">ПТ</span>
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">27</span>
+<span class="font-label-caps text-[9px] text-text-muted">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-status-verified font-bold">85%</span>
+</div>
+<!-- Day 14: Sat 28 -->
+<div class="py-2 px-1 flex flex-col items-center justify-center bg-surface-sand/40">
+<span class="font-label-caps text-[10px] text-secondary font-bold">СБ</span>
+<span class="font-title-md text-sm font-bold text-secondary leading-tight">28</span>
+<span class="font-label-caps text-[9px] text-secondary font-semibold">Ноя</span>
+<span class="mt-1 px-1.5 py-0.2 rounded bg-surface-container-lowest font-label-caps text-[9px] text-status-verified font-bold">91%</span>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- SECTION 1: BUILDING F (6 APARTMENTS) -->
+<!-- ========================================== -->
+<div class="tape-grid-row bg-surface-container-low border-b border-border-subtle py-1.5 px-4 items-center">
+<div class="flex items-center gap-2 col-span-15">
+<span class="material-symbols-outlined text-[16px] text-primary">apartment</span>
+<span class="font-label-caps text-[11px] text-primary font-bold uppercase tracking-wider">Корпус F — Executive Pool &amp; Penthouse Zone (6 апартаментов)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest font-label-caps text-[10px] text-text-muted font-semibold ml-2 border border-border-subtle/50">Загрузка: 93%</span>
+</div>
+</div>
+<!-- ROW F-101 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<!-- Room Left Header -->
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0" title="Чистый"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#F-101</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Ground Terrace</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">48 м² • 1st Fl • SmartLock</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<!-- 14 Day Timeline Canvas -->
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<!-- Today subtle vertical guide -->
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- David Becker: 15 to 18 Nov (Days 0 to 3, width 3 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#31574d] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 0 + 3px); width: calc((100% / 14) * 3 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px] opacity-80">travel_explore</span>
+<span class="font-label-md text-[11px] font-semibold truncate">David Becker (#UN-8301)</span>
+<span class="font-label-caps text-[9px] opacity-75">Expedia</span>
+</div>
+<span class="font-label-caps text-[9px] bg-black/25 px-1 py-0.5 rounded font-bold shrink-0 ml-1">Выехал</span>
+</div>
+<!-- Empty slot with subtle action on hover -->
+<div class="absolute top-1.5 bottom-1.5 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style="left: calc((100% / 14) * 3);">
+<span class="font-label-caps text-[10px] text-text-muted bg-surface-container-lowest px-2 py-0.5 rounded border border-border-subtle shadow-xs">
+                Свободно • ฿4,200/сут
+              </span>
+</div>
+</div>
+</div>
+<!-- ROW F-102 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-secondary shrink-0" title="Уборка"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#F-102</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Direct Pool</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">52 м² • Swim-Up Deck</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-accent-gold-muted text-secondary font-label-caps text-[10px] font-bold shrink-0">Уборка</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Michael Chang: 22 to 26 Nov (Day 7 to 11, 4 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#1e5848] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 7 + 3px); width: calc((100% / 14) * 4 - 6px);"><div class="flex items-center gap-1.5 truncate"><span class="material-symbols-outlined text-[13px] text-accent-gold-soft">travel_explore</span><span class="font-label-md text-[11px] font-semibold truncate">David Becker (#UN-8301)</span><span class="font-label-caps text-[9px] px-1 py-0.2 rounded bg-black/20 text-accent-gold-soft">Expedia</span></div><span class="font-label-caps text-[9px] bg-black/25 px-1 py-0.5 rounded font-bold shrink-0 ml-1">Выехал</span></div>
+</div>
+</div>
+<!-- ROW F-201 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#F-201</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">2BR Family Suite</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">75 м² • 2 King Beds • 2nd Fl</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Инспекция</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Elena Rostova: 16 to 24 Nov (Days 1 to 9, 8 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#11382e] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 1 + 3px); width: calc((100% / 14) * 8 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft">family_restroom</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Elena Rostova (myUNO Direct VIP #UN-7719)</span>
+<span class="font-label-caps text-[9px] opacity-80">3 гостя • ฿64,800</span>
+</div>
+<div class="flex items-center gap-1 shrink-0 ml-1">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft" title="VIP Трансфер">directions_car</span>
+<span class="px-1.5 py-0.5 rounded bg-[#1e5848] font-label-caps text-[9px] font-bold">В проживании</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ROW F-302 (FEATURED ROW WITH SMIRNOV ACTIVE BOOKING) -->
+<div class="tape-grid-row border-b border-border-subtle bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors group relative z-20">
+<div class="sticky left-0 z-20 bg-[#eef7f4] p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.03)]">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-instant animate-pulse shrink-0" title="Активный гость"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-primary">#F-302</span>
+<span class="px-1 py-0.2 rounded bg-secondary-container text-on-secondary-container font-label-caps text-[9px] font-bold">Featured</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Luxury Pool • 54 м²</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-label-caps text-[10px] font-bold shrink-0">Занят</span>
+</div>
+<div class="col-span-14 relative h-13 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%] flex items-center">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Alexei Smirnov Active Plaque: 20 to 23 Nov (Days 5 to 8, 3 cols) -->
+<div class="absolute top-1 bottom-1 rounded-lg bg-gradient-to-r from-[#11382e] via-[#17372f] to-[#11382e] text-white px-2.5 flex items-center justify-between shadow-md z-20 cursor-pointer ring-2 ring-accent-gold-soft ring-offset-1" style="left: calc((100% / 14) * 5 + 3px); width: calc((100% / 14) * 3 - 6px);">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-5 h-5 rounded-full bg-accent-gold-soft text-primary font-bold font-label-caps text-[9px] flex items-center justify-center shrink-0">АС</div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1 truncate">
+<span class="font-label-md text-[11px] font-bold truncate">Алексей Смирнов</span>
+<span class="font-label-caps text-[9px] text-accent-gold-soft font-semibold">Direct #UN-84920</span>
+</div>
+<span class="font-label-caps text-[9px] text-white/80 truncate">฿37,350 • Porsche + Шеф</span>
+</div>
+</div>
+<div class="flex items-center gap-1 shrink-0 pl-1">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft">directions_car</span>
+<span class="px-1.5 py-0.5 rounded bg-[#1e5848] text-white font-label-caps text-[9px] font-bold">In-House</span>
+</div>
+</div>
+<!-- Subsequent Booking in F-302: Klaus Weber: 25 to 28 Nov (Days 10 to 13, 3 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#31574d] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 10 + 3px); width: calc((100% / 14) * 3 - 6px);">
+<div class="flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[13px]">calendar_today</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Klaus Weber (#UN-8600)</span>
+</div>
+<span class="font-label-caps text-[9px] bg-black/20 px-1 py-0.5 rounded font-bold shrink-0">25 Ноя</span>
+</div>
+</div>
+</div>
+<!-- ROW F-401 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#F-401</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">2BR Premier</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">82 м² • Panoramic Balcony</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%] flex items-center justify-center">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<div class="text-text-muted font-label-caps text-[10px] opacity-40 hover:opacity-100 transition-opacity">
+<span class="bg-surface-container-lowest/90 px-3 py-1 rounded-md border border-border-subtle shadow-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">add_circle</span>
+                Свободно под моментальное бронирование (฿14,200/сут)
+              </span>
+</div>
+</div>
+</div>
+<!-- ROW F-501 (Penthouse) -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-instant shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#F-501</span>
+<span class="font-label-caps text-[10px] text-status-instant font-bold">Sky Penthouse</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">115 м² • Private Rooftop Jacuzzi</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-status-instant font-label-caps text-[10px] font-bold shrink-0">VIP Гость</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Sultan Al-Mansoor: 21 to 27 Nov (Days 6 to 12, 6 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#11382e] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 6 + 3px); width: calc((100% / 14) * 6 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-accent-gold-soft">diamond</span>
+<span class="font-label-md text-[11px] font-bold truncate">Sultan Al-Mansoor (#UN-8802, Penthouse VIP)</span>
+<span class="font-label-caps text-[9px] text-accent-gold-soft">฿245,000 • VIP Butler</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#1e5848] text-white font-label-caps text-[9px] font-bold shrink-0 ml-1">В проживании</span>
+</div>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- SECTION 2: BUILDING E (4 APARTMENTS) -->
+<!-- ========================================== -->
+<div class="tape-grid-row bg-surface-container-low border-b border-border-subtle py-1.5 px-4 items-center">
+<div class="flex items-center gap-2 col-span-15">
+<span class="material-symbols-outlined text-[16px] text-primary">home_work</span>
+<span class="font-label-caps text-[11px] text-primary font-bold uppercase tracking-wider">Корпус E — Garden Courtyard (4 апартамента)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest font-label-caps text-[10px] text-text-muted font-semibold ml-2 border border-border-subtle/50">Загрузка: 85%</span>
+</div>
+</div>
+<!-- ROW E-101 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#E-101</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Garden Terrace</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">46 м² • Private Patio</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Dmitry Korolev: 23 to 27 Nov (Days 8 to 12, 4 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#31574d] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 8 + 3px); width: calc((100% / 14) * 4 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px]">luggage</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Dmitry Korolev (#UN-8711)</span>
+</div>
+<span class="font-label-caps text-[9px] bg-black/20 px-1.5 py-0.5 rounded shrink-0">Подтверждено</span>
+</div>
+</div>
+</div>
+<!-- ROW E-204 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-[#b47818] shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#E-204</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Standard</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">45 м² • Garden View</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-instant-bg text-secondary font-label-caps text-[10px] font-bold shrink-0">Выезд сегодня</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Liam Davies: 18 to 22 Nov (Days 3 to 7, 4 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#b47818] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 3 + 3px); width: calc((100% / 14) * 4 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px]">flight_takeoff</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Liam Davies (#AB-4410, Airbnb)</span>
+</div>
+<span class="px-1.5 py-0.5 bg-black/25 rounded font-label-caps text-[9px] font-bold shrink-0 ml-1">Выезд 12:00</span>
+</div>
+</div>
+</div>
+<!-- ROW E-305 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#E-305</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">2BR Deluxe</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">72 м² • Pool &amp; Garden View</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Long-term Voronovs: 15 to 28 Nov (Full 14 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#11382e] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: 3px; right: 3px;">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft">verified</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Long-term: Семья Вороновых (#LT-441) • 15 – 28 Ноября (Весь горизонт)</span>
+<span class="font-label-caps text-[9px] opacity-80">฿140,000/мес</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#1e5848] text-white font-label-caps text-[9px] font-bold shrink-0 ml-1">Долгосрок</span>
+</div>
+</div>
+</div>
+<!-- ROW E-402 (OOD / Maintenance) -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-outline shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#E-402</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">Studio Comfort</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">38 м² • 4th Floor</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-label-caps text-[10px] font-bold shrink-0">OOD / Ремонт</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- OOD AC Maintenance: 19 to 22 Nov (Days 4 to 7, 3 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md striped-ood border border-slate-300 text-slate-800 px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 4 + 3px); width: calc((100% / 14) * 3 - 6px);">
+<div class="flex items-center gap-1 font-label-caps text-[10px] font-bold bg-white/90 px-1.5 py-0.5 rounded shadow-xs truncate">
+<span class="material-symbols-outlined text-[13px] text-error">build</span>
+<span class="truncate">Обслуживание VRV кондиционирования</span>
+</div>
+<span class="px-1 py-0.5 bg-slate-700 text-white rounded font-label-caps text-[9px] font-bold shrink-0 ml-1">Блокировка</span>
+</div>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- SECTION 3: BUILDING D (4 APARTMENTS) -->
+<!-- ========================================== -->
+<div class="tape-grid-row bg-surface-container-low border-b border-border-subtle py-1.5 px-4 items-center">
+<div class="flex items-center gap-2 col-span-15">
+<span class="material-symbols-outlined text-[16px] text-primary">domain</span>
+<span class="font-label-caps text-[11px] text-primary font-bold uppercase tracking-wider">Корпус D — Lagoon Access (4 апартамента)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest font-label-caps text-[10px] text-text-muted font-semibold ml-2 border border-border-subtle/50">Загрузка: 90%</span>
+</div>
+</div>
+<!-- ROW D-101 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#D-101</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Pool Terrace</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">48 м² • Lagoon Access</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Инспекция</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Takahashi Kenji: 17 to 27 Nov (Days 2 to 12, 10 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#11382e] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 2 + 3px); width: calc((100% / 14) * 10 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft">villa</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Takahashi Kenji (Direct #UN-7610) • 10 ночей</span>
+<span class="font-label-caps text-[9px] text-accent-gold-soft">฿118,000</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-[#1e5848] text-white font-label-caps text-[9px] font-bold shrink-0 ml-1">В проживании</span>
+</div>
+</div>
+</div>
+<!-- ROW D-203 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-secondary shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#D-203</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">1BR Deluxe Lagoon</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">50 м² • 2nd Floor</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-accent-gold-muted text-secondary font-label-caps text-[10px] font-bold shrink-0">Грязно</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Olga Kurylenko: 18 to 22 Nov (Days 3 to 7, 4 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#b47818] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 3 + 3px); width: calc((100% / 14) * 4 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px]">flight_takeoff</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Olga Kurylenko (Booking.com #BK-7890)</span>
+</div>
+<span class="px-1.5 py-0.5 bg-black/25 rounded font-label-caps text-[9px] font-bold shrink-0 ml-1">Выезд 12:00</span>
+</div>
+<!-- Marc V.: 24 to 28 Nov (Days 9 to 13, 4 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#31574d] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 9 + 3px); width: calc((100% / 14) * 4 - 6px);">
+<span class="font-label-md text-[11px] truncate">Marc V. (Direct #UN-8902)</span>
+<span class="font-label-caps text-[9px] bg-black/20 px-1 py-0.5 rounded shrink-0">24 Ноя</span>
+</div>
+</div>
+</div>
+<!-- ROW D-302 -->
+<div class="tape-grid-row border-b border-border-subtle hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#D-302</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">2BR Lagoon Premier</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">78 м² • 3rd Floor</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%] flex items-center justify-center">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<div class="text-text-muted font-label-caps text-[10px] opacity-40 hover:opacity-100 transition-opacity">
+<span class="bg-surface-container-lowest/90 px-3 py-1 rounded-md border border-border-subtle shadow-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">add</span> Доступно к бронированию (฿8,900/сут)
+              </span>
+</div>
+</div>
+</div>
+<!-- ROW D-404 -->
+<div class="tape-grid-row hover:bg-surface-sand/15 transition-colors group relative">
+<div class="sticky left-0 z-20 bg-surface-container-lowest p-2.5 px-3.5 flex items-center justify-between border-r border-border-subtle shadow-[2px_0_4px_rgba(0,0,0,0.02)] group-hover:bg-surface-sand/20">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-2 h-2 rounded-full bg-status-verified shrink-0"></div>
+<div class="flex flex-col truncate">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-xs font-bold text-on-surface">#D-404</span>
+<span class="font-label-caps text-[10px] text-text-muted truncate">2BR Rooftop Sky</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted">92 м² • Top Floor</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold shrink-0">Чисто</span>
+</div>
+<div class="col-span-14 relative h-12 bg-[linear-gradient(to_right,#e5dfd3_1px,transparent_1px)] bg-[size:calc(100%/14)_100%]">
+<div class="absolute inset-y-0 bg-primary/5 pointer-events-none" style="left: calc((100% / 14) * 7); width: calc(100% / 14);"></div>
+<!-- Sarah Jenkins: 15 to 21 Nov (Days 0 to 6, 6 cols) -->
+<div class="absolute top-1.5 bottom-1.5 rounded-md bg-[#31574d] text-white px-2.5 flex items-center justify-between shadow-xs z-10" style="left: calc((100% / 14) * 0 + 3px); width: calc((100% / 14) * 6 - 6px);">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[13px]">hotel</span>
+<span class="font-label-md text-[11px] font-semibold truncate">Sarah Jenkins (#UN-8109)</span>
+</div>
+<span class="font-label-caps text-[9px] bg-black/20 px-1 py-0.5 rounded shrink-0">Выехала</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ACTIVE BOOKING QUICK CARD: ALEXEI SMIRNOV (#F-302) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-xs border border-border-subtle flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+<!-- Guest Info & Stay Details -->
+<div class="flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold font-title-md text-sm shadow-xs">
+            АС
+          </div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-title-md text-base font-bold text-primary">Алексей Смирнов</h3>
+<span class="px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-[10px] font-bold border border-status-verified/20">In-House</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-sand text-secondary font-label-caps text-[10px] font-bold">#F-302 (Featured)</span>
+</div>
+<p class="font-body-sm text-xs text-text-muted mt-0.5">Бронь #UN-84920 • Direct VIP • +7 (916) 880-12-34 • 20 – 23 Ноя (3 ночи)</p>
+</div>
+</div>
+<div class="h-8 w-px bg-border-subtle hidden md:block"></div>
+<!-- PIN and Balance Chips -->
+<div class="flex items-center gap-2">
+<div class="px-3 py-1 rounded-lg bg-surface-sand border border-border-subtle/80 flex items-center gap-1.5 text-xs">
+<span class="material-symbols-outlined text-[16px] text-status-verified">lock</span>
+<span class="font-label-caps text-[10px] text-text-muted">SmartLock PIN:</span>
+<span class="font-label-md font-bold text-primary tracking-wider">928401</span>
+</div>
+<div class="px-3 py-1 rounded-lg bg-status-verified-bg border border-status-verified/20 flex items-center gap-1.5 text-xs">
+<span class="material-symbols-outlined text-[16px] text-status-verified">check_circle</span>
+<span class="font-label-caps text-[10px] text-status-verified">Баланс:</span>
+<span class="font-label-md font-bold text-status-verified">฿37,350 (Оплачено)</span>
+</div>
+</div>
+</div>
+<!-- Concierge & Quick Actions -->
+<div class="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-low text-xs border border-border-subtle/70" title="Porsche Macan GTS подан в лобби">
+<span class="material-symbols-outlined text-[15px] text-secondary">sports_motorsports</span>
+<span class="font-label-caps text-[11px] text-on-surface font-semibold">Porsche Macan GTS</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-low text-xs border border-border-subtle/70" title="Шеф-повар Somchai Tan: сегодня 19:30">
+<span class="material-symbols-outlined text-[15px] text-primary">restaurant</span>
+<span class="font-label-caps text-[11px] text-on-surface font-semibold">Шеф Somchai Tan (19:30)</span>
+</div>
+<button class="h-8 px-3 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] font-label-md text-xs font-bold transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">chat</span>
+<span class="">WhatsApp</span>
+</button>
+<button class="h-8 px-3.5 rounded-lg bg-primary hover:bg-tertiary text-on-primary font-label-md text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs">
+<span class="material-symbols-outlined text-[15px]">badge</span>
+<span class="">Открыть детали</span>
+</button>
+</div>
+</div>
+<!-- BOTTOM SUMMARY KPI CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+<!-- Metric 1: Average Occupancy -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-xs border border-border-subtle flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider">Средняя загрузка</span>
+<div class="flex items-baseline gap-1.5 mt-0.5">
+<span class="font-title-md text-lg font-bold text-primary">89.4%</span>
+<span class="font-label-caps text-[10px] text-status-verified font-bold">+6.2% vs План</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted block mt-0.5">Высокий сезон Банг Тао</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-status-verified-bg flex items-center justify-center text-status-verified">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+</div>
+</div>
+<!-- Metric 2: ADR -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-xs border border-border-subtle flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider">ADR (Средняя цена/ночь)</span>
+<div class="flex items-baseline gap-1.5 mt-0.5">
+<span class="font-title-md text-lg font-bold text-primary">฿ 12,450</span>
+<span class="font-label-caps text-[10px] text-status-verified font-bold">+18% vs 2025</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted block mt-0.5">RevPAR: ฿ 11,130</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+</div>
+</div>
+<!-- Metric 3: Housekeeping Status -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-xs border border-border-subtle flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider">Статус клининга</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-title-md text-lg font-bold text-status-verified">44 Чисто</span>
+<span class="font-label-caps text-[10px] text-text-muted">/ 8 в работе</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted block mt-0.5">5 горничных на смене</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-status-instant-bg flex items-center justify-center text-status-instant">
+<span class="material-symbols-outlined text-[20px]">sanitizer</span>
+</div>
+</div>
+<!-- Metric 4: Concierge Orders -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-xs border border-border-subtle flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider">Активные заказы услуг</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-title-md text-lg font-bold text-primary">14 заказов</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted block mt-0.5">Авто (6), Шеф (4), Яхты (4)</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">room_service</span>
+</div>
+</div>
+<!-- Metric 5: Channel Manager Sync -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-xs border border-border-subtle flex items-center justify-between">
+<div>
+<span class="font-label-caps text-[10px] text-text-muted uppercase font-bold tracking-wider">Channel Manager</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span>
+<span class="font-label-md text-sm font-bold text-primary">Live (0 коллизий)</span>
+</div>
+<span class="font-label-caps text-[10px] text-text-muted block mt-0.5">Airbnb, Booking, Expedia OK</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-status-verified-bg flex items-center justify-center text-status-verified">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

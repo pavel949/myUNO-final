@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { StayDatePicker } from '@/components/StayDatePicker';
 import type { PlaceOption } from '@/lib/place-search';
 import { PlaceCombobox, type PlaceComboboxLabels } from './PlaceCombobox';
-import { HOME_INTENTS, useHomeIntent, type HomeIntent } from './HomeIntentProvider';
+import { useHomeIntent } from './HomeIntentProvider';
+import { HOME_INTENTS, type HomeIntent } from './home-intent';
 import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 export interface HomeFinderLabels {

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>myUNO Phuket | Agent &amp; Broker Hub</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#00221a",
+            "primary-container": "#11382e",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#a7cfc1",
+            secondary: "#81551c",
+            "secondary-container": "#fdc17e",
+            "on-secondary": "#ffffff",
+            surface: "#effcf9",
+            "surface-ivory": "#FBF9F5",
+            "surface-sand": "#F4F0E8",
+            "surface-sand-subtle": "#EAE4D7",
+            "surface-container-lowest": "#ffffff",
+            "border-subtle": "#E2DDD2",
+            "text-muted": "#687571",
+            "on-surface": "#121e1c",
+            "status-verified": "#1E5848",
+            "status-verified-bg": "#E9F1EE",
+            "status-instant": "#9A6B32",
+            "status-instant-bg": "#FAF3E8",
+            "accent-gold-soft": "#E4BE8D",
+          },
+          fontFamily: {
+            headline: ["Outfit", "sans-serif"],
+            body: ["Manrope", "sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    @layer base {
+      body {
+        font-family: 'Manrope', sans-serif;
+        color: #121e1c;
+        background-color: #F8F6F1;
+      }
+      h1, h2, h3, h4, .font-heading {
+        font-family: 'Outfit', sans-serif;
+      }
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D8D2C4;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F6F1] text-on-surface antialiased flex min-h-screen">
+<!-- ================= LEFT SIDEBAR (260px) ================= -->
+<aside class="fixed left-0 top-0 bottom-0 w-[260px] bg-surface-sand border-r border-border-subtle z-50 flex flex-col justify-between overflow-y-auto">
+<div class="flex flex-col">
+<!-- Brand Logo Header -->
+<div class="h-20 px-5 flex items-center justify-between border-b border-border-subtle/80 bg-surface-sand">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-heading text-xl font-bold tracking-tight text-primary">myUNO</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-status-instant-bg text-secondary border border-secondary/20">PHUKET</span>
+</div>
+<div class="text-[11px] font-medium tracking-wide text-text-muted mt-0.5">Agent &amp; Broker Terminal</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified" title="Kasikorn Escrow Live"></span>
+</div>
+<!-- Broker Mini Card / Payout Balance -->
+<div class="p-4 border-b border-border-subtle/60">
+<div class="bg-surface-container-lowest p-3.5 rounded-xl border border-border-subtle shadow-sm flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="text-[10px] uppercase font-bold tracking-wider text-text-muted">Баланс к выплате</span>
+<span class="text-[10px] font-bold text-status-verified bg-status-verified-bg px-1.5 py-0.5 rounded">KBANK</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-heading text-xl font-bold text-primary">฿ 428,500</span>
+<span class="text-xs text-text-muted font-medium">THB</span>
+</div>
+<button class="w-full mt-0.5 py-1.5 px-2 bg-status-verified-bg text-status-verified hover:bg-status-verified hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">payments</span>
+<span>Вывести средства</span>
+</button>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="p-3 space-y-5 text-sm">
+<!-- Section 1 -->
+<div>
+<div class="px-3 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-text-muted">01 Рабочий стол</div>
+<div class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-primary text-on-primary font-semibold shadow-sm" href="#">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+<span>Главный дашборд</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">filter_alt</span>
+<span>Сделки &amp; Воронка</span>
+<span class="ml-auto text-[11px] px-1.5 py-0.2 rounded-full bg-surface-container-lowest text-primary font-bold">8</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span>Клиентская база</span>
+</a>
+</div>
+</div>
+<!-- Section 2 -->
+<div>
+<div class="px-3 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-text-muted">02 Инвентарь &amp; Клиенты</div>
+<div class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">share</span>
+<span>Каталог White-label</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">calendar_view_month</span>
+<span>Шахматка PMS</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Презентации &amp; Тизеры</span>
+</a>
+</div>
+</div>
+<!-- Section 3 -->
+<div>
+<div class="px-3 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-text-muted">03 Финансы &amp; Комиссии</div>
+<div class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">call_split</span>
+<span>Сплит комиссии</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Реестр выплат &amp; Инвойсы</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">calculate</span>
+<span>Калькулятор ROI &amp; Split</span>
+</a>
+</div>
+</div>
+<!-- Section 4 -->
+<div>
+<div class="px-3 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-text-muted">04 Сервис &amp; Сопровождение</div>
+<div class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+<span>Юрист &amp; Chanote</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-muted hover:text-primary hover:bg-surface-sand-subtle font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">directions_car</span>
+<span>VIP-трансфер Alphard</span>
+</a>
+</div>
+</div>
+</nav>
+</div>
+<!-- Curator & DBD License Footnote -->
+<div class="p-3.5 space-y-2 border-t border-border-subtle bg-surface-sand">
+<div class="p-3 bg-surface-container-lowest rounded-xl border border-border-subtle flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold text-primary flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span> Куратор офиса
+          </span>
+<span class="text-[10px] text-text-muted">Laguna Hub</span>
+</div>
+<div class="text-xs text-on-surface font-medium">Нараян Кумар (Desk)</div>
+<a class="inline-flex items-center gap-1 text-[11px] text-status-verified hover:underline font-semibold mt-0.5" href="https://wa.me/">
+<span class="material-symbols-outlined text-[14px]">chat</span> WhatsApp прямая линия
+        </a>
+</div>
+<div class="flex items-center justify-between text-[10px] text-text-muted px-1">
+<span>DBD #0835565011942</span>
+<span class="font-semibold text-primary">Kasikorn Escrow</span>
+</div>
+</div>
+</aside>
+<!-- ================= MAIN CONTENT WRAPPER ================= -->
+<div class="pl-[260px] flex-1 flex flex-col min-w-0">
+<!-- TOP BAR (Header) -->
+<header class="sticky top-0 z-40 h-20 bg-surface-ivory/95 backdrop-blur border-b border-border-subtle px-8 flex items-center justify-between gap-6 shadow-sm">
+<!-- Search Input with Keyboard Shortcut -->
+<div class="flex-1 max-w-md">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-text-muted text-[18px]">search</span>
+<input class="w-full pl-10 pr-12 py-2 bg-surface-sand/80 hover:bg-surface-sand focus:bg-white rounded-lg text-xs md:text-sm text-on-surface placeholder:text-text-muted border border-border-subtle focus:border-primary outline-none transition-all" placeholder="Поиск по клиентам, виллам, коду #DL или номеру Chanote..." type="text"/>
+<span class="absolute right-3 text-[10px] font-semibold text-text-muted bg-surface-sand-subtle px-1.5 py-0.5 rounded border border-border-subtle">⌘K</span>
+</div>
+</div>
+<!-- Action & Profile Group -->
+<div class="flex items-center gap-3.5">
+<!-- New Deal Button -->
+<button class="h-10 px-4 bg-primary hover:bg-primary-container text-white rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Новая сделка</span>
+</button>
+<!-- Currency Selector -->
+<div class="flex items-center bg-surface-sand rounded-lg p-1 border border-border-subtle text-xs">
+<button class="px-2.5 py-1 font-bold text-primary bg-surface-container-lowest rounded shadow-xs">฿ THB</button>
+<button class="px-2.5 py-1 text-text-muted hover:text-primary transition-colors font-medium">$ USD</button>
+<button class="px-2.5 py-1 text-text-muted hover:text-primary transition-colors font-medium">€ EUR</button>
+</div>
+<!-- Language Selector -->
+<div class="flex items-center bg-surface-sand rounded-lg p-1 border border-border-subtle text-xs">
+<button class="px-2 py-1 font-bold text-primary bg-surface-container-lowest rounded shadow-xs">RU</button>
+<button class="px-2 py-1 text-text-muted hover:text-primary transition-colors font-medium">EN</button>
+<button class="px-2 py-1 text-text-muted hover:text-primary transition-colors font-medium">TH</button>
+</div>
+<div class="h-6 w-px bg-border-subtle"></div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-3 pl-1">
+<div class="text-right hidden sm:block">
+<div class="flex items-center justify-end gap-1.5">
+<span class="font-heading text-sm font-bold text-primary">Константин Васильев</span>
+<span class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-status-verified-bg text-status-verified border border-status-verified/20">KBANK VERIFIED</span>
+</div>
+<div class="text-[11px] text-text-muted">Tier-1 Partner · Рейтинг ★ 4.95</div>
+</div>
+<div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold font-heading text-sm shadow-sm ring-2 ring-primary/10">
+            КВ
+          </div>
+</div>
+</div>
+</header>
+<!-- MAIN BODY CANVAS -->
+<main class="flex-1 p-8 space-y-6">
+<!-- ================= 4 KPI METRIC CARDS ================= -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Metric 1: Баланс к выводу (Emerald Dark Accent) -->
+<div class="bg-primary text-white p-5 rounded-2xl border border-primary-container shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-on-primary-container">Баланс к выводу</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-white border border-white/15">KBANK INSTANT</span>
+</div>
+<div class="my-3">
+<div class="flex items-baseline gap-2">
+<span class="font-heading text-2xl lg:text-3xl font-bold tracking-tight">฿ 428,500</span>
+<span class="text-xs font-semibold text-accent-gold-soft">THB</span>
+</div>
+<p class="text-[12px] text-on-primary-container mt-1">#DL-8819 и арендный пул · вывод 15 мин</p>
+</div>
+<button class="w-full py-2 px-3 bg-secondary hover:bg-secondary/90 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm" id="payout-trigger-btn">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+<span>Вывести на Kasikorn</span>
+</button>
+</div>
+<!-- Metric 2: Активный пайплайн -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-border-subtle shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-text-muted">Активный пайплайн</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-status-verified-bg text-status-verified">8 сделок в работе</span>
+</div>
+<div class="my-3">
+<div class="flex items-baseline justify-between">
+<span class="font-heading text-2xl lg:text-3xl font-bold text-primary">฿ 148.5M</span>
+<span class="text-[11px] font-bold text-status-verified bg-status-verified-bg px-2 py-0.5 rounded">+18% MoM</span>
+</div>
+<p class="text-[12px] text-text-muted mt-1">Ожидаемая комиссия: <span class="font-bold text-primary">฿ 4.45M</span> · Ср. чек ฿18.5M</p>
+</div>
+<div class="w-full bg-surface-sand h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 72%;"></div>
+</div>
+</div>
+<!-- Metric 3: Показы сегодня -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-border-subtle shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-text-muted">Показы сегодня</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-status-instant-bg text-status-instant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-instant"></span> 16:30 Ближайший
+            </span>
+</div>
+<div class="my-3">
+<div class="flex items-baseline gap-2">
+<span class="font-heading text-2xl lg:text-3xl font-bold text-primary">2 встречи</span>
+</div>
+<p class="text-[12px] text-text-muted mt-1">Oceanstone #402 &amp; Botanica Foresta #B-12</p>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
+<span class="text-text-muted text-[11px]">VIP-трансфер &amp; Смарт-ключ</span>
+<span class="text-status-verified font-bold text-[11px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Готовы 100%
+            </span>
+</div>
+</div>
+<!-- Metric 4: White-label витрина -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-border-subtle shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-text-muted">White-label витрина</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-status-verified-bg text-status-verified">АКТИВНА</span>
+</div>
+<div class="my-3">
+<div class="font-heading text-lg font-bold text-primary leading-tight">Подборка в 1 клик</div>
+<p class="text-[12px] text-text-muted mt-1">Чистые ссылки без прямых контактов собственника</p>
+</div>
+<button class="w-full py-2 px-3 bg-surface-sand hover:bg-surface-sand-subtle text-primary border border-border-subtle rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors" id="quick-share-link-btn">
+<span class="material-symbols-outlined text-[16px]">share</span>
+<span>Поделиться витриной</span>
+</button>
+</div>
+</section>
+<!-- ================= 2-COLUMN MAIN WORKSPACE (Kanban 8 cols + Tools 4 cols) ================= -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT/CENTER: KANBAN PIPELINE (8 Columns) -->
+<div class="lg:col-span-8 flex flex-col space-y-4">
+<!-- Pipeline Header & Filter Toolbar -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-border-subtle shadow-sm flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">view_kanban</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-heading text-lg font-bold text-primary">Воронка сделок</h2>
+<span class="text-[11px] font-bold bg-surface-sand text-text-muted px-2 py-0.5 rounded-full">8 объектов</span>
+</div>
+<div class="text-[11px] text-text-muted">Управление статусами, комиссиями и юридическими договорами</div>
+</div>
+</div>
+<!-- Segmented Filter Buttons -->
+<div class="flex items-center gap-2">
+<div class="flex bg-surface-sand p-1 rounded-xl border border-border-subtle text-xs">
+<button class="px-3 py-1 font-bold text-primary bg-white rounded-lg shadow-xs">Все (8)</button>
+<button class="px-3 py-1 text-text-muted hover:text-primary font-medium transition-colors">Виллы (5)</button>
+<button class="px-3 py-1 text-text-muted hover:text-primary font-medium transition-colors">Кондо (3)</button>
+</div>
+<button class="p-2 rounded-xl bg-surface-sand hover:bg-surface-sand-subtle border border-border-subtle text-text-muted hover:text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+</div>
+<!-- 4 Spacious Kanban Columns -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
+<!-- COLUMN 1: Новые лиды (3) -->
+<div class="flex flex-col bg-surface-sand/50 p-3 rounded-2xl border border-border-subtle min-h-[620px]">
+<div class="flex items-center justify-between pb-2.5 mb-3 border-b border-border-subtle">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-heading text-xs font-bold text-primary">Новые лиды</span>
+</div>
+<span class="text-[11px] font-bold bg-white text-text-muted px-2 py-0.5 rounded-full border border-border-subtle">3</span>
+</div>
+<div class="space-y-3 flex-1">
+<!-- Card 1: Layantara Villa #14 -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="relative h-28 rounded-lg overflow-hidden mb-2.5 bg-surface-sand">
+<img class="w-full h-full object-cover" data-alt="Luxury tropical pool villa in Layan Phuket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKtJWR-Z3yOdhZKBqNiQOAb3D-fDiuCUEInre-0uoX6Cs2HaD-GjCu12DoB9bzeJzNkOvBgh52f-IwUFEZgvzuSErLc974oAR_NHTmgkTH1iY1gA8JfbBYgHgn0MFfOsIYoGKafzarwXTNAY7p4YA-LZOoVLo3fk5zc6NgYxUpXTPxQNPrGpZJgIHKYpdH4BBz4ZvwyMd2fpCFJ86k1SP4D4EXrr3kqW3fE5LOZLEsQ3PlX-SP0ucK"/>
+<span class="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-primary/90 text-white px-2 py-0.5 rounded backdrop-blur">Вилла · Layan</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">Layantara Villa #14</div>
+<p class="text-[11px] text-text-muted mt-0.5">Михаил Воронов · 3BR Pool</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">฿ 32,000,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 960,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-surface-sand hover:bg-surface-sand-subtle text-primary border border-border-subtle rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">send</span>
+<span>Презентация в WhatsApp</span>
+</button>
+</div>
+<!-- Card 2: The Title Legendary -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-status-instant-bg text-status-instant">Инвестор</span>
+<span class="text-[10px] font-bold text-status-verified">8.0% Net Yield</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">The Title Legendary</div>
+<p class="text-[11px] text-text-muted mt-0.5">Sarah Jenkins · 2BR Bangtao</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">$450,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 480,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-surface-sand hover:bg-surface-sand-subtle text-primary border border-border-subtle rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">chat</span>
+<span>Написать клиенту</span>
+</button>
+</div>
+<!-- Card 3: Дмитрий Ш. (Аренда) -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all">
+<div class="flex items-center justify-between mb-1">
+<div class="font-heading text-sm font-bold text-primary">Дмитрий Ш.</div>
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-sand text-text-muted">Rawai Long-term</span>
+</div>
+<p class="text-[11px] text-text-muted">Аренда 6 месяцев</p>
+<div class="mt-2 pt-2 border-t border-border-subtle/80 flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">฿85,000/мес</span>
+<span class="font-bold text-secondary">Комиссия ฿42,500</span>
+</div>
+</div>
+</div>
+</div>
+<!-- COLUMN 2: Показы & Осмотры (2) -->
+<div class="flex flex-col bg-surface-sand/50 p-3 rounded-2xl border border-border-subtle min-h-[620px]">
+<div class="flex items-center justify-between pb-2.5 mb-3 border-b border-border-subtle">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-status-instant"></span>
+<span class="font-heading text-xs font-bold text-primary">Показы &amp; Осмотры</span>
+</div>
+<span class="text-[11px] font-bold bg-white text-text-muted px-2 py-0.5 rounded-full border border-border-subtle">2</span>
+</div>
+<div class="space-y-3 flex-1">
+<!-- Card: Oceanstone Penthouse #402 -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-secondary-container/50 text-secondary">Сегодня 16:30</span>
+<span class="text-[10px] font-bold text-status-verified flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">vpn_key</span> Salto готов
+                      </span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">Oceanstone #402</div>
+<p class="text-[11px] text-text-muted mt-0.5">David Chen · Penthouse Laguna</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">฿ 14,200,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 426,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-primary hover:bg-primary-container text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[15px]">lock_open</span>
+<span>Открыть смарт-замок</span>
+</button>
+</div>
+<!-- Card: Botanica Foresta #B-12 -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="relative h-28 rounded-lg overflow-hidden mb-2.5 bg-surface-sand">
+<img class="w-full h-full object-cover" data-alt="Botanica Foresta villa in Phuket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzQLNglGZYiLFJ6AyV1HPmlpDe1UXcn3nv2d9WZXrf_5NbcSSYnzTROInA1fMk9Xy69rHaXVNNplLVk37JeeHkMC1s8TDdIRGMGFUDNcJLmVsn3ZyAWlvRl8NGr5nt9nGcHUftvXOzhvuey74_z-EnXfhrqFwzKY7_5upruCltUmBYAydIIqTM4U1xBxGxFjXgsM2OKEphhB09p-Xf0OLCP5u1Xk4GWUpFnG4rmHtVdpyF2vJpzO_w"/>
+<span class="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-primary/90 text-white px-2 py-0.5 rounded backdrop-blur">Завтра 14:00</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">Botanica Foresta #B-12</div>
+<p class="text-[11px] text-text-muted mt-0.5">Alex &amp; Elena K. · Anantara Layan</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">฿ 41,500,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 1,245,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-status-verified-bg hover:bg-status-verified hover:text-white text-status-verified rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">airport_shuttle</span>
+<span>Alphard подтвержден</span>
+</button>
+</div>
+</div>
+</div>
+<!-- COLUMN 3: Юр. аудит & SPA (2) -->
+<div class="flex flex-col bg-surface-sand/50 p-3 rounded-2xl border border-border-subtle min-h-[620px]">
+<div class="flex items-center justify-between pb-2.5 mb-3 border-b border-border-subtle">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-heading text-xs font-bold text-primary">Юр. аудит &amp; SPA</span>
+</div>
+<span class="text-[11px] font-bold bg-white text-text-muted px-2 py-0.5 rounded-full border border-border-subtle">2</span>
+</div>
+<div class="space-y-3 flex-1">
+<!-- Card: Layantara Villa #08 -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary text-white">#DL-9204</span>
+<span class="text-[10px] font-bold text-status-verified">Chanote чистый</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">Layantara Villa #08</div>
+<p class="text-[11px] text-text-muted mt-0.5">Роман Григорьев · 4BR</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">฿ 32,000,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 960,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-surface-sand hover:bg-surface-sand-subtle text-primary border border-border-subtle rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">gavel</span>
+<span>Запросить SPA Договор</span>
+</button>
+</div>
+<!-- Card: Hao Wu (Bangtao) -->
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-border-subtle shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-sand text-text-muted">#DL-9311</span>
+<span class="text-[10px] font-bold text-secondary">Квота Freehold</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">Hao Wu · Bangtao</div>
+<p class="text-[11px] text-text-muted mt-0.5">1BR Condo · Рассрочка 30/70</p>
+<div class="mt-2.5 pt-2 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Сумма сделки:</span>
+<span class="font-bold text-primary">฿ 6,200,000</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Комиссия:</span>
+<span class="font-bold text-secondary">฿ 186,000</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-1.5 px-2 bg-surface-sand hover:bg-surface-sand-subtle text-primary border border-border-subtle rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">description</span>
+<span>Проверить квоту</span>
+</button>
+</div>
+</div>
+</div>
+<!-- COLUMN 4: К выплате (1) -->
+<div class="flex flex-col bg-surface-sand/50 p-3 rounded-2xl border border-border-subtle min-h-[620px]">
+<div class="flex items-center justify-between pb-2.5 mb-3 border-b border-border-subtle">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified"></span>
+<span class="font-heading text-xs font-bold text-primary">К выплате</span>
+</div>
+<span class="text-[11px] font-bold bg-white text-text-muted px-2 py-0.5 rounded-full border border-border-subtle">1</span>
+</div>
+<div class="space-y-3 flex-1">
+<!-- Card: The Title #F-302 -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl border-2 border-status-verified/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-status-verified-bg text-status-verified">Эскроу закрыт</span>
+<span class="text-[10px] text-text-muted">#DL-8819</span>
+</div>
+<div class="font-heading text-sm font-bold text-primary">The Title #F-302</div>
+<p class="text-[11px] text-text-muted mt-0.5">Аренда: Jean-Marc Dupont</p>
+<div class="mt-3 pt-2.5 border-t border-border-subtle/80 flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-text-muted text-[11px]">Контракт:</span>
+<span class="text-text-muted font-medium">฿ 1,020,000</span>
+</div>
+<div class="flex items-center justify-between text-xs mt-1">
+<span class="text-text-muted text-[11px]">К получению:</span>
+<span class="font-heading text-base font-bold text-status-verified">฿ 85,000 THB</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-3.5 py-2 px-3 bg-status-verified hover:bg-status-verified/90 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+<span>Вывести сейчас</span>
+</button>
+</div>
+<!-- Info Box: Escrow Settlement -->
+<div class="p-3 rounded-xl bg-surface-container-lowest border border-dashed border-border-subtle text-center">
+<span class="material-symbols-outlined text-text-muted text-[20px]">schedule</span>
+<div class="text-xs font-semibold text-primary mt-1">Kasikorn Escrow Split</div>
+<p class="text-[11px] text-text-muted mt-0.5 leading-relaxed">Выплаты проводятся моментально или планово каждый вторник</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT SIDEBAR: OPERATIONAL DAY & TOOLS (4 Columns) -->
+<div class="lg:col-span-4 flex flex-col space-y-4">
+<!-- PANEL 1: Расписание показов -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-border-subtle shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3 border-b border-border-subtle">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+</div>
+<div>
+<h3 class="font-heading text-sm font-bold text-primary">Ближайшие показы</h3>
+<div class="text-[11px] text-text-muted">2 выезда подтверждены сегодня/завтра</div>
+</div>
+</div>
+<button class="text-xs font-bold text-primary hover:text-secondary px-2.5 py-1 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle transition-colors">
+                + Слот
+              </button>
+</div>
+<!-- Items -->
+<div class="space-y-3">
+<!-- Item 1: Oceanstone -->
+<div class="p-3 rounded-xl bg-surface-sand/70 border border-border-subtle flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary text-white">СЕГОДНЯ 16:30</span>
+<span class="text-[10px] font-bold text-status-verified flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span> Salto смарт-замок готов
+                  </span>
+</div>
+<div>
+<div class="font-heading text-sm font-bold text-primary">Oceanstone Penthouse #402</div>
+<div class="text-xs text-text-muted">Гость: David Chen · Ключ активен на 2 часа</div>
+</div>
+<button class="w-full mt-1 py-1.5 px-3 bg-primary hover:bg-primary-container text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[15px]">lock_open</span>
+<span>Открыть смарт-замок</span>
+</button>
+</div>
+<!-- Item 2: Botanica Foresta -->
+<div class="p-3 rounded-xl bg-surface-sand/70 border border-border-subtle flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-sand-subtle text-primary border border-border-subtle">ЗАВТРА 14:00</span>
+<span class="text-[10px] font-bold text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">airport_shuttle</span> Alphard VIP
+                  </span>
+</div>
+<div>
+<div class="font-heading text-sm font-bold text-primary">Botanica Foresta Villa #B-12</div>
+<div class="text-xs text-text-muted">Alex &amp; Elena K. · Подача: Anantara Layan</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PANEL 2: Быстрая White-label подборка -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-border-subtle shadow-sm flex flex-col gap-3.5">
+<div class="flex items-center justify-between pb-3 border-b border-border-subtle">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</div>
+<div>
+<h3 class="font-heading text-sm font-bold text-primary">White-label подборка</h3>
+<div class="text-[11px] text-text-muted">Чистая ссылка без прямых контактов</div>
+</div>
+</div>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-status-verified-bg text-status-verified">1-TAP</span>
+</div>
+<div class="space-y-2.5">
+<div>
+<label class="text-[11px] font-bold text-text-muted uppercase tracking-wider block mb-1">Выбрать пул объектов</label>
+<div class="relative">
+<select class="w-full px-3 py-2 bg-surface-sand rounded-xl text-xs text-on-surface border border-border-subtle focus:bg-white focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+<option>Layan &amp; Bangtao Luxury Villas (4 объекта)</option>
+<option>Инвест-пул: Condos 7-9% Yield (6 объектов)</option>
+<option>Эксклюзив: Botanica Grand Avenue (2 объекта)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[16px]">expand_more</span>
+</div>
+</div>
+<div class="flex gap-2 pt-1">
+<button class="flex-1 py-2 px-3 bg-primary hover:bg-primary-container text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm" id="copy-whitelabel-link">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+<span>Скопировать для WhatsApp</span>
+</button>
+<button class="p-2 bg-surface-sand hover:bg-surface-sand-subtle border border-border-subtle rounded-lg text-primary flex items-center justify-center transition-colors" title="Показать QR-код">
+<span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+</button>
+</div>
+</div>
+</div>
+<!-- PANEL 3: Дежурный юрист & Land Office -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-border-subtle shadow-sm flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-sand flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-heading text-xs font-bold text-primary truncate">Дежурный юрист Land Office</span>
+<span class="w-2 h-2 rounded-full bg-status-verified flex-shrink-0"></span>
+</div>
+<div class="text-[11px] text-text-muted truncate">Сурачат · Проверка Chanote &amp; Квоты (до 2ч)</div>
+</div>
+</div>
+<a class="flex-shrink-0 py-2 px-3 bg-status-verified-bg hover:bg-status-verified hover:text-white text-status-verified rounded-lg text-xs font-bold flex items-center gap-1 transition-colors" href="https://wa.me/66824491000" target="_blank">
+<span class="material-symbols-outlined text-[15px]">chat</span>
+<span>Связаться</span>
+</a>
+</div>
+<!-- PANEL 4: Статистика просмотров витрин -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-border-subtle shadow-sm flex items-center justify-between text-xs">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px]">trending_up</span>
+<div>
+<span class="font-bold text-primary">48 переходов</span>
+<div class="text-[11px] text-text-muted">по вашим White-label ссылкам за 24ч</div>
+</div>
+</div>
+<span class="text-[11px] font-bold text-status-verified bg-status-verified-bg px-2 py-0.5 rounded">+32%</span>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- INTERACTIVITY SCRIPT -->
+<script>
+    document.getElementById('copy-whitelabel-link')?.addEventListener('click', function() {
+      const originalText = this.innerHTML;
+      this.innerHTML = '<span class="material-symbols-outlined text-[15px]">done</span><span>Ссылка скопирована!</span>';
+      this.classList.remove('bg-primary');
+      this.classList.add('bg-status-verified');
+      setTimeout(() => {
+        this.innerHTML = originalText;
+        this.classList.remove('bg-status-verified');
+        this.classList.add('bg-primary');
+      }, 2000);
+    });
+
+    document.getElementById('quick-share-link-btn')?.addEventListener('click', function() {
+      const originalText = this.innerHTML;
+      this.innerHTML = '<span class="material-symbols-outlined text-[15px]">done</span><span>Ссылка готова!</span>';
+      setTimeout(() => {
+        this.innerHTML = originalText;
+      }, 2000);
+    });
+
+    document.getElementById('payout-trigger-btn')?.addEventListener('click', function() {
+      const original = this.innerHTML;
+      this.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Kasikorn API...</span>';
+      setTimeout(() => {
+        this.innerHTML = '<span class="material-symbols-outlined text-[16px]">check_circle</span><span>Заявка #KB-904 отправлена</span>';
+        this.classList.remove('bg-secondary');
+        this.classList.add('bg-status-verified');
+      }, 1200);
+    });
+  </script>
+</body></html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><title>myUNO Global Platform OS</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary":"#ffffff","inverse-surface":"#273331","primary-fixed":"#c2ebdc","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","border-subtle":"#E5DFD3","surface-sand-subtle":"#EAE4D7","on-primary-fixed":"#002019","error-container":"#ffdad6","surface-container":"#e3f1ed","on-secondary-fixed":"#2b1700","surface-container-lowest":"#ffffff","tertiary-fixed":"#c7eadd","accent-gold-muted":"#F5EAD9","primary":"#00221a","surface-tint":"#40665a","on-surface-variant":"#414845","on-tertiary":"#ffffff","status-verified-bg":"#E9F1EE","on-secondary":"#ffffff","surface-container-highest":"#d8e5e2","on-background":"#121e1c","status-instant-bg":"#FAF3E8","secondary-fixed-dim":"#f6bb79","on-secondary-fixed-variant":"#663e04","on-error":"#ffffff","primary-fixed-dim":"#a7cfc1","accent-gold-soft":"#E4BE8D","surface-container-high":"#ddebe8","error":"#ba1a1a","inverse-on-surface":"#e6f4f0","on-tertiary-container":"#7fa195","text-muted":"#566360","surface-bright":"#effcf9","secondary-container":"#fdc17e","surface-ivory":"#FBF9F5","surface-sand":"#F4F0E8","background":"#effcf9","on-tertiary-fixed-variant":"#2d4d44","primary-container":"#11382e","on-error-container":"#93000a","status-instant":"#9A6B32","outline":"#717975","on-surface":"#121e1c","surface-dim":"#cfddd9","surface":"#effcf9","on-secondary-container":"#784d14","tertiary-fixed-dim":"#accec2","tertiary":"#01221a","status-verified":"#1E5848","tertiary-container":"#17372f","on-primary-container":"#7ba295","secondary":"#81551c","secondary-fixed":"#ffddba","on-primary-fixed-variant":"#284e43","inverse-primary":"#a7cfc1","on-tertiary-fixed":"#002019","surface-container-low":"#e9f7f3"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-2xl":"4rem","space-md":"1rem","margin-mobile":"1.25rem","gutter-mobile":"1rem","space-xl":"2.5rem","margin":"3rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xs":"0.25rem","gutter":"1.5rem"},"fontFamily":{"title-md":["Outfit"],"headline-sm":["Outfit"],"body-sm":["Manrope"],"headline-lg-mobile":["Outfit"],"label-md":["Manrope"],"label-caps":["Manrope"],"body-lg":["Manrope"],"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-md":["Outfit"],"display-hero":["Outfit"],"label-lg":["Manrope"],"body-md":["Manrope"]},"fontSize":{"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-screen w-72 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,18,14,0.18)]"><div class="flex flex-col h-full overflow-hidden"><div class="px-space-lg pt-space-lg pb-space-md border-b border-tertiary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md tracking-tight text-on-primary leading-none">myUNO</span><span class="font-label-caps text-label-caps text-on-primary-container tracking-wider uppercase mt-space-xs">GLOBAL OS v4.2</span></div></div><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container"><span class="w-1.5 h-1.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-caps text-label-caps text-accent-gold-soft tracking-wider">PROD</span></div></div><button class="w-full mt-space-sm flex items-center justify-between px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-tertiary-container hover:text-on-primary transition-all text-left group" type="button"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px] text-accent-gold-soft">terminal</span><span class="font-body-sm text-body-sm text-on-primary-container group-hover:text-on-primary">Jump / Command</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container text-on-primary-container font-mono">⌘K</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-md space-y-space-lg"><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ОБЗОР &amp; УПРАВЛЕНИЕ</span><span class="font-label-caps text-label-caps text-on-primary-container">01</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">public</span>Глобальный дашборд</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="portfolio-and-projects" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">domain</span>Дестинации &amp; Комплексы</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="vendor-hub" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">storefront</span>Маркетплейс &amp; Вендоры</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">ФИНАНСЫ &amp; КЛИРИНГ</span><span class="font-label-caps text-label-caps text-on-primary-container">02</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="ledger-and-payouts" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">account_balance_wallet</span>Клиринг &amp; Выплаты</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="owners-and-reporting" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">insights</span>Отчетность инвесторов</a></nav><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)]"><div class="px-space-sm pb-space-xs flex items-center justify-between"><span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wider">БЕЗОПАСНОСТЬ &amp; СИСТЕМА</span><span class="font-label-caps text-label-caps text-on-primary-container">03</span></div><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="iam-and-rbac" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">shield_person</span>Роли &amp; Доступ (IAM)</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">history_edu</span>Аудит-лог &amp; События</a><a class="flex items-center px-space-md py-2.5 rounded-lg text-on-primary-container hover:bg-primary-container hover:text-on-primary transition-all group font-label-lg text-label-lg" data-path="infrastructure-monitoring" href="#"><span class="material-symbols-outlined text-[20px] mr-space-sm text-on-primary-container group-hover:text-on-primary">network_check</span>Инфраструктура &amp; API</a></nav></div><div class="p-space-md bg-tertiary-container m-space-md rounded-xl border border-primary-container flex flex-col gap-space-sm"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Asset Registry</span><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-on-primary">LIVE</span></div><div class="grid grid-cols-3 gap-space-xs text-center py-1 bg-primary/40 rounded-lg"><div class="flex flex-col"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">4</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Зоны</span></div><div class="flex flex-col border-x border-primary-container"><span class="font-title-md text-title-md text-on-primary font-bold leading-tight">18</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Компл.</span></div><div class="flex flex-col"><span class="font-title-md text-title-md text-accent-gold-soft font-bold leading-tight">342</span><span class="font-label-caps text-label-caps text-on-primary-container text-[10px]">Юнита</span></div></div><div class="flex items-center justify-between pt-1 border-t border-primary-container/80"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-body-sm text-body-sm text-on-primary-container text-[11px]">All Systems Operational</span></div><span class="font-label-caps text-label-caps text-on-primary font-mono">99.98%</span></div></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container z-40 px-space-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Platform</span><span class="material-symbols-outlined text-[16px] text-outline-variant">chevron_right</span><span class="font-label-lg text-label-lg text-on-surface font-semibold">myUNO Executive Hub</span></div><div class="h-4 w-[1px] bg-outline-variant"></div><button class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-sand text-on-surface font-body-sm text-body-sm hover:bg-surface-sand-subtle transition-colors" type="button"><span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span><span class="material-symbols-outlined text-[16px] text-status-verified">calendar_today</span><span class="font-semibold text-on-surface">Q4 2026 • Ноябрь</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></button></div><div class="flex-1 max-w-md mx-space-lg"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-text-muted pointer-events-none">search</span><input class="w-full h-9 pl-10 pr-12 rounded-lg bg-surface-sand/70 text-on-surface placeholder:text-text-muted font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:border-primary-container focus:bg-surface-container-lowest transition-all" placeholder="Поиск по инвесторам, виллам, транзакциям..." type="search"/><kbd class="absolute right-space-sm px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-text-muted uppercase">⌘K</kbd></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-status-verified-bg text-status-verified font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">show_chart</span><span class="font-semibold">GMV Today:</span><span class="font-bold font-mono">฿1.48M</span><span class="text-[11px] text-status-verified/80">• 100% Sync</span></div><div class="flex items-center bg-surface-sand p-0.5 rounded-lg border border-border-subtle"><button class="px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm" type="button">THB ฿</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USD $</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">RUB ₽</button><button class="px-2 py-0.5 rounded text-text-muted hover:text-on-surface font-label-caps text-label-caps transition-colors" type="button">USDT</button></div><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span></button><div class="h-6 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ring-2 ring-accent-gold-soft"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden 2xl:flex flex-col text-left"><div class="flex items-center gap-1.5"><span class="font-label-lg text-label-lg text-on-surface font-bold leading-tight">Александр В.</span><span class="font-label-caps text-label-caps px-1 py-0.2 rounded bg-primary text-on-primary text-[9px]">COO</span></div><span class="font-label-caps text-label-caps text-text-muted text-[10px]">SuperAdmin Root</span></div></div></div></header><main class="relative pt-16 flex-1 w-full bg-surface-bright"><div class="w-full px-space-lg py-space-lg" id="screen-content"><div class="flex flex-col w-full">
+<!-- Hero / Header Title Strip -->
+<div class="relative bg-surface-container-low rounded-2xl p-space-lg mb-space-lg shadow-sm overflow-hidden">
+<div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-primary/5 pointer-events-none blur-3xl"></div>
+<div class="relative flex flex-col xl:flex-row xl:items-center justify-between gap-space-md z-10">
+<div class="max-w-3xl">
+<div class="flex items-center gap-space-xs text-text-muted font-label-caps text-label-caps uppercase tracking-wider mb-1">
+<span class="inline-block w-2 h-2 rounded-full bg-status-verified"></span>
+<span>Automated Split Engine • Phase 4.2</span>
+<span class="text-outline-variant">•</span>
+<span>ESCROW &amp; CLEARING PROTOCOL</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-semibold">
+          Финансовый клиринг, сплиты платежей и выплаты
+        </h1>
+<p class="font-body-md text-body-md text-text-muted mt-space-xs leading-relaxed max-w-2xl">
+          Единый расчетный центр myUNO OS: распределение выручки между портфельными собственниками (Owner Share), операционной комиссией экосистемы (Take-Rate) и локальными партнерами консьерж-инфраструктуры Пхукета.
+        </p>
+</div>
+<!-- Quick Action Terminal -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm pt-2 xl:pt-0">
+<button class="group flex items-center justify-center gap-2 px-space-md py-3 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg shadow-md hover:bg-primary-container transition-all" id="batch-payout-btn" type="button">
+<span class="material-symbols-outlined text-[20px] text-accent-gold-soft group-hover:rotate-12 transition-transform">bolt</span>
+<span>Исполнить клиринг цикла</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container text-accent-gold-soft ml-1">1 Дек</span>
+</button>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center gap-1.5 px-space-md py-3 rounded-lg bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm hover:bg-surface-sand transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Owner Statements</span>
+</button>
+<button class="p-3 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-primary shadow-sm hover:bg-surface-sand transition-all" title="Экспорт в 1C / QuickBooks" type="button">
+<span class="material-symbols-outlined text-[20px]">file_download</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Currency & Period Controls Bar -->
+<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-lowest/80 backdrop-blur-md rounded-xl p-space-sm shadow-sm">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-text-muted uppercase ml-2">Основная валюта клиринга:</span>
+<div class="inline-flex p-1 rounded-lg bg-surface-sand" id="currency-switcher">
+<button class="currency-btn active-curr px-3 py-1 rounded bg-surface-container-lowest font-label-caps text-label-caps text-primary shadow-sm transition-all font-bold" data-currency="THB" type="button">THB ฿ Активна</button>
+<button class="currency-btn px-3 py-1 rounded font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-currency="USD" type="button">USD $</button>
+<button class="currency-btn px-3 py-1 rounded font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-currency="RUB" type="button">RUB ₽</button>
+<button class="currency-btn px-3 py-1 rounded font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-currency="USDT" type="button">USDT TRC-20</button>
+</div>
+</div>
+<div class="flex items-center gap-space-md text-text-muted font-body-sm text-body-sm mr-2">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-status-verified"></span> Банковский шлюз: <strong>BOT Real-time</strong></span>
+<span class="hidden md:inline text-outline-variant">•</span>
+<span class="hidden md:flex items-center gap-1">Эскроу-депонирование: <strong class="text-primary font-mono">100%</strong></span>
+<span class="hidden md:inline text-outline-variant">•</span>
+<span>Текущий биллинг: <span class="font-mono text-primary font-bold">Ноябрь 2026</span></span>
+</div>
+</div>
+</div>
+<!-- Top Financial Summary Cards (Bento Metric Ribbon) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md mb-space-lg">
+<!-- Card 1: Gross Billing -->
+<div class="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Совокупный расчетный объем</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Gross Billing (Ноябрь 2026)</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">account_balance</span>
+</div>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight font-headline-lg">฿48,650,000</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center gap-0.5 font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-status-verified-bg text-status-verified">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +14.8% MoM
+          </span>
+<span class="font-body-sm text-body-sm text-text-muted">vs Октябрь ฿42.3M</span>
+</div>
+</div>
+<div class="pt-space-sm bg-surface-sand-subtle/50 rounded-lg p-2.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">verified_user</span> Эскроу-протокол
+        </span>
+<span class="font-label-caps text-label-caps text-primary font-bold">100% Защита</span>
+</div>
+</div>
+<!-- Card 2: Net Owner Payout -->
+<div class="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Пул к выплате собственникам</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Net Owner Payouts (70.1% Gross)</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-status-verified-bg flex items-center justify-center text-status-verified">
+<span class="material-symbols-outlined text-[22px]">real_estate_agent</span>
+</div>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-status-verified tracking-tight">฿34,120,000</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Чистая доходность: <strong class="text-primary font-mono">82.4%</strong> от аренды</span>
+</div>
+</div>
+<div class="pt-space-sm bg-surface-sand-subtle/50 rounded-lg p-2.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">184 объекта недвижимости</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Сформировано 98.9%</span>
+</div>
+</div>
+<!-- Card 3: Net Platform Revenue -->
+<div class="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Выручка myUNO Platform</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Take-Rate &amp; Service Margins</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-accent-gold-muted flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+</div>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">฿6,812,000</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-sm text-body-sm text-text-muted font-mono">14.0% от общего объема</span>
+</div>
+</div>
+<div class="pt-space-sm bg-surface-sand-subtle/50 rounded-lg p-2 flex items-center justify-between font-label-caps text-label-caps text-text-muted">
+<span>Direct: 10%</span>
+<span>Mgmt: 15%</span>
+<span>Concierge: 20%</span>
+</div>
+</div>
+<!-- Card 4: Local Vendors -->
+<div class="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Выплаты локальным вендорам</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Service &amp; Experience Partners</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+</div>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">฿2,868,000</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-sm text-body-sm text-text-muted">42 аккредитованных оператора</span>
+</div>
+</div>
+<div class="pt-space-sm bg-surface-sand-subtle/50 rounded-lg p-2.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Авто • Яхты • Шефы • Спа</span>
+<span class="font-label-caps text-label-caps text-primary font-bold">100% DBD KYC</span>
+</div>
+</div>
+</div>
+<!-- Realtime Split Engine Visualizer Bar -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm mb-space-lg">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-primary">pie_chart</span>
+<span class="font-title-md text-title-md text-primary font-semibold">Архитектура распределения денежных потоков (Clearing Flow)</span>
+</div>
+<div class="flex items-center gap-space-md text-body-sm font-body-sm text-text-muted">
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-status-verified"></span> Инвесторы (70.1%)</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-primary"></span> myUNO Take-Rate (14.0%)</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-secondary-fixed-dim"></span> Партнеры услуг (5.9%)</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-surface-variant"></span> Налог DBD 5% + Шлюзы (10.0%)</span>
+</div>
+</div>
+<!-- Multi-segment visual bar -->
+<div class="w-full h-4 rounded-full bg-surface-container overflow-hidden flex shadow-inner">
+<div class="h-full bg-status-verified transition-all duration-500" style="width: 70.1%" title="Выплаты собственникам: ฿34.12M"></div>
+<div class="h-full bg-primary transition-all duration-500" style="width: 14.0%" title="myUNO Platform Margin: ฿6.81M"></div>
+<div class="h-full bg-secondary-fixed-dim transition-all duration-500" style="width: 5.9%" title="Вендоры: ฿2.87M"></div>
+<div class="h-full bg-surface-variant transition-all duration-500" style="width: 10.0%" title="Налоги и комиссии эквайринга: ฿4.85M"></div>
+</div>
+<div class="flex justify-between items-center mt-2 text-[11px] font-mono text-text-muted">
+<span>Баланс на расчетных счетах: ฿48,650,000.00 THB</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-status-verified">sync</span> Непрерывный расчет по смарт-правилам контрактов</span>
+</div>
+</div>
+<!-- Interactive Settlement Table Section -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden mb-space-lg">
+<!-- Table Header & Filter Toolbar -->
+<div class="p-space-md bg-surface-sand-subtle/30 flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div>
+<h2 class="font-title-md text-title-md text-primary font-semibold">Журнал расщепления платежей (Split &amp; Settlement Ledger)</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Потранзакционный расчет долей бенефициаров в реальном времени с автоматическим депонированием</p>
+</div>
+<!-- Segmented Category Filters -->
+<div class="flex flex-wrap items-center gap-1 bg-surface-container p-1 rounded-lg" id="table-filter-rail">
+<button class="filter-tab px-3 py-1.5 rounded-md font-label-caps text-label-caps bg-surface-container-lowest text-primary shadow-sm font-bold transition-all" data-filter="all" type="button">Все транзакции</button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-filter="owners" type="button">Доли собственников</button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-filter="vendors" type="button">Выплаты вендорам</button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-filter="deposits" type="button">Удержания депозитов</button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-label-caps text-label-caps text-text-muted hover:text-primary transition-all" data-filter="platform" type="button">Платформенный сбор</button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse" id="settlement-table">
+<thead>
+<tr class="bg-surface-container-low text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-3 px-space-md">ID Транзакции</th>
+<th class="py-3 px-space-sm">Дата / Время</th>
+<th class="py-3 px-space-md">Бронирование / Объект</th>
+<th class="py-3 px-space-sm">Источник платежа</th>
+<th class="py-3 px-space-md text-right">Общая сумма</th>
+<th class="py-3 px-space-md text-right text-status-verified font-bold">Собственник (฿ / %)</th>
+<th class="py-3 px-space-md text-right text-primary font-bold">myUNO Fee (฿)</th>
+<th class="py-3 px-space-md text-right text-secondary font-bold">Вендор (฿)</th>
+<th class="py-3 px-space-md text-center">Статус клиринга</th>
+<th class="py-3 px-space-md text-center">Действия</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y-0" id="table-body">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-sand-subtle/40 transition-colors group">
+<td class="py-3.5 px-space-md font-mono text-primary font-bold">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">lock</span>
+<span>#TX-90412</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm text-text-muted font-mono whitespace-nowrap">
+              22 Нояб 14:15
+            </td>
+<td class="py-3.5 px-space-md">
+<div class="font-semibold text-primary">The Title Legendary #F-302</div>
+<div class="text-[12px] text-text-muted flex items-center gap-1">
+<span>Инвестор: Алексей Смирнов</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-status-verified font-mono">Direct Stay</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sand text-on-surface text-[12px] font-medium">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span> Stripe 3D-Sec
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono font-bold text-primary">
+              ฿37,350
+            </td>
+<td class="py-3.5 px-space-md text-right">
+<div class="font-mono font-bold text-status-verified">฿29,880</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1 rounded">80.0%</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-primary">
+<div class="font-bold">฿3,735</div>
+<span class="text-[11px] text-text-muted">10% Take-rate</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-secondary">
+<div class="font-bold">฿3,735</div>
+<span class="text-[11px] text-text-muted truncate max-w-[120px] inline-block" title="Porsche Macan + Шеф Сомчай">Porsche &amp; Chef</span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-gold-muted text-status-instant font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-status-instant animate-pulse"></span>
+                Готов к выплате
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Открыть сплит-ведомость" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Снять авто-холд" type="button">
+<span class="material-symbols-outlined text-[18px]">lock_open</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-sand-subtle/20 hover:bg-surface-sand-subtle/40 transition-colors group">
+<td class="py-3.5 px-space-md font-mono text-primary font-bold">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">verified</span>
+<span>#TX-90408</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm text-text-muted font-mono whitespace-nowrap">
+              22 Нояб 11:30
+            </td>
+<td class="py-3.5 px-space-md">
+<div class="font-semibold text-primary">Layantara Luxury Villa #02</div>
+<div class="text-[12px] text-text-muted flex items-center gap-1">
+<span>VIP Sultan Al-Mansoor</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-accent-gold-soft font-bold font-mono">Wire 14 Nights</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sand text-on-surface text-[12px] font-medium">
+<span class="material-symbols-outlined text-[14px] text-primary">account_balance</span> SWIFT ($14.2k)
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono font-bold text-primary">
+              ฿511,200
+            </td>
+<td class="py-3.5 px-space-md text-right">
+<div class="font-mono font-bold text-status-verified">฿434,520</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1 rounded">85.0%</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-primary">
+<div class="font-bold">฿76,680</div>
+<span class="text-[11px] text-text-muted">15% Mgmt Fee</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-text-muted">
+              —
+            </td>
+<td class="py-3.5 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px]">done_all</span>
+                Клиринг завершен
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Открыть ведомость" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+<button class="p-1 rounded text-text-muted hover:text-primary transition-colors" title="Swift Confirmation" type="button">
+<span class="material-symbols-outlined text-[18px]">attachment</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-sand-subtle/40 transition-colors group">
+<td class="py-3.5 px-space-md font-mono text-primary font-bold">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">hourglass_top</span>
+<span>#TX-90395</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm text-text-muted font-mono whitespace-nowrap">
+              21 Нояб 18:20
+            </td>
+<td class="py-3.5 px-space-md">
+<div class="font-semibold text-primary">The Title Legendary #E-305</div>
+<div class="text-[12px] text-text-muted flex items-center gap-1">
+<span>Контракт: Семья Вороновых</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-primary font-mono">1-Мес Lease</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sand text-on-surface text-[12px] font-medium">
+<span class="material-symbols-outlined text-[14px] text-primary">qr_code_2</span> Direct THB QR
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono font-bold text-primary">
+              ฿140,000
+            </td>
+<td class="py-3.5 px-space-md text-right">
+<div class="font-mono font-bold text-status-verified">฿119,000</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1 rounded">85.0%</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-primary">
+<div class="font-bold">฿21,000</div>
+<span class="text-[11px] text-text-muted">15% Long Lease</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-text-muted">
+              —
+            </td>
+<td class="py-3.5 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px]">shield</span>
+                На балансе эскроу
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Открыть ведомость" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Детали контракта" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-sand-subtle/20 hover:bg-surface-sand-subtle/40 transition-colors group">
+<td class="py-3.5 px-space-md font-mono text-primary font-bold">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">sailing</span>
+<span>#TX-90382</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm text-text-muted font-mono whitespace-nowrap">
+              21 Нояб 09:45
+            </td>
+<td class="py-3.5 px-space-md">
+<div class="font-semibold text-primary">Услуга: Яхта Majesty 56ft</div>
+<div class="text-[12px] text-text-muted flex items-center gap-1">
+<span>Чартер Пхи-Пхи (Private Concierge)</span>
+</div>
+</td>
+<td class="py-3.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sand text-on-surface text-[12px] font-medium">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_score</span> МИР Онлайн
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono font-bold text-primary">
+              ฿75,000
+            </td>
+<td class="py-3.5 px-space-md text-right">
+<span class="text-text-muted font-mono">฿0</span>
+<span class="block text-[10px] text-text-muted">Юнит не задействован</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-primary">
+<div class="font-bold">฿15,000</div>
+<span class="text-[11px] text-text-muted">20% Concierge Cut</span>
+</td>
+<td class="py-3.5 px-space-md text-right font-mono text-secondary">
+<div class="font-bold">฿60,000</div>
+<span class="text-[11px] text-text-muted">Andaman Sea Charter</span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px]">account_balance_wallet</span>
+                Выплачено на DBD счет
+              </span>
+</td>
+<td class="py-3.5 px-space-md text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Акт выполнения услуги" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</button>
+<button class="p-1 rounded text-primary hover:bg-surface-container transition-colors" title="Налоговый инвойс вендора" type="button">
+<span class="material-symbols-outlined text-[18px]">summarize</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination & Quick Summary Bar -->
+<div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm text-body-sm font-body-sm text-text-muted">
+<div class="flex items-center gap-space-md">
+<span>Показано <strong>4 из 184</strong> операций за выбранный цикл</span>
+<span class="hidden sm:inline text-outline-variant">•</span>
+<span>Текущий эскроу-пул: <strong class="text-primary font-mono font-bold">฿2,410,000 THB</strong> в ожидании чек-аутов</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm hover:bg-surface-sand transition-colors" type="button">Предыдущая</button>
+<span class="font-mono text-primary font-bold px-1">Стр. 1 из 14</span>
+<button class="px-3 py-1 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps shadow-sm hover:bg-surface-sand transition-colors" type="button">Следующая</button>
+</div>
+</div>
+</div>
+<!-- Bottom Execution Dual Panel: Batch Payout Cycle & Gateway Health Monitor -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg mb-space-md">
+<!-- Left Col (7 cols): Batch Payout Schedule & Withholding Tax Engine -->
+<div class="xl:col-span-7 bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-semibold">График массовых выплат собственникам</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Следующий регламентный расчетный цикл: <strong>1 декабря 2026</strong></p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified animate-ping"></span> Сверка завершена
+          </span>
+</div>
+<!-- Verification Metrics Card Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm mb-space-md">
+<div class="p-space-sm rounded-lg bg-surface-sand-subtle/60">
+<span class="font-label-caps text-label-caps text-text-muted block uppercase">Верификация реквизитов</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-sm text-headline-sm font-bold text-primary font-mono">182 / 184</span>
+</div>
+<span class="font-body-sm text-body-sm text-status-verified flex items-center gap-0.5 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> 98.9% готовы
+            </span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-sand-subtle/60">
+<span class="font-label-caps text-label-caps text-text-muted block uppercase">Требуют валидации</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-sm text-headline-sm font-bold text-secondary font-mono">2 собственника</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">Обновление SWIFT / IBAN</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-sand-subtle/60">
+<span class="font-label-caps text-label-caps text-text-muted block uppercase">Withholding Tax (5% DBD)</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-sm text-headline-sm font-bold text-primary font-mono">฿1,706,000</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">Автодепонирование для Tax ID</span>
+</div>
+</div>
+<!-- Visual Verification Progress Bar -->
+<div class="bg-surface-sand p-space-sm rounded-lg mb-space-md">
+<div class="flex items-center justify-between text-body-sm font-body-sm mb-1.5">
+<span class="text-primary font-semibold">Готовность пакета к расчету на 1 Декабря</span>
+<span class="font-mono text-status-verified font-bold">98.9% (฿33,745,000 THB)</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-surface-variant overflow-hidden flex">
+<div class="h-full bg-status-verified" style="width: 98.9%"></div>
+<div class="h-full bg-secondary-fixed-dim" style="width: 1.1%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 text-[11px] text-text-muted">
+<span>2 владельца (The Title #A-102, #C-405) получили SMS/Email напоминание о проверке IBAN</span>
+<button class="text-primary hover:underline font-semibold" type="button">Послать повторный PUSH</button>
+</div>
+</div>
+</div>
+<!-- Compliance Note & Single Click Auto-Run -->
+<div class="pt-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">gavel</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Все сплит-операции соответствуют протоколу <strong>BOT Foreign Currency Act 2024</strong>.</span>
+</div>
+<button class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps font-bold hover:bg-primary-container shadow-sm transition-all whitespace-nowrap" type="button">
+          Предпросмотр траншей (182)
+        </button>
+</div>
+</div>
+<!-- Right Col (5 cols): Banking Gateways & Account Health -->
+<div class="xl:col-span-5 bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Платежные шлюзы и счета</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Мониторинг ликвидности и статус каналов</p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span> Все онлайн
+          </span>
+</div>
+<!-- Bank Rows -->
+<div class="space-y-space-xs">
+<!-- Gateway 1: Kasikorn -->
+<div class="p-space-sm rounded-xl bg-surface-sand-subtle/50 hover:bg-surface-sand-subtle transition-colors flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-[#138f2d]/10 flex items-center justify-center text-[#138f2d] font-bold font-mono text-[11px]">
+                K-B
+              </div>
+<div>
+<div class="font-semibold text-primary font-body-sm text-body-sm flex items-center gap-1.5">
+<span>Kasikorn Bank (Corporate THB)</span>
+<span class="font-label-caps text-label-caps px-1 rounded bg-status-verified-bg text-status-verified">Auto-Sweep</span>
+</div>
+<div class="text-[11px] text-text-muted font-mono">IBAN •••• 9812 • BOT Clearing Direct</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono font-bold text-primary">฿18,450,000</div>
+<span class="text-[11px] text-status-verified">Ликвидность 100%</span>
+</div>
+</div>
+<!-- Gateway 2: Bangkok Bank -->
+<div class="p-space-sm rounded-xl bg-surface-sand-subtle/50 hover:bg-surface-sand-subtle transition-colors flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-[#1e4598]/10 flex items-center justify-center text-[#1e4598] font-bold font-mono text-[11px]">
+                BBL
+              </div>
+<div>
+<div class="font-semibold text-primary font-body-sm text-body-sm flex items-center gap-1.5">
+<span>Bangkok Bank Multi-Currency</span>
+<span class="font-label-caps text-label-caps px-1 rounded bg-surface-container text-primary">USD/EUR</span>
+</div>
+<div class="text-[11px] text-text-muted font-mono">SWIFT •••• 4401 • FX Rate Lock active</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono font-bold text-primary">$420,000</div>
+<span class="text-[11px] text-text-muted font-mono">≈ ฿14,910,000 THB</span>
+</div>
+</div>
+<!-- Gateway 3: Stripe Connect -->
+<div class="p-space-sm rounded-xl bg-surface-sand-subtle/50 hover:bg-surface-sand-subtle transition-colors flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-[#635bff]/10 flex items-center justify-center text-[#635bff] font-bold font-mono text-[11px]">
+                ST
+              </div>
+<div>
+<div class="font-semibold text-primary font-body-sm text-body-sm flex items-center gap-1.5">
+<span>Stripe Connect Custom Accounts</span>
+</div>
+<div class="text-[11px] text-text-muted font-mono">184 Linked Connected Accounts</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono font-bold text-status-verified">100% Payout</div>
+<span class="text-[11px] text-text-muted">Instant API Dispatch</span>
+</div>
+</div>
+<!-- Gateway 4: MIR / SBP -->
+<div class="p-space-sm rounded-xl bg-surface-sand-subtle/50 hover:bg-surface-sand-subtle transition-colors flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-[#008c95]/10 flex items-center justify-center text-[#008c95] font-bold font-mono text-[11px]">
+                МИР
+              </div>
+<div>
+<div class="font-semibold text-primary font-body-sm text-body-sm flex items-center gap-1.5">
+<span>МИР / СБП (Рублевый эквайринг)</span>
+<span class="font-label-caps text-label-caps px-1 rounded bg-accent-gold-muted text-status-instant">FX ЦБ +1.2%</span>
+</div>
+<div class="text-[11px] text-text-muted font-mono">Прямой авто-конверт в THB на K-Bank</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono font-bold text-primary">₽11,280,000</div>
+<span class="text-[11px] text-status-verified">Конвертировано</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Sync Status Tag -->
+<div class="pt-space-sm mt-space-sm flex items-center justify-between text-body-sm font-body-sm text-text-muted bg-surface-container p-space-sm rounded-xl">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">sync</span>
+          Последняя банковская сверка: <strong>22 Нояб 14:30</strong>
+</span>
+<button class="text-primary hover:underline font-label-caps text-label-caps font-bold" type="button">Обновить балансы</button>
+</div>
+</div>
+</div>
+<!-- Modal / Notification Toast Container (Simulated Microinteraction) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-space-md hidden bg-primary/40 backdrop-blur-sm" id="payout-modal">
+<div class="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-space-lg shadow-2xl relative">
+<div class="w-12 h-12 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center mb-space-sm">
+<span class="material-symbols-outlined text-[28px]">payments</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Подтверждение клиринга цикла</h3>
+<p class="font-body-md text-body-md text-text-muted mt-space-xs">
+        Вы инициируете массовую выплату <strong>฿34,120,000 THB</strong> на расчетные счета 182 собственников через <strong>Kasikorn Bank &amp; Stripe Connect</strong> с автоматическим вычетом 5% Withholding Tax.
+      </p>
+<div class="my-space-md p-space-sm bg-surface-sand rounded-xl space-y-1 text-body-sm font-body-sm">
+<div class="flex justify-between">
+<span class="text-text-muted">Пакет транзакций:</span>
+<span class="font-mono font-bold text-primary">182 транша</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted">Налоговый депозит DBD (5%):</span>
+<span class="font-mono font-bold text-primary">฿1,706,000 THB</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted">Чистый перевод бенефициарам:</span>
+<span class="font-mono font-bold text-status-verified">฿32,414,000 THB</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm mt-space-lg">
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container text-primary font-label-lg text-label-lg hover:bg-surface-variant transition-colors" id="close-modal-btn" type="button">
+          Отмена
+        </button>
+<button class="px-space-md py-2.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg shadow-md hover:bg-primary-container transition-all flex items-center gap-2" id="confirm-payout-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Подтвердить и отправить в банк</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple Micro-interactions for Ledger Filtering, Currencies and Batch Modal
+  (function() {
+    // Currency Switcher Simulation
+    const currencyButtons = document.querySelectorAll('.currency-btn');
+    currencyButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currencyButtons.forEach(b => {
+          b.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+          b.classList.add('text-text-muted');
+        });
+        btn.classList.remove('text-text-muted');
+        btn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+      });
+    });
+
+    // Ledger Filter Tabs
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        filterTabs.forEach(t => {
+          t.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+          t.classList.add('text-text-muted');
+        });
+        tab.classList.remove('text-text-muted');
+        tab.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+      });
+    });
+
+    // Modal Triggers
+    const batchBtn = document.getElementById('batch-payout-btn');
+    const modal = document.getElementById('payout-modal');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const confirmBtn = document.getElementById('confirm-payout-btn');
+
+    if (batchBtn && modal) {
+      batchBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+    }
+
+    if (closeBtn && modal) {
+      closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+    }
+
+    if (confirmBtn && modal) {
+      confirmBtn.addEventListener('click', () => {
+        confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Обработка траншей...';
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          confirmBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span> <span>Подтвердить и отправить в банк</span>';
+          alert('Пакет выплат на сумму ฿34,120,000 успешно передан в процессинг Kasikorn Corporate Bank.');
+        }, 1200);
+      });
+    }
+  })();
+</script></div></main><footer class="w-full bg-surface-container-lowest border-t border-surface-container py-space-sm px-space-lg"><div class="flex flex-col md:flex-row items-center justify-between text-on-surface-variant font-body-sm text-body-sm gap-space-xs"><div><span class="font-semibold text-primary">myUNO Platform OS</span> © 2026 myUNO Hospitality &amp; Asset Management Ltd. All rights reserved.</div><div class="flex items-center gap-space-md"><span class="flex items-center gap-1 text-[12px]"><span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span> Bangkok (BKK-1) Cluster Sync</span><span class="text-[12px] text-outline">Latency: 18ms</span><a class="hover:text-primary transition-colors text-[12px]" data-path="infrastructure-monitoring" href="#">Status Ledger</a></div></div></footer></div></body></html>

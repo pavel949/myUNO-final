@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"accent-gold-soft":"#E4BE8D","surface-dim":"#cfddd9","inverse-on-surface":"#e6f4f0","tertiary":"#01221a","surface-bright":"#effcf9","on-surface":"#121e1c","secondary-container":"#fdc17e","tertiary-fixed":"#c7eadd","background":"#effcf9","surface-variant":"#d8e5e2","secondary-fixed-dim":"#f6bb79","primary-fixed":"#c2ebdc","on-secondary":"#ffffff","surface-container-high":"#ddebe8","status-verified":"#1E5848","status-verified-bg":"#E9F1EE","inverse-primary":"#a7cfc1","inverse-surface":"#273331","primary-container":"#11382e","status-instant-bg":"#FAF3E8","on-primary-fixed-variant":"#284e43","secondary":"#81551c","on-secondary-fixed-variant":"#663e04","on-tertiary-fixed":"#002019","surface-ivory":"#FBF9F5","surface-container-lowest":"#ffffff","error":"#ba1a1a","error-container":"#ffdad6","primary-fixed-dim":"#a7cfc1","surface-container":"#e3f1ed","surface-tint":"#40665a","on-secondary-container":"#784d14","outline-variant":"#c1c8c4","surface-container-low":"#e9f7f3","tertiary-fixed-dim":"#accec2","on-tertiary-fixed-variant":"#2d4d44","accent-gold-muted":"#F5EAD9","border-subtle":"#E5DFD3","tertiary-container":"#17372f","on-tertiary-container":"#7fa195","secondary-fixed":"#ffddba","surface":"#effcf9","text-muted":"#566360","on-error":"#ffffff","primary":"#00221a","surface-sand":"#F4F0E8","status-instant":"#9A6B32","on-primary-fixed":"#002019","on-surface-variant":"#414845","on-primary":"#ffffff","surface-sand-subtle":"#EAE4D7","surface-container-highest":"#d8e5e2","on-tertiary":"#ffffff","on-background":"#121e1c","on-error-container":"#93000a","outline":"#717975","on-primary-container":"#7ba295","on-secondary-fixed":"#2b1700"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-sm":"0.5rem","space-xs":"0.25rem","space-xl":"2.5rem","gutter":"1.5rem","gutter-mobile":"1rem","margin-mobile":"1.25rem","space-md":"1rem","margin":"3rem","space-lg":"1.5rem","space-2xl":"4rem"},fontFamily:{"body-lg":["Manrope"],"body-md":["Manrope"],"headline-sm":["Outfit"],"label-md":["Manrope"],"headline-lg":["Outfit"],"label-lg":["Manrope"],"title-md":["Outfit"],"body-sm":["Manrope"],"headline-md":["Outfit"],"label-caps":["Manrope"],"headline-lg-mobile":["Outfit"],"display-hero-mobile":["Outfit"],"display-hero":["Outfit"]},fontSize:{"body-lg":["18px",{lineHeight:"28px",letterSpacing:"0em",fontWeight:"400"}],"body-md":["15px",{lineHeight:"24px",letterSpacing:"0em",fontWeight:"400"}],"headline-sm":["22px",{lineHeight:"30px",letterSpacing:"-0.005em",fontWeight:"600"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.03em",fontWeight:"600"}],"headline-lg":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"500"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.02em",fontWeight:"600"}],"title-md":["18px",{lineHeight:"26px",letterSpacing:"0em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"400"}],"headline-md":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.08em",fontWeight:"700"}],"headline-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"display-hero-mobile":["36px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"600"}],"display-hero":["56px",{lineHeight:"64px",letterSpacing:"-0.02em",fontWeight:"600"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 bg-surface-ivory/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-gutter flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm" data-path="buy-and-invest" href="#"><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><span class="font-title-md text-title-md text-primary tracking-tight">myUNO</span></a><nav class="hidden lg:flex items-center gap-space-xs p-space-xs rounded-full bg-surface-sand/60" data-active-classes="bg-surface-container-high text-on-surface font-semibold rounded-full px-space-md py-space-xs shadow-[0_1px_4px_rgba(17,56,46,0.04)]"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 px-space-md py-space-xs rounded-full transition-colors" data-path="rent" href="#">Аренда</a><a aria-current="page" class="transition-colors bg-surface-container-high text-on-surface font-semibold rounded-full px-space-md py-space-xs shadow-[0_1px_4px_rgba(17,56,46,0.04)]" data-path="buy-and-invest" href="#">Купить</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 px-space-md py-space-xs rounded-full transition-colors" data-path="complexes" href="#">Комплексы</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 px-space-md py-space-xs rounded-full transition-colors" data-path="services" href="#">Услуги</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 px-space-md py-space-xs rounded-full transition-colors" data-path="for-owners" href="#">Собственникам</a></nav></div><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center gap-space-xs bg-surface-sand/70 p-space-xs rounded-full"><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full bg-surface-container-lowest text-primary shadow-[0_1px_3px_rgba(0,0,0,0.03)]" type="button">THB ฿</button><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full text-on-surface-variant hover:text-on-surface transition-colors" type="button">USD $</button><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full text-on-surface-variant hover:text-on-surface transition-colors" type="button">RUB ₽</button><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full text-on-surface-variant hover:text-on-surface transition-colors" type="button">USDT</button></div><div class="hidden sm:flex items-center gap-space-xs bg-surface-sand/70 p-space-xs rounded-full"><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full bg-surface-container-lowest text-primary font-bold shadow-[0_1px_3px_rgba(0,0,0,0.03)]" type="button">RU</button><button class="font-label-md text-label-md px-space-sm py-space-xs rounded-full text-on-surface-variant hover:text-on-surface transition-colors" type="button">EN</button></div><a class="hidden xl:flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg shadow-[0_4px_16px_-2px_rgba(17,56,46,0.12)] hover:bg-primary transition-colors" data-path="favorites-and-requests" href="#"><span class="material-symbols-outlined text-[18px] text-accent-gold-soft">bookmark</span><span>Мой UNO / Избранное &amp; Заявки</span></a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-surface"><div class="flex flex-col w-full">
+<!-- Hero Section -->
+<section class="relative w-full overflow-hidden bg-surface-ivory pt-space-xl pb-space-2xl">
+<div class="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(#11382e_0.75px,transparent_0.75px)] [background-size:24px_24px]"></div>
+<div class="relative max-w-[1280px] mx-auto px-gutter flex flex-col gap-space-xl">
+<!-- Overline & Main Title -->
+<div class="flex flex-col gap-space-md max-w-4xl">
+<div class="inline-flex items-center gap-space-xs self-start px-space-md py-space-xs rounded-full bg-status-verified-bg text-status-verified">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-label-caps text-label-caps tracking-wider uppercase">Инвестиционная недвижимость Пхукета • Прямые цены застройщиков и эксклюзивные перепродажи</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+          Премиальная недвижимость на Пхукете с подтвержденной доходностью от 8.5% до 12.2% годовых
+        </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl">
+          Полное юридическое сопровождение сделки, проверка чистоты титула Chanote, выбор между Freehold и Leasehold, и бесшовный переход под управление myUNO Hospitality с первого дня.
+        </p>
+</div>
+<!-- Advanced Search / Filter Bar Component -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-lg p-space-md md:p-space-lg flex flex-col gap-space-md">
+<!-- Intent / Category Tabs -->
+<div class="flex items-center gap-space-xs p-space-xs bg-surface-sand rounded-lg self-start">
+<button class="px-space-md py-space-xs rounded-md bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm" type="button">Все объекты</button>
+<button class="px-space-md py-space-xs rounded-md text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-colors" type="button">Виллы с бассейном</button>
+<button class="px-space-md py-space-xs rounded-md text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-colors" type="button">Апартаменты / Кондо</button>
+<button class="px-space-md py-space-xs rounded-md text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-colors" type="button">Пентхаусы</button>
+</div>
+<!-- Filter Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-md">
+<!-- Location -->
+<div class="flex flex-col gap-space-xs bg-surface-sand/50 p-space-sm rounded-lg">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Локация</label>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<select class="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none cursor-pointer">
+<option value="all">Все районы Пхукета</option>
+<option selected="" value="bangtao">Банг Тао (Лагуна)</option>
+<option value="layan">Лаян</option>
+<option value="kamala">Камала (Millionaires Mile)</option>
+<option value="rawai">Раваи &amp; Най Харн</option>
+<option value="cherngtalay">Чонг Тале</option>
+</select>
+</div>
+</div>
+<!-- Type -->
+<div class="flex flex-col gap-space-xs bg-surface-sand/50 p-space-sm rounded-lg">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Тип объекта</label>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">home_work</span>
+<select class="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none cursor-pointer">
+<option value="any">Любой формат</option>
+<option value="condo">Кондоминиумы / Апартаменты</option>
+<option value="villa">Приватные виллы</option>
+<option value="penthouse">Пентхаусы</option>
+</select>
+</div>
+</div>
+<!-- Budget Range -->
+<div class="flex flex-col gap-space-xs bg-surface-sand/50 p-space-sm rounded-lg">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Бюджет (THB / USD)</label>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+<select class="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none cursor-pointer">
+<option value="all">Любой бюджет</option>
+<option value="5-10">฿5M – ฿10M (~$140k–$280k)</option>
+<option selected="" value="10-25">฿10M – ฿25M (~$280k–$715k)</option>
+<option value="25-50">฿25M – ฿50M (~$715k–$1.4M)</option>
+<option value="50+">฿50M+ (Ультра-люкс)</option>
+</select>
+</div>
+</div>
+<!-- Ownership Form -->
+<div class="flex flex-col gap-space-xs bg-surface-sand/50 p-space-sm rounded-lg">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Право собственности</label>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">gavel</span>
+<select class="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none cursor-pointer">
+<option value="any">Freehold или Leasehold</option>
+<option value="foreign-freehold">Foreign Freehold (100% частная)</option>
+<option value="leasehold">Protected Leasehold (90 лет)</option>
+</select>
+</div>
+</div>
+<!-- Completion Term -->
+<div class="flex flex-col gap-space-xs bg-surface-sand/50 p-space-sm rounded-lg">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Срок готовности</label>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+<select class="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none cursor-pointer">
+<option value="any">Все этапы</option>
+<option value="ready">Готовое (Ready to move/Rent)</option>
+<option value="off-plan">Off-plan (Рассрочка 0%)</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-xs">
+<div class="flex items-center gap-space-sm text-text-muted">
+<span class="material-symbols-outlined text-status-verified text-[20px]">format_image_left</span>
+<span class="font-body-sm text-body-sm">48 объектов прошли предпродажный Due Diligence за ноябрь-декабрь</span>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<button class="w-full sm:w-auto px-space-lg py-space-sm rounded-lg bg-surface-sand text-primary hover:bg-surface-sand-subtle font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Индивидуальный подбор</span>
+</button>
+<button class="w-full sm:w-auto px-space-xl py-space-sm rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg transition-colors shadow-sm flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-accent-gold-soft text-[18px]">search</span>
+<span>Показать 48 объектов</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Top Value & Trust Metrics -->
+<section class="w-full bg-surface-sand/40 py-space-xl">
+<div class="max-w-[1280px] mx-auto px-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="w-10 h-10 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">verified</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary">100% аудит Chanote</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Юридическая проверка земельного титула и лицензий IEE/EIA экспертами myUNO Legal до внесения задатка.
+        </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="w-10 h-10 rounded-full bg-accent-gold-muted text-status-instant flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">price_check</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary">฿0 скрытых комиссий</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Официальные цены застройщиков и частных владельцев без агентских наценок и завышения смет.
+        </p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">trending_up</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary">До 12.2% NET ROI</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Реальная арендная доходность на основе фактических данных 342 юнитов в действующей PMS myUNO.
+        </p>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="w-10 h-10 rounded-full bg-surface-sand text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">currency_exchange</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Trade-in &amp; Крипто-клиринг</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Структурирование расчетов в THB, USD SWIFT, USDT через официальный тайский эскроу-депозит в Kasikorn Bank.
+        </p>
+</div>
+</div>
+</section>
+<!-- Interactive Ownership Guide & ROI Calculator Section -->
+<section class="w-full bg-surface-ivory py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-gutter flex flex-col gap-space-xl">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Юридическая архитектура &amp; Финансовый расчет</span>
+<h2 class="font-headline-md text-headline-md text-primary">Выбор формы владения на Пхукете</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+          Сравните две основные структуры приобретения тайских активов для нерезидентов в строгом соответствии с Land Code BE 2497.
+        </p>
+</div>
+<!-- Comparison Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+<!-- Foreign Freehold -->
+<div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-md flex flex-col justify-between gap-space-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed/20 rounded-bl-full pointer-events-none"></div>
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="px-space-md py-space-xs rounded-full bg-primary text-on-primary font-label-md text-label-md">100% Частная Собственность</span>
+<span class="font-label-caps text-label-caps text-text-muted">Квота 49% в кондоминиумах</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Foreign Freehold</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+              Безусловное и бессрочное право собственности на имя иностранного физического лица с выдачей персонального Чанота (Chanote Title Deed) государственным Земельным департаментом.
+            </p>
+<ul class="flex flex-col gap-space-sm pt-space-xs">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Бессрочное прямое владение и простое прямое наследование</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Имя покупателя вписано на обратной стороне титульного листа Chanote</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Налоги и сборы при регистрации: 2-3% в Land Department</span>
+</li>
+</ul>
+</div>
+<div class="pt-space-md bg-surface-sand/40 p-space-md rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Идеально подходит для:</span>
+<span class="font-label-lg text-label-lg text-primary">Апартаментов, Кондо и Пентхаусов</span>
+</div>
+</div>
+<!-- Protected Leasehold -->
+<div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-md flex flex-col justify-between gap-space-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-accent-gold-soft/20 rounded-bl-full pointer-events-none"></div>
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="px-space-md py-space-xs rounded-full bg-accent-gold-muted text-status-instant font-label-md text-label-md">Долгосрочная Аренда 90 Лет</span>
+<span class="font-label-caps text-label-caps text-text-muted">Контракт 30+30+30</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Protected Leasehold</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+              Зарегистрированное долгосрочное владение земельным участком и постройкой. Здание может оформляться во Freehold, а участок в защищенный безотзывный Leasehold с опциями субаренды и переуступки.
+            </p>
+<ul class="flex flex-col gap-space-sm pt-space-xs">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-instant text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Сниженный налог при регистрации: всего 1.1% в Land Department</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-instant text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Высокая степень конфиденциальности и защита активов от претензий третьих лиц</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-instant text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Возможность владения виллами с крупными земельными участками 500-2500 м²</span>
+</li>
+</ul>
+</div>
+<div class="pt-space-md bg-surface-sand/40 p-space-md rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Идеально подходит для:</span>
+<span class="font-label-lg text-label-lg text-primary">Приватных вилл и резиденций у моря</span>
+</div>
+</div>
+</div>
+<!-- Interactive ROI Mini-Calculator Strip -->
+<div class="w-full bg-surface-container-highest rounded-xl p-space-lg md:p-space-xl flex flex-col lg:flex-row items-center justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs max-w-xl">
+<div class="flex items-center gap-space-xs text-status-verified">
+<span class="material-symbols-outlined text-[20px]">calculate</span>
+<span class="font-label-caps text-label-caps uppercase">Инвестиционный симулятор доходности</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Калькулятор доходности myUNO Full Management</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Расчет арендного денежного потока по модели 80/20 на основе средней загрузки резиденций 74% за последние 12 месяцев.
+          </p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-space-md w-full lg:w-auto">
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">Стоимость объекта</span>
+<span class="font-headline-sm text-headline-sm text-primary" id="roi-asset-cost">฿12,500,000</span>
+<span class="font-body-sm text-body-sm text-text-muted">~$357,000 USD</span>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">Чистая прибыль NET</span>
+<span class="font-headline-sm text-headline-sm text-status-verified" id="roi-net-income">฿1,312,500 / год</span>
+<span class="font-body-sm text-body-sm text-status-verified">10.5% NET годовых</span>
+</div>
+<div class="col-span-2 sm:col-span-1 bg-primary text-on-primary p-space-md rounded-lg flex flex-col justify-center">
+<button class="w-full text-left font-label-lg text-label-lg flex items-center justify-between" type="button">
+<span>Полная модель</span>
+<span class="material-symbols-outlined text-accent-gold-soft">arrow_forward</span>
+</button>
+<span class="font-body-sm text-body-sm opacity-80 mt-1">Excel &amp; PDF расчет</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Real Estate Projects & Residences -->
+<section class="w-full bg-surface py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-gutter flex flex-col gap-space-xl">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs max-w-2xl">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Каталог проверенной недвижимости</span>
+<h2 class="font-headline-md text-headline-md text-primary">Флагманские проекты и готовые резиденции</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Каждый объект проверен на обременения, наличие свободной иностранной квоты и готов к оформлению.
+          </p>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Сортировка:</span>
+<select class="bg-surface-container-lowest px-space-md py-space-xs rounded-full font-label-lg text-label-lg text-primary outline-none shadow-sm cursor-pointer">
+<option>По максимальной доходности ROI</option>
+<option>По стоимости: сначала доступные</option>
+<option>По стоимости: премиум сегмент</option>
+<option>По готовности (Ready to move)</option>
+</select>
+</div>
+</div>
+<!-- Properties Grid (4 cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-xl">
+<!-- CARD 1: The Title Legendary -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-md flex flex-col">
+<div class="relative w-full h-72 overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" data-alt="Modern tropical luxury condo building in Bang Tao Phuket with expansive turquoise lagoon swimming pool, lush palm trees, sun loungers, warm architectural lighting, and floor-to-ceiling glass balconies in emerald and teak tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUYcS6-AAZpdSHjDTtMVfC8kGI1hS_oGQQ9623Q7v60kQti_g9vKWX9azxVm7F6D2hGOauhXysm7kO0KiWLVjpgUjdd03vIBk2wJ9VTRqL5W15B_a7HUkpsP_mogv4LCffX8OtLUhDnarlIlr6HkGFkrj0u19Kzml8RW2lOh0zfb7TKa6Oe2lUCG0wxTYkvS5FQUno_AEI1B7br3msPQMLPZZ5PGt3U22XHC3BOsHWA7t-gYr-aFWb"/>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-space-xs">
+<span class="px-space-sm py-space-xs rounded-full bg-primary text-on-primary font-label-md text-label-md">Флагман продаж</span>
+<span class="px-space-sm py-space-xs rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-md text-label-md">Freehold доступен</span>
+</div>
+<div class="absolute bottom-space-md right-space-md px-space-sm py-space-xs rounded-full bg-status-verified-bg/95 backdrop-blur-md text-status-verified font-label-md text-label-md flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px]">pool</span>
+<span>Прямой выход к бассейну</span>
+</div>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md flex-grow justify-between">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+                  Банг Тао (400м до пляжа)
+                </span>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-sand px-space-sm py-0.5 rounded">Сдача: Q1 2026</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">The Title Legendary Bang Tao — 1BR Pool Access</h3>
+<div class="flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm pt-space-xs">
+<span>54 м²</span>
+<span>•</span>
+<span>1 спальня</span>
+<span>•</span>
+<span>1 ванная комната</span>
+<span>•</span>
+<span>myUNO PMS</span>
+</div>
+</div>
+<!-- Price and ROI Block -->
+<div class="pt-space-md bg-surface-sand/30 p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Стоимость:</span>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿6,850,000 THB</span>
+<span class="block font-body-sm text-body-sm text-text-muted">~$195,700 USD</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-caps text-label-caps text-status-verified">Прогноз окупаемости:</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold">9.8% NET (฿671,300/год)</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button class="w-full px-space-md py-space-sm rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Презентация PDF</span>
+</button>
+<button class="w-full px-space-md py-space-sm rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-accent-gold-soft text-[18px]">calendar_today</span>
+<span>Забронировать</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CARD 2: Layantara Luxury Pool Villa -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-md flex flex-col">
+<div class="relative w-full h-72 overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" data-alt="Exquisite modern tropical private villa in Layan Phuket featuring a 12-meter private swimming pool, sunken lounge, open-concept teak living room, travertine stone floors, and manicured lush tropical palms." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK3gZ7KbE7HQdGyr197H5JR9KsaZICmczbxfgsHNdSS8BwbrEikVFNmiKxgBNj8ZnKlZBanp-SH1vqXmro8ifctZC2eZkVrEyb5OMBCwOVxtoHWjdui3qlz0FyzozjVSOBUUWA1mHJyUo8JnH3j1r3z8WmeQ3djCVktkGqw6PT_QEnD4JAELiGtINgrGk9c_6Lr0yMW9hLPPuv9GSA_UG9azchRPbWX2em9uosT4p_hhnHD8xlHFKG"/>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-space-xs">
+<span class="px-space-sm py-space-xs rounded-full bg-status-verified text-on-primary font-label-md text-label-md">Готовая вилла (Move-in)</span>
+<span class="px-space-sm py-space-xs rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-md text-label-md">Leasehold 90 лет / Thai Co</span>
+</div>
+<div class="absolute bottom-space-md right-space-md px-space-sm py-space-xs rounded-full bg-accent-gold-muted/95 backdrop-blur-md text-status-instant font-label-md text-label-md flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px]">star</span>
+<span>11.2% NET ROI</span>
+</div>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md flex-grow justify-between">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+                  Лаян / Банг Тао (Тихий район)
+                </span>
+<span class="font-label-md text-label-md text-status-verified bg-status-verified-bg px-space-sm py-0.5 rounded">Готова к заселению</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Layantara Luxury Pool Villa — 3BR Signature Grand</h3>
+<div class="flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm pt-space-xs">
+<span>385 м² (участок 520 м²)</span>
+<span>•</span>
+<span>3 спальни</span>
+<span>•</span>
+<span>4 ванные</span>
+<span>•</span>
+<span>Бассейн 12м</span>
+</div>
+</div>
+<!-- Price and ROI Block -->
+<div class="pt-space-md bg-surface-sand/30 p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Стоимость:</span>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿24,900,000 THB</span>
+<span class="block font-body-sm text-body-sm text-text-muted">~$711,400 USD</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-caps text-label-caps text-status-verified">Прогноз окупаемости:</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold">11.2% NET (฿2,788,800/год)</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button class="w-full px-space-md py-space-sm rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Презентация PDF</span>
+</button>
+<button class="w-full px-space-md py-space-sm rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-accent-gold-soft text-[18px]">calendar_today</span>
+<span>Забронировать</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CARD 3: Oceanstone Residences Penthouse -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-md flex flex-col">
+<div class="relative w-full h-72 overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" data-alt="Luxury modern penthouse terrace in Bang Tao Phuket with private hot tub, lounge sofas, panoramic mountain and tropical sunset views, clean architectural stone lines, and ambient lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKija3WB7Szz7OEamV33CCZ50HfVkATMMltMJO2mpZxkVQooEtmZ4mf_PLjhaZaSA0mMg0St-rJlUNWZLpjw0co6I95VrmpeCPL9vka2VPcQE3pPf9HFwLEDJmLkby7fIWVmet1Vak5gXOdvNHJhs32nFIRkI-Absl94h1v6Vxz9TK9keiD8M4puIGbEHAjOSf8AqtOm_ive6J2ZpDx2wMr_ikuYcifNRHAatXOalIWkkvkKbTkjJl"/>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-space-xs">
+<span class="px-space-sm py-space-xs rounded-full bg-primary-container text-on-primary font-label-md text-label-md">Вторичный рынок (Resale)</span>
+<span class="px-space-sm py-space-xs rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-md text-label-md">100% Foreign Freehold</span>
+</div>
+<div class="absolute bottom-space-md right-space-md px-space-sm py-space-xs rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-md text-label-md flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px]">deck</span>
+<span>Руфтоп с джакузи</span>
+</div>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md flex-grow justify-between">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+                  Банг Тао (Рядом с Boat Avenue)
+                </span>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-sand px-space-sm py-0.5 rounded">Полная реновация 2024</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Oceanstone Residences — 2BR Panoramic Penthouse</h3>
+<div class="flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm pt-space-xs">
+<span>92 м²</span>
+<span>•</span>
+<span>2 спальни</span>
+<span>•</span>
+<span>2 санузла</span>
+<span>•</span>
+<span>Вид на горы</span>
+</div>
+</div>
+<!-- Price and ROI Block -->
+<div class="pt-space-md bg-surface-sand/30 p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Стоимость:</span>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿11,400,000 THB</span>
+<span class="block font-body-sm text-body-sm text-text-muted">~$325,700 USD</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-caps text-label-caps text-status-verified">Прогноз окупаемости:</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold">8.9% NET (฿1,014,600/год)</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button class="w-full px-space-md py-space-sm rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Презентация PDF</span>
+</button>
+<button class="w-full px-space-md py-space-sm rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-accent-gold-soft text-[18px]">calendar_today</span>
+<span>Забронировать</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CARD 4: Botanica Foresta Exclusive -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-md flex flex-col">
+<div class="relative w-full h-72 overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" data-alt="Ultra-luxury tropical contemporary sanctuary villa in Phuket with 15-meter infinity pool, expansive covered outdoor terrace, natural stone walls, bespoke wood elements, and lush rainforest surroundings." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTIDtd1l6CNmz5SvBHIiFpjR52RU1JPrSyXDptHStSqQUtahVP6gIVwb8IWWkSVUdVaAqmXs1IQ5mDddMieHW8SAQT8FAvPvc6Xk6qhQlEy84e1xyVayzC3VcJoLI1WkwoT7Tie0_BQo7h3bRdVLR6Pe8o4SWp5r6LLy-gxnjBUKY3DwebFx_pb68e2dr1eeksTgp0uJzz8nftXX4IK2tmGr5E58GLsHU5-bgxlHHGXusA6zkIZcsR"/>
+<div class="absolute top-space-md left-space-md flex flex-wrap gap-space-xs">
+<span class="px-space-sm py-space-xs rounded-full bg-secondary text-on-primary font-label-md text-label-md">Off-plan • Сдача Q4 2026</span>
+<span class="px-space-sm py-space-xs rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-md text-label-md">Рассрочка 0% на 18 мес</span>
+</div>
+<div class="absolute bottom-space-md right-space-md px-space-sm py-space-xs rounded-full bg-primary/90 backdrop-blur-md text-on-primary font-label-md text-label-md flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px]">water</span>
+<span>Инфинити бассейн 15м</span>
+</div>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md flex-grow justify-between">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+                  Лаян (Рядом с пляжем и гольф-клубом)
+                </span>
+<span class="font-label-md text-label-md text-primary bg-primary-fixed px-space-sm py-0.5 rounded">Премиум комьюнити</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Botanica Foresta Exclusive — 4BR Grand Sanctuary</h3>
+<div class="flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm pt-space-xs">
+<span>510 м² (участок 840 м²)</span>
+<span>•</span>
+<span>4 спальни</span>
+<span>•</span>
+<span>5 санузлов</span>
+<span>•</span>
+<span>Гараж на 2 авто</span>
+</div>
+</div>
+<!-- Price and ROI Block -->
+<div class="pt-space-md bg-surface-sand/30 p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Стоимость:</span>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">฿39,500,000 THB</span>
+<span class="block font-body-sm text-body-sm text-text-muted">~$1,128,500 USD</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-caps text-label-caps text-status-verified">Прогноз окупаемости:</span>
+<span class="font-label-lg text-label-lg text-status-verified font-bold">10.4% NET (฿4,108,000/год)</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button class="w-full px-space-md py-space-sm rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Презентация PDF</span>
+</button>
+<button class="w-full px-space-md py-space-sm rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-accent-gold-soft text-[18px]">calendar_today</span>
+<span>Забронировать</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Safe Purchase Roadmap Section -->
+<section class="w-full bg-surface-sand/60 py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-gutter flex flex-col gap-space-xl">
+<div class="flex flex-col gap-space-xs text-center max-w-2xl mx-auto">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Безопасность транзакций</span>
+<h2 class="font-headline-md text-headline-md text-primary">Ключевые этапы безопасной сделки в Таиланде</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Пошаговый протокол сопровождения myUNO Legal — от первого резерва до получения свидетельства о собственности Chanote.
+        </p>
+</div>
+<!-- 5-Step Process Timeline Grid -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-space-md">
+<!-- Step 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-caps text-label-caps flex items-center justify-center">01</div>
+<h3 class="font-title-md text-title-md text-primary">Бронирование и фиксация цены</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Внесение депозита ฿100k–200k THB на безопасный эскроу-счет для блокировки лота по утвержденному прайсу.
+          </p>
+</div>
+<!-- Step 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-caps text-label-caps flex items-center justify-center">02</div>
+<h3 class="font-title-md text-title-md text-primary">Комплексный Due Diligence</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Юридический аудит Chanote в Land Department, проверка лицензий застройщика и отсутствия обременений.
+          </p>
+</div>
+<!-- Step 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-caps text-label-caps flex items-center justify-center">03</div>
+<h3 class="font-title-md text-title-md text-primary">Подписание договора (SPA)</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Заключение контракта купли-продажи на двух языках (тайский и английский) с прозрачным графиком траншей.
+          </p>
+</div>
+<!-- Step 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-caps text-label-caps flex items-center justify-center">04</div>
+<h3 class="font-title-md text-title-md text-primary">Регистрация и получение Chanote</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Официальное закрытие сделки в Земельном департаменте с передачей оригинала Чанота и ключей владельцу.
+          </p>
+</div>
+<!-- Step 5 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-accent-gold-soft font-label-caps text-label-caps flex items-center justify-center">05</div>
+<h3 class="font-title-md text-title-md text-primary">Запуск в управление myUNO</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Подключение к отельной PMS, размещение на мировых площадках и первая выплата дохода 1-го числа месяца.
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Lead Generation & VIP Consultation Form -->
+<section class="w-full bg-primary-container text-on-primary py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-gutter grid grid-cols-1 lg:grid-cols-12 gap-space-2xl items-center">
+<!-- Text & Value Props -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-sand/20 text-accent-gold-soft self-start">
+<span class="material-symbols-outlined text-[16px]">stars</span>
+<span class="font-label-caps text-label-caps uppercase">VIP Консалтинг для инвесторов</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-primary tracking-tight">
+          Персональный инвестиционный подбор под ваш бюджет и стратегию
+        </h2>
+<p class="font-body-lg text-body-lg text-on-primary-container">
+          Старший брокер и юрист myUNO составят финансовую модель окупаемости 3 лучших объектов на Пхукете с учетом налогов, квот и валютного клиринга.
+        </p>
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-accent-gold-soft text-[20px]">bolt</span>
+<span class="font-body-sm text-body-sm">Ответ и первые персональные расчеты в течение 15 минут</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-accent-gold-soft text-[20px]">lock</span>
+<span class="font-body-sm text-body-sm">Строгое соблюдение банковской тайны и соглашение NDA</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-accent-gold-soft text-[20px]">account_balance</span>
+<span class="font-body-sm text-body-sm">Бесплатный расчет налоговой оптимизации сделки (Transfer Tax &amp; Stamp Duty)</span>
+</div>
+</div>
+</div>
+<!-- Form Card -->
+<div class="lg:col-span-6 bg-surface-container-lowest text-on-surface rounded-xl p-space-xl shadow-xl flex flex-col gap-space-md">
+<h3 class="font-headline-sm text-headline-sm text-primary">Заявка на инвестиционный расчет</h3>
+<form class="flex flex-col gap-space-md" onsubmit="event.preventDefault(); alert('Спасибо! Эксперт myUNO свяжется с вами в течение 15 минут.');">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Ваше имя</label>
+<input class="w-full bg-surface-sand/40 border border-border-subtle rounded-lg px-space-md py-space-sm font-body-md text-body-md text-on-surface outline-none focus:border-primary transition-colors" placeholder="Константин" required="" type="text"/>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Телефон / WhatsApp</label>
+<input class="w-full bg-surface-sand/40 border border-border-subtle rounded-lg px-space-md py-space-sm font-body-md text-body-md text-on-surface outline-none focus:border-primary transition-colors" placeholder="+7 (999) 000-00-00" required="" type="tel"/>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Планируемый бюджет</label>
+<select class="w-full bg-surface-sand/40 border border-border-subtle rounded-lg px-space-md py-space-sm font-body-md text-body-md text-on-surface outline-none focus:border-primary transition-colors cursor-pointer">
+<option value="tier1">До $200,000 (~฿7M THB)</option>
+<option selected="" value="tier2">$200,000 – $500,000 (~฿7M–฿18M)</option>
+<option value="tier3">$500,000 – $1,000,000 (~฿18M–฿35M)</option>
+<option value="tier4">$1,000,000+ (Премиум портфель)</option>
+</select>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Главная цель инвестиции</label>
+<select class="w-full bg-surface-sand/40 border border-border-subtle rounded-lg px-space-md py-space-sm font-body-md text-body-md text-on-surface outline-none focus:border-primary transition-colors cursor-pointer">
+<option selected="" value="roi">Максимальный арендный доход</option>
+<option value="living">Собственное проживание / Отдых</option>
+<option value="capital">Прирост капитала (Off-plan перепродажа)</option>
+<option value="mix">Баланс: личный отдых + аренда</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Предпочтительная локация на Пхукете</label>
+<div class="grid grid-cols-3 gap-space-xs">
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-sand/30 cursor-pointer font-body-sm text-body-sm">
+<input checked="" class="accent-primary" type="checkbox"/>
+<span>Банг Тао</span>
+</label>
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-sand/30 cursor-pointer font-body-sm text-body-sm">
+<input checked="" class="accent-primary" type="checkbox"/>
+<span>Лаян</span>
+</label>
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-sand/30 cursor-pointer font-body-sm text-body-sm">
+<input class="accent-primary" type="checkbox"/>
+<span>Камала</span>
+</label>
+</div>
+</div>
+<button class="mt-space-xs w-full py-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg transition-colors shadow-md flex items-center justify-center gap-space-xs" type="submit">
+<span class="material-symbols-outlined text-accent-gold-soft text-[20px]">send</span>
+<span>Получить подборку и расчет ROI в WhatsApp</span>
+</button>
+<p class="font-body-sm text-body-sm text-text-muted text-center">
+            Нажимая кнопку, вы подтверждаете конфиденциальность контакта и регламент DBD лицензирования.
+          </p>
+</form>
+</div>
+</div>
+</section>
+</div></main><footer class="w-full bg-surface-sand text-on-surface mt-space-2xl pt-space-2xl pb-space-xl"><div class="max-w-[1280px] mx-auto px-gutter flex flex-col gap-space-2xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-xl"><div class="lg:col-span-2 flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><span class="font-headline-sm text-headline-sm text-primary tracking-tight">myUNO Luxury Assets</span></div><p class="font-body-md text-body-md text-on-surface-variant max-w-md">Премиальное агентство недвижимости и аккредитованный гостиничный оператор на Пхукете. Управление инвестиционными портфелями, аренда премиальных вилл и структурирование сделок Freehold/Leasehold с 2017 года.</p><div class="flex items-center gap-space-sm text-on-surface-variant"><span class="material-symbols-outlined text-[20px] text-primary">location_on</span><span class="font-body-sm text-body-sm">Cherngtalay / Bang Tao Beach, 83110 Phuket, Thailand</span></div></div><div class="flex flex-col gap-space-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Каталог &amp; Инвестиции</span><ul class="flex flex-col gap-space-xs"><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="buy-and-invest" href="#">Каталог для покупки</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="complexes" href="#">Виллы и резиденции</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="complexes" href="#">Инвестиционные проекты</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="rent" href="#">Долгосрочная аренда</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="buy-and-invest" href="#">Аналитика ROI &amp; Капитализация</a></li></ul></div><div class="flex flex-col gap-space-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Право и Структурирование</span><ul class="flex flex-col gap-space-xs"><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="legal-guide" href="#">Гид по Freehold / Leasehold</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="legal-guide" href="#">Налогообложение сделок</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="services" href="#">Юридический Due Diligence</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="for-owners" href="#">Доверительное управление</a></li><li class="list-none"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="services" href="#">Эскроу и безопасные расчеты</a></li></ul></div><div class="flex flex-col gap-space-sm"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Представительство</span><div class="flex flex-col gap-space-xs"><p class="font-body-sm text-body-sm text-on-surface-variant">Офис продаж и консьерж-сервис:</p><p class="font-label-lg text-label-lg text-on-surface">Bang Tao Luxury Hub, Suite 304</p><p class="font-body-sm text-body-sm text-text-muted">Режим работы: Пн-Вс 09:00 - 20:00 (GMT+7)</p><div class="mt-space-xs inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-status-verified-bg text-status-verified font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">verified</span><span>DBD Registered Real Estate Mandate</span></div></div></div></div><div class="flex flex-col md:flex-row items-center justify-between gap-space-md pt-space-lg text-text-muted font-body-sm text-body-sm"><div class="flex items-center gap-space-lg"><span>© 2026 myUNO Hospitality &amp; Asset Management Ltd. All rights reserved.</span></div><div class="flex items-center gap-space-md"><a class="hover:text-on-surface transition-colors" data-path="legal-guide" href="#">Политика конфиденциальности</a><a class="hover:text-on-surface transition-colors" data-path="legal-guide" href="#">Регламент DBD и комплаенс</a><a class="hover:text-on-surface transition-colors" data-path="legal-guide" href="#">Карта объектов</a></div></div></div></footer></body></html>

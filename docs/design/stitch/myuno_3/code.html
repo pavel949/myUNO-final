@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-container": "#17372f", "tertiary-fixed": "#c7eadd", "on-tertiary-fixed": "#002019", "accent-gold-muted": "#F5EAD9", "inverse-surface": "#273331", "outline-variant": "#c1c8c4", "secondary-container": "#fdc17e", "on-error": "#ffffff", "on-surface-variant": "#414845", "surface-container": "#e3f1ed", "on-background": "#121e1c", "secondary-fixed-dim": "#f6bb79", "error-container": "#ffdad6", "primary-container": "#11382e", "error": "#ba1a1a", "on-tertiary": "#ffffff", "status-instant-bg": "#FAF3E8", "tertiary-fixed-dim": "#accec2", "primary": "#00221a", "surface-container-high": "#ddebe8", "surface-container-highest": "#d8e5e2", "surface-sand-subtle": "#EAE4D7", "surface-sand": "#F4F0E8", "on-tertiary-container": "#7fa195", "text-muted": "#566360", "on-primary-fixed-variant": "#284e43", "on-secondary-container": "#784d14", "surface-bright": "#effcf9", "surface-dim": "#cfddd9", "tertiary": "#01221a", "surface-tint": "#40665a", "inverse-on-surface": "#e6f4f0", "surface": "#effcf9", "accent-gold-soft": "#E4BE8D", "border-subtle": "#E5DFD3", "status-verified-bg": "#E9F1EE", "on-primary-container": "#7ba295", "on-surface": "#121e1c", "on-secondary-fixed-variant": "#663e04", "on-primary": "#ffffff", "status-instant": "#9A6B32", "secondary-fixed": "#ffddba", "primary-fixed-dim": "#a7cfc1", "secondary": "#81551c", "on-secondary": "#ffffff", "on-tertiary-fixed-variant": "#2d4d44", "outline": "#717975", "surface-ivory": "#FBF9F5", "surface-variant": "#d8e5e2", "inverse-primary": "#a7cfc1", "on-secondary-fixed": "#2b1700", "surface-container-low": "#e9f7f3", "on-error-container": "#93000a", "primary-fixed": "#c2ebdc", "background": "#effcf9", "on-primary-fixed": "#002019", "surface-container-lowest": "#ffffff", "status-verified": "#1E5848" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2.5rem", "margin": "3rem", "margin-mobile": "1.25rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-2xl": "4rem", "gutter": "1.5rem", "space-lg": "1.5rem", "gutter-mobile": "1rem", "space-md": "1rem" }, fontFamily: { "body-sm": ["Manrope"], "title-md": ["Outfit"], "body-md": ["Manrope"], "headline-lg-mobile": ["Outfit"], "headline-sm": ["Outfit"], "body-lg": ["Manrope"], "headline-md": ["Outfit"], "display-hero-mobile": ["Outfit"], "headline-lg": ["Outfit"], "label-lg": ["Manrope"], "display-hero": ["Outfit"], "label-md": ["Manrope"], "label-caps": ["Manrope"] }, fontSize: { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-20 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50"><div class="w-full h-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[280px]"><div class="flex items-baseline gap-space-xs"><span class="font-title-md text-title-md font-bold tracking-tight text-primary">myUNO</span><span class="font-label-caps text-label-caps text-secondary font-semibold uppercase">Phuket</span></div><div class="h-4 w-px bg-outline-variant/40 hidden xl:block"></div><span class="hidden xl:inline-block font-label-caps text-label-caps bg-surface-container-high text-on-surface-variant px-space-sm py-space-xs rounded-full">Portfolio &amp; Onboarding Hub</span></div><nav class="hidden lg:flex items-center gap-space-md xl:gap-space-lg" data-active-classes="text-primary font-bold"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="portfolio-overview" href="#">Обзор портфеля</a><a aria-current="page" class="transition-colors whitespace-nowrap text-primary font-bold" data-path="project-onboarding" href="#">Онбординг комплекса</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="unit-onboarding-and-verification" href="#">Онбординг юнита</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="owner-approvals-and-mandates" href="#">Заявки собственников</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="sop-and-contracts" href="#">Шаблоны мандатов</a></nav><div class="flex items-center gap-space-sm xl:gap-space-md"><div class="hidden 2xl:flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-space-xs rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.03)]"><span class="material-symbols-outlined text-secondary text-[16px]">location_on</span><span class="font-body-sm text-body-sm text-on-surface-variant">Пхукет, Таиланд • Банг Тао / Лаян</span></div><button class="flex items-center gap-space-xs bg-primary text-on-primary font-label-md text-label-md px-space-md py-space-xs rounded-lg hover:bg-tertiary transition-colors shadow-sm"><span class="material-symbols-outlined text-[16px]">add</span><span class="whitespace-nowrap">+ Новый объект</span></button><button aria-label="Уведомления" class="relative p-space-xs rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-4 h-4 bg-secondary text-on-secondary rounded-full flex items-center justify-center font-label-caps text-[9px] font-bold">3</span></button><div class="flex items-center gap-space-xs pl-space-xs"><div class="text-right hidden sm:block"><div class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Кристофер В.</div><div class="font-label-caps text-[10px] text-text-muted leading-tight">Head of Portfolio &amp; Mandates</div></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><aside class="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.03)] z-40 overflow-y-auto"><div class="p-space-md space-y-space-lg"><nav class="space-y-space-lg" data-active-classes="bg-surface-container text-primary font-semibold"><div><div class="font-label-caps text-label-caps text-text-muted tracking-wider px-space-sm mb-space-xs">01 ИНИЦИАЦИЯ &amp; ЗАЯВКИ</div><div class="space-y-space-xs"><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="active-intake-queue" href="#"><span class="font-body-sm text-body-sm">Все заявки на онбординг</span><span class="font-label-caps text-[10px] bg-surface-container-highest px-1.5 py-0.5 rounded text-on-surface-variant">Queue</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="pending-owner-approvals" href="#"><span class="font-body-sm text-body-sm">Заявки от собственников</span><span class="font-label-caps text-[10px] bg-secondary-fixed text-on-secondary-fixed px-1.5 py-0.5 rounded">12 Pending</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="drafts-and-audits" href="#"><span class="font-body-sm text-body-sm">Черновики и инспекции</span><span class="font-label-caps text-[10px] bg-surface-container-highest px-1.5 py-0.5 rounded text-on-surface-variant">Drafts</span></a></div></div><div><div class="font-label-caps text-label-caps text-text-muted tracking-wider px-space-sm mb-space-xs">02 ОБЪЕКТЫ &amp; МАНДАТЫ</div><div class="space-y-space-xs"><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="master-projects" href="#"><span class="font-body-sm text-body-sm">Реестр комплексов</span><span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded">Master</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="units-and-keys" href="#"><span class="font-body-sm text-body-sm">Номерной фонд</span><span class="font-label-caps text-[10px] bg-surface-container-highest px-1.5 py-0.5 rounded text-on-surface-variant">Units</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="mandate-scopes" href="#"><span class="font-body-sm text-body-sm">Скоуп мандатов</span><span class="font-label-caps text-[10px] bg-surface-container-highest px-1.5 py-0.5 rounded text-on-surface-variant">SLA</span></a></div></div><div><div class="font-label-caps text-label-caps text-text-muted tracking-wider px-space-sm mb-space-xs">03 ИНСПЕКЦИЯ &amp; ДОВЕРИЕ</div><div class="space-y-space-xs"><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="chanote-and-dbd-audit" href="#"><span class="font-body-sm text-body-sm">Юридический аудит Chanote &amp; DBD</span><span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded">Legal</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="myuno-clean-checklists" href="#"><span class="font-body-sm text-body-sm">Чек-листы myUNO Clean 5★</span><span class="font-label-caps text-[10px] bg-status-instant-bg text-status-instant px-1.5 py-0.5 rounded">5★ Clean</span></a><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="iot-and-smartlocks" href="#"><span class="font-body-sm text-body-sm">Подключение IoT &amp; SmartLocks</span><span class="font-label-caps text-[10px] bg-surface-container-highest px-1.5 py-0.5 rounded text-on-surface-variant">IoT Hub</span></a></div></div></nav></div></aside><div class="pl-72"><main class="w-full pt-20 px-space-lg pb-space-2xl bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- BREADCRUMBS & CONTEXT HEADER -->
+<div class="flex flex-col gap-space-sm mb-space-lg">
+<div class="flex items-center gap-space-xs text-text-muted">
+<a class="font-body-sm text-body-sm text-text-muted hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">apartment</span>
+<span>Обзор портфеля</span>
+</a>
+<span class="text-outline-variant font-body-sm text-body-sm">/</span>
+<a class="font-body-sm text-body-sm text-text-muted hover:text-primary transition-colors" href="#">Онбординг объектов</a>
+<span class="text-outline-variant font-body-sm text-body-sm">/</span>
+<span class="font-body-sm text-body-sm text-primary font-medium">Регистрация жилого комплекса</span>
+</div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center gap-space-sm">
+<h1 class="font-headline-sm text-headline-sm text-primary">Регистрация жилого комплекса</h1>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Draft in Progress
+          </span>
+<span class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+            DBD &amp; Chanote Checked
+          </span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm self-start lg:self-auto">
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-container-low px-space-sm py-1 rounded">ID: PRJ-PHK-2026-084</span>
+<button class="flex items-center gap-1 text-primary hover:text-on-surface-variant font-label-md text-label-md transition-colors px-space-sm py-1 rounded bg-surface-container-low">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Журнал правок</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MULTI-STEP PROGRESS STEPPER -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm mb-space-lg">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-space-sm relative">
+<!-- Step 1 Completed -->
+<div class="flex items-center gap-space-xs relative">
+<div class="w-7 h-7 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-caps text-label-caps text-status-verified">Шаг 01 • Готово</div>
+<div class="font-label-md text-label-md text-on-surface truncate">Базовая инфо &amp; Локация</div>
+</div>
+</div>
+<!-- Step 2 Completed -->
+<div class="flex items-center gap-space-xs relative">
+<div class="w-7 h-7 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-caps text-label-caps text-status-verified">Шаг 02 • Готово</div>
+<div class="font-label-md text-label-md text-on-surface truncate">Архитектура &amp; Корпуса</div>
+</div>
+</div>
+<!-- Step 3 Active -->
+<div class="flex items-center gap-space-xs relative p-space-xs rounded-lg bg-surface-container-low">
+<div class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md shrink-0 shadow-sm">
+          3
+        </div>
+<div class="min-w-0">
+<div class="font-label-caps text-label-caps text-secondary font-bold">Шаг 03 • Текущий</div>
+<div class="font-label-md text-label-md text-primary font-bold truncate">Скоуп &amp; Юрисдикция</div>
+</div>
+</div>
+<!-- Step 4 Upcoming -->
+<div class="flex items-center gap-space-xs opacity-60">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest text-text-muted flex items-center justify-center font-label-md text-label-md shrink-0">
+          4
+        </div>
+<div class="min-w-0">
+<div class="font-label-caps text-label-caps text-text-muted">Шаг 04</div>
+<div class="font-label-md text-label-md text-text-muted truncate">Удобства &amp; Сервис</div>
+</div>
+</div>
+<!-- Step 5 Upcoming -->
+<div class="flex items-center gap-space-xs opacity-60">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest text-text-muted flex items-center justify-center font-label-md text-label-md shrink-0">
+          5
+        </div>
+<div class="min-w-0">
+<div class="font-label-caps text-label-caps text-text-muted">Шаг 05</div>
+<div class="font-label-md text-label-md text-text-muted truncate">Медиа &amp; Документы</div>
+</div>
+</div>
+</div>
+</div>
+<!-- CRUCIAL SCOPE TOGGLE BANNER -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm mb-space-lg relative overflow-hidden">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-md">
+<div>
+<div class="flex items-center gap-space-xs mb-1">
+<span class="font-label-caps text-label-caps text-secondary font-bold uppercase tracking-wider">Ключевое решение мандата</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">verified_user</span>
+</div>
+<h2 class="font-title-md text-title-md text-primary">Скоуп мандата управления (Operating Mandate Scope)</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Определяет модель ответственности myUNO, алгоритмы бронирования в PMS и статус маркировки на витрине myUNO Phuket.</p>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-space-xs rounded-lg self-start md:self-auto">
+<span class="material-symbols-outlined text-status-verified text-[18px]">gavel</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">SLA юрисдикция: Phuket Court of Justice</span>
+</div>
+</div>
+<!-- Toggle Selector Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md" id="mandate-scope-selector">
+<!-- Option A: Whole Complex (Active default) -->
+<div class="cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-low shadow-md relative" id="scope-opt-whole" onclick="selectMandateScope('whole')">
+<div class="flex items-start justify-between gap-space-xs mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0" id="scope-radio-whole">
+<span class="w-2 h-2 rounded-full bg-on-primary"></span>
+</div>
+<span class="font-title-md text-title-md text-primary font-bold">Управление всем комплексом</span>
+</div>
+<span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-2 py-0.5 rounded-full font-bold">FULL RESIDENCE</span>
+</div>
+<div class="font-label-caps text-label-caps text-secondary font-semibold mb-space-xs">Whole Residence Management (e.g. Layantara, Botanica Grand)</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+          Полный операционный суверенитет myUNO: собственная стойка reception, выделенный housekeeping штат, регулярное техобслуживание бассейнов и сада, gated access контрольно-пропускной пункт.
+        </p>
+<div class="flex flex-wrap gap-space-xs pt-space-xs">
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-lowest px-2 py-1 rounded text-primary">
+<span class="material-symbols-outlined text-[13px]">key</span>
+            Единый мастер-ключ
+          </span>
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-lowest px-2 py-1 rounded text-primary">
+<span class="material-symbols-outlined text-[13px]">pool</span>
+            Общие зоны по SOP myUNO
+          </span>
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-lowest px-2 py-1 rounded text-primary">
+<span class="material-symbols-outlined text-[13px]">support_agent</span>
+            Консьерж 24/7 on-site
+          </span>
+</div>
+</div>
+<!-- Option B: Unit-by-Unit -->
+<div class="cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-lowest hover:bg-surface-container-high relative" id="scope-opt-unit" onclick="selectMandateScope('unit')">
+<div class="flex items-start justify-between gap-space-xs mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0" id="scope-radio-unit">
+<span class="w-2 h-2 rounded-full bg-transparent"></span>
+</div>
+<span class="font-title-md text-title-md text-on-surface font-semibold">Выборочное управление юнитами</span>
+</div>
+<span class="font-label-caps text-[10px] bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full">CONDO INVENTORY</span>
+</div>
+<div class="font-label-caps text-label-caps text-text-muted mb-space-xs">Unit-by-Unit / Selected Condos (e.g. The Title Legendary, Oceanstone)</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+          Управление пулом частных апартаментов в составе стороннего кондоминиума. Координация с Juristic Person Office, автономные умные замки, соблюдение внутреннего регламента здания.
+        </p>
+<div class="flex flex-wrap gap-space-xs pt-space-xs">
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-low px-2 py-1 rounded text-text-muted">
+<span class="material-symbols-outlined text-[13px]">business</span>
+            Взаимодействие с Juristic
+          </span>
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-low px-2 py-1 rounded text-text-muted">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+            Smart Lock TTLock/Salto
+          </span>
+<span class="inline-flex items-center gap-1 font-label-caps text-[10px] bg-surface-container-low px-2 py-1 rounded text-text-muted">
+<span class="material-symbols-outlined text-[13px]">directions_car</span>
+            Гостевые парковочные квоты
+          </span>
+</div>
+</div>
+</div>
+</div>
+<!-- MAIN 2-COLUMN BESPOKE FORM LAYOUT -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg mb-space-xl">
+<!-- LEFT COLUMN (7 COLS): PASSPORT & OPERATIONAL MANDATE -->
+<div class="xl:col-span-7 flex flex-col gap-space-lg">
+<!-- PANEL A: ПАСПОРТ КОМПЛЕКСА -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">domain</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-bold">Паспорт жилого комплекса</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Базовые юридические и геодезические атрибуты мастер-девелопмента</p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-sm py-1 rounded">Реестр DBD проверен</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Complex Name EN -->
+<div class="space-y-space-xs md:col-span-2">
+<label class="font-label-caps text-label-caps text-text-muted block">Название комплекса (EN / Латиница)</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors shadow-inner" type="text" value="Layantara Luxury Pool Villas Bang Tao"/>
+<span class="absolute right-3 top-2.5 material-symbols-outlined text-[18px] text-status-verified">verified</span>
+</div>
+</div>
+<!-- Complex Name TH -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Название комплекса (TH / Тайский язык)</label>
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:bg-surface-container-lowest transition-colors" type="text" value="ลายันธารา ลักชัวรี่ พูลวิลล่า บางเทา"/>
+</div>
+<!-- Sub-district / District -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Район / Пляжный кластер (Phuket)</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none appearance-none">
+<option selected="">Bang Tao Beach (Cherngtalay) • 400м от моря</option>
+<option>Layan Hills • 1.2км от моря</option>
+<option>Surin Beach (Choeng Thale)</option>
+<option>Kamala Millionaires' Mile</option>
+</select>
+<span class="absolute right-3 top-3 pointer-events-none material-symbols-outlined text-[16px] text-text-muted">expand_more</span>
+</div>
+</div>
+<!-- Developer entity -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Девелопер / Застройщик</label>
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none" type="text" value="Andaman Heritage Development Co., Ltd."/>
+</div>
+<!-- Handover date -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Срок ввода в эксплуатацию</label>
+<div class="flex items-center gap-space-xs">
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none" type="text" value="Q1 2026 (Ready to Move)"/>
+<span class="shrink-0 font-label-caps text-[10px] bg-surface-sand px-2 py-2 rounded text-secondary font-bold">100% SLA</span>
+</div>
+</div>
+<!-- Chanote title deed -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Юридический статус земли (Title Deed)</label>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-sm rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[20px]">assignment_turned_in</span>
+<div class="min-w-0">
+<div class="font-label-md text-label-md text-primary font-semibold truncate">Chanote No. 49201 (Cherng Talay Land Office)</div>
+<div class="font-label-caps text-[10px] text-status-verified font-medium">Нотариальный аудит пройден 14 Фев 2025</div>
+</div>
+</div>
+</div>
+<!-- Ownership Structure -->
+<div class="space-y-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted block">Допустимый тип собственности</label>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-sm rounded-lg">
+<span class="material-symbols-outlined text-primary text-[20px]">verified</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Freehold &amp; Protected Leasehold 90y</div>
+<div class="font-label-caps text-[10px] text-text-muted">3 x 30 лет с опцией выкупа доли BVI</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PANEL B: ОПЕРАЦИОННЫЙ МАНДАТ И РАЗГРАНИЧЕНИЕ -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">handshake</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-bold">Операционный мандат &amp; Регламент</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Правила присутствия бренда myUNO и финансовая архитектура</p>
+</div>
+</div>
+<span class="font-label-caps text-label-caps text-on-tertiary-container bg-tertiary-container px-space-sm py-1 rounded text-on-primary">Tier-1 Hospitality</span>
+</div>
+<!-- Dynamic Storefront Formulation Callout -->
+<div class="p-space-md rounded-xl bg-surface-container-low mb-space-lg relative">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[22px] shrink-0 mt-0.5">campaign</span>
+<div class="space-y-space-xs">
+<div class="font-label-caps text-label-caps text-secondary font-bold">Отображение на витрине myUNO Phuket</div>
+<div class="font-title-md text-title-md text-primary font-semibold" id="storefront-formula-text">
+                «Комплекс под полным управлением myUNO»
+              </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                Гости и инвесторы видят гарантийный лейбл высшей категории: единые стандарты качества полотенец, премиальный батлер-сервис, трансфер и централизованный консьерж 24/7.
+              </p>
+</div>
+</div>
+</div>
+<!-- Mandate Configuration Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Split Model -->
+<div class="p-space-md rounded-xl bg-surface-sand space-y-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Модель сплита выручки по умолчанию</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-primary font-bold">80 / 20</span>
+<span class="font-label-caps text-label-caps text-secondary font-semibold">Full Yield Program</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              80% чистого рентного дохода собственнику / 20% Net myUNO Hospitality fee (включая маркетинг OTA и листинги).
+            </p>
+</div>
+<!-- PMS Mode -->
+<div class="p-space-md rounded-xl bg-surface-container-low space-y-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Интеграция с PMS &amp; Channel Manager</span>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[22px]">calendar_month</span>
+<span class="font-title-md text-title-md text-primary font-semibold">Tape Chart Direct</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Прямое сопоставление физических ключей (Unit Allocation). Синхронизация Airbnb, Booking.com Luxe, Marriott Homes &amp; Villas.
+            </p>
+</div>
+<!-- Cleaning standard -->
+<div class="md:col-span-2 p-space-md rounded-xl bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-status-instant text-[24px]">hotel_class</span>
+<div>
+<div class="font-label-caps text-label-caps text-secondary font-bold">Базовый стандарт обслуживания</div>
+<div class="font-title-md text-title-md text-primary font-semibold">myUNO Clean 5★ Hospitality Standard</div>
+<p class="font-body-sm text-body-sm text-text-muted">Сатин 500TC из египетского хлопка, комплекты полотенец 650 GSM, отельная эко-косметика myUNO Botanicals (Lemongrass &amp; Bergamot).</p>
+</div>
+</div>
+<button class="shrink-0 px-space-md py-space-xs rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors shadow-sm">
+              Посмотреть SOP чек-лист
+            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN (5 COLS): AMENITIES, MEDIA & MAP PREVIEW -->
+<div class="xl:col-span-5 flex flex-col gap-space-lg">
+<!-- PANEL C: ИНФРАСТРУКТУРА И ОБЩИЕ ЗОНЫ -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">deck</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-bold">Инфраструктура комплекса</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Общие зоны под регулярным контролем myUNO</p>
+</div>
+</div>
+<span class="font-label-caps text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">6 verified</span>
+</div>
+<!-- Amenity Checkboxes -->
+<div class="space-y-space-xs">
+<!-- Item 1 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">pool</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Приватные бассейны с морской солью</span>
+</div>
+<span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded">Daily Care</span>
+</label>
+<!-- Item 2 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">fitness_center</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Клабхаус, фитнес-центр &amp; Wellness SPA</span>
+</div>
+<span class="font-label-caps text-[10px] bg-surface-sand px-1.5 py-0.5 rounded text-secondary">Technogym</span>
+</label>
+<!-- Item 3 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">key</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Smart Keyless доступ (Salto / TTLock BLE)</span>
+</div>
+<span class="font-label-caps text-[10px] bg-status-instant-bg text-status-instant px-1.5 py-0.5 rounded font-bold">Instant Check-in</span>
+</label>
+<!-- Item 4 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">ev_station</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Подземный паркинг с зарядками EV (22kW)</span>
+</div>
+<span class="font-label-caps text-[10px] bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded">6 станций</span>
+</label>
+<!-- Item 5 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">concierge</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Стойка консьержа myUNO 24/7 (Multi-lingual)</span>
+</div>
+<span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded">EN / RU / TH</span>
+</label>
+<!-- Item 6 -->
+<label class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" type="checkbox"/>
+<span class="material-symbols-outlined text-primary text-[18px]">security</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Охрана и CCTV по периметру 24/7</span>
+</div>
+<span class="font-label-caps text-[10px] bg-status-verified-bg text-status-verified px-1.5 py-0.5 rounded">Gated</span>
+</label>
+</div>
+</div>
+<!-- PANEL D: МЕДИА-АССЕТЫ И ФОТОФИКСАЦИЯ -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">photo_library</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary font-bold">Медиатека &amp; Генплан</h3>
+<p class="font-body-sm text-body-sm text-text-muted">Проверенные визуальные материалы комплекса</p>
+</div>
+</div>
+<button class="font-label-md text-label-md text-secondary font-semibold hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">upload</span>
+            Загрузить еще
+          </button>
+</div>
+<div class="grid grid-cols-2 gap-space-sm mb-space-md">
+<!-- Main Hero Media -->
+<div class="relative col-span-2 rounded-xl overflow-hidden group h-48 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Architectural photograph of a luxurious tropical pavilion pool villa in Bang Tao Phuket, with natural teak wood accents, limestone terrace, reflective turquoise infinity pool, lush palms and tranquil morning Andaman sunlight, high-end tropical modernism" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOtGK37DSHCKZ7r3tRMyaWxv_T7zUgD9k-alTE2kjV2_DYnEU87YqX6YgLg8zJV97K5DcmFxWXUUVIBYFjpPMChnvolVQ5hSBC2_E_emrloRB9urCw3NOhseIQKyDN2kBkVZUM8VmAB-VBXkQyRIjaXZOysESVXh71HFfEd9EKt_xu2gCeSll7DB6Hz42KLeJESkf_4gNjWkWFsavcUoKjF2L1VHbCR-pT5o4jZu_EZgoZJ2rWmwyq"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute top-2.5 left-2.5 flex items-center gap-1">
+<span class="bg-primary/90 text-on-primary font-label-caps text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">Главное фото витрины</span>
+<span class="bg-status-verified-bg text-status-verified font-label-caps text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-bold">Actual Physical Evidence</span>
+</div>
+<div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between">
+<div>
+<div class="text-on-primary font-label-md text-label-md font-bold">Layantara Master Exterior</div>
+<div class="text-tertiary-fixed font-label-caps text-[10px]">Инспекция myUNO • 12 февраля 2025</div>
+</div>
+<span class="text-on-primary font-label-caps text-[10px] bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm">RAW 4K • 18 MB</span>
+</div>
+</div>
+<!-- Secondary Image: Master Plan -->
+<div class="relative rounded-xl overflow-hidden h-32 bg-surface-container group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Architectural master site plan blueprint of a villa resort development in Phuket surrounded by tropical green gardens, roads, swimming pools, high precision architectural drafting with emerald tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADbe9-JsL3PlzwXJWXNFPLWoNnrk38kwL531ROR7s3_ipEkRrENtstEqPL9xZ0RQrUpxd0iC5xNnG2Jt9ld_RbhjnJMy7mCsuRnowuUo29BRRBbMt4-AWmmepTvIovMewLmPqMpdc3FNqN5G4c1cGlUqFj_GFNSSCos6518YdvaT8e2nPoiiA6hqBIRnpexZ6BVw7wXjwZCh4AZjbrfbcymfrk6cwhzLQ-PGXqaNi08Ro8YEl-SWQo"/>
+<div class="absolute inset-0 bg-primary/20 group-hover:bg-primary/10 transition-colors"></div>
+<span class="absolute top-2 left-2 bg-surface-ivory/95 text-primary font-label-caps text-[10px] px-1.5 py-0.5 rounded shadow-sm font-semibold">Генплан (24 Виллы)</span>
+</div>
+<!-- Secondary Image: Interior Mock -->
+<div class="relative rounded-xl overflow-hidden h-32 bg-surface-container group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="High-end modern luxury bedroom interior overlooking private swimming pool in Phuket, minimalist teak bed frame, beige linen, warm mood lighting, floor-to-ceiling sliding glass doors, lush palm leaves outside" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-2ww6cUqtfj117ot8r6PwZw6LqmGj4mOF8NBJYQdlx7b82CVpDIebl-tAYwZLWPk4GsU3gKgjEgHu7A6hk1pzRTpx6782zuA525hs-yMinr1tYZ_T4qm-Rp6j8vpx_QCjlp03DL0DvPnc7jWVBHidKIctXdbYwQYb58hd4U7j2bzUXecng3SDj_JpMmZwXMVgJAURf71YckgUfis6IsTbmX-snG0WFPNejp0kMtr2M70h4vaeQs5e"/>
+<div class="absolute inset-0 bg-primary/20 group-hover:bg-primary/10 transition-colors"></div>
+<span class="absolute top-2 left-2 bg-surface-sand text-secondary font-label-caps text-[10px] px-1.5 py-0.5 rounded font-bold">Типовой интерьер</span>
+</div>
+</div>
+<!-- Location Radar / Micro Map Card -->
+<div class="rounded-xl overflow-hidden relative">
+<div class="w-full h-28 bg-cover bg-center rounded-xl" data-location="Bang Tao Beach, Cherngtalay, Phuket, Thailand" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB_JnlFw2ZVQ1ihiZvqjmsAYu2YfiSQLMBodwFCTT53ebothOFF1QuXKJI_efOiQApGgA4__SOOwSgsFFZl5nTKF9KWgAyHE5cPLn9qeoPY6PrV8MwWi0WPxiijmvfFXoQnfBfIGaJIp7_cTrwrcojes4T-vFTM6vxa1B3kmMpmD22a_20wLJ5KGz3DGA0FtPPmRiRhD52BufsbUTyro-Kc-3zbB74Y-vbwbGDp8vGHZayFYtoU7P69')"></div>
+<div class="absolute bottom-2 left-2 right-2 bg-surface-container-lowest/90 backdrop-blur-md px-space-sm py-1.5 rounded-lg flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-1 min-w-0">
+<span class="material-symbols-outlined text-secondary text-[16px]">location_on</span>
+<span class="font-body-sm text-body-sm text-primary font-semibold truncate">8.0012° N, 98.2987° E • Банг Тао</span>
+</div>
+<span class="font-label-caps text-[10px] text-status-verified font-bold shrink-0">GPS Зафиксирован</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PERSISTENT FLOATING STICKY ACTION BAR -->
+<div class="sticky bottom-4 z-30 bg-surface-container-lowest/95 backdrop-blur-xl rounded-xl p-space-md shadow-xl flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<div class="w-9 h-9 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">save_as</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-primary font-bold">Layantara Luxury Pool Villas</div>
+<div class="font-label-caps text-[10px] text-text-muted">Все изменения шага 03 валидированы и сохранены локально</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<!-- Draft button -->
+<button class="px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-container-highest transition-colors">
+        Сохранить как черновик (Draft)
+      </button>
+<!-- Preview Portal button -->
+<button class="hidden md:flex items-center gap-1 px-space-md py-space-sm rounded-lg bg-surface-container-low text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Предпросмотр портала</span>
+</button>
+<!-- Primary Next Step button -->
+<button class="flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-tertiary transition-colors shadow-md">
+<span>Перейти к добавлению корпусов и юнитов</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  function selectMandateScope(type) {
+    const optWhole = document.getElementById('scope-opt-whole');
+    const optUnit = document.getElementById('scope-opt-unit');
+    const radioWhole = document.getElementById('scope-radio-whole');
+    const radioUnit = document.getElementById('scope-radio-unit');
+    const formulaText = document.getElementById('storefront-formula-text');
+
+    if (type === 'whole') {
+      optWhole.className = 'cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-low shadow-md relative';
+      optUnit.className = 'cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-lowest hover:bg-surface-container-high relative';
+
+      radioWhole.innerHTML = '<span class="w-2 h-2 rounded-full bg-on-primary"></span>';
+      radioWhole.className = 'w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0';
+
+      radioUnit.innerHTML = '<span class="w-2 h-2 rounded-full bg-transparent"></span>';
+      radioUnit.className = 'w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0';
+
+      formulaText.textContent = '«Комплекс под полным управлением myUNO»';
+    } else {
+      optUnit.className = 'cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-low shadow-md relative';
+      optWhole.className = 'cursor-pointer rounded-xl p-space-md transition-all duration-200 bg-surface-container-lowest hover:bg-surface-container-high relative';
+
+      radioUnit.innerHTML = '<span class="w-2 h-2 rounded-full bg-on-primary"></span>';
+      radioUnit.className = 'w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0';
+
+      radioWhole.innerHTML = '<span class="w-2 h-2 rounded-full bg-transparent"></span>';
+      radioWhole.className = 'w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0';
+
+      formulaText.textContent = '«Отдельные апартаменты под управлением myUNO»';
+    }
+  }
+</script></main></div></body></html>

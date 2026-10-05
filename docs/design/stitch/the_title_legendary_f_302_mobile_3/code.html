@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_stack" name="shell-type"/>
+<title>Оформление бронирования и оплата — The Title Legendary #F-302</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #effcf9;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-font-smoothing: antialiased;
+        min-height: max(884px, 100dvh);
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#11382e",
+            "primary-dark": "#00221a",
+            "primary-container": "#17372f",
+            "on-primary": "#ffffff",
+            "accent-gold": "#E4BE8D",
+            "accent-gold-soft": "#F5EAD9",
+            "surface": "#effcf9",
+            "surface-card": "#ffffff",
+            "surface-muted": "#f4f8f7",
+            "surface-border": "#e3ebe8",
+            "on-surface": "#121e1c",
+            "text-muted": "#5e6d69",
+            "status-verified": "#1b5e4c",
+            "status-verified-bg": "#eaf5f1",
+            "badge-gold": "#FAF3E8",
+            "badge-gold-text": "#9A6B32"
+          },
+          borderRadius: {
+            "2xl": "1rem",
+            "3xl": "1.5rem"
+          },
+          fontFamily: {
+            headline: ["Outfit", "sans-serif"],
+            body: ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface text-on-surface font-body text-[14px] flex flex-col min-h-screen selection:bg-primary/10">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl border-b border-surface-border/60">
+<div class="h-14 px-4 flex items-center justify-between gap-3 max-w-md mx-auto">
+<button aria-label="Вернуться назад" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-muted active:scale-95 transition-all" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
+</button>
+<div class="flex flex-col items-center justify-center text-center">
+<h1 class="font-headline font-semibold text-[17px] text-on-surface tracking-tight">Бронирование</h1>
+<div class="flex items-center gap-1.5 text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+<span class="text-[11px] font-medium tracking-wide uppercase">Безопасное соединение</span>
+</div>
+</div>
+<button aria-label="Служба консьержа" class="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-surface-muted active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]">support_agent</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col relative w-full pt-16 pb-28 min-h-screen">
+<div class="px-4 py-4 space-y-4 max-w-md mx-auto w-full">
+<!-- Step Indicator -->
+<div class="flex items-center justify-between px-1 py-1">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-semibold">3</span>
+<span class="font-headline font-semibold text-sm text-on-surface">Оформление и оплата</span>
+</div>
+<span class="text-xs font-medium text-text-muted">Шаг 3 из 3</span>
+</div>
+<!-- Booking Summary Card -->
+<div class="bg-surface-card rounded-2xl p-3.5 border border-surface-border/80 shadow-[0_2px_12px_rgba(17,56,46,0.03)] flex items-center gap-3.5">
+<div class="relative w-[72px] h-[72px] rounded-xl overflow-hidden shrink-0 bg-surface-muted shadow-inner">
+<img alt="The Title Legendary Bang Tao" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu-nP4hclv7UmUNIoj2QSRPStD244UuG2xLouw0rpS-Wvj10kj4hkoW-KY7N9g3mqh0xkg-f3vEcU_XEOgwQM9RWXCeAxEGN-5BcLoNnOLqsdKmgjHlg2QZ2MyXcyNqaEMhW6t7fzZcF-ZwwYaphbBP3Y36hx-XE-Mv8PxAVwcU4lfO5RgYP5NbYf5-QIdMAqUFcOCpoLGvqqYc0ulzvLRn58V3tSZS5vbTHmficLOqrA33DusIOPk"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1 justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline font-semibold text-[15px] text-on-surface truncate">The Title Legendary #F-302</span>
+</div>
+<p class="text-xs text-text-muted mt-0.5">1-спальные апартаменты с террасой</p>
+<div class="flex items-center gap-2 mt-1.5 flex-wrap">
+<span class="text-xs font-medium text-on-surface bg-surface-muted px-2 py-0.5 rounded-md">15–28 ноя (13 ночей)</span>
+<span class="text-xs text-text-muted">· 2 гостя</span>
+</div>
+</div>
+</div>
+<!-- Step 1: Данные гостя (Guest Info) -->
+<section class="bg-surface-card rounded-2xl p-4 border border-surface-border/80 shadow-[0_2px_12px_rgba(17,56,46,0.03)] space-y-3.5">
+<div class="flex items-center justify-between pb-1 border-b border-surface-border/40">
+<h2 class="font-headline font-semibold text-[15px] text-on-surface flex items-center gap-2">
+<span>Данные для ваучера</span>
+</h2>
+<span class="text-xs font-medium text-text-muted">Обязательно</span>
+</div>
+<div class="space-y-3">
+<!-- Full Name -->
+<div>
+<label class="block text-xs font-medium text-text-muted mb-1">Имя и фамилия (латиницей как в паспорте)</label>
+<div class="bg-surface-muted rounded-xl px-3.5 py-2.5 border border-surface-border/60 focus-within:border-primary/50 focus-within:bg-white transition-all flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-text-muted">person_outline</span>
+<input class="bg-transparent text-sm font-semibold text-on-surface w-full focus:outline-none uppercase tracking-wide" type="text" value="ALEKSANDR SMIRNOV"/>
+</div>
+</div>
+<!-- Email -->
+<div>
+<label class="block text-xs font-medium text-text-muted mb-1">Email для электронного ваучера</label>
+<div class="bg-surface-muted rounded-xl px-3.5 py-2.5 border border-surface-border/60 focus-within:border-primary/50 focus-within:bg-white transition-all flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-text-muted">mail_outline</span>
+<input class="bg-transparent text-sm text-on-surface w-full focus:outline-none" type="email" value="alex.smirnov@residence.uno"/>
+</div>
+</div>
+<!-- Phone -->
+<div>
+<label class="block text-xs font-medium text-text-muted mb-1">Телефон для связи</label>
+<div class="bg-surface-muted rounded-xl px-3.5 py-2.5 border border-surface-border/60 focus-within:border-primary/50 focus-within:bg-white transition-all flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-text-muted">phone</span>
+<input class="bg-transparent text-sm font-medium text-on-surface w-full focus:outline-none" type="tel" value="+7 (916) 880-45-20"/>
+</div>
+</div>
+<!-- Messenger Selector -->
+<div class="pt-0.5">
+<label class="block text-xs font-medium text-text-muted mb-1.5">Канал связи с консьержем</label>
+<div class="grid grid-cols-2 gap-2 bg-surface-muted p-1 rounded-xl" id="messengerSelector">
+<button class="py-2 px-3 rounded-lg flex items-center justify-center gap-2 bg-white text-primary font-medium text-xs shadow-sm transition-all" onclick="selectMessenger(this, 'tg')" type="button">
+<span class="material-symbols-outlined text-[16px]">send</span>
+<span>Telegram</span>
+</button>
+<button class="py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-text-muted font-medium text-xs hover:text-on-surface transition-all" onclick="selectMessenger(this, 'wa')" type="button">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+<span>WhatsApp</span>
+</button>
+</div>
+<div class="mt-2 bg-surface-muted rounded-xl px-3.5 py-2 border border-surface-border/60 flex items-center gap-1.5">
+<span class="text-text-muted font-medium text-xs">@</span>
+<input class="bg-transparent text-xs text-on-surface w-full focus:outline-none font-medium" id="messengerHandle" type="text" value="smirnov_travel"/>
+</div>
+</div>
+<!-- TM.30 Notice Badge -->
+<div class="bg-status-verified-bg/80 border border-status-verified/15 rounded-xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-status-verified text-[18px] shrink-0 mt-0.5">verified_user</span>
+<p class="text-xs text-status-verified leading-relaxed">
+<strong class="font-semibold">Официальная регистрация TM.30 включена.</strong> Консьерж подает уведомление в иммиграционную службу Пхукета автоматически.
+            </p>
+</div>
+</div>
+</section>
+<!-- Step 2: Услуги к заезду (Optional Add-ons) -->
+<section class="bg-surface-card rounded-2xl p-4 border border-surface-border/80 shadow-[0_2px_12px_rgba(17,56,46,0.03)] space-y-3">
+<div class="flex items-center justify-between pb-1 border-b border-surface-border/40">
+<h2 class="font-headline font-semibold text-[15px] text-on-surface">Услуги к заезду</h2>
+<span class="text-xs font-semibold text-status-verified" id="selectedCountBadge">2 выбрано</span>
+</div>
+<div class="space-y-2">
+<!-- Addon 1 -->
+<label class="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-surface-muted/60 hover:bg-surface-muted cursor-pointer transition-all">
+<div class="flex items-center gap-3 min-w-0">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer" onchange="updateAddonState(this)" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<span class="text-sm font-semibold text-on-surface truncate">VIP-трансфер из HKT (Alphard)</span>
+<span class="text-xs text-text-muted">Встреча с табличкой в зале прилета</span>
+</div>
+</div>
+<span class="text-xs font-semibold text-primary whitespace-nowrap ml-2">+฿1,800</span>
+</label>
+<!-- Addon 2 -->
+<label class="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-surface-muted/60 hover:bg-surface-muted cursor-pointer transition-all">
+<div class="flex items-center gap-3 min-w-0">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer" onchange="updateAddonState(this)" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<span class="text-sm font-semibold text-on-surface truncate">eSIM 5G Unlimited (15 дней)</span>
+<span class="text-xs text-text-muted">Безлимитный интернет в Таиланде</span>
+</div>
+</div>
+<span class="text-xs font-semibold text-primary whitespace-nowrap ml-2">+฿450</span>
+</label>
+<!-- Addon 3 -->
+<label class="flex items-center justify-between p-3 rounded-xl border border-surface-border/60 bg-white hover:bg-surface-muted/40 cursor-pointer transition-all">
+<div class="flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer" onchange="updateAddonState(this)" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<span class="text-sm font-medium text-on-surface truncate">Корзина фруктов &amp; Prosecco</span>
+<span class="text-xs text-text-muted">Охлажденное вино и тропические фрукты</span>
+</div>
+</div>
+<span class="text-xs font-medium text-text-muted whitespace-nowrap ml-2">+฿2,500</span>
+</label>
+</div>
+</section>
+<!-- Step 3: Способ оплаты (Payment Method) -->
+<section class="bg-surface-card rounded-2xl p-4 border border-surface-border/80 shadow-[0_2px_12px_rgba(17,56,46,0.03)] space-y-3.5">
+<div class="flex items-center justify-between pb-1 border-b border-surface-border/40">
+<h2 class="font-headline font-semibold text-[15px] text-on-surface">Способ оплаты</h2>
+<span class="text-[11px] font-medium text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-status-verified">lock</span>
+            PCI DSS L1
+          </span>
+</div>
+<!-- 4-Grid Selectable Methods -->
+<div class="grid grid-cols-2 gap-2" id="paymentOptions">
+<!-- RF Cards (Active) -->
+<button class="pay-btn p-3 rounded-xl border-2 border-primary bg-primary/[0.03] text-left flex flex-col justify-between h-[84px] transition-all" onclick="selectPayMethod(this, 'rf')" type="button">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[20px] text-primary">credit_card</span>
+<span class="w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center text-white text-[9px] font-bold">✓</span>
+</div>
+<div>
+<div class="font-semibold text-xs text-primary leading-tight">Карты банков РФ</div>
+<div class="text-[11px] text-text-muted mt-0.5">МИР, Visa, MC · ₽</div>
+</div>
+</button>
+<!-- International Cards -->
+<button class="pay-btn p-3 rounded-xl border border-surface-border/80 bg-white hover:bg-surface-muted text-left flex flex-col justify-between h-[84px] transition-all" onclick="selectPayMethod(this, 'intl')" type="button">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[20px] text-text-muted">public</span>
+</div>
+<div>
+<div class="font-semibold text-xs text-on-surface leading-tight">Зарубежные карты</div>
+<div class="text-[11px] text-text-muted mt-0.5">USD / EUR / THB</div>
+</div>
+</button>
+<!-- Thai QR -->
+<button class="pay-btn p-3 rounded-xl border border-surface-border/80 bg-white hover:bg-surface-muted text-left flex flex-col justify-between h-[84px] transition-all" onclick="selectPayMethod(this, 'qr')" type="button">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[20px] text-text-muted">qr_code_2</span>
+<span class="text-[10px] font-medium text-status-verified bg-status-verified-bg px-1 rounded">0%</span>
+</div>
+<div>
+<div class="font-semibold text-xs text-on-surface leading-tight">Thai QR (PromptPay)</div>
+<div class="text-[11px] text-text-muted mt-0.5">Мгновенный перевод</div>
+</div>
+</button>
+<!-- USDT Crypto -->
+<button class="pay-btn p-3 rounded-xl border border-surface-border/80 bg-white hover:bg-surface-muted text-left flex flex-col justify-between h-[84px] transition-all" onclick="selectPayMethod(this, 'crypto')" type="button">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[20px] text-text-muted">currency_bitcoin</span>
+<span class="text-[10px] font-medium text-text-muted bg-surface-muted px-1 rounded">Web3</span>
+</div>
+<div>
+<div class="font-semibold text-xs text-on-surface leading-tight">USDT (Crypto)</div>
+<div class="text-[11px] text-text-muted mt-0.5">TRC20 / ERC20</div>
+</div>
+</button>
+</div>
+<!-- Minimalist Card Input Box -->
+<div class="bg-surface-muted/70 rounded-xl p-3.5 border border-surface-border/80 space-y-3" id="cardDetailsBox">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface">Реквизиты карты</span>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded bg-emerald-700 text-[10px] font-bold text-white tracking-wider">МИР</span>
+<span class="text-[11px] text-text-muted">Visa / MC</span>
+</div>
+</div>
+<div>
+<div class="bg-white rounded-lg px-3 py-2 border border-surface-border/70 flex items-center justify-between">
+<span class="font-mono text-sm tracking-wider text-on-surface">2202 2012 •••• 7731</span>
+<span class="material-symbols-outlined text-[16px] text-status-verified">lock</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<div class="bg-white rounded-lg px-3 py-2 border border-surface-border/70 flex items-center justify-between">
+<span class="text-xs text-text-muted">Срок:</span>
+<span class="font-mono text-xs font-medium text-on-surface">09 / 28</span>
+</div>
+<div class="bg-white rounded-lg px-3 py-2 border border-surface-border/70 flex items-center justify-between">
+<span class="text-xs text-text-muted">CVC:</span>
+<span class="font-mono text-xs font-medium text-on-surface">•••</span>
+</div>
+</div>
+<p class="text-[11px] text-text-muted text-center pt-0.5">
+            Курс зафиксирован: 1 THB = 2.80 ₽ · Без скрытых комиссий
+          </p>
+</div>
+</section>
+<!-- Transparent Price Breakdown -->
+<section class="bg-surface-card rounded-2xl p-4 border border-surface-border/80 shadow-[0_2px_12px_rgba(17,56,46,0.03)] space-y-3">
+<h2 class="font-headline font-semibold text-[15px] text-on-surface">Прозрачный расчет</h2>
+<div class="space-y-2 text-xs">
+<div class="flex justify-between items-center text-text-muted">
+<span>Проживание (13 ночей)</span>
+<span class="font-mono text-on-surface font-medium">฿41,600</span>
+</div>
+<div class="flex justify-between items-center text-text-muted">
+<span>Финальная эко-уборка</span>
+<span class="font-mono text-on-surface font-medium">฿1,800</span>
+</div>
+<div class="flex justify-between items-center text-text-muted">
+<span>Консьерж myUNO 24/7</span>
+<span class="text-status-verified font-medium">Включено</span>
+</div>
+<div class="flex justify-between items-center text-text-muted">
+<span>Доп. услуги (Трансфер + eSIM)</span>
+<span class="font-mono text-on-surface font-medium">+฿2,250</span>
+</div>
+<div class="pt-2 border-t border-surface-border/60">
+<div class="flex justify-between items-baseline py-1">
+<span class="text-sm font-semibold text-on-surface">Итого к оплате онлайн</span>
+<div class="text-right">
+<span class="font-headline text-lg font-bold text-primary font-mono">฿45,650</span>
+</div>
+</div>
+<div class="text-right text-[11px] text-text-muted">
+              ≈ 127,820 ₽ / $1,304
+            </div>
+</div>
+</div>
+<!-- Refundable Deposit Note -->
+<div class="bg-badge-gold border border-accent-gold/40 rounded-xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-badge-gold-text text-[18px] shrink-0 mt-0.5">shield</span>
+<p class="text-xs text-badge-gold-text leading-snug">
+<strong>Возвратный депозит ฿10,000</strong> вносится при заселении батлеру (наличными или USDT) и полностью возвращается в день выезда.
+          </p>
+</div>
+<!-- Cancellation Policy Banner -->
+<div class="bg-status-verified-bg/70 border border-status-verified/20 rounded-xl p-3 flex items-center gap-2.5">
+<span class="material-symbols-outlined text-status-verified text-[18px] shrink-0">check_circle</span>
+<span class="text-xs font-medium text-status-verified">Бесплатная отмена бронирования до 1 ноября 2026</span>
+</div>
+<!-- Terms Agreement -->
+<label class="flex items-start gap-2.5 pt-1 cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer" id="agreeTerms" type="checkbox"/>
+<span class="text-[11px] text-text-muted leading-tight">
+            Согласен с правилами проживания и договором публичной оферты UNO Hospitality.
+          </span>
+</label>
+</section>
+<!-- Trust & Support Footer -->
+<div class="text-center pt-2 pb-6 space-y-2">
+<a class="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline" href="#">
+<span class="material-symbols-outlined text-[16px]">support_agent</span>
+<span>Нужна помощь? Консьерж в WhatsApp</span>
+</a>
+<p class="text-[10px] text-text-muted">
+          DBD Registration #083556600984 · Bang Tao Beach, Phuket
+        </p>
+</div>
+</div>
+</main>
+<!-- Sticky Bottom Bar -->
+<aside class="fixed bottom-0 w-full z-50 pb-safe bg-white/95 backdrop-blur-xl border-t border-surface-border/80 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+<div class="px-4 py-3 flex items-center justify-between gap-3 max-w-md mx-auto">
+<div class="flex flex-col">
+<span class="text-[11px] uppercase tracking-wider text-text-muted font-semibold">Итого к оплате</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline font-bold text-lg text-primary font-mono leading-none">฿45,650</span>
+<span class="text-[11px] text-text-muted">≈ 127,820 ₽</span>
+</div>
+</div>
+<button class="h-11 px-6 bg-primary hover:bg-primary-container active:scale-[0.98] text-white font-medium text-sm rounded-xl flex items-center gap-2 shadow-md transition-all shrink-0" onclick="handlePaySubmit()" type="button">
+<span class="material-symbols-outlined text-[17px]">lock</span>
+<span>Оплатить ฿45,650</span>
+</button>
+</div>
+</aside>
+<script>
+    function selectMessenger(btn, type) {
+      const container = document.getElementById('messengerSelector');
+      container.querySelectorAll('button').forEach(b => {
+        b.className = 'py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-text-muted font-medium text-xs hover:text-on-surface transition-all';
+      });
+      btn.className = 'py-2 px-3 rounded-lg flex items-center justify-center gap-2 bg-white text-primary font-medium text-xs shadow-sm transition-all';
+      
+      const input = document.getElementById('messengerHandle');
+      input.value = (type === 'tg') ? 'smirnov_travel' : '+7 (916) 880-45-20';
+    }
+
+    function selectPayMethod(btn, type) {
+      const allBtns = document.querySelectorAll('.pay-btn');
+      allBtns.forEach(b => {
+        b.className = 'pay-btn p-3 rounded-xl border border-surface-border/80 bg-white hover:bg-surface-muted text-left flex flex-col justify-between h-[84px] transition-all';
+        const check = b.querySelector('.bg-primary');
+        if (check) check.remove();
+      });
+
+      btn.className = 'pay-btn p-3 rounded-xl border-2 border-primary bg-primary/[0.03] text-left flex flex-col justify-between h-[84px] transition-all';
+      const headerDiv = btn.querySelector('div:first-child');
+      if (!headerDiv.querySelector('.bg-primary')) {
+        const checkSpan = document.createElement('span');
+        checkSpan.className = 'w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center text-white text-[9px] font-bold';
+        checkSpan.innerText = '✓';
+        headerDiv.appendChild(checkSpan);
+      }
+
+      const cardBox = document.getElementById('cardDetailsBox');
+      if (type === 'rf' || type === 'intl') {
+        cardBox.style.display = 'block';
+      } else {
+        cardBox.style.display = 'none';
+      }
+    }
+
+    function updateAddonState(checkbox) {
+      const card = checkbox.closest('label');
+      if (checkbox.checked) {
+        card.classList.add('border-primary/20', 'bg-surface-muted/60');
+        card.classList.remove('border-surface-border/60', 'bg-white');
+      } else {
+        card.classList.remove('border-primary/20', 'bg-surface-muted/60');
+        card.classList.add('border-surface-border/60', 'bg-white');
+      }
+
+      const checkedCount = document.querySelectorAll('section:nth-of-type(2) input[type="checkbox"]:checked').length;
+      document.getElementById('selectedCountBadge').textContent = checkedCount + ' выбрано';
+    }
+
+    function handlePaySubmit() {
+      const agree = document.getElementById('agreeTerms');
+      if (!agree.checked) {
+        alert('Пожалуйста, подтвердите согласие с правилами бронирования.');
+        return;
+      }
+      alert('Переход в защищенный платежный шлюз банка...');
+    }
+  </script>
+</body></html>

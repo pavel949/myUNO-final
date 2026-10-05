@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, useState } from 'react';
 import { matchPlaces, type PlaceOption } from '@/lib/place-search';
-import type { HomePlaceSelection } from './HomeIntentProvider';
+import type { HomePlaceSelection } from './home-intent';
 
 export interface PlaceComboboxLabels {
   label: string;

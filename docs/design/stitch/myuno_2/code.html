@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container-high":"#ddebe8","on-primary":"#ffffff","secondary":"#81551c","on-tertiary-fixed-variant":"#2d4d44","on-tertiary-container":"#7fa195","on-secondary":"#ffffff","status-instant-bg":"#FAF3E8","status-instant":"#9A6B32","tertiary-fixed-dim":"#accec2","surface-tint":"#40665a","tertiary-container":"#17372f","surface-dim":"#cfddd9","primary-fixed-dim":"#a7cfc1","error-container":"#ffdad6","inverse-on-surface":"#e6f4f0","on-primary-fixed-variant":"#284e43","outline":"#717975","on-error":"#ffffff","error":"#ba1a1a","surface":"#effcf9","on-secondary-container":"#784d14","on-error-container":"#93000a","surface-container":"#e3f1ed","surface-bright":"#effcf9","surface-ivory":"#FBF9F5","secondary-container":"#fdc17e","inverse-surface":"#273331","surface-container-low":"#e9f7f3","outline-variant":"#c1c8c4","surface-variant":"#d8e5e2","accent-gold-muted":"#F5EAD9","secondary-fixed-dim":"#f6bb79","status-verified":"#1E5848","status-verified-bg":"#E9F1EE","inverse-primary":"#a7cfc1","secondary-fixed":"#ffddba","surface-container-lowest":"#ffffff","on-surface-variant":"#414845","text-muted":"#566360","on-secondary-fixed-variant":"#663e04","on-tertiary":"#ffffff","on-primary-fixed":"#002019","background":"#effcf9","primary":"#00221a","on-background":"#121e1c","on-tertiary-fixed":"#002019","on-surface":"#121e1c","tertiary-fixed":"#c7eadd","border-subtle":"#E5DFD3","primary-fixed":"#c2ebdc","accent-gold-soft":"#E4BE8D","surface-container-highest":"#d8e5e2","tertiary":"#01221a","surface-sand":"#F4F0E8","on-primary-container":"#7ba295","primary-container":"#11382e","on-secondary-fixed":"#2b1700","surface-sand-subtle":"#EAE4D7"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter-mobile":"1rem","margin-mobile":"1.25rem","gutter":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","margin":"3rem","space-xl":"2.5rem","space-2xl":"4rem","space-lg":"1.5rem","space-md":"1rem"},fontFamily:{"label-md":["Manrope"],"label-caps":["Manrope"],"label-lg":["Manrope"],"headline-lg":["Outfit"],"headline-lg-mobile":["Outfit"],"headline-md":["Outfit"],"body-sm":["Manrope"],"body-md":["Manrope"],"display-hero-mobile":["Outfit"],"display-hero":["Outfit"],"headline-sm":["Outfit"],"title-md":["Outfit"],"body-lg":["Manrope"]},fontSize:{"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.03em",fontWeight:"600"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.08em",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.02em",fontWeight:"600"}],"headline-lg":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"500"}],"headline-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-md":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"body-sm":["13px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"400"}],"body-md":["15px",{lineHeight:"24px",letterSpacing:"0em",fontWeight:"400"}],"display-hero-mobile":["36px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"600"}],"display-hero":["56px",{lineHeight:"64px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-sm":["22px",{lineHeight:"30px",letterSpacing:"-0.005em",fontWeight:"600"}],"title-md":["18px",{lineHeight:"26px",letterSpacing:"0em",fontWeight:"600"}],"body-lg":["18px",{lineHeight:"28px",letterSpacing:"0em",fontWeight:"400"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 max-w-[1280px] mx-auto px-margin-mobile lg:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><a class="flex items-center gap-space-sm" data-path="home" href="#"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><span class="font-headline-sm text-headline-sm text-primary tracking-tight">myUNO</span></a><nav class="hidden lg:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary font-bold rounded-lg"><a class="px-space-sm py-space-xs font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="rent" href="#">Аренда</a><a class="px-space-sm py-space-xs font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="buy" href="#">Купить</a><a class="px-space-sm py-space-xs font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="complexes" href="#">Комплексы</a><a class="px-space-sm py-space-xs font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="services" href="#">Услуги</a><a aria-current="page" class="px-space-sm py-space-xs transition-colors bg-primary-container text-on-primary font-bold rounded-lg" data-path="owner-evaluation" href="#">Собственникам</a></nav></div><div class="flex items-center gap-space-md"><div class="hidden sm:flex items-center gap-space-xs bg-surface-sand px-space-sm py-space-xs rounded-lg"><select aria-label="Валюта" class="bg-transparent font-label-caps text-label-caps text-on-surface cursor-pointer focus:outline-none"><option value="THB">THB ฿</option><option value="USD">USD $</option><option value="RUB">RUB ₽</option></select><span class="text-outline-variant font-body-sm text-body-sm">|</span><select aria-label="Язык" class="bg-transparent font-label-caps text-label-caps text-on-surface cursor-pointer focus:outline-none"><option value="RU">RU</option><option value="EN">EN</option><option value="TH">TH</option></select></div><a class="hidden md:inline-flex items-center justify-center px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary transition-colors" data-path="portal-login" href="#">Войти / Мой UNO</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-surface"><div class="flex flex-col w-full">
+<!-- SECTION 1: HERO & VALUE PROPOSITION -->
+<section class="relative w-full overflow-hidden bg-surface py-space-xl lg:py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
+<!-- Text & Core CTA Block (7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-status-verified-bg text-status-verified w-fit">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Институциональное управление на Пхукете</span>
+</div>
+<h1 class="font-display-hero text-headline-lg lg:text-display-hero text-primary tracking-tight leading-[1.08]">
+            Доходность до <span class="text-secondary">11.4%</span> годовых и безупречное состояние вашей недвижимости
+          </h1>
+<p class="font-body-lg text-body-lg text-text-muted max-w-2xl">
+            Возьмем на себя маркетинг, заселение гостей, отельный сервис <span class="font-semibold text-primary">myUNO Clean</span> и предиктивное техническое обслуживание. Прозрачная P&amp;L отчетность в личном кабинете инвестора в режиме 24/7.
+          </p>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<a class="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary transition-colors shadow-sm" href="#audit-form">
+<span>Заказать выездной аудит объекта</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+<a class="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-lg bg-surface-sand text-primary font-label-lg text-label-lg hover:bg-surface-sand-subtle transition-colors" href="#calculator">
+<span class="material-symbols-outlined text-[18px]">calculate</span>
+<span>Рассчитать доходность</span>
+</a>
+</div>
+<!-- Escrow & Insurance Trust Strip -->
+<div class="flex items-center gap-space-sm pt-space-sm text-text-muted">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+<span class="font-label-md text-label-md">100% эскроу-депозит и страхование Allianz до ฿1,000,000</span>
+</div>
+<span class="text-outline-variant">•</span>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[20px]">analytics</span>
+<span class="font-label-md text-label-md">Прямая интеграция с DBD и банками Таиланда</span>
+</div>
+</div>
+</div>
+<!-- Hero Asset Imagery & Realtime P&L Preview (5 cols) -->
+<div class="lg:col-span-5 relative">
+<div class="relative rounded-xl overflow-hidden shadow-xl bg-surface-container-high aspect-[4/3]">
+<img class="w-full h-full object-cover" data-alt="Ultra-luxury tropical modern villa in Bang Tao Laguna Phuket with infinity pool reflecting warm sunset, teak architectural overhangs, lush verdant tropical landscaping and warm interior ambient lighting. Minimalist aesthetic with Andaman emerald and sandy limestone undertones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo7RU1fSQieeJhZE0lav4af2U1RFog4mEKn3vmQpZc5PXHl8rgK-Xu5FRj7i03JpXzjS_bYnpqjNV84tdlpwkQiBJSClg4nka9ADSSDQB3L9dbAyiO18oW1es1tPrn-_MQcWeyUy0cAvkXm6QvwUsD1z_q4ZZ3s5J676A10BNWzsRpTsbZGrVRb_xB3kC0psyI7a4qzGiU_Q0C6x7hgm10jkYPnMkfMnBOsfM1qKt3a9MSgzvJ6bC5"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent"></div>
+<!-- Realtime Trust Badge on Image -->
+<div class="absolute top-4 left-4 bg-surface-ivory/95 backdrop-blur-md px-space-sm py-space-xs rounded-lg shadow-sm flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-primary uppercase">Mandate Active • Bang Tao</span>
+</div>
+<!-- Overlaid P&L Flash Card -->
+<div class="absolute bottom-4 left-4 right-4 bg-surface-ivory/95 backdrop-blur-md p-space-md rounded-xl shadow-lg flex items-center justify-between">
+<div>
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Выплата за прошлый месяц</div>
+<div class="font-headline-sm text-headline-sm text-primary font-bold">฿184,500 THB</div>
+<div class="font-body-sm text-body-sm text-status-verified flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span>+14.2% к базовому прогнозу ADR</span>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Загрузка</div>
+<div class="font-headline-sm text-headline-sm text-secondary font-bold">93.4%</div>
+<div class="font-body-sm text-body-sm text-text-muted">28 из 30 ночей</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Trust Metrics Bar (4 Pillars) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-md mt-space-xl pt-space-lg bg-surface-ivory rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col gap-0.5">
+<div class="font-display-hero-mobile text-headline-lg text-primary font-bold">342</div>
+<div class="font-title-md text-title-md text-on-surface">Юнита под управлением</div>
+<div class="font-body-sm text-body-sm text-text-muted">Флагманские кондоминиумы и виллы</div>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="font-display-hero-mobile text-headline-lg text-secondary font-bold">฿48.6M</div>
+<div class="font-title-md text-title-md text-on-surface">Выплачено владельцам</div>
+<div class="font-body-sm text-body-sm text-text-muted">Чистые начисления за 2026 год</div>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="font-display-hero-mobile text-headline-lg text-primary font-bold">88.6%</div>
+<div class="font-title-md text-title-md text-on-surface">Среднегодовая загрузка</div>
+<div class="font-body-sm text-body-sm text-text-muted">Алгоритмы Dynamic PMS Pricing</div>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="font-display-hero-mobile text-headline-lg text-status-verified font-bold">100%</div>
+<div class="font-title-md text-title-md text-on-surface">Гарантия сохранности</div>
+<div class="font-body-sm text-body-sm text-text-muted">Allianz + Эскроу депозит арендатора</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: INTERACTIVE YIELD & REVENUE CALCULATOR -->
+<section class="w-full bg-surface-sand py-space-2xl" id="calculator">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="flex flex-col gap-space-xs mb-space-xl">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Интерактивный прогноз доходности</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Калькулятор выручки и сплита 80/20</h2>
+<p class="font-body-md text-body-md text-text-muted max-w-2xl">
+          Расчет базируется на фактических исторических данных бронирований myUNO за 2024–2026 гг. с учетом сезонных коэффициентов Пхукета.
+        </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Control Panel (7 cols) -->
+<div class="lg:col-span-7 bg-surface-ivory rounded-xl p-space-lg shadow-sm flex flex-col gap-space-lg">
+<!-- Parameter 1: Location -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">1. Локация объекта на Пхукете</label>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-space-xs" id="calc-locations">
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-primary text-on-primary transition-all" data-mult="1.15" data-val="bangtao" type="button">
+<span class="block font-label-lg text-label-lg">Банг Тао (Лагуна)</span>
+<span class="block font-body-sm text-body-sm opacity-80">Высокий ADR</span>
+</button>
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-mult="1.10" data-val="layan" type="button">
+<span class="block font-label-lg text-label-lg">Лаян</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Премиум виллы</span>
+</button>
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-mult="1.05" data-val="kamala" type="button">
+<span class="block font-label-lg text-label-lg">Камала (Millionaires)</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Стабильный спрос</span>
+</button>
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-mult="0.95" data-val="rawai" type="button">
+<span class="block font-label-lg text-label-lg">Раваи / Най Харн</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Круглогодично</span>
+</button>
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-mult="0.90" data-val="patong" type="button">
+<span class="block font-label-lg text-label-lg">Патонг</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Макс. ротация</span>
+</button>
+<button class="location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-mult="1.08" data-val="surin" type="button">
+<span class="block font-label-lg text-label-lg">Сурин</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Бутик кондо</span>
+</button>
+</div>
+</div>
+<!-- Parameter 2: Property Type -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">2. Тип и площадь юнита</label>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-xs" id="calc-types">
+<button class="type-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all flex items-center justify-between" data-adr="5200" data-base="1450000" data-roi="10.8" type="button">
+<div>
+<div class="font-label-lg text-label-lg">1BR Апартаменты</div>
+<div class="font-body-sm text-body-sm text-text-muted">45 – 60 м²</div>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">ADR ฿5,200</span>
+</button>
+<button class="type-btn p-space-sm rounded-lg text-left bg-primary text-on-primary transition-all flex items-center justify-between" data-adr="8900" data-base="2462500" data-roi="9.8" type="button">
+<div>
+<div class="font-label-lg text-label-lg">2BR Deluxe Suite</div>
+<div class="font-body-sm text-body-sm opacity-80">75 – 95 м²</div>
+</div>
+<span class="font-label-caps text-label-caps text-on-primary bg-primary-container px-space-xs py-0.5 rounded">Популярно</span>
+</button>
+<button class="type-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all flex items-center justify-between" data-adr="14200" data-base="3850000" data-roi="9.2" type="button">
+<div>
+<div class="font-label-lg text-label-lg">Sky Penthouse</div>
+<div class="font-body-sm text-body-sm text-text-muted">120 – 180 м²</div>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">ADR ฿14,200</span>
+</button>
+<button class="type-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all flex items-center justify-between" data-adr="22500" data-base="5900000" data-roi="11.4" type="button">
+<div>
+<div class="font-label-lg text-label-lg">Приватная вилла с бассейном</div>
+<div class="font-body-sm text-body-sm text-text-muted">3 – 5 спален</div>
+</div>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-space-xs py-0.5 rounded">High Yield</span>
+</button>
+</div>
+</div>
+<!-- Parameter 3: Seasonality & Strategy -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">3. Стратегия сдачи</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-xs" id="calc-strategy">
+<button class="strat-btn p-space-sm rounded-lg text-left bg-primary text-on-primary transition-all" data-strat-mult="1.0" type="button">
+<span class="block font-label-lg text-label-lg">Круглый год (Mix)</span>
+<span class="block font-body-sm text-body-sm opacity-80">Макс. годовой доход</span>
+</button>
+<button class="strat-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-strat-mult="0.82" type="button">
+<span class="block font-label-lg text-label-lg">Высокий сезон (Nov-Apr)</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Свободно летом</span>
+</button>
+<button class="strat-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all" data-strat-mult="0.75" type="button">
+<span class="block font-label-lg text-label-lg">Долгосрок (1-3 года)</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Фикс. ежемесячно</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Realtime Yield Breakdown & Chart (5 cols) -->
+<div class="lg:col-span-5 bg-surface-ivory rounded-xl p-space-lg shadow-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Прогноз чистого дохода владельца</span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">Net 80%</span>
+</div>
+<!-- Main Hero Figure -->
+<div class="bg-surface-sand rounded-xl p-space-md flex flex-col gap-1">
+<div class="font-body-sm text-body-sm text-text-muted">Чистая выплата инвестору за 12 месяцев:</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-hero-mobile text-headline-lg font-bold text-primary" id="calc-net-thb">฿1,970,000</span>
+<span class="font-title-md text-title-md text-text-muted">THB</span>
+</div>
+<div class="font-label-lg text-label-lg text-secondary flex items-center justify-between">
+<span id="calc-net-usd">~$56,300 USD / год</span>
+<span class="font-bold text-primary" id="calc-monthly-thb">฿164,200 THB / месяц</span>
+</div>
+</div>
+<!-- KPI Cards 2x2 -->
+<div class="grid grid-cols-2 gap-space-xs">
+<div class="bg-surface-sand/60 p-space-sm rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted block">Доходность (NET ROI)</span>
+<span class="font-headline-sm text-headline-sm font-bold text-status-verified" id="calc-roi">9.8%</span>
+</div>
+<div class="bg-surface-sand/60 p-space-sm rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted block">Загрузка фонда</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary" id="calc-occupancy">87% <span class="font-body-sm text-body-sm font-normal text-text-muted">(318 дн.)</span></span>
+</div>
+<div class="bg-surface-sand/60 p-space-sm rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted block">Средняя ставка ADR</span>
+<span class="font-label-lg text-label-lg font-bold text-primary" id="calc-adr-range">฿7,200 - ฿14,500</span>
+</div>
+<div class="bg-surface-sand/60 p-space-sm rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted block">Налог WHT (DBD)</span>
+<span class="font-label-lg text-label-lg font-bold text-text-muted">5% автоматом</span>
+</div>
+</div>
+<!-- Transparent Split Visualizer (Inline SVG Bar) -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<div class="flex justify-between font-label-caps text-label-caps text-text-muted">
+<span>Сплит выручки: 80% Инвестор / 20% myUNO</span>
+<span id="calc-gross">Валовая: ฿2,462,500 THB</span>
+</div>
+<div class="w-full h-3 bg-surface-sand rounded-full overflow-hidden flex">
+<div class="h-full bg-primary rounded-l-full transition-all duration-300" style="width: 80%;"></div>
+<div class="h-full bg-secondary-container rounded-r-full transition-all duration-300" style="width: 20%;"></div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs text-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span>
+<span class="text-primary font-semibold" id="calc-owner-share">Владелец: ฿1,970,000</span>
+</div>
+<div class="flex items-center gap-space-xs justify-end">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span>
+<span class="text-text-muted" id="calc-commission">myUNO (20%): ฿492,500</span>
+</div>
+</div>
+</div>
+<a class="w-full text-center py-space-sm px-space-md rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm" href="#audit-form">
+            Зафиксировать расчет и заказать аудит
+          </a>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: MANDATE MODELS COMPARISON -->
+<section class="w-full bg-surface py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="flex flex-col gap-space-xs mb-space-xl text-center max-w-3xl mx-auto">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Форматы сотрудничества</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Прозрачные модели доверительного управления</h2>
+<p class="font-body-md text-body-md text-text-muted">
+          Никаких скрытых плат, завышенных смет на обслуживание и неожиданных удержаний. Все расходы документируются счетами и фотофиксацией.
+        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg items-stretch">
+<!-- MODEL A: FULL MANAGEMENT 80/20 (FLAGSHIP) -->
+<div class="relative bg-surface-sand rounded-xl p-space-lg flex flex-col justify-between shadow-lg">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-space-md py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider shadow-sm">
+            Флагманский мандат myUNO
+          </div>
+<div class="flex flex-col gap-space-md pt-space-xs">
+<div>
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Модель А • Полный отельный цикл</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Full Management 80/20</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Идеально для собственников, живущих за пределами Таиланда.</p>
+</div>
+<div class="p-space-md bg-surface-ivory rounded-lg flex items-baseline justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Доля собственника</span>
+<span class="font-headline-lg text-headline-lg font-bold text-primary">80%</span>
+</div>
+<div class="text-right">
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Комиссия myUNO</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-secondary">20% Net</span>
+</div>
+</div>
+<ul class="flex flex-col gap-space-xs text-body-sm text-on-surface">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Отельный сервис <strong>myUNO Clean</strong> (сатин 500TC, эко-косметика)</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Установка и поддержка замков <strong>IoT Salto / Yale</strong></span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Динамическое PMS-управление на 18 мировых OTA + Direct</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Персональный guest-батлер и консьерж-служба 24/7</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Страхование Allianz от ущерба до <strong>฿1,000,000 THB</strong></span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>До <strong>30 дней</strong> бесплатного личного проживания в году</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Выплаты 1-го числа месяца (THB, USD, USDT)</span>
+</li>
+</ul>
+</div>
+<div class="pt-space-md">
+<a class="w-full block text-center py-space-sm px-space-md rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm" href="#audit-form">
+              Выбрать Full Management
+            </a>
+</div>
+</div>
+<!-- MODEL B: RENTAL ONLY (15%) -->
+<div class="bg-surface-ivory rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex flex-col gap-space-md">
+<div>
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Модель Б • Дистрибуция и гости</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Rental Only (15%)</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Для владельцев со штатным персоналом или собственной УК.</p>
+</div>
+<div class="p-space-md bg-surface-sand rounded-lg flex items-baseline justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Доля собственника</span>
+<span class="font-headline-lg text-headline-lg font-bold text-primary">85%</span>
+</div>
+<div class="text-right">
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Комиссия сервиса</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-text-muted">15%</span>
+</div>
+</div>
+<ul class="flex flex-col gap-space-xs text-body-sm text-on-surface">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Маркетинг на закрытой платформе myUNO Direct + OTA</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Синхронизация календарей iCal / Channel Manager</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Скоринг гостей и проверка паспортов при заселении</span>
+</li>
+<li class="flex items-start gap-space-xs text-text-muted">
+<span class="material-symbols-outlined text-outline-variant text-[18px]">cancel</span>
+<span>Клининг и расходники осуществляются собственником</span>
+</li>
+<li class="flex items-start gap-space-xs text-text-muted">
+<span class="material-symbols-outlined text-outline-variant text-[18px]">cancel</span>
+<span>Техническое обслуживание не включено</span>
+</li>
+</ul>
+</div>
+<div class="pt-space-md">
+<a class="w-full block text-center py-space-sm px-space-md rounded-lg bg-surface-sand text-primary font-label-lg text-label-lg hover:bg-surface-sand-subtle transition-colors" href="#audit-form">
+              Выбрать Rental Only
+            </a>
+</div>
+</div>
+<!-- MODEL C: GUARANTEED YIELD (7-8% FIXED) -->
+<div class="bg-surface-ivory rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex flex-col gap-space-md">
+<div>
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Модель В • Безрисковый доход</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Rental Guarantee</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Фиксированный стабильный доход без привязки к сезонности.</p>
+</div>
+<div class="p-space-md bg-surface-sand rounded-lg flex items-baseline justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Фиксированная ставка</span>
+<span class="font-headline-lg text-headline-lg font-bold text-secondary">7 – 8%</span>
+</div>
+<div class="text-right">
+<span class="font-label-caps text-label-caps text-text-muted uppercase block">Срок контракта</span>
+<span class="font-label-lg text-label-lg font-semibold text-primary">от 2 лет</span>
+</div>
+</div>
+<ul class="flex flex-col gap-space-xs text-body-sm text-on-surface">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Выплаты не зависят от заполняемости объекта</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Полное покрытие коммунальных счетов и амортизации</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Ежеквартальный пересмотр рыночной капитализации</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>14 дней личного проживания в низкий сезон</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[18px]">check_circle</span>
+<span>Банковская гарантия тайского банка первого эшелона</span>
+</li>
+</ul>
+</div>
+<div class="pt-space-md">
+<a class="w-full block text-center py-space-sm px-space-md rounded-lg bg-surface-sand text-primary font-label-lg text-label-lg hover:bg-surface-sand-subtle transition-colors" href="#audit-form">
+              Запросить расчет гарантии
+            </a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: ONBOARDING PROCESS (4 STEPS) -->
+<section class="w-full bg-surface-sand py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="flex flex-col gap-space-xs mb-space-xl">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Прозрачный путь запуска</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">4 шага от заявки до первой чистой выплаты</h2>
+<p class="font-body-md text-body-md text-text-muted">Интеграция занимает от 3 до 7 рабочих дней без необходимости вашего личного присутствия на острове.</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Step 1 -->
+<div class="bg-surface-ivory rounded-xl p-space-md flex flex-col justify-between gap-space-md shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary/30 font-bold">01</span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">15 минут</span>
+</div>
+<h4 class="font-title-md text-title-md text-primary font-semibold">Экспресс-оценка и онлайн-заявка</h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+              Заполните данные о вашем кондоминиуме или вилле. Наш алгоритм сопоставит объект с базой спроса myUNO.
+            </p>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm">
+<span class="material-symbols-outlined text-[18px]">speed</span>
+<span>Мгновенный скоринг</span>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="bg-surface-ivory rounded-xl p-space-md flex flex-col justify-between gap-space-md shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary/30 font-bold">02</span>
+<span class="font-label-caps text-label-caps text-primary bg-surface-container-high px-space-xs py-0.5 rounded">Бесплатно</span>
+</div>
+<h4 class="font-title-md text-title-md text-primary font-semibold">Выездной аудит эксперта myUNO</h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+              Инженер и отельный супервайзер проводят проверку по чеклисту из 42 пунктов (сантехника, AC, Chanote, шумоизоляция).
+            </p>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm">
+<span class="material-symbols-outlined text-[18px]">checklist</span>
+<span>Чек-лист 42 параметра</span>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="bg-surface-ivory rounded-xl p-space-md flex flex-col justify-between gap-space-md shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary/30 font-bold">03</span>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-space-xs py-0.5 rounded">Безопасно</span>
+</div>
+<h4 class="font-title-md text-title-md text-primary font-semibold">Договор и IoT SmartLock</h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+              Подписание двуязычного договора мандата. Бесплатная установка электронного замка Salto или Yale с контролем доступа.
+            </p>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span>Бесключевой доступ</span>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="bg-surface-ivory rounded-xl p-space-md flex flex-col justify-between gap-space-md shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary/30 font-bold">04</span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">Старт выплат</span>
+</div>
+<h4 class="font-title-md text-title-md text-primary font-semibold">Фотосессия и запуск гостей</h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+              Интерьерная съемка архитектурным фотографом, выход на 18 площадок и первая выплата дохода уже 1-го числа следующего месяца.
+            </p>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+<span>Выплаты 1-го числа</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: REAL INVESTOR PORTAL PREVIEW & PROOF OF QUALITY -->
+<section class="w-full bg-surface py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
+<!-- Investor Portal UI Preview (7 cols) -->
+<div class="lg:col-span-7 bg-surface-sand rounded-xl p-space-md shadow-lg flex flex-col gap-space-md">
+<!-- Top bar of portal preview -->
+<div class="flex items-center justify-between pb-space-xs border-b border-border-subtle">
+<div class="flex items-center gap-space-xs">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<div class="w-3 h-3 rounded-full bg-secondary-container"></div>
+<div class="w-3 h-3 rounded-full bg-status-verified"></div>
+<span class="font-label-caps text-label-caps text-text-muted ml-2">myUNO Owner Dashboard • Unit #B402 The Title Legendary</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-space-xs py-0.5 rounded">Online 24/7</span>
+</div>
+<!-- P&L Dashboard Mockup Details -->
+<div class="grid grid-cols-3 gap-space-xs">
+<div class="bg-surface-ivory p-space-xs rounded-lg">
+<div class="font-label-caps text-label-caps text-text-muted">Март 2026 (Факт)</div>
+<div class="font-title-md text-title-md font-bold text-primary">฿214,800</div>
+<div class="font-body-sm text-body-sm text-status-verified">+18.5% YoY</div>
+</div>
+<div class="bg-surface-ivory p-space-xs rounded-lg">
+<div class="font-label-caps text-label-caps text-text-muted">Занятость месяца</div>
+<div class="font-title-md text-title-md font-bold text-primary">29 / 31 дн.</div>
+<div class="font-body-sm text-body-sm text-text-muted">93.5% Occ</div>
+</div>
+<div class="bg-surface-ivory p-space-xs rounded-lg">
+<div class="font-label-caps text-label-caps text-text-muted">Статус выплаты</div>
+<div class="font-title-md text-title-md font-bold text-status-verified">Переведено</div>
+<div class="font-body-sm text-body-sm text-text-muted">SWIFT / THB Bangkok Bank</div>
+</div>
+</div>
+<!-- Inline SVG Financial Sparkline / Booking Distribution -->
+<div class="bg-surface-ivory p-space-md rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Динамика выручки и ADR по месяцам</span>
+<span class="font-body-sm text-body-sm text-text-muted">Высокий сезон: ADR ฿9,400</span>
+</div>
+<div class="w-full h-32 flex items-end gap-2 pt-2">
+<div class="flex-1 bg-surface-container-high rounded-t flex flex-col justify-end items-center h-[65%]"><span class="font-label-caps text-[9px] text-text-muted mb-1">Nov</span></div>
+<div class="flex-1 bg-surface-container-high rounded-t flex flex-col justify-end items-center h-[85%]"><span class="font-label-caps text-[9px] text-text-muted mb-1">Dec</span></div>
+<div class="flex-1 bg-primary rounded-t flex flex-col justify-end items-center h-[100%]"><span class="font-label-caps text-[9px] text-on-primary mb-1">Jan</span></div>
+<div class="flex-1 bg-primary rounded-t flex flex-col justify-end items-center h-[95%]"><span class="font-label-caps text-[9px] text-on-primary mb-1">Feb</span></div>
+<div class="flex-1 bg-primary rounded-t flex flex-col justify-end items-center h-[88%]"><span class="font-label-caps text-[9px] text-on-primary mb-1">Mar</span></div>
+<div class="flex-1 bg-surface-container-high rounded-t flex flex-col justify-end items-center h-[70%]"><span class="font-label-caps text-[9px] text-text-muted mb-1">Apr</span></div>
+<div class="flex-1 bg-surface-container-high rounded-t flex flex-col justify-end items-center h-[55%]"><span class="font-label-caps text-[9px] text-text-muted mb-1">May</span></div>
+<div class="flex-1 bg-surface-container-high rounded-t flex flex-col justify-end items-center h-[50%]"><span class="font-label-caps text-[9px] text-text-muted mb-1">Jun</span></div>
+</div>
+</div>
+<!-- Verified Itemized Log -->
+<div class="bg-surface-ivory p-space-sm rounded-lg flex flex-col gap-1 text-body-sm">
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Последние события по юниту</div>
+<div class="flex items-center justify-between text-on-surface">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-status-verified">cleaning_services</span> Клининг myUNO Clean (Выезд гостя из Сингапура)</span>
+<span class="text-text-muted">Вчера, 14:20</span>
+</div>
+<div class="flex items-center justify-between text-on-surface">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">build</span> Замена фильтра кондиционера (Плановое ТО)</span>
+<span class="text-text-muted">12 мар, 10:15</span>
+</div>
+</div>
+</div>
+<!-- Description & Guarantees (5 cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Максимальная честность данных</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Никаких «слепых зон» в управлении вашим капиталом</h2>
+<p class="font-body-md text-body-md text-text-muted">
+            Вы в любой момент видите бронирования, стоимость каждой ночи, профиль гостя и состояние счета. Никаких накрученных расходов на лампочки или фиктивный клининг.
+          </p>
+<div class="flex flex-col gap-space-sm">
+<div class="p-space-sm rounded-lg bg-surface-sand flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">photo_camera</span>
+<div>
+<div class="font-title-md text-title-md text-primary">Фотофиксация каждого заезда</div>
+<div class="font-body-sm text-body-sm text-text-muted">Перед каждым заселением и после выезда супервайзер делает 360° отчет состояния интерьера.</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-sand flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-status-verified text-[24px]">receipt_long</span>
+<div>
+<div class="font-title-md text-title-md text-primary">Автоматические налоговые квитанции DBD</div>
+<div class="font-body-sm text-body-sm text-text-muted">Полная юридическая чистота для нерезидентов, справки WHT 5% для налоговой декларации.</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-sand flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">vpn_key</span>
+<div>
+<div class="font-title-md text-title-md text-primary">Личные дни без ограничений дат</div>
+<div class="font-body-sm text-body-sm text-text-muted">Бронируйте проживание для себя и семьи в 1 клик через личный кабинет владельца.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 6: OWNER EVALUATION & AUDIT LEAD FORM -->
+<section class="w-full bg-surface-sand py-space-2xl" id="audit-form">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="bg-surface-ivory rounded-2xl p-space-lg lg:p-space-xl shadow-xl">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Left Info Column (5 cols) -->
+<div class="lg:col-span-5 flex flex-col justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-status-verified-bg text-status-verified w-fit">
+<span class="material-symbols-outlined text-[16px]">pin_drop</span>
+<span class="font-label-caps text-label-caps uppercase">Бесплатный выезд на Пхукете</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Закажите профессиональный аудит объекта</h2>
+<p class="font-body-md text-body-md text-text-muted">
+                Инженер и отельный аудитор myUNO приедут на объект, оценят его рыночный ADR потенциал и составят дорожную карту максимизации дохода.
+              </p>
+</div>
+<!-- Trust Bullets -->
+<div class="flex flex-col gap-space-sm bg-surface-sand p-space-md rounded-xl">
+<div class="flex items-center gap-space-xs text-body-sm font-semibold text-primary">
+<span class="material-symbols-outlined text-status-verified text-[20px]">schedule</span>
+<span>Ответ инженера в течение 15 минут в WhatsApp</span>
+</div>
+<div class="flex items-center gap-space-xs text-body-sm text-text-muted">
+<span class="material-symbols-outlined text-secondary text-[20px]">description</span>
+<span>Проверка юридической чистоты титула (Chanote / Leasehold)</span>
+</div>
+<div class="flex items-center gap-space-xs text-body-sm text-text-muted">
+<span class="material-symbols-outlined text-status-verified text-[20px]">security</span>
+<span>Строгое NDA: персональные данные не передаются третьим лицам</span>
+</div>
+</div>
+<!-- Direct Contact Hotline -->
+<div class="flex items-center gap-space-md pt-space-xs">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">support_agent</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-text-muted uppercase">Горячая линия для инвесторов</div>
+<div class="font-title-md text-title-md font-bold text-primary">+66 (0) 76 000 111</div>
+<div class="font-body-sm text-body-sm text-text-muted">owners@myuno.com • WhatsApp / TG</div>
+</div>
+</div>
+</div>
+<!-- Right Form (7 cols) -->
+<div class="lg:col-span-7 bg-surface rounded-xl p-space-lg shadow-sm">
+<form class="flex flex-col gap-space-md" id="owner-form" onsubmit="event.preventDefault(); document.getElementById('form-success').classList.remove('hidden'); document.getElementById('owner-form').classList.add('hidden');">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Condo / Villa Name -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Название ЖК или поселка</label>
+<input class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface" placeholder="Например: The Title Legendary, Oceanstone..." required="" type="text"/>
+</div>
+<!-- Unit Type & Bedrooms -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Тип юнита</label>
+<select class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface cursor-pointer">
+<option value="1br">1BR Апартаменты</option>
+<option selected="" value="2br">2BR Deluxe Suite</option>
+<option value="penthouse">Sky Penthouse</option>
+<option value="villa">Приватная вилла (3-5 спален)</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Area m2 -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Площадь объекта (м²)</label>
+<input class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface" placeholder="Например: 85" required="" type="number"/>
+</div>
+<!-- Preferred Model -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Интересующая модель</label>
+<select class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface cursor-pointer">
+<option selected="" value="full">Full Management 80/20 (Рекомендуем)</option>
+<option value="rental">Rental Only 15% (Только маркетинг)</option>
+<option value="guarantee">Гарантированная доходность 7-8%</option>
+</select>
+</div>
+</div>
+<!-- Contact Person Name -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Ваше имя и фамилия</label>
+<input class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface" placeholder="Александр Смирнов" required="" type="text"/>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Phone / Messenger -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Телефон (WhatsApp / TG)</label>
+<input class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface" placeholder="+7 / +66 ..." required="" type="tel"/>
+</div>
+<!-- Email -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Электронная почта</label>
+<input class="w-full px-space-md py-space-sm rounded-lg bg-surface-ivory border border-border-subtle focus:border-primary focus:outline-none font-body-md text-body-md text-on-surface" placeholder="owner@gmail.com" required="" type="email"/>
+</div>
+</div>
+<!-- Optional Chanote Upload Mockup -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Документ на объект (Chanote / Договор купли-продажи) — опционально</label>
+<div class="border border-dashed border-border-subtle rounded-lg p-space-sm text-center bg-surface-ivory hover:bg-surface-sand transition-colors cursor-pointer flex items-center justify-center gap-space-xs text-text-muted">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+<span class="font-body-sm text-body-sm">Нажмите для прикрепления PDF или фото (до 25 МБ)</span>
+</div>
+</div>
+<button class="w-full py-space-sm px-space-lg rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-md mt-space-xs flex items-center justify-center gap-space-xs" type="submit">
+<span>Заказать аудит и получить персональный P&amp;L прогноз</span>
+<span class="material-symbols-outlined text-[18px]">check</span>
+</button>
+<p class="font-body-sm text-[12px] text-text-muted text-center">
+                Нажимая кнопку, вы соглашаетесь с Политикой конфиденциальности myUNO Asset Management. Инженер свяжется с вами в течение 15 минут.
+              </p>
+</form>
+<!-- Success State Hidden by Default -->
+<div class="hidden flex-col items-center justify-center text-center p-space-xl gap-space-sm" id="form-success">
+<div class="w-16 h-16 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[36px]">task_alt</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Заявка успешно принята!</h3>
+<p class="font-body-md text-body-md text-text-muted max-w-md">
+                Старший аудитор myUNO свяжется с вами в WhatsApp в течение 15 минут для согласования даты и времени выездной инспекции юнита.
+              </p>
+<button class="mt-space-sm px-space-md py-space-xs rounded-lg bg-surface-sand text-primary font-label-lg text-label-lg" onclick="document.getElementById('form-success').classList.add('hidden'); document.getElementById('owner-form').classList.remove('hidden');">
+                Отправить еще одну заявку
+              </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 7: FAQ FOR PROPERTY OWNERS -->
+<section class="w-full bg-surface py-space-2xl">
+<div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin">
+<div class="flex flex-col gap-space-xs mb-space-xl text-center max-w-2xl mx-auto">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Ответы на ключевые вопросы</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Часто задаваемые вопросы собственников</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md max-w-4xl mx-auto">
+<!-- FAQ 1 -->
+<div class="bg-surface-ivory rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-primary font-title-md text-title-md font-semibold">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+<span>Как проверяются и отбираются гости?</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            myUNO использует скоринг безопасности: обязательная верификация паспортов по тайской форме TM.30, кредитный холд депозита от $500 до $2,500 USD и отказ от бронирований для шумных вечеринок. 78% гостей — экспаты, европейские семьи и IT-специалисты.
+          </p>
+</div>
+<!-- FAQ 2 -->
+<div class="bg-surface-ivory rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-primary font-title-md text-title-md font-semibold">
+<span class="material-symbols-outlined text-secondary text-[20px]">shield</span>
+<span>Что происходит, если гость повредит имущество?</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            Ущерб покрывается страховым полисом myUNO x Allianz (лимит до ฿1,000,000 THB), а также немедленным списанием с гарантийного депозита гостя. Наша мобильная служба ремонта устраняет любые дефекты в течение 4 часов без привлечения владельца.
+          </p>
+</div>
+<!-- FAQ 3 -->
+<div class="bg-surface-ivory rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-primary font-title-md text-title-md font-semibold">
+<span class="material-symbols-outlined text-secondary text-[20px]">calendar_month</span>
+<span>Как я могу использовать дни для собственного отдыха?</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            В тарифе Full Management вам доступно до 30 дней в году. Вы просто открываете календарь в личном кабинете инвестора и блокируете нужные даты. К вашему приезду команда myUNO подготовит виллу по стандартам 5-звездочного отеля.
+          </p>
+</div>
+<!-- FAQ 4 -->
+<div class="bg-surface-ivory rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-primary font-title-md text-title-md font-semibold">
+<span class="material-symbols-outlined text-secondary text-[20px]">currency_exchange</span>
+<span>В какой валюте производятся ежемесячные выплаты?</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+            Выплаты производятся строго 1-го числа каждого месяца. Вы можете выбрать перевод в тайских батах (THB) на счет в любом банке Таиланда, международный SWIFT в долларах США (USD) или прямой перевод в USDT (TRC-20 / ERC-20).
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Calculator Vanilla JS -->
+<script>
+    (function initCalculator() {
+      let locMult = 1.15;
+      let baseGross = 2462500;
+      let stratMult = 1.0;
+      let baseRoi = 9.8;
+
+      const locBtns = document.querySelectorAll('#calc-locations button');
+      const typeBtns = document.querySelectorAll('#calc-types button');
+      const stratBtns = document.querySelectorAll('#calc-strategy button');
+
+      function updateCalc() {
+        const gross = Math.round(baseGross * locMult * stratMult);
+        const ownerNet = Math.round(gross * 0.80);
+        const myunoCommission = Math.round(gross * 0.20);
+        const monthly = Math.round(ownerNet / 12);
+        const usdNet = Math.round(ownerNet / 35);
+        const dynamicRoi = (baseRoi * locMult * stratMult / 1.15).toFixed(1);
+
+        const netEl = document.getElementById('calc-net-thb');
+        const usdEl = document.getElementById('calc-net-usd');
+        const monthlyEl = document.getElementById('calc-monthly-thb');
+        const roiEl = document.getElementById('calc-roi');
+        const grossEl = document.getElementById('calc-gross');
+        const ownerShareEl = document.getElementById('calc-owner-share');
+        const commissionEl = document.getElementById('calc-commission');
+
+        if (netEl) netEl.textContent = '฿' + ownerNet.toLocaleString('en-US');
+        if (usdEl) usdEl.textContent = '~$' + usdNet.toLocaleString('en-US') + ' USD / год';
+        if (monthlyEl) monthlyEl.textContent = '฿' + monthly.toLocaleString('en-US') + ' THB / месяц';
+        if (roiEl) roiEl.textContent = dynamicRoi + '%';
+        if (grossEl) grossEl.textContent = 'Валовая: ฿' + gross.toLocaleString('en-US') + ' THB';
+        if (ownerShareEl) ownerShareEl.textContent = 'Владелец (80%): ฿' + ownerNet.toLocaleString('en-US');
+        if (commissionEl) commissionEl.textContent = 'myUNO (20%): ฿' + myunoCommission.toLocaleString('en-US');
+      }
+
+      locBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          locBtns.forEach(b => {
+            b.className = 'location-btn px-space-sm py-space-xs rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all';
+            const sub = b.querySelector('span:last-child');
+            if (sub) sub.className = 'block font-body-sm text-body-sm text-text-muted';
+          });
+          btn.className = 'location-btn px-space-sm py-space-xs rounded-lg text-left bg-primary text-on-primary transition-all';
+          const activeSub = btn.querySelector('span:last-child');
+          if (activeSub) activeSub.className = 'block font-body-sm text-body-sm opacity-80';
+
+          locMult = parseFloat(btn.dataset.mult);
+          updateCalc();
+        });
+      });
+
+      typeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          typeBtns.forEach(b => {
+            b.className = 'type-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all flex items-center justify-between';
+            const sub = b.querySelector('.font-body-sm');
+            if (sub) sub.className = 'font-body-sm text-body-sm text-text-muted';
+          });
+          btn.className = 'type-btn p-space-sm rounded-lg text-left bg-primary text-on-primary transition-all flex items-center justify-between';
+          const activeSub = btn.querySelector('.font-body-sm');
+          if (activeSub) activeSub.className = 'font-body-sm text-body-sm opacity-80';
+
+          baseGross = parseInt(btn.dataset.base, 10);
+          baseRoi = parseFloat(btn.dataset.roi);
+          updateCalc();
+        });
+      });
+
+      stratBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          stratBtns.forEach(b => {
+            b.className = 'strat-btn p-space-sm rounded-lg text-left bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-all';
+            const sub = b.querySelector('span:last-child');
+            if (sub) sub.className = 'block font-body-sm text-body-sm text-text-muted';
+          });
+          btn.className = 'strat-btn p-space-sm rounded-lg text-left bg-primary text-on-primary transition-all';
+          const activeSub = btn.querySelector('span:last-child');
+          if (activeSub) activeSub.className = 'block font-body-sm text-body-sm opacity-80';
+
+          stratMult = parseFloat(btn.dataset.stratMult);
+          updateCalc();
+        });
+      });
+
+      updateCalc();
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface-sand text-on-surface py-space-2xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="max-w-[1280px] mx-auto px-margin-mobile lg:px-margin"><div class="grid grid-cols-1 md:grid-cols-4 gap-space-xl mb-space-2xl"><div class="flex flex-col gap-space-sm"><div class="flex items-center gap-space-xs mb-space-xs"><span class="font-headline-sm text-headline-sm text-primary tracking-tight">myUNO</span></div><p class="font-body-sm text-body-sm text-text-muted leading-relaxed">Институциональное доверительное управление премиальной недвижимостью на Пхукете. Честность данных, безупречный отельный сервис и прозрачность активов.</p></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Недвижимость</h4><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="rent" href="#">Аренда вилл и апартаментов</a><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="buy" href="#">Инвестиции и покупка</a><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="complexes" href="#">Курортные комплексы</a></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Собственникам</h4><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="owner-evaluation" href="#">Оценка доходности объекта</a><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="services" href="#">Полное доверительное управление</a><a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" data-path="portal-login" href="#">Кабинет владельца</a></div><div class="flex flex-col gap-space-sm"><h4 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Офис на Пхукете</h4><p class="font-body-sm text-body-sm text-text-muted">Cherngtalay, Thalang District, Phuket 83110, Thailand</p><p class="font-body-sm text-body-sm text-text-muted">owners@myuno.com<br/>+66 (0) 76 000 111</p></div></div><div class="pt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm"><p class="font-body-sm text-body-sm text-text-muted">© 2024 myUNO Hospitality &amp; Asset Management. Все права защищены.</p><div class="flex items-center gap-space-md"><span class="font-body-sm text-body-sm text-text-muted">Политика конфиденциальности</span><span class="font-body-sm text-body-sm text-text-muted">Условия сервиса</span></div></div></div></footer></body></html>

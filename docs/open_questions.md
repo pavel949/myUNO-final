@@ -564,4 +564,51 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **What shipped:** `src/modules/compliance/regulatory-credential.service.ts` (create/update/list + `checkRegulatoryCredentialForGoLive`, reusing `evaluateCommercialEligibility` rather than duplicating its matching logic); admin routes `POST/GET /api/admin/regulatory-credentials` and `PUT /api/admin/regulatory-credentials/[id]`; a "Regulatory credentials" section on `/app/admin/compliance` (list + create + revoke); wired as an independent check alongside `permittedUseConfirmedAt` in both go-live paths (`units.ts` direct edit, `compliance.service.ts` mobilization checklist). 10 new integration tests plus 3 existing go-live tests updated for the new prerequisite; full suite (2196 tests), lint, build and `db:verify` all green; live-server smoke test confirmed admin-only enforcement, audit logging, and the UI rendering.
 - **Deliberately out of scope:** organization-level credentials (schema/writer support it, but `evaluateCommercialEligibility` itself only reads project- and unit-level rows, so an org-scoped credential wouldn't satisfy the gate yet — no UI control added for it to avoid a misleading control); a config-catalog entry for credential types (kept as a code constant, matching the engine's own hard-coded `offeringType`, so the two can't drift apart).
 
+### Q72. Who verifies an owner's sale authority, and on what evidence — OPEN (founder)
+- **Source:** 2026-10-01 PMS/rentals/sales audit, P0 #3. The public "buy" listing requires a verified `sale_authority` credential, but no writer accepted that type, so no unit could ever be listed for sale.
+- **Shipped (PR #205):** `sale_authority` is recordable at unit scope only (the sale gate reads unit credentials), admin-only, evidence media attached, audit-logged.
+- **Open:** who may verify it — admin only, or a ClearView reviewer role — and what counts as evidence (exclusive or open mandate, notarised power of attorney, title-deed copy). Until ruled, admin verification is the reversible default; no unit is listed for sale without it.
+
+### Q73. One pricing truth — engine, tax basis, monthly threshold, money naming — OPEN (founder)
+- **Source:** 2026-10-01 audit, P1 pricing findings. Before PR #205 the quote function had two branches applying different rules to the same stay:
+  | | Tariff-grid branch | Legacy branch |
+  |---|---|---|
+  | Tax key | `finance.vat_pct` | `finance.occupancy_tax_pct` |
+  | Monthly switch | 30+ nights | 28+ nights |
+- **Shipped (PR #205):**
+  - one live engine (`computeCanonicalPriceBreakdown`); the legacy engine is deleted;
+  - the headline price comes from the same quote;
+  - an override guard refuses rates outside 1/10x–10x of the base.
+- **Open:**
+  1. `main` now also carries `src/modules/booking/revenue-tariff-engine.ts` (`resolveEffectiveStayOffer`), not yet called anywhere. Which engine is the long-term SSOT? Two would recreate the split above.
+  2. Which tax applies to short stays — VAT 7%, local occupancy tax, or both — and is it included in or added to the displayed rate?
+  3. Is the monthly-rate switch at 28 or 30 nights?
+  4. `*_thb` columns hold satang, the trap behind the Q67 100x price bug. Rename them at the next migration window (`*_satang`)?
+
+### Q74. The display font has no Cyrillic — OPEN (brand)
+- **Source:** 2026-10-01 audit, P2 #17. Outfit loads `latin` and `latin-ext` only, so Russian headings fall back to Manrope; RU is the primary market.
+- **Open:** pick a display face with Cyrillic, either a Cyrillic-capable Outfit alternative or keep Manrope for RU headings deliberately. This is a brand call; no font was substituted.
+
+### Q75. Layantara villas have no operator assigned — OPEN (founder)
+- **Source:** 2026-10-01 audit, runtime check. Operator scoping works (ops sees only its project), but no ops or MC member is assigned to Layantara, so only an admin can work its bookings.
+- **Open:** which organisation and people operate Layantara after cutover, and with which departments (front desk, housekeeping, finance)? The data model supports it; it needs the names.
+
+### Q76. Privacy notice in Russian and Thai needs a certified translation — OPEN (legal)
+- **Source:** 2026-10-05 i18n sweep. The 38 `legal.privacy.*` keys have English only, so RU and TH visitors read the English notice.
+- **Why not drafted:** a machine-drafted legal notice could misstate obligations under PDPA. `key-coverage.test.ts` lists the prefix as deliberately pending.
+- **Open:** commission a certified RU/TH translation; then seed the keys and remove the exclusion.
+
+### Q77. The About page names a different operating company than the footer — OPEN (founder)
+- **Source:** 2026-10-05 i18n sweep, while drafting RU/TH for the About page.
+- **Conflict:** the About page says Toplight Asia Pacific Co., Ltd. (DBD 0115658039800) operates myUNO, while the site footer names Ignatev Estate Co., Ltd (DBD 083-5-56602358-7).
+- **Claims needing evidence:**
+  - "Ignatev Estate is licensed to operate in Thailand";
+  - "20+ years in real estate";
+  - "monthly statements tracing every dollar", although the platform is THB-only. The RU draft says "каждый бат".
+- **Open:** which entity is the operator of record, and which claims stand. The drafts are `needs_review` and carry the warning in their descriptions.
+
+### Q78. Dense data grids have no type size in doc 06 — OPEN (design)
+- **Source:** 2026-10-05 token lock. Doc 06's smallest size is `small` (13/19). The unified stay calendar uses 9–11px arbitrary sizes so a month of villas fits on screen.
+- **Open:** add a `type.dense` (e.g. 11/14) to doc 06 for data grids, or redesign the grid at 13px. Arbitrary values stay as a reviewable exception until ruled.
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

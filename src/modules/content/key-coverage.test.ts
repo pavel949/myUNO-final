@@ -14,8 +14,8 @@ import { describe, expect, it } from 'vitest';
 // Keys deliberately left without a machine-drafted translation.
 const PENDING_CERTIFIED_TRANSLATION = [
   // The privacy notice is a legal text: a drafted RU/TH version could
-  // misstate obligations. Tracked in docs/open_questions.md (certified
-  // translation of legal pages); EN renders until then.
+  // misstate obligations. Tracked as docs/open_questions.md Q76; EN renders
+  // until a certified translation is seeded.
   'legal.privacy.',
 ];
 

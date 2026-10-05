@@ -57,12 +57,12 @@ export default async function ResidencePage() {
 
   if (residences.length === 0) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+      <main className="stitch-workspace p-20 md:p-32">
         <div className="max-w-3xl mx-auto">
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
             {labels['residence.title']}
           </h1>
-          <div className="p-24 bg-surface-paper border border-border-line rounded-lg">
+          <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary mb-16">{labels['residence.none']}</p>
             <Link href="/messages" className="text-brand-andaman font-semibold hover:underline">
               {labels['residence.none_action']}
@@ -93,10 +93,13 @@ export default async function ResidencePage() {
     `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="max-w-4xl mx-auto">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['residence.title']}</h1>
-        <p className="text-body text-text-secondary mb-32">{labels['residence.subtitle']}</p>
+        <div className="stitch-hero mb-32">
+          <p className="stitch-kicker">{labels['residence.your_home']}</p>
+          <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{labels['residence.title']}</h1>
+          <p className="mt-8 max-w-2xl text-body text-text-secondary">{labels['residence.subtitle']}</p>
+        </div>
 
         {residences.map((residence, index) => (
           <section key={residence.projectId} className="mb-40">
@@ -125,7 +128,7 @@ export default async function ResidencePage() {
                 {residence.announcements.map((announcement) => (
                   <li
                     key={announcement.id}
-                    className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card"
+                    className="stitch-panel p-16"
                   >
                     <div className="flex flex-wrap items-baseline gap-8 mb-4">
                       <p className="font-display text-title font-semibold text-text-ink">
@@ -162,7 +165,7 @@ export default async function ResidencePage() {
             <h3 className="font-display text-title font-semibold text-text-ink mb-12">
               {labels['residence.handbook']}
             </h3>
-            <div className="p-16 bg-surface-paper border border-border-line rounded-lg mb-24">
+            <div className="stitch-panel mb-24 p-16">
               {handbooks[index] ? (
                 // Rendered as text, never as HTML: it is admin-editable content
                 // out of the database, and injecting it would put whatever an
@@ -194,7 +197,7 @@ export default async function ResidencePage() {
                   <li key={service.id}>
                     <Link
                       href={`/services/${service.id}?projectId=${residence.projectId}`}
-                      className="block p-16 bg-surface-paper border border-border-line rounded-lg hover:border-brand-andaman transition-colors"
+                      className="stitch-panel block p-16 transition duration-structural hover:-translate-y-1 hover:border-brand-andaman hover:shadow-float"
                     >
                       <p className="text-body font-semibold text-text-ink">{service.title}</p>
                       <p className="text-small text-text-secondary">

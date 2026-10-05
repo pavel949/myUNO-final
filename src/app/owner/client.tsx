@@ -235,13 +235,14 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   );
 
   return (
-    <div className="min-h-screen bg-surface-ivory">
-      <div className="max-w-6xl mx-auto px-24 py-40">
-        <div className="mb-40">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+    <div className="stitch-workspace">
+      <div className="mx-auto max-w-6xl px-20 py-32 md:px-32 md:py-40">
+        <div className="stitch-hero-dark mb-40">
+          <p className="mb-8 text-kicker font-semibold uppercase tracking-[0.16em] text-brand-sun-soft">Owner · Portfolio</p>
+          <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">
             {labels['owner.dashboard.title']}
           </h1>
-          <p className="text-body text-text-stone">
+          <p className="text-body text-white/70">
             {shape.isPortfolio
               ? fill(labels['owner.dashboard.portfolio_subtitle'] ?? '', {
                   units: String(shape.unitCount),
@@ -365,7 +366,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             {labels['owner.trends.title']}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <div className="stitch-panel p-24">
               <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.revenue']}
               </h3>
@@ -417,7 +418,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {visibleCompliance.map((status) => (
                 <div
                   key={status.unitId}
-                  className="bg-surface-paper border border-border-line rounded-md p-24"
+                  className="stitch-panel p-24"
                 >
                   <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
                     {status.unitName}

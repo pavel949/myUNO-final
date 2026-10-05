@@ -123,8 +123,8 @@ export default function CheckoutClient({
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
-        <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full text-center">
+      <div className="stitch-workspace flex min-h-screen items-center justify-center bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32">
+        <div className="stitch-panel w-full max-w-lg p-32 text-center shadow-float">
           <div className="text-heading-1 mb-16" aria-hidden="true">
             ✓
           </div>
@@ -141,8 +141,8 @@ export default function CheckoutClient({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32 max-w-md w-full">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
+      <div className="stitch-panel w-full max-w-lg p-24 shadow-float md:p-32">
+        <h1 className="mb-24 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">
           {labels['payments.checkout.title']}
         </h1>
 
@@ -154,7 +154,7 @@ export default function CheckoutClient({
         )}
 
         {session && (
-          <div className="mb-24 p-16 bg-surface-ivory rounded-lg border border-border-line space-y-8">
+          <div className="mb-24 space-y-10 rounded-2xl border border-border-line bg-surface-ivory/80 p-20">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">

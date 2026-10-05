@@ -63,6 +63,7 @@ export interface UnitDetailLabels {
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
+  floor: string;
   notChargedYet: string;
   fewerGuests: string;
   moreGuests: string;
@@ -295,7 +296,7 @@ export default function UnitDetailClient({
                     {String(unit.grossAreaSqm || unit.sizeSqm)} m²
                   </Chip>
                 ) : null}
-                {unit.floor ? <Chip variant="neutral">Floor {unit.floor}</Chip> : null}
+                {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}
               </div>
               {(unit.views?.length || unit.unitFeatures?.length) ? (
                 <div className="mb-24 flex flex-wrap gap-8">

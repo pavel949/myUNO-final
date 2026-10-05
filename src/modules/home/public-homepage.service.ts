@@ -7,6 +7,8 @@ import { listPublicMarketplaceServices } from '@/modules/services';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { tMany, type Locale } from '@/modules/content';
 import { interleaveByProject, rankProjects } from './home-read-model';
+import { applyHomepagePlacements } from './homepage-placement';
+import { getDestination } from '@/modules/destinations';
 
 export interface HomepageStayUnit {
   id: string;
@@ -31,8 +33,9 @@ export interface HomepageArea {
 
 async function readHomepageData(locale: Locale) {
   const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const destination = getDestination();
 
-  const [projects, commercialHomes, services, rawAreas, units, areaCoverProjects] = await Promise.all([
+  const [projects, commercialHomes, services, rawAreas, units, areaCoverProjects, placements] = await Promise.all([
     listPublicProjects(locale),
     listPublicCommercialHomes(prisma),
     listPublicMarketplaceServices(prisma, locale, { limit: 24 }).catch(() => []),
@@ -90,6 +93,14 @@ async function readHomepageData(locale: Locale) {
       },
       orderBy: { createdAt: 'asc' },
     }),
+    prisma.homepagePlacement.findMany({
+      where: {
+        destinationKey: destination.key,
+        status: 'active',
+        OR: [{ locale: null }, { locale }],
+      },
+      orderBy: [{ sectionKey: 'asc' }, { position: 'asc' }],
+    }),
   ]);
 
   const areaKeys = rawAreas.flatMap(area => [
@@ -133,13 +144,45 @@ async function readHomepageData(locale: Locale) {
     coverUrl: areaCoverById.get(area.id) ?? null,
   }));
 
+  const rankedProjects = rankProjects(projects);
+  const placedProjects = applyHomepagePlacements(rankedProjects, placements, {
+    destinationKey: destination.key,
+    locale,
+    sectionKey: 'projects',
+    entityType: 'project',
+  });
+  const placedCommercialHomes = applyHomepagePlacements(commercialHomes, placements, {
+    destinationKey: destination.key,
+    locale,
+    sectionKey: 'homes',
+    entityType: 'unit',
+  });
+  const placedStayUnits = applyHomepagePlacements(stayUnits, placements, {
+    destinationKey: destination.key,
+    locale,
+    sectionKey: 'homes',
+    entityType: 'unit',
+  });
+  const placedServices = applyHomepagePlacements(services, placements, {
+    destinationKey: destination.key,
+    locale,
+    sectionKey: 'services',
+    entityType: 'service',
+  });
+  const placedAreas = applyHomepagePlacements(allAreas, placements, {
+    destinationKey: destination.key,
+    locale,
+    sectionKey: 'areas',
+    entityType: 'area',
+  });
+
   return {
-    projects: rankProjects(projects),
-    commercialHomes,
-    services,
-    stayUnits,
+    projects: placedProjects,
+    commercialHomes: placedCommercialHomes,
+    services: placedServices,
+    stayUnits: placedStayUnits,
     /** Areas shown as cards (first six); `placeAreas` feeds the search box. */
-    areas: allAreas.slice(0, 6),
+    areas: placedAreas.slice(0, 6),
     placeAreas: allAreas,
   };
 }

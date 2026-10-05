@@ -20,8 +20,14 @@ export const maxDuration = 60;
  * Protected by CRON_SECRET. Safe to repeat: source-path provenance makes each
  * imported file idempotent and already-created MediaAssets are reused.
  */
+function isImportAuthorized(req: NextRequest) {
+  if (isCronAuthorized(req)) return true;
+  const token = process.env.MEDIA_IMPORT_TOKEN;
+  return Boolean(token) && req.headers.get('authorization') === `Bearer ${token}`;
+}
+
 export async function POST(req: NextRequest) {
-  if (!isCronAuthorized(req)) return cronUnauthorized();
+  if (!isImportAuthorized(req)) return cronUnauthorized();
 
   const source = req.nextUrl.searchParams.get('source') || '';
   const offset = Number(req.nextUrl.searchParams.get('offset') || '0');
@@ -46,7 +52,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isCronAuthorized(req)) return cronUnauthorized();
+  if (!isImportAuthorized(req)) return cronUnauthorized();
   return NextResponse.json({
     sources: MANAGED_YANDEX_SOURCES.map(({ key, label, scope }) => ({ key, label, scope })),
   });

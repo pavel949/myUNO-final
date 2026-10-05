@@ -25,6 +25,8 @@ interface Unit {
   plotAreaSqm?: number | null;
   unitFeatures?: string[];
   views?: string[];
+  viewLabels?: string[];
+  featureLabels?: string[];
   baseNightlyThb: number;
   maxGuests?: number;
   minNights?: number;
@@ -298,11 +300,11 @@ export default function UnitDetailClient({
                 ) : null}
                 {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}
               </div>
-              {(unit.views?.length || unit.unitFeatures?.length) ? (
+              {(unit.viewLabels?.length || unit.featureLabels?.length) ? (
                 <div className="mb-24 flex flex-wrap gap-8">
-                  {[...(unit.views ?? []), ...(unit.unitFeatures ?? [])].map((fact) => (
-                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small capitalize text-text-secondary">
-                      {fact.replace(/_/g, ' ')}
+                  {[...(unit.viewLabels ?? []), ...(unit.featureLabels ?? [])].map((fact) => (
+                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small text-text-secondary">
+                      {fact}
                     </span>
                   ))}
                 </div>

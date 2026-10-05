@@ -50,7 +50,7 @@ export default function ProjectNearbyEditor({
   }, [places, query]);
 
   async function refresh(select?: string | null) {
-    const response = await fetch('/api/admin/projects/' + projectId + '/places', { cache: 'no-store' });
+    const response = await fetch(`/api/admin/projects/${projectId}/places`, { cache: 'no-store' });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       setMessage(data?.error || 'Could not load nearby places.');
@@ -65,7 +65,7 @@ export default function ProjectNearbyEditor({
     setBusy(true);
     setMessage(null);
     const form = new FormData(event.currentTarget);
-    const response = await fetch('/api/admin/projects/' + projectId + '/places', {
+    const response = await fetch(`/api/admin/projects/${projectId}/places`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -93,7 +93,7 @@ export default function ProjectNearbyEditor({
     setMessage(null);
     const form = new FormData(event.currentTarget);
     const response = await fetch(
-      '/api/admin/projects/' + projectId + '/places/' + selected.id,
+      `/api/admin/projects/${projectId}/places/${selected.id}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

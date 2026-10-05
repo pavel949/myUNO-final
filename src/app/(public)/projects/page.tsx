@@ -27,7 +27,7 @@ export default async function ProjectsHubPage() {
     'projects.hub.title': 'Our residences',
     'projects.hub.subtitle':
       'Every residence on myUNO runs on one platform: verified guests, managed services, transparent owner reporting.',
-    'projects.hub.units_live': '{count} homes available',
+    'projects.hub.units_live': '{count} homes',
     'projects.hub.from_price': 'from ฿{price} / night',
     'projects.hub.view': 'Explore the residence',
     'projects.hub.no_photo': 'Illustrative image',

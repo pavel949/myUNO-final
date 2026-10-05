@@ -22,7 +22,14 @@ export default async function ProjectCategoryPage({
   if (!category) notFound();
   const units = project.units.filter(unit => unit.categoryKey === category.key);
   const bookableUnits = units.filter(unit => unit.bookable);
-  const copy = await tMany(prisma, [category.titleKey, category.descriptionKey], locale);
+  const unitEditorialKeys = units.flatMap(unit =>
+    [unit.titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key))
+  );
+  const copy = await tMany(
+    prisma,
+    [category.titleKey, category.descriptionKey, ...unitEditorialKeys],
+    locale
+  );
   const labels = await getLabels({
     'project_category.back': 'Back to project',
     'project_category.available': '{count} homes in this category',
@@ -97,6 +104,12 @@ export default async function ProjectCategoryPage({
               </p>
             ) : null}
             <h3 className="mt-4 font-semibold text-text-ink">{unit.name}</h3>
+            {unit.titleKey && copy[unit.titleKey] ? (
+              <p className="mt-4 text-small font-semibold text-brand-andaman">{copy[unit.titleKey]}</p>
+            ) : null}
+            {unit.descriptionKey && copy[unit.descriptionKey] ? (
+              <p className="mt-8 line-clamp-3 text-small leading-relaxed text-text-secondary">{copy[unit.descriptionKey]}</p>
+            ) : null}
             <div className="mt-8 flex flex-wrap gap-8 text-small text-text-secondary">
               {unit.maxGuests > 0 ? <span>{labels['project_category.guests'].replace('{count}',String(unit.maxGuests))}</span> : null}
               {unit.sizeSqm ? <span>{labels['project_category.size'].replace('{count}',String(unit.sizeSqm))}</span> : null}

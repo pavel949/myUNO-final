@@ -75,7 +75,7 @@ export default async function ServiceOrdersPage() {
             <li key={order.id}>
               <Link
                 href={`/services/orders/${order.id}`}
-                className="block p-16 bg-surface-paper border border-border-line rounded-lg hover:border-brand-andaman transition-colors"
+                className="stitch-panel block p-16 transition duration-structural hover:-translate-y-1 hover:border-brand-andaman hover:shadow-float"
               >
                 <div className="flex flex-wrap items-baseline gap-8 mb-4">
                   <p className="text-body font-semibold text-text-ink">{order.service.title}</p>
@@ -98,13 +98,16 @@ export default async function ServiceOrdersPage() {
     );
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['orders.title']}</h1>
-        <p className="text-body text-text-secondary mb-24">{labels['orders.subtitle']}</p>
+    <main className="stitch-workspace p-20 md:p-32">
+      <div className="mx-auto max-w-4xl">
+        <div className="stitch-hero mb-32">
+          <p className="stitch-kicker">{labels['orders.upcoming']}</p>
+          <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{labels['orders.title']}</h1>
+          <p className="mt-8 max-w-2xl text-body text-text-secondary">{labels['orders.subtitle']}</p>
+        </div>
 
         {orders.length === 0 ? (
-          <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+          <div className="stitch-panel p-24 text-center">
             <p className="text-body text-text-secondary mb-16">{labels['orders.empty']}</p>
             <Link href="/services" className="text-brand-andaman font-semibold hover:underline">
               {labels['orders.browse']}

@@ -72,7 +72,9 @@ Mobile retains hero imagery; search becomes a compact sheet; cards are near-full
 ## 7. Navigation
 
 Consumer-first:
-`myUNO · Explore · Stays · Services · Homes · For Owners · For Partners · My myUNO`.
+`myUNO · Rent · Buy · Projects · Services · Owners · My UNO`.
+
+`Rent` exposes Holiday and Long-term. `Owners` exposes Sell, Rent out, List myself, Hand to management, and the authenticated Owner workspace. Destination, currency and language remain utility controls rather than primary tasks.
 
 Do not expose CRM, PMS, OperatingScope, finance or provider-table language publicly.
 
@@ -114,3 +116,10 @@ Ask: **Does this feel like one calm coherent myUNO product, or another feature p
 ## 15. Localization acceptance
 
 Review meaning and quality, not just key existence: RU copy, EN consistency, Thai typography/wrapping, long Russian strings, form/errors/notifications. A translation key existing is not proof of translation quality.
+
+
+## 16. Stitch reference adoption (2026-10-05)
+
+The Stitch UI pack is an approved visual/flow reference, not a data or business-rule source. Adopt its strongest patterns for operational surfaces: persistent left rail, compact KPI band, primary workspace plus contextual right rail, explicit state chips, step-based wizards, sticky mobile actions and dense but legible tables.
+
+Do not copy unsupported behavior. A Stitch surface is only "implemented" when the canonical myUNO data, permission, error/empty states, server transition and downstream operational effects exist. Missing flows are tracked in `docs/STITCH_FLOW_RECONCILIATION.md`.

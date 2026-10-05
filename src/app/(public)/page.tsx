@@ -166,6 +166,7 @@ export default async function LandingPage({
       'landing.hp.owners.manage.title': 'Hand over to management',
       'landing.hp.owners.manage.body': 'Operations, costs and reporting handled for you. Start with an assessment of the property.',
       'landing.hp.owners.manage.cta': 'Request an assessment',
+      'landing.hp.owners.all': 'All owner options',
       'landing.hp.owners.existing': 'Already a client?',
       'landing.hp.owners.existing_cta': 'Open the owner workspace',
       'landing.hp.partners.title': 'For partners',
@@ -620,6 +621,10 @@ export default async function LandingPage({
 
           <div className="mt-32 grid gap-24 border-t border-border-line pt-24 md:grid-cols-2">
             <p className="text-body text-text-secondary">
+              <Link href="/owners" className="font-semibold text-brand-andaman hover:underline">
+                {labels['landing.hp.owners.all']} →
+              </Link>
+              <span className="mx-8 text-text-stone">·</span>
               {labels['landing.hp.owners.existing']}{' '}
               <Link href="/app" className="font-semibold text-brand-andaman hover:underline">
                 {labels['landing.hp.owners.existing_cta']} →

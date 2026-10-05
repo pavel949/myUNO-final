@@ -96,7 +96,6 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
   const maxArea = positiveNumber(searchParams?.maxArea);
   const minPrice = positiveNumber(searchParams?.minPrice);
   const maxPrice = positiveNumber(searchParams?.maxPrice);
-  const leaseTermMonths = positiveNumber(searchParams?.leaseTermMonths);
 
   const homes = allHomes.filter((home) => {
     const price = home.priceThb[intent] ?? null;

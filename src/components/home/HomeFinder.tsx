@@ -17,6 +17,10 @@ export interface HomeFinderLabels {
   adults: string;
   children: string;
   datesError: string;
+  moveIn: string;
+  leaseTerm: string;
+  pets: string;
+  petOptions: { any: string; yes: string; no: string };
   filters: {
     more: string;
     type: string;
@@ -45,7 +49,7 @@ export function HomeFinder({
 }) {
   const router = useRouter();
   const { intent, setIntent, place, setPlace, search, setSearch } = useHomeIntent();
-  const { startDate, endDate, adults, children, unitType, bedrooms, budget } = search;
+  const { startDate, endDate, adults, children, unitType, bedrooms, budget, moveIn, leaseTermMonths, pets } = search;
   const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 
@@ -60,6 +64,11 @@ export function HomeFinder({
       if (unitType) params.set('type', unitType);
       if (bedrooms) params.set('bedrooms', bedrooms);
       if (budget) params.set('maxPrice', budget);
+      if (intent === 'monthly') {
+        if (moveIn) params.set('moveIn', moveIn);
+        if (leaseTermMonths) params.set('leaseTermMonths', leaseTermMonths);
+        if (pets !== 'any') params.set('pets', pets);
+      }
       router.push('/homes?' + params.toString());
       return;
     }
@@ -166,6 +175,34 @@ export function HomeFinder({
           </>
         ) : null}
 
+        {intent === 'monthly' ? (
+          <>
+            <label className="grid gap-8 text-small text-text-secondary">
+              {labels.moveIn}
+              <input
+                className={field}
+                type="month"
+                min={today.slice(0, 7)}
+                value={moveIn}
+                onChange={(e) => setSearch((current) => ({ ...current, moveIn: e.target.value }))}
+              />
+            </label>
+            <label className="grid gap-8 text-small text-text-secondary">
+              {labels.leaseTerm}
+              <select
+                className={field}
+                value={leaseTermMonths}
+                onChange={(e) => setSearch((current) => ({ ...current, leaseTermMonths: e.target.value }))}
+              >
+                <option value="">{labels.filters.any}</option>
+                {[1, 3, 6, 12, 24].map((months) => (
+                  <option key={months} value={months}>{months}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : null}
+
         <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8 lg:col-span-4">
           <summary className="min-h-32 cursor-pointer text-small font-semibold text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
             {labels.filters.more}
@@ -202,6 +239,20 @@ export function HomeFinder({
                 className={field}
               />
             </label>
+            {intent === 'monthly' ? (
+              <label className="grid gap-8 text-small text-text-secondary">
+                {labels.pets}
+                <select
+                  className={field}
+                  value={pets}
+                  onChange={(e) => setSearch((current) => ({ ...current, pets: e.target.value as 'any' | 'yes' | 'no' }))}
+                >
+                  <option value="any">{labels.petOptions.any}</option>
+                  <option value="yes">{labels.petOptions.yes}</option>
+                  <option value="no">{labels.petOptions.no}</option>
+                </select>
+              </label>
+            ) : null}
           </div>
         </details>
 

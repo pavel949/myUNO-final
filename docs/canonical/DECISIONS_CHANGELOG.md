@@ -31,6 +31,12 @@
 - A donor/legacy services repo is optional evidence, not a required dependency.
 - Public redesign does not outrank P0 money/migration/order correctness.
 
+## Homepage v4 (2026-10-05, founder request; brief `MYUNO_HOMEPAGE_STRATEGY_RU`)
+- Homepage reorganised around one chosen task (Holiday / Long-term / Buy) shared by the search form and the offers shelf; one search box for areas **and** complexes; owner goals (sell / rent out / list yourself / hand to management) are separate paths with separate destinations; services shown as situations over the one catalogue; "My UNO" continuity block.
+- Price honesty: a holiday card shows an **indicative base rate** with the note "total is calculated for your dates" — never a total. Long-term shows monthly rent, buy shows the sale price, otherwise "terms on request". Placeholder photos are flagged illustrative.
+- Project/unit ordering no longer depends on project display names (rank = real cover photo → live inventory → name; shelf units are spread across projects).
+- **Not done here, tracked:** (1) header IA change (Rent · Buy · Complexes · Services · Owners) — the brief proposes it; `PRODUCT.md`/`DESIGN.md` still describe Stay/Buy/Own/Services/My UNO, so the nav was deliberately left unchanged until the founder confirms; (2) move-in month / lease term in the long-term search — `/homes` has no such filter, so the field is withheld rather than shown and ignored; (3) managed placement by ID/destination (`HomepageSection/Placement`) — needs a config/schema addition; (4) funnel events from brief §14 — analytics events are a typed schema enum written server-side, so they need a migration; (5) a "scope of management" line on complex cards — no mandate-scope field exists to read from, so nothing is claimed; (6) Thai/Chinese copy for the new keys (fall back to English).
+
 ## Commercial decisions requiring real evidence
 - seller/merchant/collector by category;
 - provider payout timing;

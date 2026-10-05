@@ -35,3 +35,11 @@ ALTER TABLE "project_nearby_place"
 ADD CONSTRAINT "project_nearby_place_project_id_fkey"
 FOREIGN KEY ("project_id") REFERENCES "project"("id")
 ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Server-side Project Portal data: do not expose the locality catalogue through
+-- the Supabase Data API. Public reads go through the application projection.
+ALTER TABLE "project_nearby_place" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE "project_nearby_place" FROM PUBLIC, anon, authenticated;
+COMMENT ON TABLE "project_nearby_place" IS
+  'Server-only descriptive Project Portal locality records; not inventory, service supply, pricing or authority.';

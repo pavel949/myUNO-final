@@ -3,7 +3,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/Button';
 
-export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: string }) {
+export function GoogleLoginButton({
+  label = 'Continue with Google',
+  next = '',
+}: {
+  label?: string;
+  next?: string;
+}) {
   const [isLoading, setIsLoading] = useState(false);
 
   const issueOAuthState = () => {
@@ -31,6 +37,12 @@ export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: 
 
       // Generate a short-lived CSRF state that the callback verifies server-side.
       const state = issueOAuthState();
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      if (next.startsWith('/') && !next.startsWith('//')) {
+        document.cookie = `google_oauth_next=${encodeURIComponent(
+          next
+        )}; Path=/; Max-Age=600; SameSite=Lax${secure}`;
+      }
 
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${clientId}` +

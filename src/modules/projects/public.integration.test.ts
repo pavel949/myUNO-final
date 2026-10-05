@@ -52,6 +52,56 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(card.liveUnitCount).toBe(0);
       expect(card.fromNightlyThb).toBeNull();
     });
+
+    it('publishes provenance-backed managed draft inventory without publishing unrelated drafts', async () => {
+      const imported = await createProjectWithMedia({ slug: 'imported-draft', status: 'draft' });
+      const unrelated = await createProjectWithMedia({ slug: 'unrelated-draft', status: 'draft' });
+      const importedUnit = await createUnit({
+        projectId: imported.id,
+        status: 'draft',
+        assetStatus: 'managed',
+        name: 'Imported managed home',
+      });
+      await createUnit({
+        projectId: unrelated.id,
+        status: 'draft',
+        assetStatus: 'managed',
+        name: 'Unrelated draft home',
+      });
+
+      const source = await prisma.externalSystem.create({
+        data: {
+          system_key: 'yandex_disk_public_media',
+          environment: 'test-import',
+          display_name: 'Managed import provenance',
+          config: { authority: 'media_source_only' },
+        },
+      });
+      await prisma.externalMapping.createMany({
+        data: [
+          {
+            external_system_id: source.id,
+            entity_type: 'project',
+            internal_id: imported.id,
+            external_id: 'imported-project',
+          },
+          {
+            external_system_id: source.id,
+            entity_type: 'unit',
+            internal_id: importedUnit.id,
+            external_id: 'imported-unit',
+          },
+        ],
+      });
+
+      const projects = await listPublicProjects();
+      expect(projects.map(project => project.slug)).toEqual(['imported-draft']);
+      expect(projects[0].liveUnitCount).toBe(1);
+
+      const detail = await getPublicProjectBySlug(imported.slug);
+      expect(detail?.units.map(unit => unit.id)).toEqual([importedUnit.id]);
+      expect(await getPublicProjectBySlug(unrelated.slug)).toBeNull();
+    });
   });
 
   describe('getPublicProjectBySlug', () => {

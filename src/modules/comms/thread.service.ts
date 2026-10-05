@@ -84,13 +84,23 @@ export async function getBookingThreadParticipants(
             },
           },
         },
-        select: { identityId: true, capabilities: true },
+        select: {
+          identityId: true,
+          capabilities: true,
+          unitAssignments: {
+            where: { unitId: booking.unitId, active: true },
+            select: { id: true },
+          },
+        },
       })
     : [];
-  const governedByIdentity = new Map<string, string[][]>();
+  const governedByIdentity = new Map<string, Array<{capabilities:string[];hasUnit:boolean}>>();
   for (const member of governedMemberships) {
     const rows = governedByIdentity.get(member.identityId) || [];
-    rows.push(member.capabilities);
+    rows.push({
+      capabilities: member.capabilities,
+      hasUnit: member.unitAssignments.length > 0,
+    });
     governedByIdentity.set(member.identityId, rows);
   }
   const messagingDepartments = new Set(['reservations', 'front_desk', 'guest_care']);
@@ -98,7 +108,9 @@ export async function getBookingThreadParticipants(
     const governed = governedByIdentity.get(assignment.identityId);
     if (
       governed?.length &&
-      !governed.some((capabilities) => capabilities.includes('manage_guest_communications'))
+      !governed.some((scope) =>
+        scope.hasUnit && scope.capabilities.includes('manage_guest_communications')
+      )
     ) continue;
 
     const configured = departmentsByIdentity.get(assignment.identityId);

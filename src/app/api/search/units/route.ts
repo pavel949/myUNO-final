@@ -14,6 +14,7 @@ import {
   boundsWhere,
 } from '@/modules/browse';
 import { listAreas, collectDescendantIds } from '@/modules/projects';
+import { getDestination } from '@/modules/destinations';
 import {
   assessGalleryReadiness,
   assessUnitMediaReadiness,
@@ -35,6 +36,9 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
+    const cookieLocale = req.cookies.get('locale')?.value as Locale | undefined;
+    const locale = cookieLocale && LOCALES.includes(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+    const destination = getDestination();
 
     const projectId = searchParams.get('projectId') || undefined;
     const inventoryCategoryId =
@@ -406,9 +410,6 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const cookieLocale = req.cookies.get('locale')?.value as Locale | undefined;
-      const locale = cookieLocale && LOCALES.includes(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
-
       const categories = await Promise.all(
         Array.from(grouped.values()).map(async (entry) => {
           const labelKey = `catalog.unit_categories.${entry.key}.label`;
@@ -474,18 +475,30 @@ export async function GET(req: NextRequest) {
         )
         .sort((a, b) => a.from_nightly_thb - b.from_nightly_thb);
 
-      await track(
-        prisma,
-        filteredCategories.length > 0 ? 'search_performed' : 'search_no_results',
-        {
-          projectId: effectiveProjectId,
-          inventoryCategoryId,
-          groupBy: 'category',
-          resultsCount: filteredCategories.length,
-          hasDates: Boolean(startDate && endDate),
-          guests: totalGuests,
-        }
-      );
+      const groupDimensions = {
+        projectId: effectiveProjectId,
+        inventoryCategoryId,
+        groupBy: 'category',
+        resultsCount: filteredCategories.length,
+        hasDates: Boolean(startDate && endDate),
+        guests: totalGuests,
+        destination: destination.key,
+        locale,
+        intent: 'stay',
+        source: 'stay_search',
+      };
+      await Promise.all([
+        track(
+          prisma,
+          filteredCategories.length > 0 ? 'search_performed' : 'search_no_results',
+          groupDimensions
+        ),
+        track(
+          prisma,
+          filteredCategories.length > 0 ? 'search_completed' : 'search_zero_results',
+          groupDimensions
+        ),
+      ]);
 
       return NextResponse.json({ categories: filteredCategories }, { status: 200 });
     }
@@ -721,14 +734,22 @@ export async function GET(req: NextRequest) {
 
     const ratings = await getUnitRatings(prisma, pricedUnits.map((p) => p.unit.id));
 
-    await track(prisma, total > 0 ? 'search_performed' : 'search_no_results', {
+    const searchDimensions = {
       projectId: effectiveProjectId,
       inventoryCategoryId,
       resultsCount: total,
       hasDates: Boolean(startDate && endDate),
       guests: totalGuests,
       sort: sort.key,
-    });
+      destination: destination.key,
+      locale,
+      intent: 'stay',
+      source: 'stay_search',
+    };
+    await Promise.all([
+      track(prisma, total > 0 ? 'search_performed' : 'search_no_results', searchDimensions),
+      track(prisma, total > 0 ? 'search_completed' : 'search_zero_results', searchDimensions),
+    ]);
 
     return NextResponse.json(
       {
@@ -771,6 +792,15 @@ export async function GET(req: NextRequest) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    const cookieLocale = req.cookies.get('locale')?.value as Locale | undefined;
+    const locale = cookieLocale && LOCALES.includes(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+    await track(prisma, 'search_failed', {
+      destination: getDestination().key,
+      locale,
+      intent: 'stay',
+      source: 'stay_search',
+      failureClass: error instanceof Error ? error.name : 'unknown',
+    }).catch(() => null);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

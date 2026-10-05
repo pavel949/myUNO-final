@@ -6,6 +6,8 @@ import {
   SESSION_COOKIE_NAME,
 } from '@/modules/auth';
 import { checkRateLimit, resetRateLimit } from '@/app/libs/rateLimit';
+import { prisma } from '@/lib/prisma';
+import { track } from '@/modules/analytics';
 
 
 function clientIp(request: NextRequest): string {
@@ -28,6 +30,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await track(prisma, 'login_started', {
+      method: 'password',
+      source: 'auth_login',
+    }).catch(() => null);
+
     const ipKey = `login:ip:${clientIp(request)}`;
     const accountKey = `login:acct:${String(email).toLowerCase()}`;
     const ipLimit = checkRateLimit(ipKey);
@@ -42,6 +49,12 @@ export async function POST(request: NextRequest) {
 
     const identity = await login({ email, password });
     resetRateLimit(accountKey);
+
+    await track(prisma, 'login_success', {
+      identityId: identity.id,
+      method: 'password',
+      source: 'auth_login',
+    }).catch(() => null);
 
     const response = NextResponse.json(
       {

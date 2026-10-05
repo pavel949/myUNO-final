@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
+import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 export interface LeadFormLabels {
   title: string;
@@ -22,6 +23,7 @@ interface LeadFormProps {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   initialMessage?: string;
   projectId?: string;
+  analytics?: { destination: string; locale: string };
   labels: LeadFormLabels;
 }
 
@@ -29,7 +31,7 @@ interface LeadFormProps {
  * Public lead form (doc 08 §3): name, contact, free-text context, consent.
  * Posts to /api/leads; includes an invisible honeypot field for bots.
  */
-export function LeadForm({ audience, labels, initialMessage = '', projectId }: LeadFormProps) {
+export function LeadForm({ audience, labels, initialMessage = '', projectId, analytics }: LeadFormProps) {
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [message, setMessage] = useState(initialMessage);
@@ -37,6 +39,20 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId }: L
   const [website, setWebsite] = useState(''); // honeypot
   const [state, setState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [consentError, setConsentError] = useState(false);
+  const started = useRef(false);
+
+  const markStarted = () => {
+    if (started.current || !analytics) return;
+    started.current = true;
+    trackPublicInteraction('lead_started', {
+      destination: analytics.destination,
+      locale: analytics.locale,
+      audience,
+      projectId,
+      source: 'lead_form',
+      deviceClass: deviceClass(),
+    });
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +94,7 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId }: L
         label={labels.name}
         required
         value={name}
+        onFocus={markStarted}
         onChange={(e) => setName(e.target.value)}
         maxLength={500}
         autoComplete="name"
@@ -87,6 +104,7 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId }: L
         required
         helpText={labels.contactHint}
         value={contact}
+        onFocus={markStarted}
         onChange={(e) => setContact(e.target.value)}
         maxLength={500}
       />
@@ -98,6 +116,7 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId }: L
         <textarea
           id={`lead-message-${audience}`}
           value={message}
+          onFocus={markStarted}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={4000}
           rows={4}

@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
 import { formatServicePriceLabel } from './price-label';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,12 +59,19 @@ export default async function ServiceDetailPage({
     notFound();
   }
   const viewer = await getCurrentUser().catch(() => null);
-  await track(prisma, 'service_service_viewed', {
+  const serviceEventDimensions = {
     serviceId: service.id,
     identityId: viewer?.identityId,
     categoryKey: service.categoryKey,
     projectId: projectId ?? undefined,
-  }).catch(() => null);
+    destination: getDestination().key,
+    locale: getRequestLocale(),
+    source: 'service_detail',
+  };
+  await Promise.all([
+    track(prisma, 'service_service_viewed', serviceEventDimensions),
+    track(prisma, 'service_opened', serviceEventDimensions),
+  ]).catch(() => null);
 
   const labels = await getLabels({
     'services.breadcrumb_home': 'Home',

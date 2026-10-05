@@ -1,5 +1,6 @@
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { LeadForm } from '@/components/LeadForm';
+import { getDestination } from '@/modules/destinations';
 
 /**
  * Server wrapper for the audience-page lead form (doc 08 §3): resolves the
@@ -12,6 +13,8 @@ export async function LeadFormSection({
   initialMessage?: string;
   projectId?: string;
 }) {
+  const locale = getRequestLocale();
+  const destination = getDestination();
   const labels = await getLabels({
     'audience.lead.title': 'Leave your contact — we reply within a day',
     'audience.lead.name': 'Your name',
@@ -34,6 +37,7 @@ export async function LeadFormSection({
           audience={audience}
           initialMessage={initialMessage}
           projectId={projectId}
+          analytics={{ destination: destination.key, locale }}
           labels={{
             title: labels['audience.lead.title'],
             name: labels['audience.lead.name'],

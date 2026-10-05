@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from 'react';
+import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 export type HomeIntent = 'stay' | 'monthly' | 'buy';
 
@@ -54,6 +55,8 @@ const DEFAULT_SEARCH: HomeSearchState = {
 
 interface HomeIntentState {
   intent: HomeIntent;
+  locale: string;
+  destination: string;
   setIntent: (intent: HomeIntent) => void;
   place: HomePlaceSelection | null;
   setPlace: (place: HomePlaceSelection | null) => void;
@@ -70,9 +73,13 @@ const HomeIntentContext = createContext<HomeIntentState | null>(null);
  */
 export function HomeIntentProvider({
   initialIntent,
+  locale,
+  destination,
   children,
 }: {
   initialIntent: HomeIntent;
+  locale: string;
+  destination: string;
   children: ReactNode;
 }) {
   const [intent, setIntentState] = useState<HomeIntent>(initialIntent);
@@ -81,6 +88,13 @@ export function HomeIntentProvider({
 
   const setIntent = useCallback((next: HomeIntent) => {
     setIntentState(next);
+    trackPublicInteraction('intent_selected', {
+      destination,
+      locale,
+      intent: next,
+      source: 'homepage',
+      deviceClass: deviceClass(),
+    });
     // A budget belongs to its commercial intent: nightly, monthly and
     // purchase amounts are never reinterpreted as one another.
     setSearch((current) => ({ ...current, budget: '' }));
@@ -92,11 +106,11 @@ export function HomeIntentProvider({
     } catch {
       // Shared state still works without a shareable URL.
     }
-  }, []);
+  }, [destination, locale]);
 
   const value = useMemo(
-    () => ({ intent, setIntent, place, setPlace, search, setSearch }),
-    [intent, setIntent, place, search]
+    () => ({ intent, locale, destination, setIntent, place, setPlace, search, setSearch }),
+    [intent, locale, destination, setIntent, place, search]
   );
   return <HomeIntentContext.Provider value={value}>{children}</HomeIntentContext.Provider>;
 }

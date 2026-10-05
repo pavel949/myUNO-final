@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getPublicCommercialHomeById, type HomeIntent } from '@/modules/projects/commercial-discovery';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
+import { track } from '@/modules/analytics';
+import { getDestination } from '@/modules/destinations';
+import { getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +31,16 @@ export default async function CommercialHomePage({ params, searchParams }: {
   if (!home) notFound();
   const requested: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const intent: HomeIntent = home.intents.includes(requested) ? requested : home.intents[0];
+
+  await track(prisma, 'unit_opened', {
+    unitId: home.id,
+    projectId: home.project.id,
+    destination: getDestination().key,
+    locale: getRequestLocale(),
+    intent: intent === 'rent' ? 'monthly' : 'buy',
+    source: 'commercial_home_detail',
+  }).catch(() => null);
+
   const labels = await getLabels({
     'homes.detail.inquiry.buy': 'Purchase enquiry',
     'homes.detail.inquiry.rent': 'Long-term rental enquiry',

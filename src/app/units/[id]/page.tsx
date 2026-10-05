@@ -8,6 +8,8 @@ import { getPublicUnitById } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import UnitDetailClient from './unit-client';
+import { track } from '@/modules/analytics';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +62,14 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
   if (!unit) {
     notFound();
   }
+
+  await track(prisma, 'unit_opened', {
+    unitId: unit.id,
+    destination: getDestination().key,
+    locale: getRequestLocale(),
+    intent: 'stay',
+    source: 'stay_unit_detail',
+  }).catch(() => null);
 
   const description = await unitDescription(unit.descriptionKey);
   const jsonLd = unitJsonLd({ ...unit, description });

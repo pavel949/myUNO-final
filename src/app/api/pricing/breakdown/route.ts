@@ -4,6 +4,9 @@ import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { checkRateLimit } from '@/app/libs/rateLimit';
+import { track } from '@/modules/analytics';
+import { getDestination } from '@/modules/destinations';
+import { getRequestLocale } from '@/lib/i18n';
 
 /**
  * POST /api/pricing/breakdown
@@ -18,6 +21,7 @@ import { checkRateLimit } from '@/app/libs/rateLimit';
  * - guestCount?: number (defaults to 1)
  */
 export async function POST(req: NextRequest) {
+  let analyticsUnitId: string | undefined;
   try {
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -37,6 +41,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { unitId, startDate: startDateStr, endDate: endDateStr, guestCount = 1 } = body;
+    analyticsUnitId = typeof unitId === 'string' ? unitId : undefined;
 
     if (!unitId || !startDateStr || !endDateStr) {
       throw createPublicError('invalid request: unitId, startDate, and endDate are required', 400);
@@ -57,6 +62,8 @@ export async function POST(req: NextRequest) {
       prisma.unit.findUnique({
         where: { id: unitId },
         select: {
+          id: true,
+          projectId: true,
           status: true,
           assetStatus: true,
           inventoryCategory: { select: { status: true } },
@@ -83,6 +90,17 @@ export async function POST(req: NextRequest) {
     // to baht here, at the response boundary. Preserve two-decimal baht
     // precision: monthly proration may end in non-zero satang.
     const toBaht = (satang: number) => satang / 100;
+    await track(prisma, 'quote_succeeded', {
+      unitId: unit?.id ?? analyticsUnitId,
+      projectId: unit?.projectId,
+      destination: getDestination().key,
+      locale: getRequestLocale(),
+      intent: 'stay',
+      source: 'pricing_breakdown',
+      nights,
+      guests: Number(guestCount) || 1,
+      isAvailable,
+    }).catch(() => null);
     return NextResponse.json(
       {
         nights,
@@ -105,6 +123,15 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    await track(prisma, 'quote_failed', {
+      unitId: analyticsUnitId,
+      destination: getDestination().key,
+      locale: getRequestLocale(),
+      intent: 'stay',
+      source: 'pricing_breakdown',
+      failureClass: error instanceof Error ? error.name : 'unknown',
+    }).catch(() => null);
+
     // Guest-actionable validation errors from the engine
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;

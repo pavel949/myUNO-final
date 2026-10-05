@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { listPublicCommercialHomes, type HomeIntent } from '@/modules/projects/commercial-discovery';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { getDestination } from '@/modules/destinations';
+import { track } from '@/modules/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
   const maxArea = positiveNumber(searchParams?.maxArea);
   const minPrice = positiveNumber(searchParams?.minPrice);
   const maxPrice = positiveNumber(searchParams?.maxPrice);
+  const leaseTermMonths = positiveNumber(searchParams?.leaseTermMonths);
 
   const homes = allHomes.filter((home) => {
     const price = home.priceThb[intent] ?? null;
@@ -109,6 +111,17 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
     if (maxPrice !== null && (price === null || price > maxPrice)) return false;
     return true;
   });
+
+  await track(prisma, homes.length > 0 ? 'search_completed' : 'search_zero_results', {
+    destination: destination.key,
+    locale: getRequestLocale(),
+    intent: intent === 'rent' ? 'monthly' : 'buy',
+    source: 'commercial_search',
+    projectId: searchParams?.projectId,
+    resultsCount: homes.length,
+    hasMoveIn: Boolean(searchParams?.moveIn),
+    hasLeaseTerm: Boolean(leaseTermMonths),
+  }).catch(() => null);
 
   const areas = [...new Set(allHomes.map((home) => home.project.areaSlug).filter((value): value is string => Boolean(value)))].sort();
   const modeLink = (value: HomeIntent) => {

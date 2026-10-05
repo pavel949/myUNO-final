@@ -64,7 +64,7 @@ export function ProjectCard({
           </p>
         ) : null}
 
-        {project.responsibility.verified && project.responsibility.organizationName ? (
+        {project.responsibility?.verified && project.responsibility.organizationName ? (
           <p className="mt-8 text-small font-medium text-white/85">
             {(project.responsibility.scope === 'project'
               ? labels.responsibilityProject

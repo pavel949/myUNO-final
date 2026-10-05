@@ -64,7 +64,7 @@ describe('Projects public read seam (discovery pages)', () => {
       expect(await getPublicProjectBySlug('draft-p')).toBeNull();
     });
 
-    it('keeps a live but media-incomplete unit out of Project Space and sitemap', async () => {
+    it('keeps a live media-incomplete unit visible for inquiry but out of bookable sitemap', async () => {
       const project = await createProjectWithMedia({ slug: 'media-gated-p', status: 'live' });
       const hidden = await createUnit({
         projectId: project.id,
@@ -79,8 +79,15 @@ describe('Projects public read seam (discovery pages)', () => {
       });
 
       const detail = await getPublicProjectBySlug(project.slug);
-      expect(detail?.units.map((unit) => unit.id)).toEqual([visible.id]);
-      expect(detail?.units.map((unit) => unit.id)).not.toContain(hidden.id);
+      expect(detail?.units.map((unit) => unit.id)).toEqual([hidden.id, visible.id]);
+      expect(detail?.units.find((unit) => unit.id === hidden.id)).toMatchObject({
+        mediaReady: false,
+        bookable: false,
+      });
+      expect(detail?.units.find((unit) => unit.id === visible.id)).toMatchObject({
+        mediaReady: true,
+        bookable: true,
+      });
       expect(await listPublicUnitIds()).toEqual([visible.id]);
     });
 
@@ -242,13 +249,16 @@ describe('Projects public read seam (discovery pages)', () => {
       ] });
       const [card] = await listPublicProjects();
       const detail = await getPublicProjectBySlug(project.slug);
-      expect(card.liveUnitCount).toBe(1);
-      expect(detail?.units.map(u => u.id)).toEqual([stay.id]);
-      expect(detail?.categories.reduce((sum, c) => sum + c.unitCount, 0)).toBe(1);
+      expect(card.liveUnitCount).toBe(3);
+      expect(detail?.units.map(u => u.id).sort()).toEqual([sale.id, lease.id, stay.id].sort());
+      expect(detail?.units.find(u => u.id === sale.id)?.bookable).toBe(false);
+      expect(detail?.units.find(u => u.id === lease.id)?.bookable).toBe(false);
+      expect(detail?.units.find(u => u.id === stay.id)?.bookable).toBe(true);
+      expect(detail?.categories.reduce((sum, c) => sum + c.unitCount, 0)).toBe(3);
       expect(await listPublicUnitIds()).toEqual([stay.id]);
     });
 
-    it('excludes source-owned inventory from the project page and sitemap until signed cutover', async () => {
+    it('keeps source-owned inventory visible for inquiry but excludes it from booking until signed cutover', async () => {
       const project = await createProjectWithMedia({ slug: 'source-project', status: 'live' });
       const sourceUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Protected source' });
       const localUnit = await createUnit({ projectId: project.id, status: 'live', name: 'Local unit' });
@@ -260,12 +270,16 @@ describe('Projects public read seam (discovery pages)', () => {
         external_system_id: source.id, entity_type: 'unit',
         internal_id: sourceUnit.id, external_id: 'source-villa',
       } });
-      expect((await getPublicProjectBySlug(project.slug))?.units.map(u => u.id)).toEqual([localUnit.id]);
-      expect((await listPublicProjects())[0].liveUnitCount).toBe(1);
+      const beforeCutover = await getPublicProjectBySlug(project.slug);
+      expect(beforeCutover?.units.map(u => u.id).sort()).toEqual([sourceUnit.id, localUnit.id].sort());
+      expect(beforeCutover?.units.find(u => u.id === sourceUnit.id)?.bookable).toBe(false);
+      expect((await listPublicProjects())[0].liveUnitCount).toBe(2);
       expect(await listPublicUnitIds()).toEqual([localUnit.id]);
       await prisma.externalSystem.update({ where: { id: source.id },
         data: { config: { bookingAuthority: 'myuno', cutoverVerified: true } } });
-      expect((await getPublicProjectBySlug(project.slug))?.units).toHaveLength(2);
+      const afterCutover = await getPublicProjectBySlug(project.slug);
+      expect(afterCutover?.units).toHaveLength(2);
+      expect(afterCutover?.units.find(u => u.id === sourceUnit.id)?.bookable).toBe(true);
     });
   });
 

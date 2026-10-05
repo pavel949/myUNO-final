@@ -234,9 +234,18 @@ export async function GET(
     const titleKey = unit.descriptionKey
       ? unit.descriptionKey.replace(/\.description$/, '.title')
       : null;
+    const factKeys = [
+      ...unit.views.map(view => `catalog.views.${view}.label`),
+      ...unit.unitFeatures
+        .filter(feature => /^[a-z0-9_]+$/.test(feature))
+        .map(feature => `catalog.unit_features.${feature}.label`),
+    ];
     const copy = await tMany(
       prisma,
-      [titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key)),
+      [
+        ...[titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key)),
+        ...factKeys,
+      ],
       getRequestLocale()
     );
     const publicUnit = {
@@ -247,6 +256,10 @@ export async function GET(
       grossAreaSqm: unit.grossAreaSqm === null ? null : Number(unit.grossAreaSqm),
       outdoorAreaSqm: unit.outdoorAreaSqm === null ? null : Number(unit.outdoorAreaSqm),
       plotAreaSqm: unit.plotAreaSqm === null ? null : Number(unit.plotAreaSqm),
+      viewLabels: unit.views.map(view => copy[`catalog.views.${view}.label`] || view.replace(/_/g, ' ')),
+      featureLabels: unit.unitFeatures
+        .filter(feature => /^[a-z0-9_]+$/.test(feature))
+        .map(feature => copy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' ')),
       inventoryCategory: inventoryCategory
         ? {
             id: inventoryCategory.id,

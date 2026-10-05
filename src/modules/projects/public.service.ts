@@ -19,16 +19,24 @@ import {
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
 function publicStayUnitWhere(excludedIds: string[], managedUnitIds: string[] = []): Prisma.UnitWhereInput {
   return {
-    OR: [
-      { status: 'live' },
-      ...(managedUnitIds.length ? [{ status: 'draft' as const, id: { in: managedUnitIds } }] : []),
-    ],
     assetStatus: { not: 'suspended' },
     inventoryCategory: { status: 'live' },
     ...(excludedIds.length ? { id: { notIn: excludedIds } } : {}),
-    OR: [
-      { project: { projectType: null } }, // Legacy untyped projects retain compatibility until migrated.
-      { commercialOfferings: { some: { offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active' } } },
+    AND: [
+      {
+        OR: [
+          { status: 'live' },
+          ...(managedUnitIds.length
+            ? [{ status: 'draft' as const, id: { in: managedUnitIds } }]
+            : []),
+        ],
+      },
+      {
+        OR: [
+          { project: { projectType: null } }, // Legacy untyped projects retain compatibility until migrated.
+          { commercialOfferings: { some: { offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active' } } },
+        ],
+      },
     ],
   };
 }
@@ -36,8 +44,9 @@ function publicStayUnitWhere(excludedIds: string[], managedUnitIds: string[] = [
 
 /**
  * Public (unauthenticated) read seam for project discovery pages.
- * Only `live` projects and `live` units are ever exposed — draft and
- * archived inventory stays invisible (doc 08 §4).
+ * Live inventory is public by default. Imported managed rows may also be
+ * visible while their legacy status remains draft; that provenance does not
+ * by itself make them bookable. Archived inventory stays invisible.
  */
 
 export interface PublicProjectCategory {

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#c7eadd", "error-container": "#ffdad6", "outline-variant": "#c1c8c4", "tertiary-fixed-dim": "#accec2", "on-tertiary-container": "#7fa195", "surface-sand": "#F4F0E8", "status-verified": "#1E5848", "surface-sand-subtle": "#EAE4D7", "on-primary-fixed-variant": "#284e43", "primary-container": "#11382e", "surface-container-lowest": "#ffffff", "outline": "#717975", "on-tertiary-fixed": "#002019", "accent-gold-muted": "#F5EAD9", "inverse-primary": "#a7cfc1", "text-muted": "#566360", "status-instant": "#9A6B32", "on-tertiary": "#ffffff", "on-surface": "#121e1c", "accent-gold-soft": "#E4BE8D", "status-verified-bg": "#E9F1EE", "border-subtle": "#E5DFD3", "status-instant-bg": "#FAF3E8", "secondary": "#81551c", "surface-tint": "#40665a", "on-surface-variant": "#414845", "on-secondary-fixed-variant": "#663e04", "inverse-on-surface": "#e6f4f0", "surface-container": "#e3f1ed", "on-secondary": "#ffffff", "surface": "#effcf9", "on-tertiary-fixed-variant": "#2d4d44", "secondary-fixed": "#ffddba", "on-error-container": "#93000a", "primary": "#00221a", "tertiary-container": "#17372f", "on-secondary-container": "#784d14", "secondary-fixed-dim": "#f6bb79", "surface-bright": "#effcf9", "on-primary-fixed": "#002019", "surface-container-highest": "#d8e5e2", "primary-fixed": "#c2ebdc", "error": "#ba1a1a", "surface-variant": "#d8e5e2", "surface-container-high": "#ddebe8", "secondary-container": "#fdc17e", "surface-ivory": "#FBF9F5", "surface-container-low": "#e9f7f3", "on-background": "#121e1c", "on-error": "#ffffff", "background": "#effcf9", "tertiary": "#01221a", "on-primary-container": "#7ba295", "on-secondary-fixed": "#2b1700", "inverse-surface": "#273331", "surface-dim": "#cfddd9", "on-primary": "#ffffff", "primary-fixed-dim": "#a7cfc1" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-mobile": "1.25rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "gutter-mobile": "1rem", "space-2xl": "4rem", "space-sm": "0.5rem", "space-md": "1rem", "margin": "3rem", "space-lg": "1.5rem", "gutter": "1.5rem" }, fontFamily: { "display-hero-mobile": ["Outfit"], "body-md": ["Manrope"], "headline-lg": ["Outfit"], "title-md": ["Outfit"], "body-lg": ["Manrope"], "display-hero": ["Outfit"], "label-lg": ["Manrope"], "label-md": ["Manrope"], "body-sm": ["Manrope"], "headline-md": ["Outfit"], "label-caps": ["Manrope"], "headline-sm": ["Outfit"], "headline-lg-mobile": ["Outfit"] }, fontSize: { "display-hero-mobile": ["36px", { lineHeight: "44px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }], "headline-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "500" }], "title-md": ["18px", { lineHeight: "26px", letterSpacing: "0em", fontWeight: "600" }], "body-lg": ["18px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "400" }], "display-hero": ["56px", { lineHeight: "64px", letterSpacing: "-0.02em", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.03em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "400" }], "headline-md": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500" }], "label-caps": ["11px", { lineHeight: "14px", letterSpacing: "0.08em", fontWeight: "700" }], "headline-sm": ["22px", { lineHeight: "30px", letterSpacing: "-0.005em", fontWeight: "600" }], "headline-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-sand z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col flex-1 overflow-y-auto"><div class="h-20 flex items-center gap-3 px-6 bg-surface-sand"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WAuIBFnmAqAnXsC_fTm3zRgUam2aF9swxtG_1wbxUhlbN47jX6mGBzDRxFkWYlO7CDYHJRGsMgegtZ7oQnLzovSDDn9s1ALHvRN-zh1tAsnFGRsruRZa6QccXi_z6pB8iTRkwQ2A0HD9mN91YQEYkAM2ykyQKC__EXtB_1nt6gtYFxfwbz_avF0eclUs8nd_l-j5KGgwAZpyF7xp9f1dLXsQtneVY7Rm6Mm_p0HipVYKkwsf4Dprc29Mo"/><div class="flex flex-col"><span class="font-title-md text-title-md text-primary tracking-tight">myUNO</span><span class="font-label-caps text-label-caps uppercase text-text-muted tracking-widest">PMS Operations v2.4</span></div></div><div class="px-4 py-2"><div class="px-3 py-2 bg-surface-container-lowest rounded-lg flex flex-col gap-1"><span class="font-label-caps text-label-caps text-text-muted uppercase">Локация управления</span><div class="flex items-center justify-between text-on-surface"><span class="font-label-lg text-label-lg truncate">Bang Tao Complex</span><span class="material-symbols-outlined text-[18px] text-text-muted">unfold_more</span></div></div></div><nav class="flex-1 px-4 py-3 space-y-6" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg"><div class="space-y-1"><div class="px-3 pb-1 font-label-caps text-label-caps text-text-muted uppercase tracking-wider">01 ПУЛЬТ FRONT DESK</div><a aria-current="page" class="flex items-center gap-3 px-3 py-2.5 transition-colors bg-primary-container text-on-primary-container font-semibold rounded-lg" data-path="reception-and-check-in" href="#"><span class="material-symbols-outlined text-[20px]">room_service</span><span>Ресепшн &amp; Заселение</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="tape-chart" href="#"><span class="material-symbols-outlined text-[20px]">grid_on</span><span>Шахматка (Tape Chart)</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="reservations-log" href="#"><span class="material-symbols-outlined text-[20px]">calendar_month</span><span>Журнал бронирований</span></a></div><div class="space-y-1"><div class="px-3 pb-1 font-label-caps text-label-caps text-text-muted uppercase tracking-wider">02 СЕРВИС &amp; КОРПУСА</div><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="cleaning-and-housekeeping" href="#"><span class="material-symbols-outlined text-[20px]">cleaning_services</span><span>Клининг &amp; Хаускипинг</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="room-inventory-and-rates" href="#"><span class="material-symbols-outlined text-[20px]">apartment</span><span>Номерной фонд &amp; Тарифы</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="work-orders" href="#"><span class="material-symbols-outlined text-[20px]">build</span><span>Инженерная служба (Work Orders)</span></a></div><div class="space-y-1"><div class="px-3 pb-1 font-label-caps text-label-caps text-text-muted uppercase tracking-wider">03 ОПЕРАЦИИ &amp; ГОСТИ</div><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="concierge-and-services" href="#"><span class="material-symbols-outlined text-[20px]">concierge</span><span>Консьерж &amp; Услуги</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="guest-folios-and-deposits" href="#"><span class="material-symbols-outlined text-[20px]">payments</span><span>Гостевые фолио &amp; Депозиты</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-sand-subtle hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="tm30-and-passport-compliance" href="#"><span class="material-symbols-outlined text-[20px]">verified_user</span><span>TM.30 &amp; Паспортный комплаенс</span></a></div></nav></div><div class="p-4 bg-surface-sand-subtle/60"><div class="p-3 bg-surface-container-lowest rounded-lg flex items-center gap-2.5"><span class="w-2.5 h-2.5 rounded-full bg-status-verified flex-shrink-0 animate-pulse"></span><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-on-surface truncate">SmartLock Gateway Online</span><span class="font-label-caps text-label-caps text-text-muted truncate">Salto/TTLock • Core v4.8</span></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface-ivory/95 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-4 flex-1 max-w-4xl"><div class="flex items-center gap-2.5 px-3.5 py-1.5 bg-surface-sand rounded-lg cursor-pointer"><span class="material-symbols-outlined text-primary text-[20px]">domain</span><div class="flex flex-col"><span class="font-label-lg text-label-lg text-primary font-semibold leading-tight">The Title Legendary Bang Tao (52 юнита)</span><span class="font-label-caps text-label-caps text-status-verified font-bold">High Season — 94% Live Occupancy</span></div><span class="material-symbols-outlined text-text-muted text-[18px] ml-1">expand_more</span></div><div class="relative flex-1"><span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span><input class="w-full h-10 pl-10 pr-4 bg-surface-container-lowest text-on-surface placeholder:text-text-muted font-body-sm text-body-sm rounded-lg focus:outline-none" placeholder="Поиск бронирования, гостя (#UN-...), номера апартаментов или паспорта... (⌘K)" type="text"/></div></div><div class="flex items-center gap-3 flex-shrink-0"><div class="hidden xl:flex items-center gap-2"><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-md text-label-md"><span class="material-symbols-outlined text-[14px]">login</span><span>Заезды: 8</span></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-sand text-text-muted font-label-md text-label-md"><span class="material-symbols-outlined text-[14px]">logout</span><span>Выезды: 6</span></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[14px]">group</span><span>Проживают: 42</span></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-instant-bg text-status-instant font-label-md text-label-md"><span class="material-symbols-outlined text-[14px]">priority_high</span><span>TM.30: 1</span></div></div><button class="flex items-center gap-2 h-10 px-4 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>+ Экспресс-заселение</span></button><div class="flex items-center gap-3 pl-3"><div class="flex flex-col text-right"><span class="font-label-lg text-label-lg text-on-surface font-semibold leading-tight">Нараян К.</span><span class="font-label-caps text-label-caps text-text-muted">Duty Lead • Online</span></div><div class="relative"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-status-verified rounded-full ring-2 ring-surface-ivory"></span></div></div></div></header><main class="relative pt-20 bg-surface min-h-screen"><div class="flex flex-col w-full text-on-surface">
+<!-- Operational Horizon & KPI Ribbon -->
+<section class="p-6 bg-surface-ivory shadow-sm">
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5">
+<div class="flex items-center gap-3">
+<div class="w-2.5 h-8 bg-primary rounded-full"></div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight">Операционный пульт Front Desk</span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps uppercase rounded-full font-bold">Высокий сезон Банг Тао</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Операционный горизонт: Сегодня, 22 Ноября 2026 • Текущее время комплекса: 14:18 (ICT +07:00)</p>
+</div>
+</div>
+<div class="flex items-center gap-2 self-start xl:self-auto">
+<span class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest shadow-sm rounded-lg text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-status-verified">sync</span>
+<span>Автосинхронизация PMS 30с</span>
+</span>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-on-primary hover:bg-primary-container transition-colors rounded-lg font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+<span>Сканировать паспорт (OCR)</span>
+</button>
+</div>
+</div>
+<!-- 4 Key Operational Metrics -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Arrivals Metric -->
+<div class="p-4 bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Ожидаемые заезды</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-hero text-headline-lg text-primary">8</span>
+<span class="font-label-md text-label-md text-text-muted">броней</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">flight_land</span>
+</div>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-body-sm font-body-sm text-text-muted bg-surface-sand/40 px-2.5 py-1.5 rounded-lg">
+<span class="text-status-verified font-medium">5 заселено</span>
+<span>•</span>
+<span class="text-status-instant font-medium">2 в пути (VIP)</span>
+<span>•</span>
+<span>1 late</span>
+</div>
+</div>
+<!-- Departures Metric -->
+<div class="p-4 bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Выезды сегодня</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-hero text-headline-lg text-primary">6</span>
+<span class="font-label-md text-label-md text-text-muted">юнитов</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-sand text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">flight_takeoff</span>
+</div>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-body-sm font-body-sm text-text-muted bg-surface-sand/40 px-2.5 py-1.5 rounded-lg">
+<span class="text-status-verified font-medium">4 сдали ключи</span>
+<span>•</span>
+<span class="text-secondary font-medium">2 late check-out</span>
+</div>
+</div>
+<!-- Room Readiness Metric -->
+<div class="p-4 bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Готовность фонда</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-hero text-headline-lg text-status-verified">96.2%</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">verified</span>
+</div>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-body-sm font-body-sm text-text-muted bg-surface-sand/40 px-2.5 py-1.5 rounded-lg">
+<span class="font-medium">48 готово</span>
+<span>•</span>
+<span class="text-status-instant font-medium">3 в уборке</span>
+<span>•</span>
+<span class="text-error font-medium">1 OOD</span>
+</div>
+</div>
+<!-- TM.30 Immigration Compliance -->
+<div class="p-4 bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">TM.30 Immigration</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-hero text-headline-lg text-primary">100%</span>
+<span class="font-label-md text-label-md text-status-verified font-bold">Synced</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-status-verified-bg text-status-verified flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">policy</span>
+</div>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-body-sm font-body-sm text-text-muted bg-surface-sand/40 px-2.5 py-1.5 rounded-lg">
+<span class="text-status-verified font-medium">7 отправлено</span>
+<span>•</span>
+<span class="text-status-instant font-medium">1 готов к отправке</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Work Area (Split 60 / 40) -->
+<section class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Operational Action Center (7 cols / ~60%) -->
+<div class="lg:col-span-7 flex flex-col gap-5">
+<!-- Filter Tabs & Quick Search -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex flex-col gap-3">
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3.5 py-1.5 bg-primary text-on-primary font-label-md text-label-md rounded-lg shadow-sm">Все заезды (8)</button>
+<button class="px-3.5 py-1.5 bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-colors font-label-md text-label-md rounded-lg">В пути / ETA (3)</button>
+<button class="px-3.5 py-1.5 bg-status-instant-bg text-status-instant font-label-md text-label-md rounded-lg font-bold flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-instant animate-pulse"></span>
+            Ожидают на ресепшн (1)
+          </button>
+<button class="px-3.5 py-1.5 bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-colors font-label-md text-label-md rounded-lg">Заселены (4)</button>
+<button class="px-3.5 py-1.5 bg-surface-sand text-on-surface hover:bg-surface-sand-subtle transition-colors font-label-md text-label-md rounded-lg">Выезды (6)</button>
+</div>
+<div class="flex items-center gap-3 pt-1">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">filter_list</span>
+<input class="w-full h-9 pl-9 pr-3 bg-surface-sand/60 text-on-surface placeholder:text-text-muted font-body-sm text-body-sm rounded-lg focus:outline-none focus:bg-surface-sand transition-all" placeholder="Быстрый фильтр: Гость, Бронь #, Апартаменты, Рейс..." type="text"/>
+</div>
+<button class="flex items-center gap-1 h-9 px-3 bg-surface-sand hover:bg-surface-sand-subtle text-on-surface font-label-md text-label-md rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Фильтры</span>
+</button>
+</div>
+</div>
+<!-- Live Arrivals Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="p-4 bg-surface-sand flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
+<span class="font-title-md text-title-md text-primary font-semibold">Журнал гостей и оперативных статусов</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Сортировка: По приоритету заезда</span>
+</div>
+<div class="divide-y divide-surface-sand-subtle/50 flex flex-col">
+<!-- Row 1: FOCUS / ACTIVE ITEM (Алексей Смирнов) -->
+<div class="p-4 bg-surface-ivory shadow-sm transition-all relative">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pl-2">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-title-md text-title-md flex-shrink-0 shadow-sm">
+                  АС
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">Алексей Смирнов</span>
+<span class="font-label-caps text-label-caps text-text-muted">#UN-84920</span>
+<span class="px-2 py-0.5 bg-status-instant-bg text-status-instant font-label-caps text-label-caps rounded font-bold animate-pulse">Сейчас в лобби</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm font-body-sm text-text-muted mt-1">
+<span class="text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">meeting_room</span> #F-302 (1BR Direct Pool, 54м²)
+                    </span>
+<span>•</span>
+<span>ETA: 14:30</span>
+</div>
+</div>
+</div>
+<!-- Statuses & Action -->
+<div class="flex flex-col sm:items-end gap-2 pl-2 sm:pl-0">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-md text-label-md rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">done_all</span> Чисто (13:45)
+                  </span>
+<span class="px-2 py-0.5 bg-surface-sand text-text-muted font-label-md text-label-md rounded">
+                    Депозит: ฿15,000 Hold
+                  </span>
+</div>
+<button class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary hover:bg-primary-container rounded-lg font-label-md text-label-md font-semibold shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[16px]">how_to_reg</span>
+<span>Запустить Экспресс-Чекин</span>
+</button>
+</div>
+</div>
+<!-- Quick Meta Tags -->
+<div class="mt-3 pl-2 pt-2 flex flex-wrap items-center gap-3 font-body-sm text-body-sm text-text-muted bg-surface-sand/30 p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-status-verified">verified_user</span> TM.30 готов к выгрузке</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">vpn_key</span> Замок Salto KS онлайн</span>
+<span>•</span>
+<span>3 ночи (22.11 — 25.11)</span>
+</div>
+</div>
+<!-- Row 2: Sarah & Marc Jenkins -->
+<div class="p-4 hover:bg-surface-sand-subtle/30 transition-colors">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-sand text-on-surface flex items-center justify-center font-title-md text-title-md flex-shrink-0">
+                  SJ
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Sarah &amp; Marc Jenkins</span>
+<span class="font-label-caps text-label-caps text-text-muted">#UN-84935</span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded font-medium">VIP Transfer</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm font-body-sm text-text-muted mt-1">
+<span class="text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">apartment</span> #F-501 (Sky Penthouse)
+                    </span>
+<span>•</span>
+<span>ETA: 16:15 (Рейс SQ-724 приземлился, Alphard в пути)</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:items-end gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-md text-label-md rounded">Чисто</span>
+<span class="px-2 py-0.5 bg-surface-sand text-text-muted font-label-md text-label-md rounded">PIN сгенерирован</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-sand hover:bg-surface-sand-subtle text-on-surface rounded-lg font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">flash_on</span>
+<span>Быстрый чекин</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Row 3: Jean-Marc Dupont -->
+<div class="p-4 hover:bg-surface-sand-subtle/30 transition-colors">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-sand text-on-surface flex items-center justify-center font-title-md text-title-md flex-shrink-0">
+                  JD
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Jean-Marc Dupont</span>
+<span class="font-label-caps text-label-caps text-text-muted">#UN-84912</span>
+<span class="px-2 py-0.5 bg-surface-sand text-text-muted font-label-caps text-label-caps rounded">Self Check-In</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm font-body-sm text-text-muted mt-1">
+<span class="text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">door_front</span> #E-204 (1BR Garden)
+                    </span>
+<span>•</span>
+<span>ETA: 18:00</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:items-end gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-status-instant-bg text-status-instant font-label-md text-label-md rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">mop</span> Финальная инспекция
+                  </span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-sand hover:bg-surface-sand-subtle text-on-surface rounded-lg font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+<span>Связаться в WhatsApp</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Row 4: David Chen -->
+<div class="p-4 hover:bg-surface-sand-subtle/30 transition-colors opacity-85">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-status-verified-bg text-status-verified flex items-center justify-center font-title-md text-title-md flex-shrink-0">
+                  DC
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface font-semibold">David Chen</span>
+<span class="font-label-caps text-label-caps text-text-muted">#UN-84899</span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded font-bold">Заселен в 11:20</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm font-body-sm text-text-muted mt-1">
+<span class="text-on-surface font-medium">#D-101 (Pool Terrace)</span>
+<span>•</span>
+<span>Ключ активен • TM.30: Рег #TM-89402</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-surface-sand text-on-surface font-label-md text-label-md rounded-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-status-verified">check_circle</span>
+<span>Проживает</span>
+</span>
+<button class="p-1.5 text-text-muted hover:text-on-surface rounded-lg hover:bg-surface-sand">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Departures & Inspection Queue Sub-panel -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">hotel_class</span>
+<span class="font-title-md text-title-md text-primary font-semibold">Очередь выездов и ре-инспекций номеров</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">2 в активном процессе</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<!-- Departure Item 1 -->
+<div class="p-3 bg-surface-sand/40 rounded-lg flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary">Юнит #E-305</span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded">Выезд 12:00</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant flex flex-col gap-1">
+<span>Депозит: ฿10,000 разблокирован (Stripe)</span>
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[15px]">cleaning_services</span> Клининг: горничная Сурат (в процессе)
+              </span>
+</div>
+</div>
+<!-- Departure Item 2 -->
+<div class="p-3 bg-surface-sand/40 rounded-lg flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary">Юнит #F-102</span>
+<span class="px-2 py-0.5 bg-status-instant-bg text-status-instant font-label-caps text-label-caps rounded">Late Check-out</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant flex flex-col gap-1">
+<span>Согласовано до 14:00 (Гость сдал карту)</span>
+<span class="flex items-center gap-1 text-text-muted">
+<span class="material-symbols-outlined text-[15px]">schedule</span> Ожидает назначения хаускипинга
+              </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Express Check-In Wizard (5 cols / ~40%) -->
+<div class="lg:col-span-5 flex flex-col">
+<div class="bg-surface-container-lowest rounded-xl shadow-md overflow-hidden flex flex-col sticky top-24">
+<!-- Wizard Header -->
+<div class="p-4 bg-primary text-on-primary">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">Фокусный процесс</span>
+<span class="font-title-md text-title-md font-bold">Экспресс-чекин • Юнит #F-302</span>
+</div>
+<span class="px-2.5 py-1 bg-surface-container-lowest/15 backdrop-blur rounded text-on-primary font-label-caps text-label-caps">
+              Гость у стойки
+            </span>
+</div>
+<!-- Stepper Indicator -->
+<div class="grid grid-cols-4 gap-1.5 mt-4 pt-3 border-t border-primary-container">
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-accent-gold-soft rounded-full"></div>
+<span class="font-label-caps text-[9px] uppercase tracking-wider text-accent-gold-soft">1. OCR</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-accent-gold-soft rounded-full"></div>
+<span class="font-label-caps text-[9px] uppercase tracking-wider text-accent-gold-soft">2. TM.30</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-accent-gold-soft rounded-full"></div>
+<span class="font-label-caps text-[9px] uppercase tracking-wider text-accent-gold-soft">3. Депозит</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-on-primary-container rounded-full"></div>
+<span class="font-label-caps text-[9px] uppercase tracking-wider text-on-primary-container">4. Ключ</span>
+</div>
+</div>
+</div>
+<!-- Wizard Scrollable Body -->
+<div class="p-5 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh-280px)]">
+<!-- Section 1: Guest Identity & OCR -->
+<div class="bg-surface-ivory p-3.5 rounded-lg flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-status-verified">document_scanner</span>
+                1. Верификация &amp; OCR Паспорта
+              </span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">check</span> OCR 100%
+              </span>
+</div>
+<!-- OCR Visual Card -->
+<div class="grid grid-cols-3 gap-3 bg-surface-container-lowest p-3 rounded-lg shadow-sm">
+<div class="col-span-1">
+<img class="w-full h-24 object-cover rounded-md" data-alt="High-resolution flat lay of an international passport data page scanned under warm office light, showing biometric photo, MRZ code lines, and holographic security marks in an upscale hotel reception setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8LakzbIGFIINSbpwu-6hbqYnzw5qcqNrc9DHdz2oQApm5icaM6teDAQq4wAkogu-wMBH9puFCPI823toox-w1aBW0lA4NNNhEWlxhPN7bdy34Not19xGdI9WGrC4KcriZTOAp_tqFAN5nlgUEmWfR9nokutk9Y2jk_Xd5-irmOGF_bk6a1_lmqnX6NPuo0tIoIHKyU4dN3eYYzJIeLsLzknhSctGwb_hhAIkIgSMGIZhZN0VwjWxC"/>
+</div>
+<div class="col-span-2 flex flex-col justify-center gap-1 text-body-sm font-body-sm">
+<span class="font-bold text-on-surface">Alexey Smirnov / Алексей Смирнов</span>
+<span class="text-text-muted">Паспорт: <strong class="text-on-surface">#76-209481</strong></span>
+<span class="text-text-muted">Гражданство: <strong class="text-on-surface">ISR / RU</strong></span>
+<span class="text-text-muted">Срок действия: <strong class="text-on-surface">12.04.2031</strong></span>
+</div>
+</div>
+</div>
+<!-- Section 2: Immigration TM.30 Bureau Direct API -->
+<div class="bg-surface-ivory p-3.5 rounded-lg flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-status-verified">verified</span>
+                2. Моментальная подача TM.30
+              </span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded font-medium">Шлюз готов</span>
+</div>
+<div class="space-y-2 text-body-sm font-body-sm">
+<div class="p-2.5 bg-surface-container-lowest rounded-lg shadow-sm">
+<span class="font-label-caps text-[10px] text-text-muted uppercase block">Адрес объекта регистрации</span>
+<span class="font-medium text-on-surface">The Title Legendary, Moo 5, Choeng Thalay, Thalang, Phuket 83110</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2 bg-surface-container-lowest rounded-lg shadow-sm">
+<span class="font-label-caps text-[10px] text-text-muted uppercase block">Штамп въезда</span>
+<span class="font-medium text-on-surface">BKK-21.11.2026</span>
+</div>
+<div class="p-2 bg-surface-container-lowest rounded-lg shadow-sm">
+<span class="font-label-caps text-[10px] text-text-muted uppercase block">Тип визы</span>
+<span class="font-medium text-on-surface">TR-60 Visa Exemption</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 bg-status-verified-bg rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-status-verified text-[18px]">cloud_sync</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold">Thai Immigration API подключен</span>
+</div>
+<button class="px-3 py-1 bg-status-verified text-on-primary rounded font-label-caps text-label-caps hover:opacity-90 transition-opacity uppercase font-bold">
+                Отправить TM.30
+              </button>
+</div>
+</div>
+<!-- Section 3: Financial Settlements & Deposit Hold -->
+<div class="bg-surface-ivory p-3.5 rounded-lg flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+                3. Финансовый расчет &amp; Депозит
+              </span>
+<span class="px-2 py-0.5 bg-status-verified-bg text-status-verified font-label-caps text-label-caps rounded font-medium">Оплачено онлайн</span>
+</div>
+<div class="flex justify-between items-center p-2.5 bg-surface-container-lowest rounded-lg shadow-sm text-body-sm font-body-sm">
+<span class="text-text-muted">Проживание (3 ночи)</span>
+<span class="font-bold text-primary">฿37,350 (Stripe Confirmed)</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="font-medium text-on-surface">Гарантийный депозит:</span>
+<span class="font-bold text-status-instant">฿15,000</span>
+</div>
+<!-- Payment Method Toggle -->
+<div class="grid grid-cols-3 gap-1 p-1 bg-surface-sand rounded-lg text-center">
+<button class="py-1.5 px-2 bg-surface-container-lowest text-primary font-label-md text-label-md rounded font-semibold shadow-sm">Холдирование карты</button>
+<button class="py-1.5 px-2 text-text-muted hover:text-on-surface font-label-md text-label-md rounded transition-colors">PromptPay QR</button>
+<button class="py-1.5 px-2 text-text-muted hover:text-on-surface font-label-md text-label-md rounded transition-colors">Наличные</button>
+</div>
+<div class="flex items-center gap-2 p-2 bg-status-verified-bg rounded-lg text-status-verified text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span>Холдировано ฿15,000 через Kasikorn Escrow Gateway</span>
+</div>
+</div>
+</div>
+<!-- Section 4: Digital Lock & Access Authorization -->
+<div class="bg-surface-ivory p-3.5 rounded-lg flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">key</span>
+                4. Цифровой ключ &amp; Смарт-замок
+              </span>
+<span class="flex items-center gap-1 text-status-verified font-label-caps text-label-caps font-bold">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span> Онлайн
+              </span>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-lg shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-text-muted">Замок: <strong class="text-on-surface">Salto KS Gateway #LGD-F302</strong></span>
+<span class="text-status-verified font-semibold">Батарея: 98%</span>
+</div>
+<!-- Generated PIN Box -->
+<div class="p-3 bg-surface-sand/60 rounded-lg flex flex-col items-center justify-center gap-1">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Временный PIN-код гостя</span>
+<div class="flex items-center gap-2 tracking-widest font-display-hero text-headline-md text-primary font-bold">
+<span>9</span><span>2</span><span>8</span><span>4</span><span>0</span><span>1</span>
+</div>
+<span class="font-body-sm text-[11px] text-text-muted">Действителен: 22.11 14:00 — 25.11 12:00</span>
+</div>
+<!-- Key Delivery Channels -->
+<div class="flex flex-col gap-2 pt-1">
+<label class="flex items-center gap-2 text-body-sm font-body-sm text-on-surface cursor-pointer">
+<input checked="" class="rounded text-primary focus:ring-0 w-4 h-4" type="checkbox"/>
+<span>Отправить PIN и ваучер в WhatsApp (+7 916 880-12-34)</span>
+</label>
+<label class="flex items-center gap-2 text-body-sm font-body-sm text-on-surface cursor-pointer">
+<input checked="" class="rounded text-primary focus:ring-0 w-4 h-4" type="checkbox"/>
+<span>Активировать Bluetooth-ключ в myUNO Guest App</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="p-4 bg-surface-sand flex flex-col gap-2">
+<button class="w-full py-3 px-4 bg-primary text-on-primary hover:bg-primary-container rounded-lg font-label-lg text-label-lg font-semibold flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99]">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Завершить заселение и выдать цифровой ключ</span>
+</button>
+<button class="w-full py-2 px-4 bg-surface-container-lowest text-primary hover:bg-surface-sand-subtle rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Распечатать регистрационную карту гостя (PDF)</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Floating Operations Micro-bar -->
+<footer class="mt-4 mx-6 mb-6 p-3.5 bg-surface-container-lowest rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex flex-wrap items-center gap-3 text-body-sm font-body-sm text-on-surface">
+<div class="flex items-center gap-1.5 font-semibold text-primary">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified"></span>
+<span>Дежурный портье: Нараян К.</span>
+</div>
+<span class="hidden sm:inline text-text-muted">•</span>
+<div class="flex items-center gap-1 text-text-muted">
+<span>Касса смены:</span>
+<strong class="text-on-surface">฿48,500</strong>
+</div>
+<span class="hidden sm:inline text-text-muted">•</span>
+<div class="flex items-center gap-1.5 text-status-verified font-medium">
+<span class="material-symbols-outlined text-[16px]">headset_mic</span>
+<span>Связь с хаускипингом: 4 канала активны</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-auto">
+<button class="px-2.5 py-1 text-text-muted hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors">
+        Журнал смены
+      </button>
+<button class="px-2.5 py-1 bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-caps text-label-caps uppercase rounded font-bold transition-colors">
+        Экстренная связь
+      </button>
+</div>
+</footer>
+</div></main></div></body></html>

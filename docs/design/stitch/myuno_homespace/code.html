@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"accent-gold-soft":"#E4BE8D","status-instant-bg":"#FAF3E8","primary-fixed-dim":"#a7cfc1","on-tertiary-fixed-variant":"#2d4d44","error-container":"#ffdad6","on-primary-fixed":"#002019","status-instant":"#9A6B32","primary":"#00221a","on-primary-container":"#7ba295","secondary":"#81551c","on-tertiary-container":"#7fa195","surface-container-lowest":"#ffffff","surface-tint":"#40665a","inverse-on-surface":"#e6f4f0","on-tertiary-fixed":"#002019","outline-variant":"#c1c8c4","primary-container":"#11382e","surface-container-low":"#e9f7f3","secondary-fixed":"#ffddba","on-secondary-fixed":"#2b1700","tertiary-fixed":"#c7eadd","status-verified":"#1E5848","inverse-surface":"#273331","inverse-primary":"#a7cfc1","error":"#ba1a1a","border-subtle":"#E5DFD3","on-background":"#121e1c","outline":"#717975","tertiary-container":"#17372f","on-error-container":"#93000a","surface-dim":"#cfddd9","surface-sand-subtle":"#EAE4D7","surface-variant":"#d8e5e2","accent-gold-muted":"#F5EAD9","on-secondary":"#ffffff","surface-container":"#e3f1ed","surface-sand":"#F4F0E8","primary-fixed":"#c2ebdc","status-verified-bg":"#E9F1EE","surface":"#effcf9","on-error":"#ffffff","tertiary":"#01221a","surface-ivory":"#FBF9F5","surface-container-high":"#ddebe8","on-tertiary":"#ffffff","surface-bright":"#effcf9","secondary-container":"#fdc17e","on-secondary-container":"#784d14","secondary-fixed-dim":"#f6bb79","on-surface-variant":"#414845","on-secondary-fixed-variant":"#663e04","on-primary":"#ffffff","on-primary-fixed-variant":"#284e43","background":"#effcf9","surface-container-highest":"#d8e5e2","on-surface":"#121e1c","text-muted":"#566360","tertiary-fixed-dim":"#accec2"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","space-xl":"2.5rem","space-md":"1rem",margin:"3rem","gutter-mobile":"1rem","margin-mobile":"1.25rem","space-sm":"0.5rem",gutter:"1.5rem","space-xs":"0.25rem","space-2xl":"4rem"},fontFamily:{"headline-sm":["Outfit"],"label-lg":["Manrope"],"label-md":["Manrope"],"label-caps":["Manrope"],"headline-md":["Outfit"],"title-md":["Outfit"],"body-lg":["Manrope"],"body-sm":["Manrope"],"body-md":["Manrope"],"headline-lg-mobile":["Outfit"],"display-hero":["Outfit"],"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"]},fontSize:{"headline-sm":["22px",{lineHeight:"30px",letterSpacing:"-0.005em",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.02em",fontWeight:"600"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.03em",fontWeight:"600"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.08em",fontWeight:"700"}],"headline-md":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"title-md":["18px",{lineHeight:"26px",letterSpacing:"0em",fontWeight:"600"}],"body-lg":["18px",{lineHeight:"28px",letterSpacing:"0em",fontWeight:"400"}],"body-sm":["13px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"400"}],"body-md":["15px",{lineHeight:"24px",letterSpacing:"0em",fontWeight:"400"}],"headline-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"500"}],"display-hero":["56px",{lineHeight:"64px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-lg":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"500"}],"display-hero-mobile":["36px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-ivory z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] overflow-y-auto"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center justify-between bg-surface-ivory"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">corporate_fare</span></div><div><span class="font-title-md text-title-md text-primary font-semibold block leading-tight">myUNO</span><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Team Workspace</span></div></div><div class="w-2 h-2 rounded-full bg-status-verified ring-4 ring-status-verified-bg"></div></div><div class="px-space-md py-space-sm"><div class="bg-surface-sand rounded-lg p-space-sm flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary text-[18px]">hub</span><div><span class="font-label-caps text-label-caps text-text-muted uppercase block">Cluster</span><span class="font-label-md text-label-md text-on-surface font-medium block">Bang Tao &amp; Layan</span></div></div><span class="material-symbols-outlined text-on-surface-variant text-[16px]">unfold_more</span></div></div><nav class="px-space-md py-space-sm space-y-1" data-active-classes="bg-primary text-on-primary font-medium rounded-lg shadow-sm"><div class="px-space-sm pt-space-xs pb-1"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Operations Core</span></div><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-2 transition-all bg-primary text-on-primary font-medium rounded-lg shadow-sm" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="font-label-lg text-label-lg">Overview &amp; Feed</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="shifts-roster" href="#"><span class="material-symbols-outlined text-[20px]">calendar_month</span><span class="font-label-lg text-label-lg">Shifts &amp; Roster</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="incident-dispatcher" href="#"><span class="material-symbols-outlined text-[20px]">emergency</span><span class="font-label-lg text-label-lg">Incident &amp; Tasks</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="sop-knowledge-base" href="#"><span class="material-symbols-outlined text-[20px]">menu_book</span><span class="font-label-lg text-label-lg">SOPs &amp; Standards</span></a><div class="px-space-sm pt-space-md pb-1"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Communication</span></div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="team-directory" href="#"><span class="material-symbols-outlined text-[20px]">badge</span><span class="font-label-lg text-label-lg">Team Directory</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="announcements-chat" href="#"><span class="material-symbols-outlined text-[20px]">campaign</span><span class="font-label-lg text-label-lg">Announcements</span></a><div class="px-space-sm pt-space-md pb-1"><span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Ecosystem Consoles</span></div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-all" data-path="role-dashboards" href="#"><span class="material-symbols-outlined text-[20px]">apps</span><span class="font-label-lg text-label-lg">Role Portals (PMS/Ops)</span></a></nav></div><div class="p-space-md m-space-md bg-surface-sand rounded-lg space-y-space-xs"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps text-text-muted uppercase">Duty Status</span><span class="inline-flex items-center gap-1 font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2 py-0.5 rounded-full font-bold"><span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>ACTIVE</span></div><div class="flex items-baseline justify-between pt-1"><span class="font-label-md text-label-md text-on-surface font-semibold">Duty Desk #04</span><span class="font-label-caps text-label-caps text-text-muted">Bang Tao Hub</span></div><div class="pt-1"><div class="w-full bg-surface-sand-subtle h-1.5 rounded-full overflow-hidden"><div class="bg-primary h-full w-3/4 rounded-full"></div></div><div class="flex justify-between font-label-caps text-label-caps text-text-muted pt-1"><span>Shift progress</span><span>6h / 8h</span></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-ivory/95 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md flex-1 max-w-xl"><div class="flex items-center gap-space-sm mr-space-sm"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WAuIBFnmAqAnXsC_fTm3zRgUam2aF9swxtG_1wbxUhlbN47jX6mGBzDRxFkWYlO7CDYHJRGsMgegtZ7oQnLzovSDDn9s1ALHvRN-zh1tAsnFGRsruRZa6QccXi_z6pB8iTRkwQ2A0HD9mN91YQEYkAM2ykyQKC__EXtB_1nt6gtYFxfwbz_avF0eclUs8nd_l-j5KGgwAZpyF7xp9f1dLXsQtneVY7Rm6Mm_p0HipVYKkwsf4Dprc29Mo"/><span class="font-title-md text-title-md text-primary font-semibold hidden xl:inline">myUNO</span></div><div class="relative flex-1"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span><input class="w-full bg-surface-sand rounded-lg pl-9 pr-space-md py-1.5 font-body-sm text-body-sm text-on-surface placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary transition-all" placeholder="Search wikis, SOPs, active workorders, staff directory..." type="text"/></div></div><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center gap-space-sm px-space-sm py-1 rounded-lg bg-surface-sand"><span class="material-symbols-outlined text-secondary text-[18px]">schedule</span><span class="font-label-md text-label-md text-on-surface font-medium">14:24 ICT</span><span class="font-label-caps text-label-caps text-text-muted">Phuket</span></div><div class="hidden lg:flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps"><span class="w-2 h-2 rounded-full bg-status-verified animate-pulse"></span><span>Operations Live</span></div><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-sand hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="text-right hidden sm:block"><span class="font-label-md text-label-md text-on-surface font-semibold block leading-tight">Kittisak S.</span><span class="font-label-caps text-label-caps text-text-muted block">Duty Ops Director</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="px-space-md lg:px-space-xl py-space-lg space-y-space-xl max-w-[1440px] mx-auto w-full">
+<!-- TOP WELCOME BANNER & LIVE PULSE RIBBON -->
+<section class="bg-surface-ivory rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-verified animate-ping"></span>
+              BANG TAO CLUSTER • LIVE DISPATCH
+            </span>
+<span class="font-label-caps text-label-caps text-text-muted">ID: BT-OPS-094</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary font-medium tracking-tight">
+            Добро пожаловать в Homespace, Нараян! 🌴
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Дежурный директор операций кластера Bang Tao &amp; Layan • Смена 08:00–20:00 ICT
+          </p>
+</div>
+<!-- Quick actions -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="inline-flex items-center gap-2 bg-primary text-on-primary font-label-lg text-label-lg px-4 py-2.5 rounded-lg shadow-sm hover:bg-tertiary-container transition-all">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+<span>+ Создать наряд / инцидент</span>
+</button>
+<button class="inline-flex items-center gap-2 bg-surface-sand text-primary font-label-lg text-label-lg px-4 py-2.5 rounded-lg hover:bg-surface-sand-subtle transition-all">
+<span class="material-symbols-outlined text-[18px]">campaign</span>
+<span>Объявление</span>
+</button>
+<button class="inline-flex items-center gap-2 bg-surface-sand text-primary font-label-lg text-label-lg px-4 py-2.5 rounded-lg hover:bg-surface-sand-subtle transition-all">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+<span>Подмена смены</span>
+</button>
+</div>
+</div>
+<!-- Live Operational Snapshot Ribbon (Grid Metrics) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm pt-space-xs">
+<div class="bg-surface-sand/70 rounded-lg p-space-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[22px]">hotel</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Загрузка фонда</span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">94.2%</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface font-semibold truncate">49 / 52 занято</p>
+<span class="font-body-sm text-body-sm text-text-muted">Высокий сезон Phuket</span>
+</div>
+</div>
+<div class="bg-surface-sand/70 rounded-lg p-space-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-secondary shadow-xs">
+<span class="material-symbols-outlined text-[22px]">assignment_late</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Инциденты</span>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-1.5 py-0.2 rounded font-bold">SLA OK</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface font-semibold truncate">2 наряда в работе</p>
+<span class="font-body-sm text-body-sm text-text-muted">VRV Daikin #E-402, Keycard</span>
+</div>
+</div>
+<div class="bg-surface-sand/70 rounded-lg p-space-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[22px]">luggage</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Заезды сегодня</span>
+<span class="font-label-caps text-label-caps text-secondary font-bold">3 VIP</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface font-semibold truncate">8 броней (2 в лобби)</p>
+<span class="font-body-sm text-body-sm text-text-muted">Трансфер Alphard к 16:15</span>
+</div>
+</div>
+<div class="bg-surface-sand/70 rounded-lg p-space-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[22px]">headset_mic</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Экстренная связь</span>
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+</div>
+<p class="font-title-md text-title-md text-on-surface font-semibold truncate">Ops Радио #04</p>
+<span class="font-body-sm text-body-sm text-text-muted">24/7 Линия поддержки дежурных</span>
+</div>
+</div>
+</div>
+</section>
+<!-- UNIFIED CROSS-ROLE QUICK JUMP GATEWAY -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Единый доступ к подсистемам</span>
+<h2 class="font-title-md text-title-md text-primary font-semibold">Мои рабочие дашборды экосистемы</h2>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant hidden sm:inline">6 активных модулей кластера</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-space-sm">
+<!-- Gateway Card 1 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">calendar_view_week</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1.5 py-0.5 rounded font-bold">Смена</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">myUNO PMS</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Front Desk &amp; Шахматка</p>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-1 block">8 заездов сегодня</span>
+</div>
+</a>
+<!-- Gateway Card 2 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">cleaning_services</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1.5 py-0.5 rounded font-bold">4 горничных</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">myUNO Clean</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Хаускипинг &amp; Аудит</p>
+<span class="font-label-caps text-label-caps text-status-verified font-semibold mt-1 block">48 / 52 чистых</span>
+</div>
+</a>
+<!-- Gateway Card 3 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-1.5 py-0.5 rounded font-bold">2 активных</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">Work Orders</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Инженерная служба</p>
+<span class="font-label-caps text-label-caps text-error font-semibold mt-1 block">1 срочный OOD</span>
+</div>
+</a>
+<!-- Gateway Card 4 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">concierge</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-1.5 py-0.5 rounded font-bold">14 заказов</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">Concierge Desk</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Marketplace вендоров</p>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-1 block">Шеф, катер, авто</span>
+</div>
+</a>
+<!-- Gateway Card 5 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">real_estate_agent</span>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-sand px-1.5 py-0.5 rounded font-bold">6 сделок</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">Broker Hub</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Продажи &amp; Аренда</p>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-1 block">฿84.5M в пайплайне</span>
+</div>
+</a>
+<!-- Gateway Card 6 -->
+<a class="bg-surface-container-lowest rounded-xl p-space-sm hover:shadow-md transition-all group flex flex-col justify-between h-36" href="#">
+<div class="flex items-start justify-between">
+<div class="w-9 h-9 rounded-lg bg-surface-sand flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">dns</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1.5 py-0.5 rounded font-bold">100% TM.30</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">SuperAdmin OS</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Global Cloud Systems</p>
+<span class="font-label-caps text-label-caps text-status-verified font-semibold mt-1 block">Все узлы в норме</span>
+</div>
+</a>
+</div>
+</section>
+<!-- MAIN TWO-COLUMN WORKSPACE: 65% / 35% -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT MAJOR COLUMN (approx 65% -> 8 cols on desktop) -->
+<div class="lg:col-span-8 space-y-space-xl min-w-0">
+<!-- SUBSECTION 1: TODAY'S DUTY ROSTER & OPERATIONAL PULSE -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Сегодняшний состав смены</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Оперативный пульс и дежурства на сегодня</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-sand px-2 py-1 rounded">Кластер: The Title Legendary &amp; Layan Beach</span>
+</div>
+</div>
+<!-- Roster Table / List -->
+<div class="space-y-space-xs">
+<!-- Row 1: Duty Lead -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm bg-surface-sand/40 hover:bg-surface-sand rounded-lg transition-colors gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-label-md shrink-0">
+                  НК
+                </div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Нараян К.</span>
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed px-2 py-0.5 rounded font-bold">Duty Lead</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Front Desk &amp; Reception • 08:00 - 20:00</span>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-3 sm:text-right shrink-0">
+<span class="inline-flex items-center gap-1 font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2 py-1 rounded-full font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                  В лобби (Стойка #01)
+                </span>
+<button class="p-1.5 rounded hover:bg-surface-sand-subtle text-primary">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+<!-- Row 2: Housekeeping Supervisor -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm bg-surface-sand/40 hover:bg-surface-sand rounded-lg transition-colors gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-label-md shrink-0">
+                  СП
+                </div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Сурат П.</span>
+<span class="font-label-caps text-label-caps text-secondary font-bold">HK Supervisor</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Инспекции чистоты и контроль белья</span>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-3 sm:text-right shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-medium">Корпуса F &amp; E (Финальный чек)</span>
+<button class="p-1.5 rounded hover:bg-surface-sand-subtle text-primary">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</div>
+<!-- Row 3: Lead Engineer -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm bg-surface-sand/40 hover:bg-surface-sand rounded-lg transition-colors gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold text-label-md shrink-0">
+                  ТС
+                </div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Танават С.</span>
+<span class="font-label-caps text-label-caps text-text-muted font-bold">Lead Engineer</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Инженерная группа #02 • Выездной наряд</span>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-3 sm:text-right shrink-0">
+<span class="inline-flex items-center gap-1 font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-2 py-1 rounded-full font-bold">
+                  VRV Daikin #E-402 (Замена клапана)
+                </span>
+<button class="p-1.5 rounded hover:bg-surface-sand-subtle text-primary">
+<span class="material-symbols-outlined text-[18px]">near_me</span>
+</button>
+</div>
+</div>
+<!-- Row 4: Butler / Guest Experience -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm bg-surface-sand/40 hover:bg-surface-sand rounded-lg transition-colors gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-bold text-label-md shrink-0">
+                  СП
+                </div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Сомбат П.</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">VIP Butler</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Guest Experience &amp; Встречи</span>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-3 sm:text-right shrink-0">
+<span class="font-body-sm text-body-sm text-on-surface truncate">Встреча: Алексей Смирнов #F-302</span>
+<button class="p-1.5 rounded hover:bg-surface-sand-subtle text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</button>
+</div>
+</div>
+<!-- Row 5: Night Audit Lead -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm bg-surface-sand/40 hover:bg-surface-sand rounded-lg transition-colors gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-sand text-text-muted flex items-center justify-center font-bold text-label-md shrink-0">
+                  ПМ
+                </div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Прасерт М.</span>
+<span class="font-label-caps text-label-caps text-text-muted font-bold">Night Audit Lead</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Ночной аудит &amp; Закрытие EOD кассы</span>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-3 sm:text-right shrink-0">
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-sand px-2 py-1 rounded">Заступает в 20:00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SUBSECTION 2: COMPANY FEED & URGENT NOTICES -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Корпоративный пульс</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Лента объявлений и важные регламенты</h3>
+</div>
+<a class="font-label-md text-label-md text-secondary hover:underline font-semibold" href="#">Все новости (18)</a>
+</div>
+<div class="space-y-space-sm">
+<!-- Pinned Alert Notice -->
+<div class="bg-status-instant-bg/60 rounded-xl p-space-md space-y-2 relative overflow-hidden">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-status-instant text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+<div class="space-y-1 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-status-instant font-bold uppercase">Срочное уведомление руководства</span>
+<span class="font-label-caps text-label-caps text-text-muted">• 1 час назад</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface font-semibold">
+                    Новый стандарт тайской иммиграционной отчетности TM.30
+                  </h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Обязательная сверка паспортов и сканирование виз через OCR-сканер myUNO строго в течение 2 часов после фактического чекина. Все данные автоматически уходят в полицейский реестр Пхукета. Пропуски SLA караются штрафами регулятора.
+                  </p>
+</div>
+</div>
+</div>
+<!-- Maintenance Notice -->
+<div class="bg-surface-sand/50 rounded-xl p-space-md space-y-2">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">pool</span>
+</div>
+<div class="space-y-1 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-text-muted font-bold uppercase">Инженерная служба курорта</span>
+<span class="font-label-caps text-label-caps text-text-muted">• 3 часа назад</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-bold">
+                    Курорт The Title Legendary: плановое обновление фильтров бассейна
+                  </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Завтра с 06:00 до 08:00 утра главный олимпийский бассейн будет временно закрыт на регламентную очистку. Проживающие гости уже получили автоматические push-уведомления через гостевое приложение Мой UNO.
+                  </p>
+</div>
+</div>
+</div>
+<!-- Celebration Notice -->
+<div class="bg-status-verified-bg/50 rounded-xl p-space-md space-y-2">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-status-verified text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">celebration</span>
+</div>
+<div class="space-y-1 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-status-verified font-bold uppercase">Признание команды</span>
+<span class="font-label-caps text-label-caps text-text-muted">• Сегодня, 11:20</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-bold">
+                    Поздравляем шеф-повара Сомчая Прасерта!
+                  </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Получен 50-й персональный отзыв 5.0★ подряд от гостей премиум-виллы #F-302 за организацию приватного ужина из морепродуктов Андаманского побережья. Бонус начислен в payroll.
+                  </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SUBSECTION 3: STANDARD OPERATING PROCEDURES (SOPs) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">База знаний и регламентов</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Операционные стандарты (SOPs)</h3>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">filter_list</span>
+<input class="bg-surface-sand text-body-sm rounded-lg pl-8 pr-3 py-1 text-on-surface placeholder:text-text-muted focus:outline-none" placeholder="Быстрый фильтр регламентов..." type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<!-- SOP Card 1 -->
+<div class="bg-surface-sand/40 hover:bg-surface-sand p-space-sm rounded-lg transition-all group flex flex-col justify-between space-y-3">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed px-2 py-0.5 rounded font-bold">SOP-01</span>
+<span class="font-label-caps text-label-caps text-text-muted">Rev 4.2</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">
+                  Чек-лист экспресс-заселения VIP-гостей и выдача PIN смарт-замка Salto KS
+                </h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+                  Бесконтактный допуск, валидация загранпаспорта, приветственный трансфер на гольф-каре.
+                </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-caps text-label-caps text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Актуально
+                </span>
+<a class="font-label-md text-label-md text-primary font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5" href="#">
+                  Открыть PDF <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- SOP Card 2 -->
+<div class="bg-surface-sand/40 hover:bg-surface-sand p-space-sm rounded-lg transition-all group flex flex-col justify-between space-y-3">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary bg-secondary-fixed px-2 py-0.5 rounded font-bold">SOP-08</span>
+<span class="font-label-caps text-label-caps text-text-muted">Rev 3.0</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">
+                  Регламент реагирования при сбое кондиционеров VRV Daikin
+                </h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+                  Алгоритм устранения ошибок U4/L5, аварийное переключение компрессоров, замена фильтров.
+                </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-caps text-label-caps text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Актуально
+                </span>
+<a class="font-label-md text-label-md text-primary font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5" href="#">
+                  Открыть PDF <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- SOP Card 3 -->
+<div class="bg-surface-sand/40 hover:bg-surface-sand p-space-sm rounded-lg transition-all group flex flex-col justify-between space-y-3">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted bg-surface-sand px-2 py-0.5 rounded font-bold">SOP-14</span>
+<span class="font-label-caps text-label-caps text-text-muted">Rev 2.8</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">
+                  Правила расщепления комиссий вендоров (80/20) и EOD фолио
+                </h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+                  Финансовый биллинг экскурсий, аренды яхт, консьерж-депозиты и закрытие кассового дня.
+                </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-caps text-label-caps text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Актуально
+                </span>
+<a class="font-label-md text-label-md text-primary font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5" href="#">
+                  Открыть PDF <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- SOP Card 4 -->
+<div class="bg-surface-sand/40 hover:bg-surface-sand p-space-sm rounded-lg transition-all group flex flex-col justify-between space-y-3">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed px-2 py-0.5 rounded font-bold">SOP-22</span>
+<span class="font-label-caps text-label-caps text-text-muted">Rev 5.1</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-primary font-bold group-hover:text-secondary transition-colors">
+                  Инструкция по фотофиксации чистоты номеров в PWA myUNO Clean
+                </h4>
+<p class="font-body-sm text-body-sm text-text-muted">
+                  Углы съемки 8 обязательных зон номера, контроль комплектности косметики L'Occitane.
+                </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-caps text-label-caps text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Актуально
+                </span>
+<a class="font-label-md text-label-md text-primary font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5" href="#">
+                  Открыть PDF <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN (approx 35% -> 4 cols on desktop) -->
+<div class="lg:col-span-4 space-y-space-xl">
+<!-- RIGHT WIDGET 1: ASSIGNED TO ME & TASKS -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Мой персональный трекер</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Мои текущие задачи</h3>
+</div>
+<span class="w-6 h-6 rounded-full bg-status-instant text-on-primary font-bold text-label-caps flex items-center justify-center">3</span>
+</div>
+<div class="space-y-3" id="tasks-container">
+<!-- Task 1 -->
+<label class="flex items-start gap-3 p-space-sm rounded-lg bg-surface-sand/50 hover:bg-surface-sand transition-colors cursor-pointer group">
+<input class="mt-1 rounded text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 accent-primary cursor-pointer" type="checkbox"/>
+<div class="space-y-1 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-error bg-error-container text-on-error-container px-2 py-0.2 rounded font-bold">Высокий</span>
+<span class="font-label-caps text-label-caps text-text-muted">до 15:45</span>
+</div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold group-hover:text-primary transition-colors leading-snug">
+                  Проверить готовность пентхауса #F-501 к заезду Марка Дженкинса
+                </p>
+<p class="font-body-sm text-body-sm text-text-muted truncate">
+                  VIP Alphard трансфер прибывает в 16:15
+                </p>
+</div>
+</label>
+<!-- Task 2 -->
+<label class="flex items-start gap-3 p-space-sm rounded-lg bg-surface-sand/50 hover:bg-surface-sand transition-colors cursor-pointer group">
+<input class="mt-1 rounded text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 accent-primary cursor-pointer" type="checkbox"/>
+<div class="space-y-1 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary bg-secondary-fixed px-2 py-0.2 rounded font-bold">Инженерия</span>
+<span class="font-label-caps text-label-caps text-text-muted">до 17:00</span>
+</div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold group-hover:text-primary transition-colors leading-snug">
+                  Подписать акт приема запчастей со склада Bang Tao
+                </p>
+<p class="font-body-sm text-body-sm text-text-muted truncate">
+                  Партия фреона R410A и фильтры рекуператоров
+                </p>
+</div>
+</label>
+<!-- Task 3 -->
+<label class="flex items-start gap-3 p-space-sm rounded-lg bg-surface-sand/50 hover:bg-surface-sand transition-colors cursor-pointer group">
+<input class="mt-1 rounded text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 accent-primary cursor-pointer" type="checkbox"/>
+<div class="space-y-1 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed px-2 py-0.2 rounded font-bold">Хаускипинг</span>
+<span class="font-label-caps text-label-caps text-text-muted">до 19:00</span>
+</div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold group-hover:text-primary transition-colors leading-snug">
+                  Согласовать график смен хаускипинга на следующую неделю
+                </p>
+<p class="font-body-sm text-body-sm text-text-muted truncate">
+                  Сурат П. подал обновленный список смен на одобрение
+                </p>
+</div>
+</label>
+</div>
+</div>
+<!-- RIGHT WIDGET 2: QUICK CONTACTS & EMERGENCY DIRECTORY -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Контакты быстрого набора</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Дежурные службы</h3>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">quick_reference</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Contact 1: Hospital -->
+<div class="p-space-sm bg-surface-sand/40 rounded-lg space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[18px]">medical_services</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Bangkok Hospital Phuket</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">24/7 Дежурный</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">Экстренная скорая помощь и англоязычный координатор</p>
+<div class="flex items-center gap-2 pt-1">
+<a class="flex-1 bg-surface-container-lowest hover:bg-surface-sand-subtle py-1.5 px-3 rounded text-center font-label-md text-label-md text-primary font-semibold flex items-center justify-center gap-1 transition-colors" href="tel:+6676254444">
+<span class="material-symbols-outlined text-[16px]">call</span> +66 76 254 444
+                </a>
+<a class="bg-surface-container-lowest hover:bg-surface-sand-subtle p-1.5 rounded text-primary transition-colors" href="#" title="WhatsApp">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</a>
+</div>
+</div>
+<!-- Contact 2: Security -->
+<div class="p-space-sm bg-surface-sand/40 rounded-lg flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">shield</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Охрана комплекса Bang Tao</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Центральный КПП (Шлагбаум A)</span>
+</div>
+<span class="font-title-md text-title-md text-primary font-bold px-3 py-1 bg-surface-container-lowest rounded">#101</span>
+</div>
+<!-- Contact 3: Tourist Police -->
+<div class="p-space-sm bg-surface-sand/40 rounded-lg flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">local_police</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Туристическая полиция</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Пхукет (Горячая линия)</span>
+</div>
+<a class="font-title-md text-title-md text-primary font-bold px-3 py-1 bg-surface-container-lowest rounded hover:bg-surface-sand-subtle transition-colors" href="tel:1155">1155</a>
+</div>
+<!-- Contact 4: IT & Salto Gateway -->
+<div class="p-space-sm bg-surface-sand/40 rounded-lg flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">router</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">IT Monitoring &amp; Salto KS</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Шлюзы смарт-замков кластера</span>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2 py-0.5 rounded font-bold">@it_myuno</span>
+</div>
+</div>
+</div>
+<!-- RIGHT WIDGET 3: SERVICE QUALITY & CSAT METRICS -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Качество сервиса</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Показатели CSAT за 24ч</h3>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2 py-0.5 rounded font-bold">Высокий индекс</span>
+</div>
+<!-- Rating big metric with star -->
+<div class="bg-surface-sand/50 p-space-md rounded-xl flex items-center justify-between">
+<div class="space-y-0.5">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Общий рейтинг курорта</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero text-headline-lg text-primary font-bold leading-none">4.96</span>
+<span class="text-secondary font-title-md text-title-md">★★★★★</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">128 проверенных отзывов в Мой UNO</span>
+</div>
+<!-- Progress Ring Visualization (Inline SVG) -->
+<div class="relative w-16 h-16 shrink-0">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-sand-subtle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="96, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-label-caps text-label-caps text-primary font-bold">
+                98%
+              </div>
+</div>
+</div>
+<!-- Secondary CSAT breakdown bars -->
+<div class="space-y-3 pt-1">
+<div class="space-y-1">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface">Скорость ответа консьержа</span>
+<span class="font-bold text-primary">1 мин 40 сек</span>
+</div>
+<div class="w-full bg-surface-sand h-2 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-[92%] rounded-full"></div>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted">Целевой норматив: &lt; 3 мин</span>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface">Экспресс-чекины через OCR</span>
+<span class="font-bold text-primary">98%</span>
+</div>
+<div class="w-full bg-surface-sand h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[98%] rounded-full"></div>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted">Без бумажных очередей в лобби</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RESORT PHOTO GALLERY / LIVING PREVIEWS -->
+<section class="bg-surface-ivory rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Визуальный контроль локаций</span>
+<h3 class="font-title-md text-title-md text-primary font-semibold">Операционные точки Bang Tao &amp; Layan</h3>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2.5 py-1 rounded-full font-bold">
+          Камеры &amp; Состояние: Онлайн
+        </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Photo 1 -->
+<div class="group relative rounded-lg overflow-hidden bg-surface-sand aspect-[16/10] shadow-xs">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Architectural photo of luxury modern Thai pavilion villa lobby with teak wood panels, lush tropical palms, marble floor reflections in natural sunlight, Andaman emerald aesthetic, interior architectural photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMTwB7hKVzUEwp6jXg1b13qnyZK1ZKL_3xsk5xBNGFGghILZqK9fb7zDSThpBNtDg-8kRGppRywF2Q06ECo46yAwR08bP7xiGwkmf7Sa-anSDpBGuYe51U5bOMfbqH1L6VLlnlFhOaepGYOHV1vY49_r9h7H6gYDAiPwcxt4JavSlG73zEraeQcUEHaDxgGC8pw-OPK1GCgH8blnyFoSb0PXC4t4zb2IVkeIwXkuQD6YHeMw1ta9wP"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-3 left-3 right-3 text-on-primary">
+<span class="font-label-caps text-label-caps bg-primary/80 px-2 py-0.5 rounded backdrop-blur-sm">Лобби The Title Legendary</span>
+<p class="font-label-md text-label-md font-semibold mt-1">Зона встречи гостей • Норма</p>
+</div>
+</div>
+<!-- Photo 2 -->
+<div class="group relative rounded-lg overflow-hidden bg-surface-sand aspect-[16/10] shadow-xs">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Serene resort pool area at Bang Tao Phuket, azure water with travertine limestone deck, green lush monstera foliage, warm soft tropical morning daylight, high-end hospitality real estate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7dHDYBvGGQ0hirfL8tXgXlqKqNIKvrvMiNTpLtYfMmjtYKfvt3x54zhdHJLaNdrpMEfz0iBlrr06PghR7LDYnEgRtm8oJo1RDoFCvLQKC9R6P14UczqAZG6nvl4-W_3ehGgwc58XO_oSnif4jcGD_ydS5-BZrCWUP_oMej3WD5pshIMzAghhqwnsj-Ahfe2lVqPQGbV72gyv8acKWA--_Prso7hqeFucMTkWbyziHB6MCG0s3ggD1"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-3 left-3 right-3 text-on-primary">
+<span class="font-label-caps text-label-caps bg-secondary/80 px-2 py-0.5 rounded backdrop-blur-sm">Главный бассейн &amp; Лаунж</span>
+<p class="font-label-md text-label-md font-semibold mt-1">Очистка запланирована на 06:00</p>
+</div>
+</div>
+<!-- Photo 3 -->
+<div class="group relative rounded-lg overflow-hidden bg-surface-sand aspect-[16/10] shadow-xs">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Spacious modern penthouse terrace overlooking the Andaman sea and pine trees of Bang Tao Beach, minimalist teak louvers, pristine white loungers, golden hour lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiUs6q-HsEqZ-jN7bVlJCjIdDuIGoUsWe6728tvXWUJGZXr3ESg7CA7iqXIlSMBNfkM1PBRJ-waiB5k__OdibcP0ibwPUhqeYjz7H8sScHkyrGplacubHdclF1a4zWUdoRgiJQj5OJcoM60EMJ6b5TNmPBKFjEB2GieSJEiGB21fgKpCnjebo1llF1ImuiWT1A_PkWHyQEpoRHjyG-UAPZeNsuWD2aPXImOkaaq82HQb_xskMbL9F1"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-3 left-3 right-3 text-on-primary">
+<span class="font-label-caps text-label-caps bg-status-verified/80 px-2 py-0.5 rounded backdrop-blur-sm">Пентхаус #F-501</span>
+<p class="font-label-md text-label-md font-semibold mt-1">Готов к заселению VIP-гостя (16:15)</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CONTENT FOOTER -->
+<footer class="pt-space-sm pb-space-lg flex flex-col sm:flex-row items-center justify-between text-text-muted font-body-sm text-body-sm gap-2">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+<span class="font-label-caps text-label-caps">myUNO Team OS v2.4 • Phuket Operations Hub</span>
+</div>
+<div class="font-label-caps text-label-caps tracking-wider uppercase">
+        Данные синхронизированы в реальном времени • ICT Zone (UTC+7)
+      </div>
+</footer>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for task checkboxes
+  document.querySelectorAll('#tasks-container input[type="checkbox"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', function() {
+      const taskTitle = this.closest('label').querySelector('.font-label-lg');
+      if (this.checked) {
+        taskTitle.classList.add('line-through', 'opacity-50');
+      } else {
+        taskTitle.classList.remove('line-through', 'opacity-50');
+      }
+    });
+  });
+</script></main></div></body></html>

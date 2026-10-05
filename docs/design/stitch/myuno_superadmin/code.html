@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#121e1c", "tertiary-fixed-dim": "#accec2", "surface-container": "#e3f1ed", "primary": "#00221a", "on-tertiary-fixed": "#002019", "accent-gold-muted": "#F5EAD9", "surface-bright": "#effcf9", "secondary-fixed": "#ffddba", "error": "#ba1a1a", "tertiary": "#01221a", "on-primary-fixed": "#002019", "primary-container": "#11382e", "inverse-on-surface": "#e6f4f0", "on-secondary-fixed-variant": "#663e04", "status-verified": "#1E5848", "on-error": "#ffffff", "on-secondary": "#ffffff", "text-muted": "#566360", "tertiary-container": "#17372f", "surface-container-lowest": "#ffffff", "accent-gold-soft": "#E4BE8D", "on-surface-variant": "#414845", "status-instant-bg": "#FAF3E8", "surface-container-low": "#e9f7f3", "tertiary-fixed": "#c7eadd", "surface-container-highest": "#d8e5e2", "surface-variant": "#d8e5e2", "inverse-primary": "#a7cfc1", "surface-tint": "#40665a", "on-secondary-fixed": "#2b1700", "on-primary": "#ffffff", "on-tertiary": "#ffffff", "error-container": "#ffdad6", "on-tertiary-fixed-variant": "#2d4d44", "on-error-container": "#93000a", "surface-sand-subtle": "#EAE4D7", "surface-container-high": "#ddebe8", "surface-ivory": "#FBF9F5", "surface-sand": "#F4F0E8", "inverse-surface": "#273331", "outline-variant": "#c1c8c4", "border-subtle": "#E5DFD3", "primary-fixed-dim": "#a7cfc1", "on-surface": "#121e1c", "on-secondary-container": "#784d14", "surface-dim": "#cfddd9", "on-tertiary-container": "#7fa195", "surface": "#effcf9", "background": "#effcf9", "primary-fixed": "#c2ebdc", "on-primary-fixed-variant": "#284e43", "status-verified-bg": "#E9F1EE", "secondary-container": "#fdc17e", "status-instant": "#9A6B32", "secondary-fixed-dim": "#f6bb79", "outline": "#717975", "secondary": "#81551c", "on-primary-container": "#7ba295" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-mobile": "1rem", "space-2xl": "4rem", "space-md": "1rem", "margin-mobile": "1.25rem", "margin": "3rem", "space-lg": "1.5rem" }, "fontFamily": { "body-sm": ["Manrope"], "title-md": ["Outfit"], "headline-lg-mobile": ["Outfit"], "body-lg": ["Manrope"], "label-caps": ["Manrope"], "headline-lg": ["Outfit"], "body-md": ["Manrope"], "headline-md": ["Outfit"], "headline-sm": ["Outfit"], "display-hero-mobile": ["Outfit"], "label-lg": ["Manrope"], "display-hero": ["Outfit"], "label-md": ["Manrope"] }, "fontSize": { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary z-50 flex flex-col justify-between overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="p-space-lg"><div class="flex items-center gap-space-sm pb-space-lg"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WAuIBFnmAqAnXsC_fTm3zRgUam2aF9swxtG_1wbxUhlbN47jX6mGBzDRxFkWYlO7CDYHJRGsMgegtZ7oQnLzovSDDn9s1ALHvRN-zh1tAsnFGRsruRZa6QccXi_z6pB8iTRkwQ2A0HD9mN91YQEYkAM2ykyQKC__EXtB_1nt6gtYFxfwbz_avF0eclUs8nd_l-j5KGgwAZpyF7xp9f1dLXsQtneVY7Rm6Mm_p0HipVYKkwsf4Dprc29Mo"/><div class="flex flex-col"><span class="font-title-md text-title-md text-surface-container-lowest tracking-tight">myUNO</span><span class="font-label-caps text-label-caps text-tertiary-fixed-dim uppercase">Global Living OS</span></div></div><div class="py-space-xs"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">01 Overview</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span>Executive Hub</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">02 Geography &amp; Portfolio</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all bg-primary-container text-on-primary font-title-md rounded-lg" data-path="destinations-expansion" href="#"><span class="material-symbols-outlined text-[20px]">explore</span><span>Направления &amp; Экспансия</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="projects-residences" href="#"><span class="material-symbols-outlined text-[20px]">apartment</span><span>Проекты &amp; Резиденции</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="inventory-units" href="#"><span class="material-symbols-outlined text-[20px]">bed</span><span>Номерной фонд</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">03 Smart Ingestion &amp; Data</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="express-import" href="#"><span class="material-symbols-outlined text-[20px]">auto_awesome</span><span>Экспресс-импорт</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">04 Operations</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="mandates-management" href="#"><span class="material-symbols-outlined text-[20px]">verified_user</span><span>Управление мандатами</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="pms-sync" href="#"><span class="material-symbols-outlined text-[20px]">sync_alt</span><span>PMS Sync</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="concierge-vendors" href="#"><span class="material-symbols-outlined text-[20px]">room_service</span><span>Консьерж &amp; Вендоры</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">05 Financials</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="split-clearing" href="#"><span class="material-symbols-outlined text-[20px]">call_split</span><span>Сплит-клиринг</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="ledger-payouts" href="#"><span class="material-symbols-outlined text-[20px]">account_balance_wallet</span><span>Ledger &amp; Payouts</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">06 System</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="system-security-iam" href="#"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span><span>IAM, RBAC &amp; API Gateway</span></a></nav></div></div><div class="p-space-md m-space-md bg-tertiary-container rounded-xl flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="w-2.5 h-2.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-md text-label-md text-primary-fixed-dim">Gateway v4.8-prod</span></div><span class="material-symbols-outlined text-primary-fixed text-[18px]">verified</span></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-ivory/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-sand px-space-md py-space-xs rounded-lg text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-secondary text-[18px]">travel_explore</span><span>Global Multi-Destination: Phuket, Algarve, Barcelona</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></div><div class="flex items-center gap-space-xs bg-status-verified-bg px-space-sm py-space-xs rounded-full"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-label-caps text-label-caps text-status-verified">All Systems Operational</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm bg-surface-container-lowest px-space-md py-space-xs rounded-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)] text-text-muted font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px]">search</span><span>Search resources, units, ledger...</span><kbd class="bg-surface-sand px-1.5 py-0.5 rounded font-label-caps text-label-caps text-on-surface-variant">⌘K</kbd></div><button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-colors"><span class="material-symbols-outlined text-[18px]">add_circle</span><span>+ Новая локация / Импорт объекта</span></button><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface">Executive Admin</span><span class="font-label-caps text-label-caps text-text-muted">SuperAdmin Root</span></div></div></div></header><main class="w-full pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full px-space-lg pb-space-2xl">
+<!-- Top Context Header Area -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-md py-space-lg">
+<div class="flex flex-col max-w-3xl">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<span class="font-label-caps text-label-caps text-secondary tracking-widest uppercase">Global Multi-Jurisdiction Engine</span>
+<span class="text-text-muted text-[12px]">•</span>
+<span class="font-label-caps text-label-caps text-status-verified uppercase bg-status-verified-bg px-space-xs py-0.5 rounded">Compliance Tier 1</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Географические направления &amp; Управление экспансией</h1>
+<p class="font-body-md text-body-md text-text-muted mt-space-xs">
+        Конфигурация рынков присутствия, валютных шлюзов, операционных десков и готовности к публикации премиального инвентаря
+      </p>
+</div>
+<!-- Top Action Toolbar -->
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-all shadow-sm active:scale-[0.99]" onclick="document.getElementById('quick-add-form').scrollIntoView({behavior: 'smooth'})">
+<span class="material-symbols-outlined text-[20px] text-accent-gold-soft">add_location_alt</span>
+<span>+ Добавить новое направление</span>
+</button>
+<button class="flex items-center justify-center w-11 h-11 bg-surface-container hover:bg-surface-container-high rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Row (4 Bento Stat Blocks) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-xl">
+<!-- Stat 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Активные дестинации</span>
+<span class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">public</span>
+</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-primary font-title-md">3</span>
+<span class="font-label-md text-label-md text-status-verified font-medium">региона присутствия</span>
+</div>
+<div class="flex flex-wrap gap-1.5 mt-space-sm">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps bg-status-verified-bg text-status-verified font-semibold">Phuket • Live</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps bg-status-instant-bg text-status-instant font-semibold">Algarve • Beta</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps bg-surface-container text-on-surface-variant font-semibold">BCN • Ingest</span>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-surface-container-low/40 pointer-events-none"></div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Оцифровано комплексов</span>
+<span class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">domain_add</span>
+</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-primary font-title-md">184</span>
+<span class="font-label-md text-label-md text-text-muted">мастер-проекта</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 mt-space-sm overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 82%;"></div>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted mt-1.5 block">82% с подтвержденным мандатом</span>
+</div>
+</div>
+<!-- Stat 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Юнитов в каталоге</span>
+<span class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-primary font-title-md">1,420</span>
+<span class="font-label-md text-label-md text-secondary font-semibold">+38 на этой неделе</span>
+</div>
+<div class="flex items-center gap-space-sm text-text-muted font-body-sm text-body-sm mt-space-sm">
+<span>78% Виллы</span>
+<span>•</span>
+<span>22% Кондо &amp; Бутик</span>
+</div>
+</div>
+</div>
+<!-- Stat 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Скорость экспресс-импорта</span>
+<span class="w-7 h-7 rounded-lg bg-status-instant-bg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-primary font-title-md">4.2</span>
+<span class="font-headline-sm text-headline-sm text-primary">мин</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold">-34% time-to-market</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-space-sm truncate">
+          AI OCR &amp; Smart Ingest Pipeline
+        </p>
+</div>
+</div>
+</div>
+<!-- Main 2-Column Responsive Split Workspace -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT / MAIN COLUMN (70% on lg: col-span-8) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- Interactive Quick Add / Edit Destination Modal-like Inline Card -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-md relative overflow-hidden" id="quick-add-form">
+<!-- Card Header with Subtle Gradient Backing -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">add_business</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Создание или настройка географической юрисдикции</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Инициализация шлюзов, операторов и комплаенс-протокола для нового рынка</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+<span class="font-label-caps text-label-caps text-primary uppercase">Draft Stage v4.2</span>
+</div>
+</div>
+<form class="flex flex-col gap-space-md mt-space-xs" onsubmit="event.preventDefault();">
+<!-- Row 1: Name and Country/Hierarchy -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Название направления (Destination Title)</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">location_on</span>
+<input class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-all" type="text" value="Алгарве / Algarve, Portugal"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Иерархия (Country → Region → Sub-Area)</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">account_tree</span>
+<input class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-all" type="text" value="Portugal → Faro District → Golden Triangle"/>
+</div>
+</div>
+</div>
+<!-- Row 2: Currency & Timezone -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Основная валюта клиринга</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">payments</span>
+<select class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none appearance-none cursor-pointer">
+<option selected="">EUR (€) - SEPA / Escrow ready</option>
+<option>THB (฿) - Kasikorn Escrow</option>
+<option>USD ($) - International Treasury</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 text-text-muted pointer-events-none text-[18px]">unfold_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Таймзона деска</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">schedule</span>
+<input class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none" type="text" value="WET (UTC+0) • Lisbon"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Часы работы деска</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">support_agent</span>
+<input class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none" type="text" value="08:00 - 22:00 WET (7d)"/>
+</div>
+</div>
+</div>
+<!-- Row 3: Legal Entity & Mandate Scope -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Операционный мандат &amp; Юрлицо</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px]">gavel</span>
+<input class="w-full pl-10 pr-space-md py-2.5 bg-surface-ivory rounded-lg font-body-md text-body-md text-on-surface focus:outline-none" type="text" value="myUNO Europe Living Lda. (NIF 517892301)"/>
+</div>
+</div>
+<!-- Service Status Segmented Selector -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Сервисный статус запуска</label>
+<div class="grid grid-cols-3 gap-1 bg-surface-ivory p-1 rounded-lg">
+<label class="flex items-center justify-center py-1.5 rounded cursor-pointer font-label-md text-label-md text-text-muted transition-all has-[:checked]:bg-surface-container-lowest has-[:checked]:text-primary has-[:checked]:shadow-sm">
+<input class="sr-only" name="dest_status" type="radio"/>
+<span>Development</span>
+</label>
+<label class="flex items-center justify-center py-1.5 rounded cursor-pointer font-label-md text-label-md text-status-instant bg-surface-container-lowest shadow-sm font-semibold has-[:checked]:bg-surface-container-lowest">
+<input checked="" class="sr-only" name="dest_status" type="radio"/>
+<span>Pre-launch</span>
+</label>
+<label class="flex items-center justify-center py-1.5 rounded cursor-pointer font-label-md text-label-md text-text-muted transition-all has-[:checked]:bg-surface-container-lowest has-[:checked]:text-status-verified has-[:checked]:shadow-sm">
+<input class="sr-only" name="dest_status" type="radio"/>
+<span>Live Public</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Row 4: Supported Inventory Multi-tag selector -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Поддерживаемые типы премиального инвентаря</label>
+<div class="flex flex-wrap items-center gap-space-xs">
+<label class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md cursor-pointer select-none">
+<input checked="" class="accent-primary w-4 h-4 rounded" type="checkbox"/>
+<span>Приватные виллы (Ultra-Luxury Villas)</span>
+</label>
+<label class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md cursor-pointer select-none">
+<input checked="" class="accent-primary w-4 h-4 rounded" type="checkbox"/>
+<span>Гольф-резиденции (Master Residences)</span>
+</label>
+<label class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md cursor-pointer select-none">
+<input checked="" class="accent-primary w-4 h-4 rounded" type="checkbox"/>
+<span>Бутик-апартаменты</span>
+</label>
+<label class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-surface-ivory text-text-muted font-label-md text-label-md cursor-pointer select-none hover:bg-surface-container hover:text-primary">
+<input class="accent-primary w-4 h-4 rounded" type="checkbox"/>
+<span>Пляжные клубы &amp; Шале</span>
+</label>
+</div>
+</div>
+<!-- Bottom Action Buttons inside Form -->
+<div class="flex items-center justify-between pt-space-sm mt-space-xs">
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-status-verified">lock</span>
+<span>Изменения логируются в смарт-аудите IAM &amp; Ledger</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-2 text-text-muted hover:text-primary font-label-lg text-label-lg transition-colors" type="button">
+                Отменить
+              </button>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-2 rounded-lg font-label-lg text-label-lg transition-all shadow-sm" type="button">
+                Применить конфигурацию
+              </button>
+</div>
+</div>
+</form>
+</section>
+<!-- Active Destinations Directory (Cards & Table Hybrid View) -->
+<section class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-primary">Реестр направлений экспансии</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-caps text-label-caps">3 Active nodes</span>
+</div>
+<!-- View Switcher -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-lg">
+<button class="px-space-sm py-1 rounded bg-surface-container-lowest text-primary font-label-caps text-label-caps uppercase shadow-sm">
+              Cards
+            </button>
+<button class="px-space-sm py-1 rounded text-text-muted hover:text-primary font-label-caps text-label-caps uppercase">
+              Audit Table
+            </button>
+</div>
+</div>
+<!-- Destination Card 1: Phuket -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row gap-space-md relative overflow-hidden group">
+<div class="w-full md:w-56 h-40 md:h-auto rounded-lg overflow-hidden shrink-0 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Breathtaking architectural pavilion villa in Phuket Thailand perched on lush green coastal granite cliff overlooking calm Andaman emerald waters during warm sunset" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZDE0rhowoScB5rzvBrF5lNgtY9kSB1Xxjpkp_ADhTrtsMPSvy1z2gBKeRc8SNxs5tSil21HaJkWUoakqauT7yjg--w6nWAFvX5fbr-YyUYYPS7AlC_N7GjoHH9TLZDtHMaLdIdVkz0lKu9Zw2qaH6kONft080tyaaO-MXAC_rFlPlfDDhfvq2oTXUv_rzcHcbVQfhdQdDHQ3W6nQNDAYj81CjTJ-bRJp24Go0RDXauiJnBRDlvYqf"/>
+<div class="absolute top-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-md text-on-primary font-label-caps text-label-caps tracking-wider uppercase">
+              HQ Flagship
+            </div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-surface-ivory/90 backdrop-blur-sm text-primary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px] text-status-verified">verified</span>
+<span>100% Mandated</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-title-md text-title-md text-primary">Пхукет (Phuket, Thailand)</h3>
+<span class="text-secondary text-sm">🇹🇭</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Bang Tao • Layan • Surin • Rawai Coastal Strip</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps font-semibold shrink-0">
+                  LIVE &amp; OPERATIONAL
+                </span>
+</div>
+<!-- Metrics Mini Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-md p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Комплексов</span>
+<span class="font-title-md text-title-md text-primary font-bold">148</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Юнитов</span>
+<span class="font-title-md text-title-md text-primary font-bold">1,120</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Клиринг / Валюта</span>
+<span class="font-label-md text-label-md text-primary font-semibold">THB (฿) / USD ($)</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Шлюз расчетов</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold truncate">Kasikorn Escrow</span>
+</div>
+</div>
+</div>
+<!-- Footer info row inside card -->
+<div class="flex items-center justify-between pt-space-sm mt-space-xs">
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-text-muted">badge</span>
+<span>Оператор: myUNO Co., Ltd. (Thailand BOI Privilege)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-primary font-label-md text-label-md transition-colors">
+                  Мандаты
+                </button>
+<button class="px-space-sm py-1 bg-primary hover:bg-primary-container text-on-primary rounded font-label-md text-label-md transition-colors flex items-center gap-1">
+<span>Управление</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Destination Card 2: Algarve -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row gap-space-md relative overflow-hidden group">
+<div class="w-full md:w-56 h-40 md:h-auto rounded-lg overflow-hidden shrink-0 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Modern high-end luxury villa in Algarve Portugal with white limestone terraces, private infinity pool, Mediterranean pines, and dramatic ochre cliffs under clear morning sunshine" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxgY6tmSVE1VhAYq5lQpEqnSH8Q934RM5UaKvLQ1KZRXQzSIGl6qpc7xdP2jNSWIkzDFq_5UayQrk-jhj9-DF3gxCgulojplzIl6UhPJ2wQfLON92goLSqCo0K42VrI8fOpsHBS_A2T4_6sC327lODm2fxUraUKr8L7ty419lEd0Vr3JMTteE035Dw4uGAQ1bvhvz27ztbSRcltFxupWqeUUG1QcUaGXy5j6KOvWmvbIggB0s6tgTb"/>
+<div class="absolute top-2 left-2 px-2 py-0.5 rounded bg-secondary text-on-primary font-label-caps text-label-caps tracking-wider uppercase">
+              EU Expansion
+            </div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-surface-ivory/90 backdrop-blur-sm text-primary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px] text-status-instant">sync</span>
+<span>AL License Scrape</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-title-md text-title-md text-primary">Алгарве (Algarve, Portugal)</h3>
+<span class="text-secondary text-sm">🇵🇹</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Almancil • Quinta do Lago • Vale do Lobo • Vilamoura</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps font-semibold shrink-0">
+                  PRE-LAUNCH EXPANSION
+                </span>
+</div>
+<!-- Metrics Mini Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-md p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Виллы &amp; Гольф</span>
+<span class="font-title-md text-title-md text-primary font-bold">24</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Юнитов в пайплайне</span>
+<span class="font-title-md text-title-md text-primary font-bold">186</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Клиринг / Валюта</span>
+<span class="font-label-md text-label-md text-primary font-semibold">EUR (€) / SEPA</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Статус SEF / AIMA</span>
+<span class="font-label-md text-label-md text-status-verified font-semibold truncate">TM Ready Verified</span>
+</div>
+</div>
+</div>
+<!-- Footer info row inside card -->
+<div class="flex items-center justify-between pt-space-sm mt-space-xs">
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-text-muted">home_work</span>
+<span>Pine Cliffs &amp; Quinta Mandate: myUNO Europe Lda.</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-primary font-label-md text-label-md transition-colors">
+                  Импорт OTA
+                </button>
+<button class="px-space-sm py-1 bg-primary hover:bg-primary-container text-on-primary rounded font-label-md text-label-md transition-colors flex items-center gap-1">
+<span>Конфигуратор</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Destination Card 3: Barcelona -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row gap-space-md relative overflow-hidden group">
+<div class="w-full md:w-56 h-40 md:h-auto rounded-lg overflow-hidden shrink-0 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Refined contemporary boutique penthouse in Barcelona Eixample district with high modernist ceilings, private terracotta terrace looking toward Mediterranean horizon, warm sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6kSqdv7OOid6TF2LobJ8NMsYriTuF19FGXO7Qj4McsY8SF7a7LAKdmunnNuB_7U0lTiJ4adRuCdZNOyqm2pN8rzLRvxtU5lB3TZadY1S5f9E2ZGBpy18ueDYQIET6wwiLN0f-dTE9vRjl_X0MJH0eniELNcT6UK9YevNdJEUtVDP1iMsSEQR1MfXsYZGjhjhdtMKqktUgXu_C3U2ar2xlmIUj2a88zwF7Dw-VVEQ9SGSHHoe4HX1H"/>
+<div class="absolute top-2 left-2 px-2 py-0.5 rounded bg-surface-container-highest text-primary font-label-caps text-label-caps tracking-wider uppercase">
+              Ingest &amp; Legal
+            </div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-surface-ivory/90 backdrop-blur-sm text-primary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[13px] text-secondary">policy</span>
+<span>HUTB Compliance</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-title-md text-title-md text-primary">Барселона (Barcelona, Spain)</h3>
+<span class="text-secondary text-sm">🇪🇸</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Eixample Golden Square • Diagonal Mar • Sitges Coast</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps font-semibold shrink-0">
+                  ONBOARDING &amp; SCRAPING
+                </span>
+</div>
+<!-- Metrics Mini Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-md p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Бутик-апарт</span>
+<span class="font-title-md text-title-md text-primary font-bold">12</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Sitges Виллы</span>
+<span class="font-title-md text-title-md text-primary font-bold">8</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Клиринг</span>
+<span class="font-label-md text-label-md text-primary font-semibold">EUR (€) / BBVA</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">HUTB Лицензии</span>
+<span class="font-label-md text-label-md text-status-instant font-semibold truncate">100% Verified</span>
+</div>
+</div>
+</div>
+<!-- Footer info row inside card -->
+<div class="flex items-center justify-between pt-space-sm mt-space-xs">
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-text-muted">balance</span>
+<span>Оператор: myUNO Iberia S.L. (Registro Mercantil Barcelona)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-primary font-label-md text-label-md transition-colors">
+                  Манифест Excel
+                </button>
+<button class="px-space-sm py-1 bg-primary hover:bg-primary-container text-on-primary rounded font-label-md text-label-md transition-colors flex items-center gap-1">
+<span>Подробнее</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- RIGHT COLUMN (30% on lg: col-span-4) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Regulatory & Compliance Gates Card -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-status-verified text-[20px]">shield_with_heart</span>
+<h3 class="font-title-md text-title-md text-primary">Compliance &amp; Regulatory Gates</h3>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-2 py-0.5 rounded">Active Rules</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-space-md">
+          Автоматический аудит локального налогового законодательства и туристических разрешений
+        </p>
+<!-- Compliance Items -->
+<div class="flex flex-col gap-space-sm">
+<!-- Item 1: Portugal -->
+<div class="p-space-sm rounded-lg bg-surface-ivory">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Portugal Alojamento Local (AL)</span>
+<span class="flex items-center gap-1 font-label-caps text-label-caps text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+<span>Active</span>
+</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">
+              Проверка реестра RNAL Turismo de Portugal перед публикацией юнита на витрине.
+            </p>
+</div>
+<!-- Item 2: Spain -->
+<div class="p-space-sm rounded-lg bg-surface-ivory">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Spain Cataluña HUTB Protocol</span>
+<span class="flex items-center gap-1 font-label-caps text-label-caps text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+<span>Active</span>
+</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">
+              Валидация регистрационного номера жилья туристического назначения (HUTB).
+            </p>
+</div>
+<!-- Item 3: Thailand -->
+<div class="p-space-sm rounded-lg bg-surface-ivory">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Thailand TM.30 Immigration API</span>
+<span class="flex items-center gap-1 font-label-caps text-label-caps text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+<span>Synced</span>
+</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">
+              Автоматическая передача данных регистрации гостей в течение 24 часов в иммиграционный офис Пхукета.
+            </p>
+</div>
+</div>
+<!-- Language Support Desk Pill Box -->
+<div class="mt-space-md pt-space-sm">
+<span class="font-label-caps text-label-caps text-text-muted uppercase block mb-2">Деск мультиязычной поддержки 24/7</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2.5 py-1 rounded bg-surface-container font-label-caps text-label-caps text-primary font-bold">PT • Português</span>
+<span class="px-2.5 py-1 rounded bg-surface-container font-label-caps text-label-caps text-primary font-bold">ES • Español</span>
+<span class="px-2.5 py-1 rounded bg-surface-container font-label-caps text-label-caps text-primary font-bold">EN • English</span>
+<span class="px-2.5 py-1 rounded bg-surface-container font-label-caps text-label-caps text-primary font-bold">RU • Русский</span>
+</div>
+</div>
+<!-- Payment Rails Status Box -->
+<div class="mt-space-md p-space-sm bg-surface-container-low rounded-lg">
+<span class="font-label-caps text-label-caps text-text-muted uppercase block mb-space-xs">Статус платежных шлюзов</span>
+<div class="flex flex-col gap-1.5 font-body-sm text-body-sm">
+<div class="flex items-center justify-between">
+<span class="text-on-surface">Stripe EU SEPA Direct Debit</span>
+<span class="text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Online</span>
+</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface">Kasikorn THB QR PromptPay</span>
+<span class="text-status-verified font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Online</span>
+</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface">Crypto Settlement (USDT TRC20)</span>
+<span class="text-status-instant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span>Standby</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Live Expansion Feed / Events Card -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">history_toggle_off</span>
+<h3 class="font-title-md text-title-md text-primary">Последние события экспансии</h3>
+</div>
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+</div>
+<!-- Event Timeline -->
+<div class="flex flex-col gap-space-md mt-space-xs relative">
+<!-- Timeline Vertical Track -->
+<div class="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-container"></div>
+<!-- Event 1 -->
+<div class="flex items-start gap-space-sm relative">
+<div class="w-8 h-8 rounded-full bg-status-instant-bg flex items-center justify-center text-status-instant shrink-0 z-10">
+<span class="material-symbols-outlined text-[16px]">cloud_download</span>
+</div>
+<div class="flex flex-col flex-1">
+<span class="font-label-md text-label-md text-primary font-bold">Импортирован Pine Cliffs Resort (Algarve)</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">Через Booking OTA Smart Link • 14 вилл оцифровано AI-парсером</span>
+<span class="font-label-caps text-label-caps text-secondary mt-1">12 мин назад • Operator Lda.</span>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="flex items-start gap-space-sm relative">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0 z-10">
+<span class="material-symbols-outlined text-[16px]">table_view</span>
+</div>
+<div class="flex flex-col flex-1">
+<span class="font-label-md text-label-md text-primary font-bold">Синхронизированы 8 вилл в Sitges (Barcelona)</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">Пакетный импорт из Excel-манифеста с верификацией кадастра</span>
+<span class="font-label-caps text-label-caps text-text-muted mt-1">1 час назад • Desk Iberia</span>
+</div>
+</div>
+<!-- Event 3 -->
+<div class="flex items-start gap-space-sm relative">
+<div class="w-8 h-8 rounded-full bg-status-verified-bg flex items-center justify-center text-status-verified shrink-0 z-10">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</div>
+<div class="flex flex-col flex-1">
+<span class="font-label-md text-label-md text-primary font-bold">Создан desk Португалия (Albufeira office)</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">Операционные ключи консьержей и интеграция с замками Salto</span>
+<span class="font-label-caps text-label-caps text-text-muted mt-1">3 часа назад • SuperAdmin Root</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-space-md py-2 bg-surface-ivory hover:bg-surface-container text-primary font-label-md text-label-md rounded-lg transition-colors flex items-center justify-center gap-1">
+<span>Смотреть полный аудит-лог экспансии</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</section>
+<!-- Smart Ingestion Speedometer Mini Banner -->
+<div class="bg-primary text-on-primary rounded-xl p-space-md shadow-md relative overflow-hidden">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-accent-gold-soft text-[24px]">speed</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-primary">myUNO Auto-Scraper v4</h4>
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase">Self-Learning Ingest</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-surface-container-high mt-space-sm">
+          Система автоматически распознает план этажа, разрешения и спецификации кондиционирования из PDF-брошюр за 4.2 мин.
+        </p>
+<div class="mt-space-md pt-space-xs flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-tertiary-fixed-dim">Zero manual typing</span>
+<a class="text-accent-gold-soft hover:underline font-label-md text-label-md flex items-center gap-0.5" data-path="express-import" href="#">
+<span>Запустить тест</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

@@ -2,6 +2,10 @@
 
 Date: 2026-10-05
 
+## Reference files
+
+The screens now live in the repository: `docs/design/stitch/` (52 screens, index in its README). The scope note below describes the earlier two-screen pass and is superseded for scope — the full set includes owner onboarding, PMS (front desk, tape chart, maintenance, night audit), vendor/agent hubs, superadmin, checkout, mobile and the two long-term-living screens. The adoption rules below still apply: reference for hierarchy and flow, not for business claims.
+
 ## Attachment scope note (2026-10-05)
 
 The Stitch attachment available in this implementation pass contains exactly two rendered sources: `myuno_long_term_living_1` and `myuno_long_term_living_2`. Therefore the evidence-backed design comparison in this pass is limited to the long-term living catalogue/search/detail composition. Broader operational rows below come from the existing myUNO architecture audit and must not be read as flows proven by this specific attachment.

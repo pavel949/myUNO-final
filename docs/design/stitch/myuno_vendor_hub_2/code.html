@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>myUNO Partner Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#effcf9",
+            "surface": "#effcf9",
+            "surface-ivory": "#FBF9F5",
+            "surface-sand": "#F4F0E8",
+            "surface-sand-subtle": "#EAE4D7",
+            "primary": "#00221a",
+            "primary-container": "#11382e",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#9dc1b4",
+            "secondary": "#81551c",
+            "secondary-container": "#fdc17e",
+            "secondary-fixed": "#ffddba",
+            "secondary-fixed-dim": "#f6bb79",
+            "accent-gold-soft": "#E4BE8D",
+            "accent-gold-muted": "#F5EAD9",
+            "status-verified": "#1E5848",
+            "status-verified-bg": "#E9F1EE",
+            "status-instant": "#9A6B32",
+            "status-instant-bg": "#FAF3E8",
+            "text-muted": "#566360",
+            "outline-variant": "#d4dedb"
+          },
+          fontFamily: {
+            "title-md": ["Outfit", "sans-serif"],
+            "headline-sm": ["Outfit", "sans-serif"],
+            "headline-md": ["Outfit", "sans-serif"],
+            "body-md": ["Manrope", "sans-serif"],
+            "body-sm": ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body { font-family: 'Manrope', sans-serif; background-color: #effcf9; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Outfit', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased flex bg-[#effcf9]">
+<!-- SIDEBAR (Fixed 260px) -->
+<aside class="w-[260px] flex-none min-h-screen bg-[#FBF9F5] border-r border-[#E5DFD3] flex flex-col justify-between p-5 sticky top-0 h-screen z-30">
+<div class="flex flex-col gap-6">
+<!-- Brand Logo -->
+<div class="flex items-center gap-2 px-2 pt-2">
+<span class="font-heading text-2xl font-bold tracking-tight text-[#00221a]">myUNO</span>
+<span class="text-[11px] font-bold uppercase tracking-wider bg-[#F5EAD9] text-[#81551c] px-2.5 py-0.5 rounded-full">Partner</span>
+</div>
+<!-- Navigation Section -->
+<div>
+<div class="text-[11px] font-bold uppercase tracking-wider text-[#566360] px-3 mb-2">Рабочая панель</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#11382e] text-white font-medium shadow-sm transition" href="#">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+<span class="text-sm">Заказы в работе</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-[#EAE4D7]/50 hover:text-slate-900 transition" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span class="text-sm">Календарь слотов</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-[#EAE4D7]/50 hover:text-slate-900 transition" href="#">
+<span class="material-symbols-outlined text-[20px]">dry_cleaning</span>
+<span class="text-sm">Мои услуги и тарифы</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-[#EAE4D7]/50 hover:text-slate-900 transition" href="#">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+<span class="text-sm">Выплаты и акты</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-[#EAE4D7]/50 hover:text-slate-900 transition" href="#">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+<span class="text-sm">Поддержка</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Verified Service Account Info Card -->
+<div class="bg-[#F4F0E8] border border-[#E5DFD3] rounded-xl p-3.5">
+<div class="text-[11px] font-bold uppercase text-[#566360] tracking-wider mb-1">Сервисный аккаунт</div>
+<div class="font-heading font-semibold text-sm text-[#00221a] truncate">Andaman Clean Pro</div>
+<div class="flex items-center gap-1.5 text-xs text-[#1E5848] font-medium mt-1.5">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Верифицирован</span>
+</div>
+</div>
+</aside>
+<!-- MAIN VIEWPORT -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- TOP BAR -->
+<header class="h-18 px-8 py-4 bg-white/80 backdrop-blur border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="inline-flex items-center gap-2 bg-[#E9F1EE] text-[#1E5848] px-3.5 py-1.5 rounded-full text-xs font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#1E5848] animate-pulse"></span>
+<span>Смена активна (На линии)</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Kasikorn Balance Badge -->
+<div class="flex items-center gap-2.5 bg-[#F4F0E8] px-3.5 py-1.5 rounded-xl border border-[#E5DFD3]">
+<span class="text-xs uppercase font-bold text-[#566360] tracking-wider">К выплате:</span>
+<span class="font-heading text-base font-bold text-[#00221a]">฿ 48,250</span>
+</div>
+<!-- Profile Avatar -->
+<div class="w-9 h-9 rounded-full bg-[#00221a] text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</div>
+</div>
+</header>
+<!-- CONTENT WRAPPER -->
+<main class="p-8 max-w-7xl w-full mx-auto space-y-6">
+<!-- TOP OPERATIONAL BANNER -->
+<section class="bg-[#11382e] text-white rounded-2xl p-6 shadow-sm border border-emerald-950 flex flex-col gap-6">
+<!-- Top row: Partner details + Status toggle -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
+<div class="flex items-center gap-4">
+<div class="relative flex-none">
+<div class="w-16 h-16 rounded-xl overflow-hidden border border-emerald-700/60 shadow">
+<img class="w-full h-full object-cover" data-alt="Chef Somchai Tan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApw8Swg0iVH33bY2QQqaWLJ_-rq2N2ocXra8uCgbnwwxcbYJc0UbqCbiO01BWP4sv8BUfSzUKweAWkkVwIZqcNVoVW2qDhzPhtxwuT9NWVDC9Tojz2-PHPZw6gP6J_ca2tSpSxOxJaN2WLnvej3UKrUL0VFg49KGeh-pe-kQllPXOWvdQU2fGaYZxIGp6Bi_UW7XV6XJAoRMKwYVHqFQn3Zvtht77qnPV9fHLUzfdCaBarPu6d5NfT"/>
+</div>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#1E5848] text-white flex items-center justify-center border-2 border-[#11382e]">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-2.5 flex-wrap">
+<h1 class="font-heading text-xl font-bold text-white tracking-tight">Siam Culinary Artisans</h1>
+<span class="bg-[#E9F1EE] text-[#1E5848] text-[11px] font-bold px-2 py-0.5 rounded-full uppercase">myUNO 5★ Партнер</span>
+<span class="text-xs text-emerald-200 flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px] text-[#E4BE8D]" style="font-variation-settings: 'FILL' 1;">star</span>
+<strong class="text-white">4.98</strong> (142 выезда)
+                </span>
+</div>
+<p class="text-xs text-emerald-200 mt-1">
+                Шеф-партнер: <span class="text-white font-medium">Сомчай Тан</span> • Локация кухни: <span class="text-white font-medium">Cherngtalay Hub, Банг Тао</span>
+</p>
+</div>
+</div>
+<!-- Controls -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-3 bg-black/20 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
+<div class="text-right">
+<div class="text-[10px] font-bold uppercase text-emerald-300">Прием заказов</div>
+<div class="text-xs font-semibold text-white" id="toggle-label">На линии (Готов к выездам)</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="availability-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-emerald-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#fdc17e]"></div>
+</label>
+</div>
+<button class="flex items-center gap-2 bg-white text-[#00221a] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#F4F0E8] transition shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add_task</span>
+<span>Внести блок слота</span>
+</button>
+</div>
+</div>
+<!-- Metric Cards Row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-5 border-t border-white/10">
+<div class="bg-white/5 rounded-xl p-3.5 border border-white/5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block mb-1">Выручка за месяц</span>
+<div class="font-heading text-2xl font-bold text-white leading-tight">฿ 386,400</div>
+<span class="text-xs text-emerald-200/80 mt-1 block">Всего 28 закрытых сервисов</span>
+</div>
+<div class="bg-white/5 rounded-xl p-3.5 border border-white/5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block mb-1">К выплате (Сплит 80%)</span>
+<div class="font-heading text-2xl font-bold text-[#ffddba] leading-tight">฿ 309,120</div>
+<span class="text-xs text-[#f6bb79] mt-1 block">Автовыплата 1-го числа</span>
+</div>
+<div class="bg-white/5 rounded-xl p-3.5 border border-white/5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block mb-1">Смены сегодня</span>
+<div class="font-heading text-2xl font-bold text-white leading-tight">3 слота</div>
+<span class="text-xs text-emerald-300 mt-1 block">1 в пути • 1 новый • 1 сдан</span>
+</div>
+<div class="bg-white/5 rounded-xl p-3.5 border border-white/5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block mb-1">Время реакции</span>
+<div class="font-heading text-2xl font-bold text-white leading-tight">11 мин</div>
+<span class="text-xs text-emerald-200/80 mt-1 block">SLA порог: до 45 мин</span>
+</div>
+</div>
+</section>
+<!-- TWO COLUMN WORKSPACE -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT DISPATCH FEED (8 COLS) -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Section Filter Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<div class="text-[11px] font-bold uppercase text-[#566360] tracking-wider">Операционный журнал</div>
+<h2 class="font-heading text-xl font-bold text-[#00221a]">Заказы в работе и новые заявки</h2>
+</div>
+<div class="flex items-center gap-1 bg-[#F4F0E8] p-1 rounded-xl border border-[#E5DFD3]">
+<button class="bg-white text-[#00221a] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">Все (3)</button>
+<button class="text-[#566360] hover:text-[#00221a] text-xs font-semibold px-3 py-1.5 rounded-lg">Внимание (1)</button>
+<button class="text-[#566360] hover:text-[#00221a] text-xs font-semibold px-3 py-1.5 rounded-lg">Завершенные (1)</button>
+</div>
+</div>
+<!-- CARD 1: ORDER IN PROGRESS -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+<div class="flex items-center gap-2.5">
+<span class="bg-[#FAF3E8] text-[#9A6B32] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#9A6B32] animate-pulse"></span>
+                  В работе • Выезд на виллу
+                </span>
+<span class="text-xs text-slate-500 font-semibold">#ORD-7491</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xs uppercase text-slate-500 font-medium">Доля шефа (80%):</span>
+<span class="font-heading text-lg font-bold text-[#00221a]">฿ 14,800</span>
+<span class="text-xs text-slate-400">(общий ฿18,500)</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+<div class="md:col-span-8 space-y-3">
+<h3 class="font-heading text-base font-bold text-[#00221a]">Персональный тайский гастро-ужин на 6 персон</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+<div class="flex items-center gap-1.5 font-medium text-slate-800">
+<span class="material-symbols-outlined text-[18px] text-[#81551c]">schedule</span>
+<span>Сегодня, 18:30 – 21:30</span>
+</div>
+<div class="flex items-center gap-1.5 font-medium text-slate-800">
+<span class="material-symbols-outlined text-[18px] text-[#00221a]">location_on</span>
+<span>Layantara Villas, #14</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Michael Weber (VIP Гость)</span>
+</div>
+</div>
+<!-- Menu specs -->
+<div class="bg-[#F4F0E8] rounded-xl p-3.5 border border-[#E5DFD3] space-y-2">
+<div class="flex items-center justify-between gap-2">
+<span class="text-[11px] font-bold uppercase text-[#566360]">Сет меню</span>
+<span class="bg-red-50 text-red-700 border border-red-200 text-[11px] font-semibold px-2 py-0.5 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">warning</span> Без арахиса (аллергия)
+                    </span>
+</div>
+<p class="text-xs text-slate-800 font-medium leading-relaxed">
+                    Королевский Том Ям с лобстером • Сибас на пару с лемонграссом и лаймом • Манго Стиб Ролл с кокосовым муссом
+                  </p>
+<p class="text-xs text-slate-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-[#1E5848]">kitchen</span>
+                    Сервировочная посуда шефа, премиальное стекло и подготовка стола включены.
+                  </p>
+</div>
+</div>
+<!-- Status Checklist Box -->
+<div class="md:col-span-4 bg-[#effcf9] rounded-xl p-3.5 border border-[#c1c8c4]/60 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-bold uppercase text-slate-500 mb-2">Статус подготовки</div>
+<ul class="space-y-2 text-xs">
+<li class="flex items-center gap-2 text-[#1E5848] font-medium">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Закупка утреннего улова</span>
+</li>
+<li class="flex items-center gap-2 text-[#1E5848] font-medium">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Мизанплас в хабе</span>
+</li>
+<li class="flex items-center gap-2 text-[#00221a] font-bold">
+<span class="material-symbols-outlined text-[16px] text-[#81551c]">radio_button_checked</span>
+<span>Выезд на локацию (17:30)</span>
+</li>
+</ul>
+</div>
+<div class="pt-3 border-t border-slate-200/80 mt-3 flex items-center justify-between text-xs">
+<span class="text-slate-500 font-medium">В пути:</span>
+<span class="font-bold text-[#00221a]">12 мин (Cherngtalay)</span>
+</div>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<button class="bg-[#00221a] hover:bg-[#11382e] text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+<span class="material-symbols-outlined text-[16px]">near_me</span>
+<span>Я прибыл на виллу</span>
+</button>
+<button class="bg-[#F4F0E8] hover:bg-[#EAE4D7] text-[#00221a] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border border-[#E5DFD3]">
+<span class="material-symbols-outlined text-[16px] text-[#81551c]">chat</span>
+<span>Чат с консьержем</span>
+</button>
+</div>
+<a class="text-xs text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1" href="#">
+<span>Полная карта выезда и оборудование</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- CARD 2: PENDING CONFIRMATION -->
+<div class="bg-white rounded-2xl p-5 border border-amber-200/80 shadow-sm space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+<div class="flex items-center gap-2">
+<span class="bg-[#F5EAD9] text-[#81551c] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+                  Ожидает подтверждения
+                </span>
+<span class="text-xs text-slate-500 font-semibold">#ORD-7495</span>
+</div>
+<div class="inline-flex items-center gap-1.5 bg-[#FAF3E8] text-[#81551c] px-3 py-1 rounded-lg text-xs font-semibold">
+<span class="material-symbols-outlined text-[15px] animate-spin">alarm</span>
+<span>Осталось 34 мин на подтверждение</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h3 class="font-heading text-base font-bold text-[#00221a]">Континентальный завтрак от шефа на 4 персоны</h3>
+<div class="flex flex-wrap items-center gap-3 text-xs text-slate-600 mt-1.5">
+<span class="flex items-center gap-1 font-medium text-slate-800">
+<span class="material-symbols-outlined text-[16px] text-[#81551c]">calendar_today</span>
+                    Завтра, 08:30 утра
+                  </span>
+<span class="flex items-center gap-1 font-medium text-slate-800">
+<span class="material-symbols-outlined text-[16px] text-[#00221a]">pin_drop</span>
+                    The Title Legendary #F-302 (Банг Тао)
+                  </span>
+<span class="flex items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+                    Бриоши, Бенедикт с крабом, смузи-боул
+                  </span>
+</div>
+</div>
+<div class="text-left md:text-right">
+<div class="text-xs uppercase text-slate-500 font-medium">Выплата шефу:</div>
+<div class="font-heading text-xl font-bold text-[#00221a]">฿ 4,960</div>
+<div class="text-[11px] text-slate-400">Тариф: ฿6,200</div>
+</div>
+</div>
+<div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<button class="bg-[#1E5848] hover:bg-[#164337] text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+<span class="material-symbols-outlined text-[16px]">task_alt</span>
+<span>Подтвердить заказ</span>
+</button>
+<button class="bg-[#F4F0E8] hover:bg-[#EAE4D7] text-[#00221a] px-3.5 py-2 rounded-xl text-xs font-semibold transition border border-[#E5DFD3]">
+                  Предложить альтернативное время
+                </button>
+</div>
+<button class="text-xs text-red-600 hover:text-red-700 font-medium">
+                Отклонить (занят слот)
+              </button>
+</div>
+</div>
+<!-- CARD 3: COMPLETED ORDER -->
+<div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col gap-2">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="bg-[#E9F1EE] text-[#1E5848] text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check</span> Завершен и подписан
+                </span>
+<span class="text-xs text-slate-500 font-semibold">#ORD-7488</span>
+<span class="text-xs text-slate-400">• Сегодня, 11:00 – 14:00</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-bold uppercase text-[#1E5848]">Чек закрыт</span>
+<span class="font-heading text-base font-bold text-[#00221a]">฿ 21,200</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-2 pt-1 border-t border-slate-100">
+<div>
+<span class="font-medium text-slate-800">BBQ сет из морепродуктов на вилле #08</span> (Семья Аркадьевых).
+                <span class="text-[#81551c] font-semibold">+฿2,000 чаевые в приложении.</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] text-[#1E5848]">draw</span>
+<span class="text-slate-500">Подписан в 14:12</span>
+<a class="text-[#00221a] font-semibold underline hover:text-[#81551c]" href="#">Акт сверки</a>
+</div>
+</div>
+</div>
+<!-- CHEF STANDARDS / INVENTORY GALLERY -->
+<div class="bg-[#F4F0E8] border border-[#E5DFD3] rounded-2xl p-5 space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold uppercase text-[#566360] tracking-wider">Инвентарь и стандарты сервировки myUNO</span>
+<a class="text-xs font-semibold text-[#81551c] hover:underline flex items-center gap-1" href="#">
+                Стандарты подачи 2025 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+<div class="relative h-24 rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-300" data-alt="Plating sea bass" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9LrhZpUCO9YQucC9oe2EWa8XeseViNcnCHH9Fk9qTOlxtEfhXWmBtfxHHhgNC6sz7oRZYrWOVDuOXaNcu1k65S8Rl8j5CrQfXjMQrihbe5ZmlWNUjMMhYn6RsxmEq-4sCWtOGarMD23t9t9h4gQxHIRRaHjZNeUYVHWAVx-1clXbIgiLegrywpcWBmmO9UNmR0nE5FMGn3aOmFFhA-y60eRdHbAHeZ0jPNky5derjb6I13uPvk194"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-2">
+<span class="text-[11px] font-bold text-white uppercase tracking-wider">Подача: Горячее</span>
+</div>
+</div>
+<div class="relative h-24 rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-300" data-alt="Table setup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArNqdkSstn8G0Sx-AZLy7iJrz2-pmzyJ0wEQhDd5JNqTDXeV-U8MgZQqJMu6ucszdB1N-WHHHST69Cya_0nqUyRdkqux_WUJzugqU3g8QT_C8C80DCoT5umYX6U7C2bXTL2vzNH-m0fcRCnJkYposVJXh7qB2-_UT5rH3sp4pdLr0vvBrEOlzAS5YnhKpYpzFJeNrnIA7RwUUuQQd3X-XjOXnC12tLwckt1PO_umgtA2ct8qhvy9tF"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-2">
+<span class="text-[11px] font-bold text-white uppercase tracking-wider">Сеттинг стола</span>
+</div>
+</div>
+<div class="relative h-24 rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition duration-300" data-alt="Fresh live seafood" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBH6w8nKMrfdASGb-FoVR0zEtzwuUmYmdpSACw14V_W3lG8Z6436NGLmZpTOxQIxTwATk5Hjzy8_ewYjCsVzpWmtSMFxf33Unh0oB0xjHQdxV9t9YfLWxD1mt4QEUNrhuMQzM1QcfZrJ7kar8-jEZ1Re4vQqOtqDAqZP2A2dUNTSunreOuHvu9jDU66U1fLyz3OI5Hv7wP4l5dNOmrHtN0VSV38XmbANv_qoLjsGvrwtqHxEwiQS6qy"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-2">
+<span class="text-[11px] font-bold text-white uppercase tracking-wider">Контроль свежести</span>
+</div>
+</div>
+<div class="h-24 rounded-xl bg-white border border-[#E5DFD3] flex flex-col items-center justify-center p-2 text-center shadow-sm">
+<span class="material-symbols-outlined text-[24px] text-[#00221a] mb-1">inventory_2</span>
+<span class="text-[10px] uppercase font-bold text-slate-500">Чек-лист инвентаря</span>
+<span class="font-heading font-bold text-sm text-[#00221a]">14 позиций</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT SCHEDULE & LOGISTICS & PAYOUT (4 COLS) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- 3-Day Mini Calendar -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<div class="text-[11px] font-bold uppercase text-[#566360] tracking-wider">Сетка слотов</div>
+<h3 class="font-heading text-base font-bold text-[#00221a]">Календарь шефа (3 дня)</h3>
+</div>
+<button class="text-slate-400 hover:text-slate-700">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+<div class="space-y-3">
+<!-- Day 1 -->
+<div class="bg-[#F4F0E8] rounded-xl p-3 border border-[#E5DFD3]">
+<div class="flex items-center justify-between text-xs mb-2">
+<span class="font-bold text-[#00221a]">Сегодня, 28 Окт</span>
+<span class="bg-[#00221a] text-white text-[10px] font-bold px-2 py-0.5 rounded">2 заказа</span>
+</div>
+<div class="grid grid-cols-3 gap-1.5 text-center text-xs">
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">08:00</div>
+<div class="text-[9px] font-bold text-[#1E5848] uppercase">Сдан</div>
+</div>
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">13:00</div>
+<div class="text-[9px] text-slate-400 uppercase">Свободно</div>
+</div>
+<div class="bg-[#9A6B32] text-white py-1.5 rounded-lg shadow-sm">
+<div class="font-semibold">18:30</div>
+<div class="text-[9px] font-bold text-amber-100 uppercase">В работе</div>
+</div>
+</div>
+</div>
+<!-- Day 2 -->
+<div class="bg-[#F4F0E8] rounded-xl p-3 border border-[#E5DFD3]">
+<div class="flex items-center justify-between text-xs mb-2">
+<span class="font-bold text-[#00221a]">Завтра, 29 Окт</span>
+<span class="bg-[#F5EAD9] text-[#81551c] text-[10px] font-bold px-2 py-0.5 rounded">1 на утвержд.</span>
+</div>
+<div class="grid grid-cols-3 gap-1.5 text-center text-xs">
+<div class="bg-[#81551c] text-white py-1.5 rounded-lg shadow-sm">
+<div class="font-semibold">08:30</div>
+<div class="text-[9px] font-bold uppercase">Запрос</div>
+</div>
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">13:00</div>
+<div class="text-[9px] text-slate-400 uppercase">Свободно</div>
+</div>
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">19:00</div>
+<div class="text-[9px] text-slate-400 uppercase">Свободно</div>
+</div>
+</div>
+</div>
+<!-- Day 3 -->
+<div class="bg-[#F4F0E8] rounded-xl p-3 border border-[#E5DFD3]">
+<div class="flex items-center justify-between text-xs mb-2">
+<span class="font-bold text-[#00221a]">Среда, 30 Окт</span>
+<span class="bg-[#E9F1EE] text-[#1E5848] text-[10px] font-bold px-2 py-0.5 rounded">Подтвержден</span>
+</div>
+<div class="grid grid-cols-3 gap-1.5 text-center text-xs">
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">08:00</div>
+<div class="text-[9px] text-slate-400 uppercase">Свободно</div>
+</div>
+<div class="bg-white py-1.5 rounded-lg border border-slate-200/80">
+<div class="font-semibold text-slate-800">13:00</div>
+<div class="text-[9px] text-slate-400 uppercase">Свободно</div>
+</div>
+<div class="bg-[#00221a] text-white py-1.5 rounded-lg">
+<div class="font-semibold">18:00</div>
+<div class="text-[9px] font-bold text-[#E4BE8D] uppercase">Вилла #02</div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-2 rounded-xl bg-[#F4F0E8] hover:bg-[#EAE4D7] text-[#00221a] text-xs font-semibold border border-[#E5DFD3] transition">
+              Открыть полный график на месяц
+            </button>
+</div>
+<!-- Logistics & Route Card -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<div class="text-[11px] font-bold uppercase text-[#566360] tracking-wider">Логистический навигатор</div>
+<span class="material-symbols-outlined text-[18px] text-[#81551c]">alt_route</span>
+</div>
+<div class="font-heading font-bold text-sm text-[#00221a]">Cherngtalay → Layantara #14</div>
+<!-- Route Map Container -->
+<div class="w-full h-36 bg-cover bg-center rounded-xl relative overflow-hidden border border-slate-200" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBIpyiIkg0BLT0AIrbJDLRj0_grRXeu2kKtBhY71Zslh3wjtspxZQGjLMf_Surmbj3IRDyONtBaVk_6RK-ubnTtMeAXcbrKxF7gXYjfjwcnAgJZ2BEGTmgcgMKYKsAYITChd9le2HeVWmNwF5l6m9grUT8qfhNHfuIn_pueQhPDiDhC_LD2JiME8RAw8FlhUalFU4R3vt7kN_CSEwACb7Q5c1MQMfDA2hUl0vizsw8Lmp3yft8dbtWq')">
+<div class="absolute bottom-2 left-2 right-2 bg-[#00221a]/85 backdrop-blur px-3 py-1.5 rounded-lg text-white flex items-center justify-between text-xs">
+<span class="flex items-center gap-1.5 font-medium">
+<span class="w-2 h-2 rounded-full bg-[#1E5848]"></span> 6.4 км • 12 минут
+                </span>
+<span class="text-[10px] font-bold text-[#E4BE8D] uppercase tracking-wider">Трафик свободный</span>
+</div>
+</div>
+<div class="text-xs text-slate-500 pt-1 flex items-center justify-between">
+<span>Служебный транспорт:</span>
+<span class="font-semibold text-slate-800">Toyota Hilux Prep Van (#741)</span>
+</div>
+</div>
+<!-- Kasikorn Bank Payout / Financial Clearing Card -->
+<div class="bg-[#00221a] text-white rounded-2xl p-5 border border-emerald-950 shadow-sm space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#ffddba] text-[20px]">account_balance</span>
+<span class="text-xs font-bold uppercase text-emerald-300 tracking-wider">Финансовый клиринг</span>
+</div>
+<span class="bg-[#11382e] text-[#E4BE8D] text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-700/50">Сплит 80%</span>
+</div>
+<div>
+<div class="text-[11px] font-bold uppercase text-emerald-300">Ближайшая выплата на Kasikorn Bank</div>
+<div class="font-heading text-2xl font-bold text-white mt-1">฿ 142,500 THB</div>
+<div class="text-xs text-emerald-200 mt-1">
+                Дата списания: <span class="text-white font-medium">1 Ноября 2025</span> • Счёт: **** 4092
+              </div>
+</div>
+<div class="bg-[#11382e] rounded-xl p-3.5 space-y-2 border border-emerald-900/60 text-xs">
+<div class="flex justify-between">
+<span class="text-emerald-300">Всего закрыто заказов:</span>
+<span class="text-white font-semibold">11 актов</span>
+</div>
+<div class="flex justify-between">
+<span class="text-emerald-300">Удержано myUNO (20%):</span>
+<span class="text-emerald-200">฿ 35,625</span>
+</div>
+<div class="flex justify-between pt-1 border-t border-emerald-800/60">
+<span class="text-emerald-300">Прямые чаевые гостей:</span>
+<span class="text-[#ffddba] font-bold">฿ 8,500 (без комиссии)</span>
+</div>
+</div>
+<button class="w-full bg-[#81551c] hover:bg-[#6c4616] text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Скачать реестр выплат (PDF)</span>
+</button>
+</div>
+<!-- Island Concierge Contact Badge -->
+<div class="bg-[#F4F0E8] border border-[#E5DFD3] rounded-2xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-white border border-[#E5DFD3] flex items-center justify-center text-[#00221a] shadow-sm">
+<span class="material-symbols-outlined text-[18px]">headset_mic</span>
+</div>
+<div>
+<div class="text-[10px] font-bold uppercase text-[#566360]">Диспетчер на острове</div>
+<div class="text-xs font-bold text-[#00221a]">+66 82 449 1000 (VIP Линия)</div>
+</div>
+</div>
+<a class="w-8 h-8 rounded-lg bg-white border border-[#E5DFD3] flex items-center justify-center text-[#00221a] hover:bg-[#EAE4D7] shadow-sm transition" href="tel:+66824491000">
+<span class="material-symbols-outlined text-[16px]">call</span>
+</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+    (function() {
+      const toggle = document.getElementById('availability-toggle');
+      const label = document.getElementById('toggle-label');
+      if (toggle && label) {
+        toggle.addEventListener('change', function(e) {
+          if (e.target.checked) {
+            label.textContent = 'На линии (Готов к выездам)';
+            label.classList.remove('text-emerald-300');
+            label.classList.add('text-white');
+          } else {
+            label.textContent = 'Смена на паузе (Не принимает)';
+            label.classList.remove('text-white');
+            label.classList.add('text-emerald-300');
+          }
+        });
+      }
+    })();
+  </script>
+</body></html>

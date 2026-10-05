@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#121e1c", "tertiary-fixed-dim": "#accec2", "surface-container": "#e3f1ed", "primary": "#00221a", "on-tertiary-fixed": "#002019", "accent-gold-muted": "#F5EAD9", "surface-bright": "#effcf9", "secondary-fixed": "#ffddba", "error": "#ba1a1a", "tertiary": "#01221a", "on-primary-fixed": "#002019", "primary-container": "#11382e", "inverse-on-surface": "#e6f4f0", "on-secondary-fixed-variant": "#663e04", "status-verified": "#1E5848", "on-error": "#ffffff", "on-secondary": "#ffffff", "text-muted": "#566360", "tertiary-container": "#17372f", "surface-container-lowest": "#ffffff", "accent-gold-soft": "#E4BE8D", "on-surface-variant": "#414845", "status-instant-bg": "#FAF3E8", "surface-container-low": "#e9f7f3", "tertiary-fixed": "#c7eadd", "surface-container-highest": "#d8e5e2", "surface-variant": "#d8e5e2", "inverse-primary": "#a7cfc1", "surface-tint": "#40665a", "on-secondary-fixed": "#2b1700", "on-primary": "#ffffff", "on-tertiary": "#ffffff", "error-container": "#ffdad6", "on-tertiary-fixed-variant": "#2d4d44", "on-error-container": "#93000a", "surface-sand-subtle": "#EAE4D7", "surface-container-high": "#ddebe8", "surface-ivory": "#FBF9F5", "surface-sand": "#F4F0E8", "inverse-surface": "#273331", "outline-variant": "#c1c8c4", "border-subtle": "#E5DFD3", "primary-fixed-dim": "#a7cfc1", "on-surface": "#121e1c", "on-secondary-container": "#784d14", "surface-dim": "#cfddd9", "on-tertiary-container": "#7fa195", "surface": "#effcf9", "background": "#effcf9", "primary-fixed": "#c2ebdc", "on-primary-fixed-variant": "#284e43", "status-verified-bg": "#E9F1EE", "secondary-container": "#fdc17e", "status-instant": "#9A6B32", "secondary-fixed-dim": "#f6bb79", "outline": "#717975", "secondary": "#81551c", "on-primary-container": "#7ba295" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-mobile": "1rem", "space-2xl": "4rem", "space-md": "1rem", "margin-mobile": "1.25rem", "margin": "3rem", "space-lg": "1.5rem" }, "fontFamily": { "body-sm": ["Manrope"], "title-md": ["Outfit"], "headline-lg-mobile": ["Outfit"], "body-lg": ["Manrope"], "label-caps": ["Manrope"], "headline-lg": ["Outfit"], "body-md": ["Manrope"], "headline-md": ["Outfit"], "headline-sm": ["Outfit"], "display-hero-mobile": ["Outfit"], "label-lg": ["Manrope"], "display-hero": ["Outfit"], "label-md": ["Manrope"] }, "fontSize": { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary z-50 flex flex-col justify-between overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="p-space-lg"><div class="flex items-center gap-space-sm pb-space-lg"><img alt="Brand logo. - Primary color: #11382e - Font: outfit - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WAuIBFnmAqAnXsC_fTm3zRgUam2aF9swxtG_1wbxUhlbN47jX6mGBzDRxFkWYlO7CDYHJRGsMgegtZ7oQnLzovSDDn9s1ALHvRN-zh1tAsnFGRsruRZa6QccXi_z6pB8iTRkwQ2A0HD9mN91YQEYkAM2ykyQKC__EXtB_1nt6gtYFxfwbz_avF0eclUs8nd_l-j5KGgwAZpyF7xp9f1dLXsQtneVY7Rm6Mm_p0HipVYKkwsf4Dprc29Mo"/><div class="flex flex-col"><span class="font-title-md text-title-md text-surface-container-lowest tracking-tight">myUNO</span><span class="font-label-caps text-label-caps text-tertiary-fixed-dim uppercase">Global Living OS</span></div></div><div class="py-space-xs"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">01 Overview</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="executive-hub" href="#"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span>Executive Hub</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">02 Geography &amp; Portfolio</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="destinations-expansion" href="#"><span class="material-symbols-outlined text-[20px]">explore</span><span>Направления &amp; Экспансия</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="projects-residences" href="#"><span class="material-symbols-outlined text-[20px]">apartment</span><span>Проекты &amp; Резиденции</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="inventory-units" href="#"><span class="material-symbols-outlined text-[20px]">bed</span><span>Номерной фонд</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">03 Smart Ingestion &amp; Data</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all bg-primary-container text-on-primary font-title-md rounded-lg" data-path="express-import" href="#"><span class="material-symbols-outlined text-[20px]">auto_awesome</span><span>Экспресс-импорт</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">04 Operations</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="mandates-management" href="#"><span class="material-symbols-outlined text-[20px]">verified_user</span><span>Управление мандатами</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="pms-sync" href="#"><span class="material-symbols-outlined text-[20px]">sync_alt</span><span>PMS Sync</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="concierge-vendors" href="#"><span class="material-symbols-outlined text-[20px]">room_service</span><span>Консьерж &amp; Вендоры</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">05 Financials</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="split-clearing" href="#"><span class="material-symbols-outlined text-[20px]">call_split</span><span>Сплит-клиринг</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="ledger-payouts" href="#"><span class="material-symbols-outlined text-[20px]">account_balance_wallet</span><span>Ledger &amp; Payouts</span></a></nav></div><div class="mt-space-md"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-wider">06 System</div><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-tertiary-container hover:text-on-primary transition-all font-body-md text-body-md" data-path="system-security-iam" href="#"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span><span>IAM, RBAC &amp; API Gateway</span></a></nav></div></div><div class="p-space-md m-space-md bg-tertiary-container rounded-xl flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="w-2.5 h-2.5 rounded-full bg-accent-gold-soft animate-pulse"></span><span class="font-label-md text-label-md text-primary-fixed-dim">Gateway v4.8-prod</span></div><span class="material-symbols-outlined text-primary-fixed text-[18px]">verified</span></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-ivory/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-sand px-space-md py-space-xs rounded-lg text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-secondary text-[18px]">travel_explore</span><span>Global Multi-Destination: Phuket, Algarve, Barcelona</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></div><div class="flex items-center gap-space-xs bg-status-verified-bg px-space-sm py-space-xs rounded-full"><span class="w-2 h-2 rounded-full bg-status-verified"></span><span class="font-label-caps text-label-caps text-status-verified">All Systems Operational</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm bg-surface-container-lowest px-space-md py-space-xs rounded-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)] text-text-muted font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px]">search</span><span>Search resources, units, ledger...</span><kbd class="bg-surface-sand px-1.5 py-0.5 rounded font-label-caps text-label-caps text-on-surface-variant">⌘K</kbd></div><button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-colors"><span class="material-symbols-outlined text-[18px]">add_circle</span><span>+ Новая локация / Импорт объекта</span></button><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface">Executive Admin</span><span class="font-label-caps text-label-caps text-text-muted">SuperAdmin Root</span></div></div></div></header><main class="w-full pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="px-space-lg lg:px-margin py-space-xl max-w-[1440px] mx-auto w-full flex flex-col gap-space-xl">
+<!-- Top Bar & Context Configuration -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs max-w-3xl">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+            AI DIGITIZATION PIPELINE V4.8
+          </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps">
+            STAGING SANDBOX
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+          Экспресс-импорт и оцифровка недвижимости
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Мультимодальный импорт данных: AI-парсинг веб-сайтов, распознавание PDF/Excel матриц и бесшовная синхронизация с OTA каналами (Airbnb, Booking.com, iCal) в единый эталонный реестр myUNO.
+        </p>
+</div>
+<!-- Quick Location & Asset Selectors -->
+<div class="flex flex-wrap sm:flex-nowrap items-center gap-space-sm p-1.5 bg-surface-sand rounded-xl shadow-sm">
+<div class="relative min-w-[200px]">
+<span class="block px-3 pt-1.5 font-label-caps text-label-caps text-text-muted">ЦЕЛЕВАЯ ЛОКАЦИЯ</span>
+<div class="flex items-center justify-between px-3 pb-1.5 text-primary font-title-md text-body-md cursor-pointer">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-secondary text-[18px]">place</span>
+<span class="truncate">Алгарве (Португалия)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">unfold_more</span>
+</div>
+</div>
+<div class="w-px h-8 bg-surface-sand-subtle hidden sm:block"></div>
+<div class="relative min-w-[220px]">
+<span class="block px-3 pt-1.5 font-label-caps text-label-caps text-text-muted">ТИП АКТИВА</span>
+<div class="flex items-center justify-between px-3 pb-1.5 text-primary font-title-md text-body-md cursor-pointer">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-primary-container text-[18px]">apartment</span>
+<span class="truncate">Комплекс / Резиденция</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">unfold_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 1: Ingestion Channels & Active URL Extraction -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm p-space-lg flex flex-col gap-space-lg">
+<!-- Multi-channel Tabs -->
+<div class="flex flex-wrap gap-space-xs p-1.5 bg-surface-sand rounded-xl">
+<button class="tab-btn flex-1 min-w-[240px] flex items-center justify-center gap-2.5 px- space-md py-3 rounded-lg bg-surface-container-lowest text-primary shadow-sm font-label-lg text-label-lg transition-all" id="tab-url" onclick="switchTab('url')">
+<span class="material-symbols-outlined text-[20px] text-primary">language</span>
+<span>🌐 Веб-ссылка / AI Web Extraction</span>
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+</button>
+<button class="tab-btn flex-1 min-w-[240px] flex items-center justify-center gap-2.5 px-space-md py-3 rounded-lg text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-all" id="tab-files" onclick="switchTab('files')">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span>📄 Загрузка файлов (PDF, Matrix, Plans)</span>
+</button>
+<button class="tab-btn flex-1 min-w-[240px] flex items-center justify-center gap-2.5 px-space-md py-3 rounded-lg text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-all" id="tab-ota" onclick="switchTab('ota')">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+<span>⚡ Синхронизация OTA (Airbnb, Booking, iCal)</span>
+</button>
+</div>
+<!-- Tab Content 1: Web Extraction Bar -->
+<div class="flex flex-col gap-space-lg" id="content-url">
+<div class="flex flex-col lg:flex-row gap-space-sm items-stretch">
+<div class="relative flex-1 flex items-center bg-surface-sand/60 rounded-xl px-space-md focus-within:bg-surface-container-lowest focus-within:shadow-sm transition-all">
+<span class="material-symbols-outlined text-text-muted text-[22px] mr-3">link</span>
+<div class="flex flex-col flex-1 py-2">
+<span class="font-label-caps text-label-caps text-text-muted">SOURCE URL (DEVELOPER PORTAL / LISTING / MATTERPORT 3D)</span>
+<input class="bg-transparent text-primary font-body-md text-body-md focus:outline-none w-full placeholder:text-text-muted/60" placeholder="Вставьте URL объекта или комплекса..." type="text" value="https://www.pinecliffs.com/en/accommodations/ocean-suites/"/>
+</div>
+<span class="px-2 py-1 rounded bg-surface-sand-subtle text-on-surface-variant font-label-caps text-label-caps uppercase mr-1">HTTPS Verified</span>
+</div>
+<button class="flex items-center justify-center gap-2 px-space-lg py-3.5 bg-primary-container hover:bg-primary text-on-primary rounded-xl font-label-lg text-label-lg shadow-sm transition-all whitespace-nowrap">
+<span class="material-symbols-outlined text-[20px] text-accent-gold-soft animate-spin">refresh</span>
+<span>Запустить AI-парсинг и извлечение данных</span>
+</button>
+</div>
+<!-- Live Extraction Progress Pipeline -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-verified animate-ping"></span>
+<span class="font-title-md text-body-md text-primary">Сессия парсинга завершена успешно</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-status-verified-bg text-status-verified">5 из 5 блоков оцифровано</span>
+</div>
+<div class="font-label-caps text-label-caps text-text-muted">
+              ПРОТОКОЛ ИНЖЕКЦИИ: <span class="text-primary font-title-md">HEURISTIC NEURAL-PARSE v4.2</span> • ВРЕМЯ: 1.84s
+            </div>
+</div>
+<!-- Micro-step indicators -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-space-sm">
+<div class="bg-surface-container-lowest p-3 rounded-lg flex flex-col justify-between gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">01 МЕТАДАННЫЕ &amp; GEO</span>
+<span class="material-symbols-outlined text-status-verified text-[18px]">verified</span>
+</div>
+<p class="font-label-md text-label-md text-primary truncate">Albufeira / Olhos de Água</p>
+<div class="w-full bg-surface-sand h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg flex flex-col justify-between gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">02 МЕДИАТЕКА &amp; 4K</span>
+<span class="material-symbols-outlined text-status-verified text-[18px]">verified</span>
+</div>
+<p class="font-label-md text-label-md text-primary truncate">48 фото (чистые ассеты)</p>
+<div class="w-full bg-surface-sand h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg flex flex-col justify-between gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">03 СПЕЦИФИКАЦИИ</span>
+<span class="material-symbols-outlined text-status-verified text-[18px]">verified</span>
+</div>
+<p class="font-label-md text-label-md text-primary truncate">3 категории апартаментов</p>
+<div class="w-full bg-surface-sand h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg flex flex-col justify-between gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">04 AMENITIES &amp; SPA</span>
+<span class="material-symbols-outlined text-status-verified text-[18px]">verified</span>
+</div>
+<p class="font-label-md text-label-md text-primary truncate">6 бассейнов, Annabel Croft</p>
+<div class="w-full bg-surface-sand h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg flex flex-col justify-between gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">05 ТАРИФЫ &amp; СЕЗОНЫ</span>
+<span class="material-symbols-outlined text-status-verified text-[18px]">verified</span>
+</div>
+<p class="font-label-md text-label-md text-primary truncate">EUR ставки + min 3 ночи</p>
+<div class="w-full bg-surface-sand h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-verified h-full w-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Two-column Staging Sandbox & Synthesis -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN: Extracted Blueprint (7 cols) -->
+<div class="xl:col-span-7 flex flex-col gap-space-lg">
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm p-space-lg flex flex-col gap-space-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="p-2 rounded-lg bg-surface-container text-primary">
+<span class="material-symbols-outlined text-[22px]">domain_verification</span>
+</span>
+<div>
+<h2 class="font-title-md text-title-md text-primary">Извлеченные данные (AI Extracted Blueprint)</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Автоматически синтезированная мастер-карточка резиденции</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-status-verified-bg text-status-verified font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+              98.4% Match Score
+            </span>
+</div>
+<!-- Hero Image & Overview Banner -->
+<div class="relative rounded-xl overflow-hidden shadow-sm bg-surface-sand h-64">
+<img class="w-full h-full object-cover" data-alt="Panoramic architectural photography of Pine Cliffs Ocean Suites in Algarve Portugal perched on dramatic red sandstone cliffs overlooking the turquoise Atlantic ocean, surrounded by lush coastal umbrella pines and manicured resort gardens in warm golden hour light, luxury Mediterranean modernism, shot on Hasselblad" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_zX3omfVCdgVL6e-45n9m_OTR33tAMaKDxNc0Gs5MzFwui44150Dq1l-JZPl3-vHEHloKcCT_dVTjzVqJXzwNyHiFOp0zJaLFpEhxz09r7TjQYGEWQhLCUNEWuAyEFPTihzYoiuAmdl2Vp19owK0PX6nDayQc_RIVD5l4Ob9PuVOjtPTB2a_Mlcnim_V6BqicnC5TUEuRs-Ocz-lwVIVxmdKlMdE78qtRfvhIiTG4a7Uz_Dm7anCE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4 flex items-end justify-between text-on-primary">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-accent-gold-soft text-primary font-label-caps text-label-caps uppercase">Full Mandate by myUNO</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest/20 backdrop-blur-sm font-label-caps text-label-caps">Verified Unit Registry</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-surface-container-lowest">Pine Cliffs Ocean Suites &amp; Luxury Collection</h3>
+<p class="font-body-sm text-body-sm text-surface-ivory/80 flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                  Praia da Falésia, Pinhal do Concelho, 8200-593 Albufeira, Algarve, Portugal
+                </p>
+</div>
+<div class="text-right bg-surface-container-lowest/15 backdrop-blur-md px-3 py-2 rounded-lg">
+<span class="block font-label-caps text-label-caps text-accent-gold-soft">REVENUE SHARE POOL</span>
+<span class="font-title-md text-title-md text-surface-container-lowest">80 / 20 Mandate</span>
+</div>
+</div>
+</div>
+<!-- Mandate Scope Selector -->
+<div class="flex flex-col gap-2 p-space-md bg-surface-sand rounded-xl">
+<span class="font-label-caps text-label-caps text-text-muted">ОПЕРАЦИОННЫЙ МАНДАТ УПРАВЛЕНИЯ (MANAGEMENT SCOPE)</span>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+<label class="flex items-center gap-2.5 p-2.5 rounded-lg bg-surface-container-lowest shadow-sm cursor-pointer">
+<input checked="" class="text-primary focus:ring-accent-gold-soft h-4 w-4" name="mandate" type="radio"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-md text-primary">Full Management</span>
+<span class="font-body-sm text-[11px] text-text-muted">80/20 сплит, клиринг myUNO</span>
+</div>
+</label>
+<label class="flex items-center gap-2.5 p-2.5 rounded-lg bg-surface-sand-subtle/50 hover:bg-surface-container-lowest transition-all cursor-pointer">
+<input class="text-primary focus:ring-accent-gold-soft h-4 w-4" name="mandate" type="radio"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-md text-on-surface">White-Label OTA</span>
+<span class="font-body-sm text-[11px] text-text-muted">Дистрибуция без ключей</span>
+</div>
+</label>
+<label class="flex items-center gap-2.5 p-2.5 rounded-lg bg-surface-sand-subtle/50 hover:bg-surface-container-lowest transition-all cursor-pointer">
+<input class="text-primary focus:ring-accent-gold-soft h-4 w-4" name="mandate" type="radio"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-md text-on-surface">Long-term Living</span>
+<span class="font-body-sm text-[11px] text-text-muted">Аренда 3-12 месяцев</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Unit Type Matrix Table -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md text-primary">Спецификация извлеченного номерного фонда</h3>
+<span class="font-label-caps text-label-caps text-text-muted">3 КАТЕГОРИИ • 36 ЮНИТОВ</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-sand text-on-surface-variant font-label-caps text-label-caps">
+<th class="py-2.5 px-3 rounded-l-lg">ТИП И НАИМЕНОВАНИЕ</th>
+<th class="py-2.5 px-3">ПЛОЩАДЬ</th>
+<th class="py-2.5 px-3">КОНФИГУРАЦИЯ</th>
+<th class="py-2.5 px-3">БАЗОВАЯ СТАВКА</th>
+<th class="py-2.5 px-3 rounded-r-lg text-right">СТАТУС ИМПОРТА</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-sand text-body-sm font-body-sm text-primary">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3">
+<div class="font-title-md text-body-md text-primary">1BR Ocean Suite</div>
+<div class="text-text-muted text-[12px]">Фронтальный вид на Атлантику, лоджия 16 м²</div>
+</td>
+<td class="py-3 px-3 font-semibold">74 м²</td>
+<td class="py-3 px-3">1 King • Кухня Miele • Ванна</td>
+<td class="py-3 px-3 font-title-md text-primary">€ 420 <span class="font-body-sm text-text-muted text-[11px]">/ ночь</span></td>
+<td class="py-3 px-3 text-right">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[11px]">18 юнитов OK</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3">
+<div class="font-title-md text-body-md text-primary">2BR Pine Residence</div>
+<div class="text-text-muted text-[12px]">Вид на сосновый парк и гольф-поля, терраса 24 м²</div>
+</td>
+<td class="py-3 px-3 font-semibold">118 м²</td>
+<td class="py-3 px-3">2 King/Twin • 2 Санузла • Kitchenette</td>
+<td class="py-3 px-3 font-title-md text-primary">€ 680 <span class="font-body-sm text-text-muted text-[11px]">/ ночь</span></td>
+<td class="py-3 px-3 text-right">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[11px]">12 юнитов OK</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3">
+<div class="font-title-md text-body-md text-primary">3BR Presidential Penthouse</div>
+<div class="text-text-muted text-[12px]">Панорамная терраса на крыше, приватный джакузи</div>
+</td>
+<td class="py-3 px-3 font-semibold">186 м²</td>
+<td class="py-3 px-3">3 Suites • 3.5 Санузла • Лифт-ключ</td>
+<td class="py-3 px-3 font-title-md text-primary">€ 1,450 <span class="font-body-sm text-text-muted text-[11px]">/ ночь</span></td>
+<td class="py-3 px-3 text-right">
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-[11px]">6 юнитов OK</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Amenities Checklist -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">РАСПОЗНАННЫЕ ИНФРАСТРУКТУРНЫЕ ТЕГИ (AMENITIES MATRIX)</span>
+<span class="font-label-caps text-label-caps text-status-verified">18 проверенных сервисов</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">pool</span> 6 бассейнов (вкл. панорамный)
+              </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">spa</span> Serenity Wellness Spa
+              </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">sports_tennis</span> Annabel Croft Tennis
+              </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">restaurant</span> 8 ресторанов Michelin Star
+              </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">beach_access</span> Прямой лифт к Praia da Falésia
+              </span>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-body-sm text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">ev_station</span> EV-Chargers 22kW
+              </span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Enrichment, Uploads & Channels (5 cols) -->
+<div class="xl:col-span-5 flex flex-col gap-space-lg">
+<!-- Files & Matrix Drag & Drop Container -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm p-space-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="p-2 rounded-lg bg-surface-sand text-secondary">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+</span>
+<h3 class="font-title-md text-title-md text-primary">Документы и мастерпланы</h3>
+</div>
+<span class="font-label-caps text-label-caps text-status-verified">2 источника сопоставлено</span>
+</div>
+<!-- Drop Area -->
+<div class="p-6 rounded-xl bg-surface-sand/40 hover:bg-surface-sand/70 transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm text-primary">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<div class="font-title-md text-body-md text-primary">Перетащите PDF презентации или таблицы Excel</div>
+<p class="font-body-sm text-[12px] text-text-muted max-w-xs">Поддержка CAD планов, поэтажных схем, матриц цен с автоматическим OCR распознаванием</p>
+</div>
+<!-- Uploaded files cards -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-sand">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-error shadow-sm font-label-caps">
+                  PDF
+                </div>
+<div class="flex flex-col">
+<span class="font-title-md text-body-sm text-primary truncate max-w-[220px]">Pine_Cliffs_Brochure_2026.pdf</span>
+<span class="font-body-sm text-[11px] text-text-muted">14.2 MB • Распознано 12 планировок</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-status-verified text-[20px]">task_alt</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-sand">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-status-verified shadow-sm font-label-caps">
+                  XLSX
+                </div>
+<div class="flex flex-col">
+<span class="font-title-md text-body-sm text-primary truncate max-w-[220px]">Price_Matrix_Algarve_Q4.xlsx</span>
+<span class="font-body-sm text-[11px] text-text-muted">840 KB • 36 юнитов со ставками в EUR</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-status-verified text-[20px]">task_alt</span>
+</div>
+</div>
+</div>
+<!-- OTA & iCal Live Channel Sync Hub -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm p-space-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="p-2 rounded-lg bg-surface-container text-primary">
+<span class="material-symbols-outlined text-[20px]">sync_alt</span>
+</span>
+<h3 class="font-title-md text-title-md text-primary">OTA Синхронизация и iCal фиды</h3>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-verified-bg text-status-verified font-label-caps text-label-caps">2 активных канала</span>
+</div>
+<!-- Channel 1: Airbnb iCal -->
+<div class="p-3.5 rounded-xl bg-surface-sand flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-md bg-[#FF5A5F] text-white flex items-center justify-center font-bold text-[11px]">Ab</span>
+<span class="font-title-md text-body-sm text-primary">Airbnb Live Calendar (iCal)</span>
+</div>
+<span class="inline-flex items-center gap-1 font-label-caps text-[11px] text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                0 коллизий
+              </span>
+</div>
+<div class="bg-surface-container-lowest px-3 py-1.5 rounded-lg text-[12px] font-mono text-text-muted truncate select-all">
+              https://www.airbnb.com/calendar/ical/891234909.ics?s=c8f184b2382...
+            </div>
+<div class="flex items-center justify-between text-[11px] text-text-muted">
+<span>Синхронизация каждые 15 минут</span>
+<span class="text-primary font-medium">Последнее: 2 мин назад</span>
+</div>
+</div>
+<!-- Channel 2: Booking.com ID -->
+<div class="p-3.5 rounded-xl bg-surface-sand flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-md bg-[#003580] text-white flex items-center justify-center font-bold text-[11px]">B.</span>
+<span class="font-title-md text-body-sm text-primary">Booking.com Direct Connectivity</span>
+</div>
+<span class="inline-flex items-center gap-1 font-label-caps text-[11px] text-status-verified">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+                API Connected
+              </span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3 py-2 rounded-lg text-body-sm">
+<span class="font-label-caps text-label-caps text-text-muted">HOTEL PROPERTY ID</span>
+<span class="font-mono font-bold text-primary">#PT-99412-ALGARVE</span>
+</div>
+</div>
+</div>
+<!-- Master Confirmation & Verification Card -->
+<div class="bg-primary text-on-primary rounded-2xl shadow-md p-space-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-accent-gold-soft uppercase tracking-wider">СТАТУС ГОТОВНОСТИ КАТАЛОГА</span>
+<div class="flex items-center gap-1 text-accent-gold-soft">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="font-title-md text-label-md">Ready to Deploy</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero text-headline-lg font-bold text-surface-container-lowest">98.4%</span>
+<span class="font-body-sm text-body-sm text-primary-fixed-dim">индекс валидности данных (Data Integrity Score)</span>
+</div>
+<p class="font-body-sm text-body-sm text-surface-sand/80">
+            Все 36 юнитов сопоставлены с реальными планировками, устранены дублирования тарифов, привязана локация Algarve Praia da Falésia.
+          </p>
+<div class="flex flex-col gap-2 pt-2">
+<button class="w-full py-3.5 px-4 bg-accent-gold-soft hover:bg-secondary text-primary hover:text-white rounded-xl font-title-md text-body-md transition-all shadow-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+<span>Опубликовать проект и 36 юнитов в каталог Алгарве</span>
+</button>
+<div class="grid grid-cols-2 gap-2 mt-1">
+<button class="py-2.5 px-3 bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary rounded-lg font-label-md text-label-md transition-all text-center">
+                Сохранить в Staging
+              </button>
+<button class="py-2.5 px-3 bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary rounded-lg font-label-md text-label-md transition-all text-center flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">gavel</span>
+<span>Проверка юристом</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function switchTab(activeMode) {
+    const tabs = ['url', 'files', 'ota'];
+    tabs.forEach(tab => {
+      const btn = document.getElementById('tab-' + tab);
+      if (btn) {
+        if (tab === activeMode) {
+          btn.className = "tab-btn flex-1 min-w-[240px] flex items-center justify-center gap-2.5 px-space-md py-3 rounded-lg bg-surface-container-lowest text-primary shadow-sm font-label-lg text-label-lg transition-all";
+        } else {
+          btn.className = "tab-btn flex-1 min-w-[240px] flex items-center justify-center gap-2.5 px-space-md py-3 rounded-lg text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-all";
+        }
+      }
+    });
+  }
+</script></main></div></body></html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"status-instant":"#9A6B32","border-subtle":"#E5DFD3","on-tertiary-container":"#7fa195","accent-gold-soft":"#E4BE8D","surface-container-lowest":"#ffffff","on-secondary":"#ffffff","surface-sand":"#F4F0E8","background":"#effcf9","tertiary":"#01221a","surface-container-high":"#ddebe8","error":"#ba1a1a","on-primary":"#ffffff","tertiary-fixed-dim":"#accec2","inverse-surface":"#273331","surface-container-low":"#e9f7f3","secondary-fixed-dim":"#f6bb79","tertiary-container":"#17372f","on-error-container":"#93000a","surface-tint":"#40665a","on-secondary-fixed-variant":"#663e04","surface-bright":"#effcf9","tertiary-fixed":"#c7eadd","on-secondary-fixed":"#2b1700","on-tertiary-fixed-variant":"#2d4d44","outline":"#717975","primary-fixed":"#c2ebdc","status-verified-bg":"#E9F1EE","surface-ivory":"#FBF9F5","on-surface":"#121e1c","surface-variant":"#d8e5e2","status-instant-bg":"#FAF3E8","on-error":"#ffffff","inverse-primary":"#a7cfc1","text-muted":"#566360","surface":"#effcf9","surface-dim":"#cfddd9","surface-sand-subtle":"#EAE4D7","on-tertiary":"#ffffff","inverse-on-surface":"#e6f4f0","on-surface-variant":"#414845","surface-container":"#e3f1ed","accent-gold-muted":"#F5EAD9","secondary":"#81551c","on-primary-fixed":"#002019","status-verified":"#1E5848","primary-fixed-dim":"#a7cfc1","surface-container-highest":"#d8e5e2","on-primary-container":"#7ba295","on-primary-fixed-variant":"#284e43","error-container":"#ffdad6","on-background":"#121e1c","primary":"#00221a","outline-variant":"#c1c8c4","secondary-container":"#fdc17e","secondary-fixed":"#ffddba","on-tertiary-fixed":"#002019","on-secondary-container":"#784d14","primary-container":"#11382e"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","space-2xl":"4rem","space-sm":"0.5rem","gutter":"1.5rem","gutter-mobile":"1rem","space-lg":"1.5rem","margin-mobile":"1.25rem","space-md":"1rem","space-xl":"2.5rem","margin":"3rem"},fontFamily:{"headline-lg":["Outfit"],"display-hero-mobile":["Outfit"],"headline-lg-mobile":["Outfit"],"headline-md":["Outfit"],"label-lg":["Manrope"],"label-caps":["Manrope"],"title-md":["Outfit"],"body-lg":["Manrope"],"display-hero":["Outfit"],"body-sm":["Manrope"],"body-md":["Manrope"],"headline-sm":["Outfit"],"label-md":["Manrope"]},fontSize:{"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"500"}],"display-hero-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"title-md":["18px",{"lineHeight":"26px","letterSpacing":"0em","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"400"}],"display-hero":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}],"headline-sm":["22px",{"lineHeight":"30px","letterSpacing":"-0.005em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.03em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col flex-1 min-h-0"><div class="h-20 px-space-lg flex items-center justify-between bg-surface-container-low"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/><div class="flex flex-col"><span class="font-title-md text-title-md text-primary tracking-tight font-bold leading-none">myUNO</span><span class="font-label-caps text-label-caps text-text-muted mt-1 uppercase tracking-wider">PMS Operations v2.4</span></div></div><span class="material-symbols-outlined text-outline cursor-pointer hover:text-on-surface text-[20px]">menu_open</span></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-xs font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Управление курортом</div><nav class="flex flex-col gap-1 mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-bold shadow-sm"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="tape-chart" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">calendar_month</span><span>Шахматка (Tape Chart)</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="reservations" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">luggage</span><span>Бронирования</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="housekeeping" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">cleaning_services</span><span>Клининг &amp; Хаускипинг</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg transition-all group bg-primary-container text-on-primary font-bold shadow-sm" data-path="inventory-rates" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">vpn_key</span><span>Номерной фонд &amp; Тарифы</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="concierge-services" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">room_service</span><span>Консьерж &amp; Доп. услуги</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group font-label-lg text-label-lg" data-path="reports-payouts" href="#"><span class="material-symbols-outlined text-[20px] text-outline group-hover:text-on-surface">payments</span><span>Отчеты &amp; Выплаты</span></a></nav></div></div><div class="p-space-md bg-surface-container-low flex flex-col gap-space-sm"><div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-1.5"><span class="font-label-caps text-label-caps text-text-muted uppercase">Локация портфеля</span><span class="font-label-caps text-label-caps text-status-verified font-bold">3 объекта</span></div><div class="flex items-center justify-between gap-space-sm p-1.5 rounded-lg bg-surface-container-low cursor-pointer hover:bg-surface-container-high transition-colors"><div class="flex items-center gap-2 overflow-hidden"><span class="material-symbols-outlined text-[18px] text-primary">villa</span><div class="flex flex-col truncate"><span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Title Legendary</span><span class="font-label-caps text-label-caps text-text-muted truncate">Bang Tao, Phuket</span></div></div><span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span></div></div><div class="px-space-sm py-2 rounded-lg bg-status-verified-bg flex items-center justify-between"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-status-verified animate-pulse"></span><span class="font-label-md text-label-md text-status-verified font-medium">Channel Manager: Активен</span></div><span class="font-label-caps text-label-caps text-status-verified font-bold">iCal / OTA</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md flex-1 max-w-xl"><div class="relative w-full"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span><input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface placeholder:text-text-muted focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary transition-all" placeholder="Поиск по номеру брони, гостю, телефону, апартаментам #F-302..." type="text"/></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-sm px-space-md py-2 rounded-full bg-surface-container-low"><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-md text-label-md text-on-surface-variant">Заезды:</span><span class="font-label-md text-label-md font-bold text-on-surface">8</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span class="font-label-md text-label-md text-on-surface-variant">Проживают:</span><span class="font-label-md text-label-md font-bold text-on-surface">42</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-instant"></span><span class="font-label-md text-label-md text-on-surface-variant">Выезды:</span><span class="font-label-md text-label-md font-bold text-on-surface">6</span></div><span class="text-outline-variant font-light">|</span><div class="flex items-center gap-1.5"><span class="font-label-md text-label-md text-on-surface-variant">Загрузка:</span><span class="font-label-md text-label-md font-bold text-status-verified">86%</span></div></div><button class="h-11 px-space-md bg-primary hover:bg-tertiary text-on-primary rounded-lg font-label-lg text-label-lg font-semibold flex items-center gap-2 transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>Новое бронирование</span></button><div class="relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-container-low text-on-surface-variant cursor-pointer transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary-container ring-2 ring-surface-container-lowest"></span></div><div class="h-8 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="flex flex-col text-right hidden sm:flex"><span class="font-label-lg text-label-lg font-semibold text-on-surface leading-tight">Нараян К.</span><span class="font-label-caps text-label-caps text-text-muted leading-tight">Duty Operations Manager</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-20 bg-surface min-h-screen w-full px-space-lg py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- TOP HEADER & TITLE STRIP -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm mb-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high font-label-caps text-label-caps text-status-verified font-bold uppercase tracking-wider flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified animate-ping"></span>
+          Channel Engine v4.2 Live
+        </span>
+<span class="font-label-caps text-label-caps text-text-muted">|</span>
+<span class="font-label-caps text-label-caps text-text-muted">Bang Tao Beach Frontage</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
+        Номерной фонд, динамические тарифы и квоты каналов
+      </h1>
+<p class="font-body-md text-body-md text-text-muted mt-0.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">apartment</span>
+<span class="font-medium text-on-surface">The Title Legendary Residences</span> — управление доступностью, надбавками OTA и паритетом цен в режиме реального времени
+      </p>
+</div>
+<!-- QUICK ACTIONS & EXPORT -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container-lowest shadow-sm hover:bg-surface-container-high font-label-lg text-label-lg text-on-surface flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px] text-text-muted">history</span>
+<span>История изменений</span>
+</button>
+<button class="px-space-md py-2.5 rounded-lg bg-primary hover:bg-tertiary text-on-primary shadow-sm font-label-lg text-label-lg font-semibold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>Применить алгоритм спроса</span>
+</button>
+</div>
+</div>
+<!-- EXECUTIVE KPI STATS STRIP -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Stat 1: Units -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-3 -bottom-3 w-20 h-20 bg-primary/5 rounded-full pointer-events-none transition-transform group-hover:scale-125"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Под управлением myUNO</span>
+<span class="material-symbols-outlined text-primary text-[20px]">villa</span>
+</div>
+<div class="mt-space-sm flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">52</span>
+<span class="font-label-md text-label-md text-text-muted">юнита активны</span>
+</div>
+<div class="mt-2 flex items-center gap-1.5 font-label-caps text-label-caps text-status-verified font-medium">
+<span class="material-symbols-outlined text-[15px]">verified</span>
+<span>100% лицензированный пул апартаментов</span>
+</div>
+</div>
+<!-- Stat 2: ADR -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-3 -bottom-3 w-20 h-20 bg-status-instant/10 rounded-full pointer-events-none transition-transform group-hover:scale-125"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Средняя цена (ADR)</span>
+<span class="material-symbols-outlined text-status-instant text-[20px]">trending_up</span>
+</div>
+<div class="mt-space-sm flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">฿4,680</span>
+<span class="font-label-md text-label-md text-text-muted">/ ночь</span>
+</div>
+<div class="mt-2 flex items-center gap-1.5 font-label-caps text-label-caps text-status-verified font-medium">
+<span class="material-symbols-outlined text-[15px]">arrow_upward</span>
+<span>+14.2% к прошлому месяцу (вход в High Season)</span>
+</div>
+</div>
+<!-- Stat 3: RevPAR -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-3 -bottom-3 w-20 h-20 bg-primary-container/10 rounded-full pointer-events-none transition-transform group-hover:scale-125"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Доходность RevPAR</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">monitoring</span>
+</div>
+<div class="mt-space-sm flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">฿4,024</span>
+<span class="font-label-md text-label-md text-text-muted">на номер</span>
+</div>
+<div class="mt-2 flex items-center gap-1.5 font-label-caps text-label-caps text-status-verified font-medium">
+<span class="material-symbols-outlined text-[15px]">insights</span>
+<span>Коэффициент загрузки 86% при текущем темпе</span>
+</div>
+</div>
+<!-- Stat 4: Channels -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Синхронизация каналов</span>
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-status-verified animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Активна</span>
+</span>
+</div>
+<div class="mt-space-sm flex items-center gap-2">
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-caps text-label-caps text-on-surface font-semibold">myUNO Direct</span>
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-caps text-label-caps text-on-surface font-semibold">Airbnb</span>
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-caps text-label-caps text-on-surface font-semibold">Booking.com</span>
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-caps text-label-caps text-on-surface font-semibold">Agoda</span>
+</div>
+<div class="mt-2 flex items-center justify-between font-label-caps text-label-caps text-text-muted">
+<span>0 конфликтов овербукинга</span>
+<span class="text-status-instant font-bold">2-way XML API</span>
+</div>
+</div>
+</div>
+<!-- DIRECT BOOKING ADVANTAGE BANNER & SEASONALITY SELECTOR -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Direct Booking Value Highlight (8 cols) -->
+<div class="lg:col-span-8 bg-surface-sand p-space-md rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md relative overflow-hidden">
+<div class="flex items-start gap-space-md z-10">
+<div class="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[26px]">savings</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold">Direct Booking Advantage</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-caps text-label-caps font-bold">
+              +18% ЧИСТАЯ ВЫГОДА
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1 max-w-xl">
+            Тарифы собственного портала myUNO не облагаются внешней агентской комиссией (OTA Markup +15-18%). Выручка собственника на ฿580-฿1,200/ночь выше при прямых бронированиях при минимальной цене для туриста.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 z-10">
+<div class="px- space-sm py-2 rounded-lg bg-surface-container-lowest shadow-sm flex flex-col items-center min-w-[110px] text-center">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Доля Direct Web</span>
+<span class="font-title-md text-title-md font-bold text-status-verified mt-0.5">44.6%</span>
+</div>
+<div class="px-space-sm py-2 rounded-lg bg-surface-container-lowest shadow-sm flex flex-col items-center min-w-[110px] text-center">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Сэкономлено OTA</span>
+<span class="font-title-md text-title-md font-bold text-primary mt-0.5">฿342,800</span>
+</div>
+</div>
+</div>
+<!-- Seasonality Engine Switcher (4 cols) -->
+<div class="lg:col-span-4 bg-primary-container text-on-primary p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-fixed text-[20px]">wb_sunny</span>
+<span class="font-label-caps text-label-caps text-secondary-fixed uppercase tracking-wider">Текущий тарифный сезон</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest/15 font-label-caps text-label-caps text-on-primary font-bold">
+          High Season 26/27
+        </span>
+</div>
+<div class="my-space-xs">
+<div class="font-title-md text-title-md font-bold leading-tight">Высокий сезон: Ноябрь — Апрель</div>
+<div class="font-body-sm text-body-sm text-on-primary-container mt-1">
+          Активно правило невозвратных депозитов (30%) и минимальное окно бронирования 60 дней до заезда.
+        </div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-md text-label-md text-on-primary-container">Мультипликатор спроса: <strong class="text-on-primary">1.22x</strong></span>
+<button class="px-space-sm py-1 rounded bg-surface-container-lowest/20 hover:bg-surface-container-lowest/30 font-label-md text-label-md text-on-primary transition-colors flex items-center gap-1">
+<span>Правила</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CONTROL TOOLBAR: DATES, FILTERS, MASS ACTIONS -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
+<!-- Left segment: Calendar Month & Days Navigator -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<div class="flex items-center bg-surface-container-low rounded-lg p-1">
+<button class="w-8 h-8 rounded hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors" title="Предыдущая неделя">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<div class="px-space-md flex items-center gap-2 cursor-pointer hover:bg-surface-container-high py-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[18px] text-primary">calendar_month</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Ноябрь 2026</span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1.5 py-0.5 rounded font-bold">14 — 23 Нояб</span>
+</div>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors" title="Следующая неделя">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- Category Filter -->
+<div class="relative">
+<select class="h-10 pl-3 pr-8 rounded-lg bg-surface-container-low font-label-lg text-label-lg text-on-surface appearance-none focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer transition-all">
+<option>Все типы (1BR, 2BR, Penthouse)</option>
+<option>1-Bedroom Luxury Pool View (24)</option>
+<option>2-Bedroom Family Suite (20)</option>
+<option>Penthouse Pool Access (8)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]">arrow_drop_down</span>
+</div>
+<!-- Quick Quick Switcher -->
+<div class="flex items-center rounded-lg bg-surface-container-low p-1 text-on-surface-variant font-label-md text-label-md">
+<button class="px-3 py-1.5 rounded-md bg-surface-container-lowest text-on-surface font-bold shadow-sm">10 дней</button>
+<button class="px-3 py-1.5 rounded-md hover:text-on-surface">14 дней</button>
+<button class="px-3 py-1.5 rounded-md hover:text-on-surface">Месяц</button>
+</div>
+</div>
+<!-- Right segment: Bulk Action Buttons -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="h-10 px- space-md px-3 rounded-lg bg-surface-sand hover:bg-surface-sand-subtle text-primary font-label-lg text-label-lg font-semibold flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[18px] text-secondary">price_change</span>
+<span>Массовое обновление цен</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-error font-label-lg text-label-lg font-semibold flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">block</span>
+<span>Stop-Sell (Закрыть продажи)</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg font-semibold flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[18px] text-outline">hotel</span>
+<span>Min Stay</span>
+</button>
+</div>
+</div>
+<!-- MAIN PRICING & INVENTORY MATRIX (Beside the Master Canvas) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Matrix Header Legend Bar -->
+<div class="p-space-md bg-surface-container-low/60 flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md text-text-muted font-label-caps text-label-caps uppercase">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded bg-status-verified-bg text-status-verified flex items-center justify-center font-bold">✓</span>
+<span>Прямой паритет цен</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-status-instant"></span>
+<span>Пятница — Суббота (Weekend Surge)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span>Квота исчерпана / Stop-Sell</span>
+</div>
+</div>
+<div class="font-body-sm text-body-sm text-text-muted flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">verified_user</span>
+<span>Авто-выравнивание валют: THB (Тайский бат ฿)</span>
+</div>
+</div>
+<!-- Scrollable Matrix Grid -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left min-w-[1100px] border-collapse">
+<!-- Date Header Row -->
+<thead>
+<tr class="bg-surface-container-low text-on-surface">
+<th class="py-3 px-space-md w-[320px] font-label-caps text-label-caps uppercase text-text-muted sticky left-0 bg-surface-container-low z-20">
+              Категория / Канал синхронизации
+            </th>
+<!-- 10 Days of Nov 2026 -->
+<th class="py-2.5 px-2 text-center min-w-[76px]">
+<span class="font-label-caps text-label-caps text-text-muted block">ПТ</span>
+<span class="font-title-md text-title-md font-bold text-on-surface">14</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-status-instant-bg/40">
+<span class="font-label-caps text-label-caps text-status-instant block font-bold">СБ</span>
+<span class="font-title-md text-title-md font-bold text-status-instant">15</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-status-instant-bg/40">
+<span class="font-label-caps text-label-caps text-status-instant block font-bold">ВС</span>
+<span class="font-title-md text-title-md font-bold text-status-instant">16</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px]">
+<span class="font-label-caps text-label-caps text-text-muted block">ПН</span>
+<span class="font-title-md text-title-md font-bold text-on-surface">17</span>
+<span class="font-label-caps text-label-caps text-text-muted">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px]">
+<span class="font-label-caps text-label-caps text-text-muted block">ВТ</span>
+<span class="font-title-md text-title-md font-bold text-on-surface">18</span>
+<span class="font-label-caps text-label-caps text-text-muted">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px]">
+<span class="font-label-caps text-label-caps text-text-muted block">СР</span>
+<span class="font-title-md text-title-md font-bold text-on-surface">19</span>
+<span class="font-label-caps text-label-caps text-text-muted">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-surface-container-high/60">
+<span class="font-label-caps text-label-caps text-primary block font-bold">ЧТ</span>
+<span class="font-title-md text-title-md font-bold text-primary">20</span>
+<span class="font-label-caps text-label-caps text-primary font-bold">Surge</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-surface-container-high/60">
+<span class="font-label-caps text-label-caps text-primary block font-bold">ПТ</span>
+<span class="font-title-md text-title-md font-bold text-primary">21</span>
+<span class="font-label-caps text-label-caps text-primary font-bold">Surge</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-status-instant-bg/40">
+<span class="font-label-caps text-label-caps text-status-instant block font-bold">СБ</span>
+<span class="font-title-md text-title-md font-bold text-status-instant">22</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">Nov</span>
+</th>
+<th class="py-2.5 px-2 text-center min-w-[76px] bg-status-instant-bg/40">
+<span class="font-label-caps text-label-caps text-status-instant block font-bold">ВС</span>
+<span class="font-title-md text-title-md font-bold text-status-instant">23</span>
+<span class="font-label-caps text-label-caps text-status-instant font-bold">Nov</span>
+</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm">
+<!-- ================= CATEGORY 1: 1BR ================= -->
+<tr class="bg-surface-sand/70 font-semibold text-on-surface">
+<td class="py-2.5 px-space-md sticky left-0 bg-surface-sand/90 backdrop-blur z-10" colspan="11">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">king_bed</span>
+<span class="font-title-md text-title-md text-primary font-bold">1-Bedroom Luxury Pool View</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest text-text-muted font-label-caps text-label-caps font-bold">24 апартамента в пуле</span>
+</div>
+<div class="flex items-center gap-space-md text-text-muted font-label-caps text-label-caps">
+<span>Мин. срок (Min Stay): <strong class="text-on-surface">2 ночи (вс-чт) / 3 ночи (пт-сб)</strong></span>
+<span class="text-status-verified font-bold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+                    Синхронизировано
+                  </span>
+</div>
+</div>
+</td>
+</tr>
+<!-- 1BR Inventory Row -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-label-md text-label-md text-on-surface font-semibold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Доступно к продаже (Квота)</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">18</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">16</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">14</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">12</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">15</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">19</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">10</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">8</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">11</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">22</span>
+</td>
+</tr>
+<!-- 1BR myUNO Direct Row -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm text-primary font-bold">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">domain</span>
+                  myUNO Direct (Best Rate)
+                </span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1 rounded">Net Rate</span>
+</div>
+</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿3,800</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿4,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿4,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿3,800</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿3,800</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿3,900</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿4,100</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿4,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿4,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿3,800</td>
+</tr>
+<!-- 1BR Airbnb (+15%) -->
+<tr class="hover:bg-surface-container-low/40 transition-colors text-text-muted">
+<td class="py-1.5 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></span>
+                Airbnb (OTA +15%)
+              </span>
+<span class="font-label-caps text-label-caps text-text-muted">Auto markup</span>
+</td>
+<td class="py-1.5 px-2 text-center">฿4,370</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,830</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,830</td>
+<td class="py-1.5 px-2 text-center">฿4,370</td>
+<td class="py-1.5 px-2 text-center">฿4,370</td>
+<td class="py-1.5 px-2 text-center">฿4,485</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿4,715</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿4,830</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,830</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,370</td>
+</tr>
+<!-- 1BR Booking.com (+18%) -->
+<tr class="hover:bg-surface-container-low/40 transition-colors text-text-muted">
+<td class="py-1.5 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                Booking.com (+18%)
+              </span>
+<span class="font-label-caps text-label-caps text-text-muted">Channel rate</span>
+</td>
+<td class="py-1.5 px-2 text-center">฿4,480</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,950</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,950</td>
+<td class="py-1.5 px-2 text-center">฿4,480</td>
+<td class="py-1.5 px-2 text-center">฿4,480</td>
+<td class="py-1.5 px-2 text-center">฿4,600</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿4,840</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿4,950</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,950</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿4,480</td>
+</tr>
+<!-- ================= CATEGORY 2: 2BR ================= -->
+<tr class="bg-surface-sand/70 font-semibold text-on-surface">
+<td class="py-2.5 px-space-md sticky left-0 bg-surface-sand/90 backdrop-blur z-10" colspan="11">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">meeting_room</span>
+<span class="font-title-md text-title-md text-primary font-bold">2-Bedroom Family Suite</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest text-text-muted font-label-caps text-label-caps font-bold">20 апартаментов в пуле</span>
+</div>
+<div class="flex items-center gap-space-md text-text-muted font-label-caps text-label-caps">
+<span>Мин. срок (Min Stay): <strong class="text-on-surface">3 ночи фикс</strong></span>
+<span class="text-status-verified font-bold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-status-verified"></span>
+                    Синхронизировано
+                  </span>
+</div>
+</div>
+</td>
+</tr>
+<!-- 2BR Inventory Row -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-label-md text-label-md text-on-surface font-semibold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Доступно к продаже (Квота)</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">12</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">10</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">8</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">6</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">9</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">11</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">5</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">4</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">11</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">14</span>
+</td>
+</tr>
+<!-- 2BR myUNO Direct -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm text-primary font-bold">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">domain</span>
+                  myUNO Direct (Best Rate)
+                </span>
+<span class="font-label-caps text-label-caps text-status-verified bg-status-verified-bg px-1 rounded">Net Rate</span>
+</div>
+</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿6,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿7,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿7,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿6,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿6,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿6,800</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿7,100</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿7,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿7,200</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿6,500</td>
+</tr>
+<!-- 2BR OTA Channels Unified -->
+<tr class="hover:bg-surface-container-low/40 transition-colors text-text-muted">
+<td class="py-1.5 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-instant"></span>
+                OTA Channels (Airbnb/Booking)
+              </span>
+<span class="font-label-caps text-label-caps text-text-muted">+15%..18%</span>
+</td>
+<td class="py-1.5 px-2 text-center">฿7,475</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿8,280</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿8,280</td>
+<td class="py-1.5 px-2 text-center">฿7,475</td>
+<td class="py-1.5 px-2 text-center">฿7,475</td>
+<td class="py-1.5 px-2 text-center">฿7,820</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿8,165</td>
+<td class="py-1.5 px-2 text-center bg-surface-container-high/30">฿8,280</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿8,280</td>
+<td class="py-1.5 px-2 text-center bg-status-instant-bg/20">฿7,475</td>
+</tr>
+<!-- ================= CATEGORY 3: PENTHOUSE ================= -->
+<tr class="bg-surface-sand/70 font-semibold text-on-surface">
+<td class="py-2.5 px-space-md sticky left-0 bg-surface-sand/90 backdrop-blur z-10" colspan="11">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-secondary">pool</span>
+<span class="font-title-md text-title-md text-primary font-bold">Penthouse Pool Access</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest text-text-muted font-label-caps text-label-caps font-bold">8 апартаментов в пуле</span>
+</div>
+<div class="flex items-center gap-space-md text-text-muted font-label-caps text-label-caps">
+<span>Мин. срок (Min Stay): <strong class="text-on-surface">5 ночей</strong></span>
+<span class="text-status-instant font-bold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-status-instant"></span>
+                    Дефицитный инвентарь
+                  </span>
+</div>
+</div>
+</td>
+</tr>
+<!-- Penthouse Inventory Row with Stop-Sell Example -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-label-md text-label-md text-on-surface font-semibold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Доступно к продаже (Квота)</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">3</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">2</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">1</span>
+</td>
+<!-- Stop Sell on Monday 17 -->
+<td class="py-2 px-2 text-center font-bold font-label-caps text-label-caps">
+<span class="px-1.5 py-1 rounded bg-error-container text-on-error-container block font-bold leading-tight">
+                0 Stop-Sell
+              </span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">2</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">3</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">1</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-instant font-label-md text-label-md bg-surface-container-high/30">
+<span class="px-2 py-1 rounded bg-status-instant-bg block">1</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">2</span>
+</td>
+<td class="py-2 px-2 text-center font-bold text-status-verified font-label-md text-label-md bg-status-instant-bg/20">
+<span class="px-2 py-1 rounded bg-status-verified-bg block">3</span>
+</td>
+</tr>
+<!-- Penthouse myUNO Direct -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-2 px-space-md sticky left-0 bg-surface-container-lowest font-body-sm text-body-sm text-primary font-bold">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">domain</span>
+                  myUNO Direct (Best Rate)
+                </span>
+<span class="font-label-caps text-label-caps text-secondary bg-secondary-fixed/40 px-1 rounded">VIP Tier</span>
+</div>
+</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿12,000</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿14,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿14,500</td>
+<td class="py-2 px-2 text-center font-semibold text-text-muted line-through">฿12,000</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿12,000</td>
+<td class="py-2 px-2 text-center font-semibold text-primary">฿12,800</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿13,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-surface-container-high/30">฿14,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿14,500</td>
+<td class="py-2 px-2 text-center font-semibold text-primary bg-status-instant-bg/20">฿12,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- BOTTOM SPLIT: CHANNEL HEALTH & AUDIT TRAIL LOG -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Channel Health Widget (5 cols) -->
+<div class="lg:col-span-5 bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">hub</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Channel Health &amp; API Latency</h2>
+</div>
+<button class="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container-high font-label-caps text-label-caps text-text-muted transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Пинг</span>
+</button>
+</div>
+<div class="flex flex-col gap-space-sm mt-space-sm">
+<!-- Direct Web -->
+<div class="p- space-sm p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold text-[13px]">
+              UNO
+            </span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">myUNO Direct Web</span>
+<span class="font-label-caps text-label-caps text-text-muted">Нативная база данных PMS</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-status-verified font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+              100% Sync
+            </span>
+<span class="font-body-sm text-body-sm text-text-muted">0.0 сек задержка</span>
+</div>
+</div>
+<!-- Airbnb API -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-8 h-8 rounded-lg bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-[13px]">
+              AB
+            </span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Airbnb XML API</span>
+<span class="font-label-caps text-label-caps text-text-muted">Dynamic Rates + Availability</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Подключено</span>
+<span class="font-body-sm text-body-sm text-text-muted">2 мин назад</span>
+</div>
+</div>
+<!-- Booking.com API -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-[13px]">
+              BK
+            </span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Booking.com Content &amp; Rates</span>
+<span class="font-label-caps text-label-caps text-text-muted">2-Way Instant Sync</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Подключено</span>
+<span class="font-body-sm text-body-sm text-text-muted">35 сек назад</span>
+</div>
+</div>
+<!-- iCal Fallback -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-8 h-8 rounded-lg bg-surface-sand text-secondary flex items-center justify-center font-bold text-[13px]">
+              iC
+            </span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">iCal Fallback Feed</span>
+<span class="font-label-caps text-label-caps text-text-muted">Резервная защита квот</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-status-verified font-bold">Активен</span>
+<span class="font-body-sm text-body-sm text-text-muted">Интервал: 15 мин</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Rate Audit Trail & Visual Showcase (7 cols) -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">history_edu</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Журнал операций и алгоритмический трекинг</h2>
+</div>
+<span class="font-label-caps text-label-caps text-text-muted">Аудит за последние 24ч</span>
+</div>
+<!-- Real Unit Visual Teaser + Audit Details -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md my-space-sm items-center">
+<!-- Visual Unit Thumbnail -->
+<div class="md:col-span-4 relative rounded-xl overflow-hidden shadow-sm h-32 group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="High-end luxury resort apartment overlooking tropical infinity swimming pool in Phuket Thailand with lush palm trees, warm late afternoon sunlight, modern minimalist architectural teakwood finishes, architectural photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5tMr_OEHvbTjn4PZjmSmU799JVMMgj919hdOdw4uCCw0TY69z_IJ5BzAUNqgIfKjYFDo0fIKa0DAUXm6gtSbANLW03qZ_qPtD06t8whkEVZcz4ToJ1aIYFS2BLNgpfcbjhAzEGnVVLLZ1NnufI4bD_WUUxVjiHMRKrLpo7wjIasr_7fv_1A5ScuBbHIySDELR8TGFAaxj_ImkPTymN9-wbjctv2eBuCqwCb79WhvLJ_PLzUEFbmyP"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-2.5">
+<span class="font-label-caps text-label-caps text-white font-bold">Unit #A-204 (1BR)</span>
+<span class="font-label-caps text-label-caps text-accent-gold-soft">The Title Legendary</span>
+</div>
+</div>
+<!-- Audit Log Entries -->
+<div class="md:col-span-8 flex flex-col gap-2.5">
+<!-- Active Demand Surge Log -->
+<div class="p-2.5 rounded-lg bg-surface-sand-subtle flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-status-instant text-[18px] mt-0.5">auto_graph</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium leading-tight">
+<strong>Нараян К.</strong> повысил базовый тариф на пиковые даты 20–25 нояб. (+8%) на основе алгоритма спроса.
+              </span>
+<span class="font-label-caps text-label-caps text-text-muted mt-1">Сегодня, 11:42 • Причина: всплеск бронирований на фестиваль Лойкратхонг</span>
+</div>
+</div>
+<!-- Channel Update Log -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">lock_clock</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium leading-tight">
+<strong>Система (Auto-Lock):</strong> Установлен Stop-Sell на категорию Penthouse на 17 ноября в связи с техническим сервисом бассейна.
+              </span>
+<span class="font-label-caps text-label-caps text-text-muted mt-1">Вчера, 18:15 • Задача Хаускипинга #HK-889</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Footer Metadata Bar -->
+<div class="pt-space-xs flex items-center justify-between font-label-md text-label-md text-text-muted">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-verified">lock</span>
+<span>Паритет цен валидирован в соответствии с контрактами OTA</span>
+</span>
+<button class="text-primary hover:text-tertiary font-bold transition-colors flex items-center gap-1">
+<span>Сформировать отчет о марже</span>
+<span class="material-symbols-outlined text-[16px]">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

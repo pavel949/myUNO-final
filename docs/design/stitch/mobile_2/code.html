@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#effcf9;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-dim": "#cfddd9", "secondary-fixed": "#ffddba", "on-tertiary": "#ffffff", "primary-fixed-dim": "#a7cfc1", "surface-container-highest": "#d8e5e2", "primary-container": "#11382e", "status-verified": "#1E5848", "status-instant-bg": "#FAF3E8", "inverse-primary": "#a7cfc1", "surface-variant": "#d8e5e2", "status-verified-bg": "#E9F1EE", "on-secondary-fixed-variant": "#663e04", "tertiary": "#01221a", "on-tertiary-fixed-variant": "#2d4d44", "on-secondary-container": "#784d14", "on-surface": "#121e1c", "surface-ivory": "#FBF9F5", "accent-gold-soft": "#E4BE8D", "on-secondary-fixed": "#2b1700", "on-secondary": "#ffffff", "surface-container": "#e3f1ed", "tertiary-fixed-dim": "#accec2", "on-primary-fixed-variant": "#284e43", "on-tertiary-container": "#7fa195", "surface-container-high": "#ddebe8", "border-subtle": "#E5DFD3", "primary-fixed": "#c2ebdc", "surface-container-lowest": "#ffffff", "outline": "#717975", "surface-bright": "#effcf9", "outline-variant": "#c1c8c4", "secondary-fixed-dim": "#f6bb79", "text-muted": "#566360", "on-error-container": "#93000a", "on-primary": "#ffffff", "surface-sand": "#F4F0E8", "surface-tint": "#40665a", "tertiary-fixed": "#c7eadd", "inverse-surface": "#273331", "status-instant": "#9A6B32", "on-primary-fixed": "#002019", "primary": "#00221a", "surface": "#effcf9", "on-primary-container": "#7ba295", "on-background": "#121e1c", "error": "#ba1a1a", "on-surface-variant": "#414845", "tertiary-container": "#17372f", "error-container": "#ffdad6", "inverse-on-surface": "#e6f4f0", "background": "#effcf9", "on-error": "#ffffff", "accent-gold-muted": "#F5EAD9", "surface-container-low": "#e9f7f3", "secondary-container": "#fdc17e", "surface-sand-subtle": "#EAE4D7", "on-tertiary-fixed": "#002019", "secondary": "#81551c" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "space-lg": "1.5rem", "gutter": "1.5rem", "space-xs": "0.25rem", "space-2xl": "4rem", "space-sm": "0.5rem", "margin-mobile": "1.25rem", "space-xl": "2.5rem", "margin": "3rem", "gutter-mobile": "1rem" }, "fontFamily": { "body-md": ["Manrope"], "headline-sm": ["Outfit"], "title-md": ["Outfit"], "display-hero-mobile": ["Outfit"], "headline-md": ["Outfit"], "body-lg": ["Manrope"], "body-sm": ["Manrope"], "label-md": ["Manrope"], "label-lg": ["Manrope"], "label-caps": ["Manrope"], "headline-lg-mobile": ["Outfit"], "display-hero": ["Outfit"], "headline-lg": ["Outfit"] }, "fontSize": { "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }], "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "display-hero": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-ivory/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Вернуться назад" class="w-11 h-11 flex items-center justify-center text-primary rounded-full hover:bg-surface-sand transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="Brand logo. - Primary color: #11382e
+- Font: outfit
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UK3vvh4I-kMltaFdsyf0-8HPiA_ePWU1BrN_9HUgEdGoPXtwitabzgeitFUUGlVJzJbm1X8djAnUM9n6YdHsoOQwEWkQPMKi-oUmCAAhStTVSWVqdfWZvhsKmNvo2EndweI4iZ2cLOfpbQJTMIImZMN-fXEJ2XOCQuGWhKBAyquEObMj1rEMqC126Xh10cBSC4FOw0JmdIs1iSkelj_KERXfds8JfLf-Yr1n56J4LL9gCRRfvBS44f1ck"/></div><div class="flex-1 min-w-0 px-space-xs text-center"><span class="block truncate font-title-md text-title-md text-primary">Персональный Шеф Повар</span></div><div class="flex items-center justify-end gap-1"><button aria-label="Поделиться услугой" class="w-11 h-11 flex items-center justify-center text-primary rounded-full hover:bg-surface-sand transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">share</span></button><button aria-label="Связаться с консьержем" class="w-11 h-11 flex items-center justify-center text-primary rounded-full hover:bg-surface-sand transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">chat_bubble</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 bg-surface pb-safe"><div class="flex flex-col w-full pb-32">
+<!-- Hero & Media Showcase -->
+<div class="relative w-full overflow-hidden bg-surface-container-highest">
+<div class="relative w-full aspect-[4/3] max-h-[380px]">
+<img class="w-full h-full object-cover" data-alt="Gourmet private dining setup on a luxury villa terrace overlooking a turquoise Andaman Sea pool at sunset in Phuket. A polished teak table is set with crisp linen, crystal glassware, fresh lime leaves, chilled champagne, and a centerpiece platter of flame-grilled Andaman rock lobsters, giant king prawns, and fresh Rawai oysters on crushed ice. Warm golden hour lighting with deep emerald palm reflections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBoNuW14BF4Iq65QIYrZzlFqroy9isWFz_um2rEFGr1TZhYvKcs_xx-k1OErUIAvn3MFtrrwEQ33DiWZa7pGIVjctATSLfb-PWgHID4NYAuk1ABdYk5B9KVvyW4YdTKmXD-gUNmDZCYYBGbXLgWUQOkvHwzC12cVDJmPe8IKvwtIfmfIbBUViJUMV2umFTWJLTTElmTyy-HRvZAJR6NxeoY7xg2JQ-2GQc7o0YkqSUwnsCUDj3XIYP"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent"></div>
+<!-- Top Badges Floating Over Hero -->
+<div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-ivory/95 backdrop-blur-md text-primary font-label-caps text-label-caps shadow-sm">
+<span class="material-symbols-outlined text-[13px] text-accent-gold-soft" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+          myUNO HOSPITALITY 5★
+        </span>
+<div class="flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-status-verified-bg/95 backdrop-blur-md text-status-verified font-label-caps text-label-caps shadow-sm">
+<span class="material-symbols-outlined text-[13px]">verified_user</span>
+            SHA EXTRA+
+          </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-ivory/95 backdrop-blur-md text-primary font-label-caps text-label-caps shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-status-instant" style="font-variation-settings: 'FILL' 1;">star</span>
+            4.98 (120+)
+          </span>
+</div>
+</div>
+<!-- Bottom Hero Information -->
+<div class="absolute bottom-3 left-3 right-3">
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/85 backdrop-blur-md text-on-primary font-body-sm text-body-sm shadow-md">
+<span class="material-symbols-outlined text-[16px] text-accent-gold-soft">location_on</span>
+<span class="truncate">Подача: The Title Legendary (#F-302) или вилла на Пхукете</span>
+</div>
+</div>
+</div>
+</div>
+<div class="px-margin-mobile flex flex-col gap-6 -mt-2">
+<!-- Title & Executive Overview -->
+<div class="bg-surface-ivory rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-status-instant-bg text-status-instant font-label-caps text-label-caps">
+          ШЕФ НА ВИЛЛУ
+        </span>
+<span class="text-text-muted font-body-sm text-body-sm">• Свежий улов дня</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight mb-2.5">
+        Приватный гастрономический ужин от шеф-повара
+      </h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Шеф-повар с опытом в 5★ отелях (Amanpuri, Trisara) приготовит ужин из свежайших морепродуктов или блюд европейской кухни, сервирует стол ресторанного уровня и оставит кухню в идеальной чистоте.
+      </p>
+</div>
+<!-- Chef Profile Compact Card -->
+<div class="bg-surface-sand rounded-xl p-4.5 shadow-sm">
+<div class="flex items-start gap-3.5">
+<div class="relative shrink-0">
+<img class="w-14 h-14 rounded-full object-cover shadow-sm" data-alt="Portrait of Thai Executive Chef Somchai Tan dressed in a clean dark-emerald chef uniform with gold embroidery, smiling warmly in a bright open-air tropical kitchen. Natural morning light, professional studio portrait, serene luxury hospitality vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_AqB5-U2gt2qKWDntF7N-8RltDnbaKHfbQ0PSZDefJEBCu6-KyGfvsH72b0SKrNHFsme5jJnGQEeAi5xBHJmoJGiP2roDyOb07oN8mTmbCghYBnlLvddnM_NNA4PMgjV9ftjgVyJ3D2la59FXfINpVo6WZl6wpE8LsaHWMotSb5xf7UyCzCQ1r69VDipd6iibfeY5EbYGwfZiRsfgnhlCl315-UX4uXeqI_Y_lPDfC_72aDf56NIU"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-status-verified flex items-center justify-center text-on-primary shadow">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary truncate">Шеф Сомчай Тан</h2>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded-full bg-surface-container-highest text-primary">14 ЛЕТ ОПЫТА</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Le Cordon Bleu Dusit • Экс-су-шеф Trisara</p>
+<div class="mt-2.5 p-2.5 rounded-lg bg-surface-ivory">
+<p class="font-body-sm text-body-sm text-primary italic leading-relaxed">
+              «Вся магия андаманской кухни — в утреннем отборе морепродуктов на аукционе Раваи...»
+            </p>
+</div>
+</div>
+</div>
+<div class="mt-3.5 pt-3 flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-status-verified">verified</span>
+<span>Лично готовит у вас</span>
+</div>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary font-label-md text-label-md active:bg-primary/20 transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">chat_bubble</span>
+          Чат с батлером
+        </button>
+</div>
+</div>
+<!-- What is Included (2x2 Grid) -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary">Что входит в сервис 5★</h2>
+<span class="font-label-caps text-label-caps text-text-muted">ALL INCLUSIVE</span>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<div class="bg-surface-ivory p-3.5 rounded-xl flex flex-col gap-2 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[19px]">local_mall</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary">Утренний улов</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Рынок Раваи, свежие травы и фермерские цитрусы</p>
+</div>
+</div>
+<div class="bg-surface-ivory p-3.5 rounded-xl flex flex-col gap-2 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[19px]">outdoor_grill</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary">Курсовая подача</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">3–4 смены блюд ресторанного тайминга прямо на вилле</p>
+</div>
+</div>
+<div class="bg-surface-ivory p-3.5 rounded-xl flex flex-col gap-2 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[19px]">table_restaurant</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary">Сервировка стола</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Бельгийский лен, бокалы Schott Zwiesel, декор</p>
+</div>
+</div>
+<div class="bg-surface-ivory p-3.5 rounded-xl flex flex-col gap-2 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-sand flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[19px]">cleaning_services</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-primary">myUNO Clean</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Полная мойка посуды, поверхностей и дезинфекция</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Date, Time & Guests Selection -->
+<div class="bg-surface-ivory rounded-xl p-4.5 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary">Дата, время и гости</h2>
+<span class="font-label-caps text-label-caps text-status-verified px-2 py-0.5 bg-status-verified-bg rounded-full">СЛОТ ДОСТУПЕН</span>
+</div>
+<div class="bg-surface-sand rounded-xl p-3.5 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+</div>
+<div>
+<span class="block font-label-caps text-label-caps text-text-muted">ДАТА УЖИНА</span>
+<span class="font-title-md text-title-md text-primary">Вс, 22 ноября 2026</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-ivory flex items-center justify-center text-primary shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">edit_calendar</span>
+</button>
+</div>
+<div class="bg-surface-sand rounded-xl p-3.5 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div>
+<span class="block font-label-caps text-label-caps text-text-muted">ТАЙМИНГ ВЕЧЕРА</span>
+<span class="font-body-md text-body-md text-primary font-medium">19:30 подача первого курса</span>
+<span class="block font-body-sm text-body-sm text-text-muted">Шеф прибывает для заготовок в 17:30</span>
+</div>
+</div>
+</div>
+<!-- Guests Counters -->
+<div class="flex flex-col gap-2.5 pt-1">
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-sand-subtle">
+<div>
+<div class="font-label-lg text-label-lg text-primary">Взрослые персоны</div>
+<div class="font-body-sm text-body-sm text-text-muted">Основное дегустационное меню</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-surface-ivory text-primary flex items-center justify-center shadow-sm font-title-md active:scale-95 transition-transform" id="btn-dec-adults" type="button">−</button>
+<span class="font-title-md text-title-md text-primary w-4 text-center" id="counter-adults">4</span>
+<button class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm font-title-md active:scale-95 transition-transform" id="btn-inc-adults" type="button">+</button>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-sand-subtle">
+<div>
+<div class="font-label-lg text-label-lg text-primary">Дети (до 10 лет)</div>
+<div class="font-body-sm text-body-sm text-text-muted">Специальные мягкие блюда</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-surface-ivory text-primary flex items-center justify-center shadow-sm font-title-md active:scale-95 transition-transform opacity-50" id="btn-dec-kids" type="button">−</button>
+<span class="font-title-md text-title-md text-primary w-4 text-center" id="counter-kids">0</span>
+<button class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm font-title-md active:scale-95 transition-transform" id="btn-inc-kids" type="button">+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Tasting Menu Selection -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary">Выбор дегустационного сета</h2>
+<span class="font-label-caps text-label-caps text-status-instant bg-status-instant-bg px-2 py-0.5 rounded-full">ТОП ВЫБОР</span>
+</div>
+<!-- Set A (Selected) -->
+<div class="menu-set-card rounded-xl p-4.5 bg-surface-ivory shadow-md transition-all duration-200" id="set-card-a">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5">
+<div class="mt-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-title-md text-title-md text-primary">Андаманский гриль &amp; Лобстер</h3>
+</div>
+<p class="font-label-caps text-label-caps text-status-verified mt-0.5">ВЫБРАНО ДЛЯ ВСЕХ 4 ГОСТЕЙ</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<div class="font-title-md text-title-md text-primary">฿2,200</div>
+<div class="font-label-caps text-label-caps text-text-muted">/ персона</div>
+</div>
+</div>
+<div class="mt-3.5 grid grid-cols-1 gap-2 pt-3 bg-surface-sand/60 p-3 rounded-lg">
+<div class="flex items-start gap-2 text-on-surface">
+<span class="font-label-caps text-label-caps text-primary mt-0.5">КУРС 1</span>
+<span class="font-body-sm text-body-sm">Севиче из дикого желтоперого тунца с манго, юдзу и маракуйей</span>
+</div>
+<div class="flex items-start gap-2 text-on-surface">
+<span class="font-label-caps text-label-caps text-primary mt-0.5">КУРС 2</span>
+<span class="font-body-sm text-body-sm">Теплый салат с фалангами королевского краба и хрустящей спаржей</span>
+</div>
+<div class="flex items-start gap-2 text-on-surface">
+<span class="font-label-caps text-label-caps text-primary mt-0.5">КУРС 3</span>
+<span class="font-body-sm text-body-sm">Андаманский лобстер на углях с чесночным маслом и филе дикого сибаса</span>
+</div>
+<div class="flex items-start gap-2 text-on-surface">
+<span class="font-label-caps text-label-caps text-primary mt-0.5">КУРС 4</span>
+<span class="font-body-sm text-body-sm">Кокосовый крем-брюле с натуральной таитянской ванилью и лаймом</span>
+</div>
+</div>
+</div>
+<!-- Set B -->
+<div class="menu-set-card rounded-xl p-4.5 bg-surface-ivory shadow-sm opacity-90 transition-all duration-200" id="set-card-b">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5">
+<div class="mt-1 w-5 h-5 rounded-full bg-surface-sand flex items-center justify-center shrink-0">
+<span class="w-2.5 h-2.5 rounded-full bg-transparent"></span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary">Французская классика &amp; Рибай</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Премиальный стейк Black Angus &amp; трюфель</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<div class="font-title-md text-title-md text-primary">฿2,600</div>
+<div class="font-label-caps text-label-caps text-text-muted">/ персона</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 pl-7.5">
+          Тартар Bluefin, спаржа гриль, рибай стейк 250г со сморчками, шоколадный фондан с соленой карамелью.
+        </p>
+</div>
+<!-- Set C -->
+<div class="menu-set-card rounded-xl p-4.5 bg-surface-ivory shadow-sm opacity-90 transition-all duration-200" id="set-card-c">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5">
+<div class="mt-1 w-5 h-5 rounded-full bg-surface-sand flex items-center justify-center shrink-0">
+<span class="w-2.5 h-2.5 rounded-full bg-transparent"></span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-primary">Королевский Сиам Royal Thai</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Традиции дворцовой тайской кухни</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<div class="font-title-md text-title-md text-primary">฿1,900</div>
+<div class="font-label-caps text-label-caps text-text-muted">/ персона</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 pl-7.5">
+          Мягкопанцирный краб темпура, Том Ям с лобстером, Массаман карри с нежным Вагю, манго стики райс.
+        </p>
+</div>
+</div>
+<!-- Dietary Preferences & Allergies -->
+<div class="bg-surface-ivory rounded-xl p-4.5 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary">Аллергии и пожелания</h2>
+<span class="material-symbols-outlined text-primary text-[20px]">room_service</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+        Шеф адаптирует рецептуры под здоровье и персональные предпочтения ваших близких:
+      </p>
+<div class="flex flex-wrap gap-2">
+<button class="diet-chip px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">check</span>
+          Без арахиса и орехов
+        </button>
+<button class="diet-chip px-3 py-1.5 rounded-full bg-surface-sand text-on-surface font-label-md text-label-md flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">add</span>
+          Без глютена
+        </button>
+<button class="diet-chip px-3 py-1.5 rounded-full bg-surface-sand text-on-surface font-label-md text-label-md flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">add</span>
+          Детские не острые блюда
+        </button>
+<button class="diet-chip px-3 py-1.5 rounded-full bg-surface-sand text-on-surface font-label-md text-label-md flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">add</span>
+          Вегетарианские опции
+        </button>
+</div>
+</div>
+<!-- Additional Options / Upsells -->
+<div class="bg-surface-ivory rounded-xl p-4.5 shadow-sm flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-primary">Дополнительные опции</h2>
+<span class="font-label-caps text-label-caps text-text-muted">ПРЕМИУМ СЕРВИС</span>
+</div>
+<!-- Option 1: Selected -->
+<label class="flex items-center justify-between p-3 rounded-lg bg-surface-sand cursor-pointer">
+<div class="flex items-center gap-3">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<div>
+<span class="block font-label-lg text-label-lg text-primary font-semibold">Винное сопровождение (3 бут.)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Подбор от шефа: Шабли, Совиньон и Пино Нуар</span>
+</div>
+</div>
+<span class="font-title-md text-title-md text-primary font-semibold shrink-0">+฿3,800</span>
+</label>
+<!-- Option 2 -->
+<label class="flex items-center justify-between p-3 rounded-lg bg-surface-sand/50 cursor-pointer">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<div>
+<span class="block font-label-lg text-label-lg text-primary font-semibold">Официант-батлер (4 часа)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Непрерывная подача напитков и смена блюд</span>
+</div>
+</div>
+<span class="font-title-md text-title-md text-primary font-semibold shrink-0">+฿1,500</span>
+</label>
+<!-- Option 3 -->
+<label class="flex items-center justify-between p-3 rounded-lg bg-surface-sand/50 cursor-pointer">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<div>
+<span class="block font-label-lg text-label-lg text-primary font-semibold">Праздничный авторский торт</span>
+<span class="font-body-sm text-body-sm text-text-muted">Манго-маракуйя или бельгийский шоколад</span>
+</div>
+</div>
+<span class="font-title-md text-title-md text-primary font-semibold shrink-0">+฿1,200</span>
+</label>
+<!-- Option 4 -->
+<label class="flex items-center justify-between p-3 rounded-lg bg-surface-sand/50 cursor-pointer">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<div>
+<span class="block font-label-lg text-label-lg text-primary font-semibold">Детское спец-меню (2 сета)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Мини-бургеры с вагю, паста и ягодный сорбет</span>
+</div>
+</div>
+<span class="font-title-md text-title-md text-primary font-semibold shrink-0">+฿1,000</span>
+</label>
+</div>
+<!-- Transparent Price Breakdown -->
+<div class="bg-surface-sand rounded-xl p-5 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between pb-1">
+<h2 class="font-title-md text-title-md text-primary">Детализация расчета</h2>
+<span class="inline-flex items-center gap-1 font-label-caps text-label-caps text-status-verified">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+          ПРОЗРАЧНЫЙ СЧЕТ
+        </span>
+</div>
+<div class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface">
+<div class="flex justify-between">
+<span class="text-text-muted">Работа шеф-повара и проф. инвентарь (до 5 ч)</span>
+<span class="font-semibold text-primary">฿4,500</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted">Сет «Андаманский гриль» (4 персоны × ฿2,200)</span>
+<span class="font-semibold text-primary">฿8,800</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted">Винное сопровождение от сомелье</span>
+<span class="font-semibold text-primary">฿3,800</span>
+</div>
+<div class="flex justify-between text-status-verified">
+<span class="font-medium">Привилегия резидента The Title Legendary (-10%)</span>
+<span class="font-semibold">-฿1,710</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted">Отельная сервировка стола и клининг кухни</span>
+<span class="font-semibold text-status-verified">฿0 (Включено)</span>
+</div>
+</div>
+<div class="pt-3 mt-1 flex items-baseline justify-between bg-surface-ivory p-3.5 rounded-lg shadow-sm">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted block">ИТОГО К ОПЛАТЕ ОНЛАЙН</span>
+<span class="font-headline-sm text-headline-sm text-primary">฿15,390</span>
+</div>
+<div class="text-right">
+<span class="font-title-md text-title-md text-secondary block font-semibold">≈ 43,090 ₽</span>
+<span class="font-body-sm text-body-sm text-text-muted">($425 по курсу дня)</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-2.5 mt-1">
+<span class="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-primary">
+<strong class="font-semibold">Бесплатная отмена за 24 часа.</strong> Морепродукты и премиальные продукты закупаются шефом индивидуально утром в день ужина.
+        </p>
+</div>
+</div>
+</div>
+<!-- Sticky Mobile Action & Payment Bottom Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-surface-ivory/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(17,56,46,0.08)] px-margin-mobile pt-3 pb-safe">
+<div class="flex items-center justify-between gap-3">
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted leading-tight">ИТОГО К ОПЛАТЕ</span>
+<div class="flex items-baseline gap-1.5 truncate">
+<span class="font-headline-sm text-headline-sm text-primary font-semibold">฿15,390</span>
+<span class="font-body-sm text-body-sm text-secondary font-medium">≈ 43,090 ₽</span>
+</div>
+</div>
+<button class="flex-1 max-w-[210px] h-12 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-md active:bg-primary-container transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span>Забронировать →</span>
+</button>
+</div>
+<!-- Supported payment gateways / guarantees -->
+<div class="mt-2 pt-1.5 pb-1 flex items-center justify-between text-text-muted font-label-caps text-label-caps opacity-90">
+<span class="inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-verified"></span>
+        Депозит 100% Secure
+      </span>
+<span>МИР / СБП • VISA / MC • PROMPTPAY • USDT</span>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interactions for guest stepper & selection
+  (function() {
+    let adults = 4;
+    let kids = 0;
+    const adultsEl = document.getElementById('counter-adults');
+    const kidsEl = document.getElementById('counter-kids');
+
+    document.getElementById('btn-inc-adults')?.addEventListener('click', () => {
+      adults++;
+      adultsEl.textContent = adults;
+    });
+
+    document.getElementById('btn-dec-adults')?.addEventListener('click', () => {
+      if (adults > 1) {
+        adults--;
+        adultsEl.textContent = adults;
+      }
+    });
+
+    document.getElementById('btn-inc-kids')?.addEventListener('click', () => {
+      kids++;
+      kidsEl.textContent = kids;
+      kidsEl.previousElementSibling?.classList.remove('opacity-50');
+    });
+
+    document.getElementById('btn-dec-kids')?.addEventListener('click', () => {
+      if (kids > 0) {
+        kids--;
+        kidsEl.textContent = kids;
+        if (kids === 0) {
+          kidsEl.previousElementSibling?.classList.add('opacity-50');
+        }
+      }
+    });
+
+    // Dietary chips toggling
+    document.querySelectorAll('.diet-chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        const isSelected = this.classList.contains('bg-primary');
+        if (isSelected) {
+          this.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+          this.classList.add('bg-surface-sand', 'text-on-surface');
+          const icon = this.querySelector('.material-symbols-outlined');
+          if (icon) {
+            icon.textContent = 'add';
+            icon.style.fontVariationSettings = '';
+          }
+        } else {
+          this.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+          this.classList.remove('bg-surface-sand', 'text-on-surface');
+          const icon = this.querySelector('.material-symbols-outlined');
+          if (icon) {
+            icon.textContent = 'check';
+            icon.style.fontVariationSettings = "'FILL' 1";
+          }
+        }
+      });
+    });
+  })();
+</script></main></body></html>

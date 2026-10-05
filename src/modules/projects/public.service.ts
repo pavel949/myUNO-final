@@ -97,12 +97,20 @@ export interface PublicProjectCard {
 export interface PublicProjectUnit {
   id: string;
   name: string;
+  titleKey: string | null;
+  descriptionKey: string | null;
   unitType: string;
   categoryKey: string | null;
   bedrooms: number;
   bathrooms: number;
   maxGuests: number;
   sizeSqm: number | null;
+  usableAreaSqm: number | null;
+  grossAreaSqm: number | null;
+  outdoorAreaSqm: number | null;
+  plotAreaSqm: number | null;
+  unitFeatures: string[];
+  views: string[];
   /** Canonical InventoryCategory base; Unit field only for legacy fallback. */
   baseNightlyThb: number;
   instantBook: boolean;
@@ -410,12 +418,20 @@ export async function getPublicProjectBySlug(
     units: publicUnits.map(({ unit: u, media, bookable }) => ({
       id: u.id,
       name: u.name,
+      titleKey: u.descriptionKey ? u.descriptionKey.replace(/\.description$/, '.title') : null,
+      descriptionKey: u.descriptionKey,
       unitType: u.unitType,
       categoryKey: u.inventoryCategory?.categoryKey ?? u.categoryKey,
       bedrooms: u.bedrooms,
       bathrooms: u.bathrooms,
       maxGuests: u.maxGuests,
       sizeSqm: u.sizeSqm,
+      usableAreaSqm: u.usableAreaSqm === null ? null : Number(u.usableAreaSqm),
+      grossAreaSqm: u.grossAreaSqm === null ? null : Number(u.grossAreaSqm),
+      outdoorAreaSqm: u.outdoorAreaSqm === null ? null : Number(u.outdoorAreaSqm),
+      plotAreaSqm: u.plotAreaSqm === null ? null : Number(u.plotAreaSqm),
+      unitFeatures: u.unitFeatures,
+      views: u.views,
       baseNightlyThb: u.inventoryCategory?.baseNightlyThb ?? u.baseNightlyThb,
       instantBook: bookable && u.instantBook,
       coverUrl: media.ready ? media.coverUrl : null,
@@ -624,12 +640,20 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
   return {
     id: unit.id,
     name: unit.name,
+    titleKey: unit.descriptionKey ? unit.descriptionKey.replace(/\.description$/, '.title') : null,
+    descriptionKey: unit.descriptionKey,
     unitType: unit.unitType,
     categoryKey: unit.inventoryCategory?.categoryKey ?? unit.categoryKey,
     bedrooms: unit.bedrooms,
     bathrooms: unit.bathrooms,
     maxGuests: unit.maxGuests,
     sizeSqm: unit.sizeSqm,
+    usableAreaSqm: unit.usableAreaSqm === null ? null : Number(unit.usableAreaSqm),
+    grossAreaSqm: unit.grossAreaSqm === null ? null : Number(unit.grossAreaSqm),
+    outdoorAreaSqm: unit.outdoorAreaSqm === null ? null : Number(unit.outdoorAreaSqm),
+    plotAreaSqm: unit.plotAreaSqm === null ? null : Number(unit.plotAreaSqm),
+    unitFeatures: unit.unitFeatures,
+    views: unit.views,
     baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
     instantBook: unit.instantBook,
     coverUrl: media.coverUrl,
@@ -637,7 +661,6 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     photoScope: media.photoScope === 'room_type' ? 'room_type' : 'exact_unit',
     mediaReady: true,
     bookable: true,
-    descriptionKey: unit.descriptionKey,
     minNights: unit.inventoryCategory?.minNights ?? unit.minNights,
     amenityKeys: unit.amenityKeys,
     project: {

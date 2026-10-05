@@ -238,7 +238,6 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
     <div className="stitch-workspace">
       <div className="mx-auto max-w-6xl px-20 py-32 md:px-32 md:py-40">
         <div className="stitch-hero-dark mb-40">
-          <p className="mb-8 text-kicker font-semibold uppercase tracking-[0.16em] text-brand-sun-soft">Owner · Portfolio</p>
           <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">
             {labels['owner.dashboard.title']}
           </h1>

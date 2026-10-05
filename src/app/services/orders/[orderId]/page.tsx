@@ -11,6 +11,7 @@ import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
 import { getServiceOrderCustomerView } from '@/modules/services';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -388,7 +389,7 @@ export default async function ServiceOrderDetailPage({
                       </p>
                     </div>
                     <span className="text-small text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString()}
+                      <LocalDate value={payment.createdAt} />
                     </span>
                   </div>
                   {payment.receiptNumber && (

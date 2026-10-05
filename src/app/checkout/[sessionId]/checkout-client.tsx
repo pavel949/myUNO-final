@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface SessionInfo {
   sessionId: string;
@@ -167,8 +168,8 @@ export default function CheckoutClient({
                   {labels['payments.checkout.dates_label']}
                 </span>
                 <span className="text-text-ink">
-                  {new Date(session.booking.startDate).toLocaleDateString()} —{' '}
-                  {new Date(session.booking.endDate).toLocaleDateString()}
+                  <LocalDate value={session.booking.startDate} /> —{' '}
+                  <LocalDate value={session.booking.endDate} />
                 </span>
               </div>
             )}

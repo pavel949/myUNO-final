@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface KpiRow {
   id: string;
@@ -250,8 +251,8 @@ export default function AdminOperationalKpisClient({
                   <td className="p-12 text-text-ink">{kpi.unitName}</td>
                   <td className="p-12 text-text-secondary">{kpi.metricName}</td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(kpi.periodStart).toLocaleDateString()} –{' '}
-                    {new Date(kpi.periodEnd).toLocaleDateString()}
+                    <LocalDate value={kpi.periodStart} /> –{' '}
+                    <LocalDate value={kpi.periodEnd} />
                   </td>
                   <td className="p-12 text-text-secondary">
                     {kpi.targetValue != null ? kpi.targetValue.toLocaleString() : '—'}

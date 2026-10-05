@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface AdminService {
   id: string;
@@ -83,7 +84,7 @@ export default function ServicesAdminClient({
               <span className="text-text-secondary font-normal"> · {service.providerName}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(service.createdAt).toLocaleDateString()}
+              <LocalDate value={service.createdAt} />
             </p>
           </div>
           <span

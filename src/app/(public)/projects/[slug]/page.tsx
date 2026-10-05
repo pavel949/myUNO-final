@@ -16,6 +16,7 @@ import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -671,7 +672,7 @@ export default async function ProjectLandingPage({
                 ) : null}
                 <p className="text-small text-text-secondary">
                   {review.authorFirstName} ·{' '}
-                  {new Date(review.createdAt).toLocaleDateString()}
+                  <LocalDate value={review.createdAt} />
                 </p>
                 {review.reply ? (
                   <p className="text-small text-text-secondary mt-12 pl-12 border-l-2 border-border-line">

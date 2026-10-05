@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import {
   getAdminDashboardStats,
   occupancyByCategory,
@@ -10,6 +10,7 @@ import {
 import { listProjects } from '@/modules/projects';
 import { Sparkline, formatThb } from '@/components/viz';
 import { StatTile } from '@/components/StatTile';
+import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,13 +141,7 @@ export default async function AdminDashboardPage() {
           <p className="text-small text-text-secondary mt-4">
             {labels['admin.dashboard.as_of'].replace(
               '{time}',
-              reportEnd.toLocaleString('en-GB', {
-                timeZone: 'Asia/Bangkok',
-                day: '2-digit',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              formatDate(reportEnd, getRequestLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
             )}
           </p>
         </div>

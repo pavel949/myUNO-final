@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Button } from '@/components';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface LatestStatementCardProps {
   statementId: string | null;
@@ -9,13 +11,10 @@ interface LatestStatementCardProps {
   onViewStatement?: (statementId: string) => void;
 }
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-};
-
 export const LatestStatementCard = React.forwardRef<HTMLDivElement, LatestStatementCardProps>(
   ({ statementId, createdAt, onViewStatement }, ref) => {
+    const locale = useLocale();
+    const formatDate = (dateStr: string): string => formatDateIn(dateStr, locale, 'monthYear');
     if (!statementId) {
       return (
         <div ref={ref} className="border border-border-line rounded-md p-24 bg-surface-paper-soft">

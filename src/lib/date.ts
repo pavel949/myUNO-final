@@ -152,3 +152,49 @@ export function daysUntil(
   const today = startOfCalendarDayUtc(calendarDayIn(instant, timeZone));
   return daysBetween(today, targetDay);
 }
+
+/** Intl locale per UI locale. Thai keeps the Gregorian calendar: stay and
+ *  payment dates must read the same in every language (th-TH alone renders
+ *  Buddhist-era years, e.g. 2569). */
+const INTL_LOCALE: Record<string, string> = {
+  en: 'en-GB',
+  ru: 'ru-RU',
+  th: 'th-TH-u-ca-gregory',
+  zh: 'zh-CN',
+};
+
+export const DATE_FORMATS = {
+  /** 5 Oct 2026 · 5 окт. 2026 г. */
+  date: { day: 'numeric', month: 'short', year: 'numeric' },
+  /** 5 Oct · 5 окт. */
+  dayMonth: { day: 'numeric', month: 'short' },
+  /** October 2026 */
+  monthYear: { month: 'long', year: 'numeric' },
+  /** 14:30 */
+  time: { hour: '2-digit', minute: '2-digit' },
+  /** 5 Oct 2026, 14:30 */
+  dateTime: { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
+} satisfies Record<string, Intl.DateTimeFormatOptions>;
+
+export type DateFormat = keyof typeof DATE_FORMATS;
+
+/**
+ * The one way to show a date to a person. Locale-aware, and always in the
+ * operating zone, so the server render and the browser agree (a bare
+ * `toLocaleDateString()` used the server's en-US and the browser's own zone:
+ * US-style dates for Russian guests, and date-only values shifted back a day
+ * for anyone west of UTC, plus a hydration mismatch). Stored calendar days
+ * (UTC midnight) read as the same day in Bangkok.
+ */
+export function formatDate(
+  value: Date | string | number | null | undefined,
+  locale: string,
+  format: DateFormat | Intl.DateTimeFormatOptions = 'date',
+  timeZone: string = DEFAULT_TIME_ZONE
+): string {
+  if (value === null || value === undefined || value === '') return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const options = typeof format === 'string' ? DATE_FORMATS[format] : format;
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? INTL_LOCALE.en, { ...options, timeZone }).format(date);
+}

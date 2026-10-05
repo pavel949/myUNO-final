@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Dispute {
   id: string;
@@ -83,7 +84,7 @@ export default function DisputesAdminClient({
                 <span className="text-body font-semibold text-text-ink">{dispute.title}</span>
               </div>
               <span className="text-small text-text-secondary">
-                {new Date(dispute.createdAt).toLocaleDateString()}
+                <LocalDate value={dispute.createdAt} />
               </span>
             </div>
 

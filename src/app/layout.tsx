@@ -8,6 +8,7 @@ import '@fontsource-variable/noto-sans-thai/wght.css';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -155,6 +156,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
+        <LocaleProvider locale={locale}>
         <Navbar
           user={
             user
@@ -262,6 +264,7 @@ export default async function RootLayout({
             zh: navLabels['nav.locale.zh'],
           }}
         />
+        </LocaleProvider>
       </body>
     </html>
   );

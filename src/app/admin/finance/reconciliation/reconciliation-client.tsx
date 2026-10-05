@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ReconciliationData {
   unmatchedPayments: Array<{
@@ -219,7 +220,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       </span>
                     </td>
                     <td className="px-12 py-8 text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString()}
+                      <LocalDate value={payment.createdAt} />
                     </td>
                   </tr>
                 ))}
@@ -264,7 +265,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       {labels['finance.reconciliation.col_created']}
                     </p>
                     <p className="text-body text-text-ink">
-                      {new Date(refund.createdAt).toLocaleDateString()}
+                      <LocalDate value={refund.createdAt} />
                     </p>
                   </div>
                 </div>

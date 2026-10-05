@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LocalDate } from '@/components/LocalDate';
 
 type Reservation = {
   id: string;
@@ -38,7 +39,7 @@ export default function AmenityReservationsClient({ reservations }: { reservatio
     {reservations.map(row => <article key={row.id} className="rounded-md border border-border-line bg-surface-paper p-16">
       <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString()} – {new Date(row.endAt).toLocaleTimeString()}</p>
+          <p className="font-semibold text-text-ink"><LocalDate value={row.startAt} format="dateTime" /> – <LocalDate value={row.endAt} format="time" /></p>
           <p className="mt-4 text-small text-text-secondary">{row.identity.firstName} {row.identity.lastName}{row.identity.email ? ` · ${row.identity.email}` : ''} · party {row.partySize}</p>
           <p className="mt-8 text-small text-text-secondary">{row.booking ? `${row.booking.unit.name} · Booking ${row.booking.id}` : 'Project role / no stay booking'}{row.note ? ` · ${row.note}` : ''}</p>
         </div>

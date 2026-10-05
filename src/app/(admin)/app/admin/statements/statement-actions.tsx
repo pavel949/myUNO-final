@@ -3,6 +3,7 @@
 import { useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Statement {
   id: string;
@@ -248,7 +249,7 @@ export default function StatementActions({
                 <Fragment key={s.id}>
                   <tr className="border-b border-border-line">
                     <td className="px-12 py-8">
-                      {`${new Date(s.periodStart).toLocaleDateString()} – ${new Date(s.periodEnd).toLocaleDateString()}`}
+                      <LocalDate value={s.periodStart} /> – <LocalDate value={s.periodEnd} />
                     </td>
                     <td className="px-12 py-8">{s.ownerName}</td>
                     <td className="px-12 py-8">{s.unitName}</td>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 import BankTransferInstructions from '@/components/booking/BankTransferInstructions';
+import { LocalDate } from '@/components/LocalDate';
 
 interface BookingDetail {
   id: string;
@@ -380,7 +381,7 @@ export default function BookingDetailClient({
             <div>
               <p className="text-small text-text-secondary">{labels['booking.detail.check_in']}</p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.startDate).toLocaleDateString()}
+                <LocalDate value={booking.startDate} />
               </p>
             </div>
             <div>
@@ -388,7 +389,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.check_out']}
               </p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.endDate).toLocaleDateString()}
+                <LocalDate value={booking.endDate} />
               </p>
             </div>
             <div>
@@ -464,7 +465,7 @@ export default function BookingDetailClient({
               </p>
               {booking.createdAt && (
                 <p className="text-small text-text-secondary">
-                  {new Date(booking.createdAt).toLocaleDateString()}
+                  <LocalDate value={booking.createdAt} />
                 </p>
               )}
             </div>
@@ -482,7 +483,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkin'] || 'Check-in'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.startDate).toLocaleDateString()}
+                <LocalDate value={booking.startDate} />
               </p>
             </div>}
             {stayStartedOrConfirmed && <div className="relative">
@@ -491,7 +492,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkout'] || 'Check-out'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.endDate).toLocaleDateString()}
+                <LocalDate value={booking.endDate} />
               </p>
             </div>}
           </div>

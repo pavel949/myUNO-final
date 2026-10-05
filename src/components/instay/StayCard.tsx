@@ -3,6 +3,8 @@
 import React from 'react';
 import { Chip } from '@/components/Chip';
 import { TrustMark } from '@/components/TrustMark';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface StayCardProps {
   unitName: string;
@@ -22,18 +24,6 @@ interface StayCardProps {
   /** Resolved copy from the content layer — the card never writes its own. */
   labels: Record<string, string>;
 }
-
-const formatStayRange = (startStr: string, endStr: string): string => {
-  const start = new Date(startStr);
-  const end = new Date(endStr);
-  const startLabel = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const endLabel = end.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${startLabel} – ${endLabel}`;
-};
 
 const stayChipStatus = (status: string): 'checked_in' | 'confirmed' | 'cancelled' | 'closed' | 'default' => {
   switch (status) {
@@ -71,6 +61,9 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
     },
     ref
   ) => {
+    const locale = useLocale();
+    const formatStayRange = (startStr: string, endStr: string): string =>
+      `${formatDateIn(startStr, locale, 'dayMonth')} – ${formatDateIn(endStr, locale, 'date')}`;
     const nightsLabel = (labels['home.stay.nights_count'] ?? '').replace(
       '{count}',
       String(nights)

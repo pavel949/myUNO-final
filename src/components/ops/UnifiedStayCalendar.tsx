@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { shiftCalendarDay } from '@/modules/booking/calendar-projection';
 import type { CalendarCell, CalendarState } from '@/modules/booking/calendar-projection';
+import { formatDate } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface UnitRow {
   id: string;
@@ -69,6 +71,7 @@ const shortLabel: Record<CalendarState, string> = {
 };
 
 export default function UnifiedStayCalendar(props: Props) {
+  const locale = useLocale();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
@@ -89,7 +92,7 @@ export default function UnifiedStayCalendar(props: Props) {
   };
   const refresh = () => {
     router.refresh();
-    setRefreshRequestedAt(new Date().toLocaleTimeString());
+    setRefreshRequestedAt(formatDate(new Date(), locale, 'time'));
   };
   useEffect(() => {
     // Periodic revalidation is a fallback, not a claimed external push subscription.
@@ -253,7 +256,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <div className="text-center">
             <p className="font-semibold text-text-ink">{mobileDate}</p>
             <p className="text-[11px] text-text-secondary">
-              {new Date(mobileDate+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}
+              {formatDate(mobileDate+'T00:00:00Z', locale, {weekday:'long'}, 'UTC')}
             </p>
           </div>
           <button type="button" disabled={mobileIndex>=props.days.length-1}
@@ -301,7 +304,7 @@ export default function UnifiedStayCalendar(props: Props) {
               {props.days.map((day)=><th key={day} scope="col"
                 className={day===props.today?'border-b border-l border-emerald-300 bg-emerald-100 p-8 text-center text-emerald-900':'border-b border-l border-border-line bg-surface-ivory p-8 text-center text-text-secondary'}>
                 <span className="block font-semibold">{day.slice(8)}</span>
-                <span className="block text-[10px]">{new Date(day+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'})}</span>
+                <span className="block text-[10px]">{formatDate(day+'T00:00:00Z', locale, {weekday:'short'}, 'UTC')}</span>
               </th>)}
             </tr></thead>
             <tbody>

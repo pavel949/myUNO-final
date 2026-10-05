@@ -5,6 +5,7 @@ import { getAdminComplianceOverview } from '@/modules/core';
 import { safeDecrypt } from '@/modules/ops';
 import ComplianceProjectFilter from './compliance-project-filter';
 import RegulatoryCredentialsClient from './regulatory-credentials-client';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -281,9 +282,9 @@ export default async function AdminCompliancePage({
                   <p className="text-small text-text-secondary">
                     {record.projectName} ·{' '}
                     {recordStatusLabel(record.status, labels)}
-                    {record.expiresOn
-                      ? ` · ${labels['admin.compliance.records_expires']} ${record.expiresOn.toLocaleDateString()}`
-                      : ''}
+                    {record.expiresOn && (
+                      <> · {labels['admin.compliance.records_expires']} <LocalDate value={record.expiresOn} /></>
+                    )}
                   </p>
                 </div>
                 <Link

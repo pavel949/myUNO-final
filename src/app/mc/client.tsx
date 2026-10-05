@@ -18,6 +18,7 @@ import {
 } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Unit {
   id: string;
@@ -168,11 +169,11 @@ function monthToPeriod(monthValue: string): { periodStart: string; periodEnd: st
   };
 }
 
-function formatReportPeriod(periodStart: string, periodEnd: string): string {
-  const start = new Date(periodStart);
+/** A half-open report period shown inclusively (the end date is exclusive). */
+function ReportPeriod({ periodStart, periodEnd }: { periodStart: string; periodEnd: string }) {
   const end = new Date(periodEnd);
   end.setUTCDate(end.getUTCDate() - 1);
-  return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
+  return <><LocalDate value={periodStart} /> — <LocalDate value={end} /></>;
 }
 
 export function MCDashboardClient({
@@ -311,7 +312,8 @@ export function MCDashboardClient({
         labels['mc.reports.export.fee_amount'],
       ],
       ...feeReport.feeLines.map((line) => [
-        new Date(line.date).toLocaleDateString(),
+        // CSV is read by spreadsheets: an unambiguous ISO day, not a locale string.
+        new Date(line.date).toISOString().slice(0, 10),
         line.type,
         line.unitName || '',
         line.description,
@@ -889,10 +891,10 @@ export function MCDashboardClient({
                             )}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
+                            <LocalDate value={booking.startDate} />
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
+                            <LocalDate value={booking.endDate} />
                           </td>
                           <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
                             ฿{booking.totalThb.toLocaleString()}
@@ -1189,10 +1191,10 @@ export function MCDashboardClient({
             ) : (
               <div>
                 <p className="text-small text-text-secondary mb-16">
-                  {formatReportPeriod(
-                    String(feeReport.periodStart),
-                    String(feeReport.periodEnd)
-                  )}
+                  <ReportPeriod
+                    periodStart={String(feeReport.periodStart)}
+                    periodEnd={String(feeReport.periodEnd)}
+                  />
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
                   <HeroNumber

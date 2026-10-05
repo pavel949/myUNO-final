@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { LocalDate } from '@/components/LocalDate';
 
 type Labels = Record<string, string>;
 
@@ -55,11 +56,11 @@ function formatBaht(satang: number) {
   });
 }
 
-function formatPeriod(start: string, end: string) {
-  const s = new Date(start);
+/** A half-open payout period shown inclusively (the end date is exclusive). */
+function PeriodRange({ start, end }: { start: string; end: string }) {
   const e = new Date(end);
   e.setUTCDate(e.getUTCDate() - 1);
-  return `${s.toLocaleDateString()} — ${e.toLocaleDateString()}`;
+  return <><LocalDate value={start} /> — <LocalDate value={e} /></>;
 }
 
 function FigureRow({
@@ -127,7 +128,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
               {labels['provider.remittances.current_period']}
             </h2>
             <p className="text-body text-text-secondary">
-              {formatPeriod(view.currentPeriod.periodStart, view.currentPeriod.periodEnd)}
+              <PeriodRange start={view.currentPeriod.periodStart} end={view.currentPeriod.periodEnd} />
             </p>
             <p className="text-caption text-text-secondary mt-4">{cadenceLabel}</p>
           </div>
@@ -212,14 +213,14 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
                   <tr key={payout.id} className="border-b border-border-line last:border-b-0">
                     <td className="text-body py-12 pr-16 whitespace-nowrap">
                       {payout.periodStart && payout.periodEnd
-                        ? formatPeriod(payout.periodStart, payout.periodEnd)
+                        ? <PeriodRange start={payout.periodStart} end={payout.periodEnd} />
                         : '—'}
                     </td>
                     <td className="text-body font-semibold tabular-nums py-12 pr-16">
                       {formatBaht(payout.amountThb)}
                     </td>
                     <td className="text-body py-12 pr-16 whitespace-nowrap">
-                      {new Date(payout.executedOn).toLocaleDateString()}
+                      <LocalDate value={payout.executedOn} />
                     </td>
                     <td className="text-body py-12 pr-16">{payout.reference}</td>
                     <td className="text-body py-12">

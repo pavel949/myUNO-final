@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
+import { LocalDate } from '@/components/LocalDate';
 
 interface AdminBooking {
   id: string;
@@ -251,8 +252,8 @@ export default function BookingsAdminClient({
               ) : null}
             </div>
             <p className="text-small text-text-secondary">
-              {new Date(booking.startDate).toLocaleDateString()} —{' '}
-              {new Date(booking.endDate).toLocaleDateString()} · ฿
+              <LocalDate value={booking.startDate} /> —{' '}
+              <LocalDate value={booking.endDate} /> · ฿
               {booking.totalThb.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               {booking.paid && (
                 <span className="text-state-success font-semibold">

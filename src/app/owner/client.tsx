@@ -20,6 +20,7 @@ import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
 import { scopeOwnerPortfolio } from './portfolio-scope';
+import { formatDate as formatDateIn } from '@/lib/date';
 
 function fill(template: string, params?: Record<string, string>): string {
   if (!params) return template;
@@ -488,20 +489,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   <div className="flex items-start justify-between gap-12">
                     <div className="flex-1">
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                        })} – {new Date(statement.periodEnd).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                        })}
+                        {labels['owner.statement.period']}: {formatDateIn(statement.periodStart, locale, { year: 'numeric', month: 'short' })} – {formatDateIn(statement.periodEnd, locale, { year: 'numeric', month: 'short' })}
                       </h3>
                       <p className="text-small text-text-secondary mb-12">
-                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatDateIn(statement.publishedAt || statement.createdAt, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                       <div className="space-y-8">
                         <div className="flex justify-between">

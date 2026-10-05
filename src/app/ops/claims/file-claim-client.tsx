@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Textarea } from '@/components/Textarea';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Stay {
   bookingId: string;
@@ -102,9 +103,7 @@ export default function FileClaimClient({
                 <span>{`${labels['staff.claims.guest']}: ${stay.guestName}`}</span>
                 <span>{`${labels['staff.claims.unit']}: ${stay.unitName}`}</span>
                 <span>
-                  {`${labels['staff.claims.checked_out']}: ${new Date(
-                    stay.checkedOutAt
-                  ).toLocaleDateString()}`}
+                  {labels['staff.claims.checked_out']}: <LocalDate value={stay.checkedOutAt} />
                 </span>
                 <span>{`${stay.hoursLeft} ${labels['staff.claims.hours_left']}`}</span>
               </div>

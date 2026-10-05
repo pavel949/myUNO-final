@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Booking {
   id: string;
@@ -154,13 +155,13 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.startDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.startDate} />
                     </p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.endDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.endDate} />
                     </p>
                   </div>
                 </div>

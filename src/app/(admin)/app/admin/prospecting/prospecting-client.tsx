@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ProspectingRow {
   id: string;
@@ -269,7 +270,7 @@ export default function AdminProspectingClient({
                     </td>
                     <td className="p-12 text-text-secondary">
                       {account.expectedCloseAt
-                        ? new Date(account.expectedCloseAt).toLocaleDateString()
+                        ? <LocalDate value={account.expectedCloseAt} />
                         : '—'}
                     </td>
                     <td className="p-12">

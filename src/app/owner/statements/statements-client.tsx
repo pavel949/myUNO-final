@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface StatementRow {
   id: string;
@@ -74,8 +75,8 @@ export default function OwnerStatementsClient({ labels }: { labels: Labels }) {
           {statements.map((s) => (
             <tr key={s.id} className="border-b border-border-line last:border-b-0">
               <td className="px-16 py-12">
-                {new Date(s.periodStart).toLocaleDateString()} –{' '}
-                {new Date(s.periodEnd).toLocaleDateString()}
+                <LocalDate value={s.periodStart} /> –{' '}
+                <LocalDate value={s.periodEnd} />
               </td>
               <td className="px-16 py-12">{s.unitName}</td>
               <td className="px-16 py-12 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>

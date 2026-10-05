@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Button, Chip } from '@/components';
 import { ServiceOrderRatingModal } from './ServiceOrderRatingModal';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface ActiveOrder {
   id: string;
@@ -31,16 +33,6 @@ const formatCurrency = (satang: number): string => {
     currency: 'THB',
     maximumFractionDigits: 0,
   }).format(satang / 100);
-};
-
-const formatDateTime = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 // Real ServiceOrderStatus values only (placed/paid/accepted/declined/expired/
@@ -74,6 +66,9 @@ const renderStars = (rating: number): string => {
 
 export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersListProps>(
   ({ orders, labels = {} }, ref) => {
+    const locale = useLocale();
+    const formatDateTime = (dateStr: string): string =>
+      formatDateIn(dateStr, locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
     if (!orders || orders.length === 0) {

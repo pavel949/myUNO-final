@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { LocalDate } from '@/components/LocalDate';
 
 interface EligibleStatement {
   id: string;
@@ -173,8 +174,8 @@ export default function PayoutForms({
                   <option value="" />
                   {eligibleStatements.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.unitName} — {new Date(s.periodStart).toLocaleDateString()}{' '}
-                      {labels['admin.payouts.period_to']} {new Date(s.periodEnd).toLocaleDateString()}
+                      {s.unitName} — <LocalDate value={s.periodStart} />{' '}
+                      {labels['admin.payouts.period_to']} <LocalDate value={s.periodEnd} />
                     </option>
                   ))}
                 </select>

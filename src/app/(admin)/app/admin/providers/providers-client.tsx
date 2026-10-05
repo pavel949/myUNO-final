@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface AdminProvider {
   id: string;
@@ -83,7 +84,7 @@ export default function ProvidersAdminClient({
               <span className="text-text-secondary font-normal"> · {provider.email}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(provider.createdAt).toLocaleDateString()}
+              <LocalDate value={provider.createdAt} />
             </p>
           </div>
           <span

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ChecklistRow {
   id: string;
@@ -266,7 +267,7 @@ export default function ComplianceChecklistsClient({
                     {row.templateName} · {row.templateFrequency}
                   </td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(row.dueDate).toLocaleDateString()}
+                    <LocalDate value={row.dueDate} />
                   </td>
                   <td className="p-12 text-text-secondary">
                     {row.passed === null

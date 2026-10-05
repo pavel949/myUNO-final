@@ -6,6 +6,7 @@ import BookingRequestRespondActions, {
 } from '@/components/booking/BookingRequestRespondActions';
 import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
+import { LocalDate } from '@/components/LocalDate';
 
 interface OpsBookingRequestRow {
   id: string;
@@ -74,8 +75,8 @@ export default function OpsRequestsClient({
                     {' · '}
                   </>
                 ) : null}
-                {new Date(request.startDate).toLocaleDateString()} —{' '}
-                {new Date(request.endDate).toLocaleDateString()} · {party}{' '}
+                <LocalDate value={request.startDate} /> —{' '}
+                <LocalDate value={request.endDate} /> · {party}{' '}
                 {labels['staff.ops.guest'].toLowerCase()}
               </p>
               {request.requestExpiresAt ? (

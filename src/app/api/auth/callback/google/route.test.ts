@@ -4,7 +4,11 @@ import { NextRequest } from 'next/server';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     identity: {
-      findUnique: vi.fn(),
+      findUnique: vi.fn(async () => ({
+        id: 'identity-1',
+        email: 'guest@example.com',
+        status: 'active',
+      })),
       create: vi.fn(),
     },
     authAccount: {
@@ -48,6 +52,94 @@ describe('GET /api/auth/callback/google', () => {
     expect(response.headers.get('location')).toContain('/login?error=invalid_oauth_state');
     expect(response.headers.get('set-cookie')).toContain('google_oauth_state=');
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+  });
+
+  it('returns a successful OAuth login to the interrupted booking review', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: 'access',
+            id_token: 'id',
+            expires_in: 3600,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'google-1',
+            email: 'guest@example.com',
+            name: 'Guest Example',
+            given_name: 'Guest',
+            family_name: 'Example',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+    const next = '/book/review?unitId=unit-1&startDate=2026-11-10&endDate=2026-11-17';
+    const request = new NextRequest(
+      'http://localhost/api/auth/callback/google?code=abc&state=state-1',
+      {
+        headers: {
+          cookie: `google_oauth_state=state-1; google_oauth_next=${encodeURIComponent(next)}`,
+        },
+      }
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(`http://localhost${next}`);
+    expect(response.headers.get('set-cookie')).toContain('google_oauth_next=');
+    fetchMock.mockRestore();
+  });
+
+  it('ignores an unsafe OAuth return path', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: 'access',
+            id_token: 'id',
+            expires_in: 3600,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'google-1',
+            email: 'guest@example.com',
+            name: 'Guest Example',
+            given_name: 'Guest',
+            family_name: 'Example',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+    const request = new NextRequest(
+      'http://localhost/api/auth/callback/google?code=abc&state=state-1',
+      {
+        headers: {
+          cookie:
+            'google_oauth_state=state-1; google_oauth_next=' +
+            encodeURIComponent('//evil.example/path'),
+        },
+      }
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/app');
+    fetchMock.mockRestore();
   });
 
   it('maps provider error to /login redirect', async () => {

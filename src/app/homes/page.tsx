@@ -85,6 +85,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       'homes.minimum_term': 'Minimum term',
       'homes.deposit': 'Deposit',
       'homes.available_from': 'Available from',
+      'homes.responsibility_unit': 'This home is managed by {org}',
     }),
   ]);
 
@@ -232,6 +233,11 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                   {home.leaseTerms.minimumLeaseMonths ? labels['homes.minimum_term'] + ': ' + home.leaseTerms.minimumLeaseMonths + ' mo' : ''}
                   {home.leaseTerms.securityDepositMonths ? ' · ' + labels['homes.deposit'] + ': ' + home.leaseTerms.securityDepositMonths + ' mo' : ''}
                   {home.leaseTerms.availableFrom ? ' · ' + labels['homes.available_from'] + ': ' + home.leaseTerms.availableFrom : ''}
+                </p>
+              ) : null}
+              {home.responsibility.verified && home.responsibility.organizationName ? (
+                <p className="text-micro font-medium text-brand-andaman">
+                  {labels['homes.responsibility_unit'].replace('{org}', home.responsibility.organizationName)}
                 </p>
               ) : null}
               <span className="inline-block text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>

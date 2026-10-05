@@ -100,6 +100,9 @@ async function readHomepageData(locale: Locale) {
         OR: [{ locale: null }, { locale }],
       },
       orderBy: [{ sectionKey: 'asc' }, { position: 'asc' }],
+    }).catch((error) => {
+      console.error('[homepage] placement layer unavailable; using canonical fallback ordering', error);
+      return [];
     }),
   ]);
 

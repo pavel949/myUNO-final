@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { formatDate } from '@/lib/date';
 import { bangkokCalendarDay } from '@/modules/booking';
 import { deriveStayWorkItems, stayWorkDepartments } from '@/modules/booking/work-projection';
 import type { StayWorkDepartment } from '@/modules/booking/work-projection';
@@ -68,6 +69,7 @@ export default async function StayOperationsPage({
   const queue=(department?work.filter(item=>item.department===department):work)
     .sort((a,b)=>(a.severity==='attention'?-1:1)-(b.severity==='attention'?-1:1)||
       a.dueDate.localeCompare(b.dueDate));
+  const locale = getRequestLocale();
   const labels: Record<string, string> = await getLabels({
     'staff.stay_queue.title':'Stay operations',
     'staff.stay_queue.kicker':'ONE BOOKING · ALL DEPARTMENTS',
@@ -81,6 +83,18 @@ export default async function StayOperationsPage({
     'staff.stay_queue.property':'Property',
     'staff.stay_queue.all_properties':'All properties',
     'staff.stay_queue.due':'Due',
+    'staff.stay_queue.action_key.balance':'Balance',
+    'staff.stay_queue.action_key.care':'Care',
+    'staff.stay_queue.action_key.check_in':'Check in',
+    'staff.stay_queue.action_key.check_out':'Check out',
+    'staff.stay_queue.action_key.collect':'Collect',
+    'staff.stay_queue.action_key.inspect':'Inspect',
+    'staff.stay_queue.action_key.prearrival':'Prearrival',
+    'staff.stay_queue.action_key.prepare_home':'Prepare home',
+    'staff.stay_queue.action_key.reconcile_cancelled':'Reconcile cancelled',
+    'staff.stay_queue.action_key.refund':'Refund',
+    'staff.stay_queue.action_key.respond':'Respond',
+    'staff.stay_queue.action_key.turnover':'Turnover',
     'staff.stay_queue.action':'Open stay',
     'staff.stay_queue.empty':'No tasks for this filter.',
     'staff.stay_queue.attention':'Needs attention',
@@ -142,8 +156,8 @@ export default async function StayOperationsPage({
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-text-ink">{item.unitName} · {item.guestName}</p>
             <p className="mt-4 text-small text-text-secondary">
-              {labels['staff.stay_queue.'+item.department]} · {item.actionKey.replace(/_/g,' ')}
-              {' · '}{labels['staff.stay_queue.due']} {item.dueDate}
+              {labels['staff.stay_queue.'+item.department]} · {labels['staff.stay_queue.action_key.'+item.actionKey] ?? item.actionKey}
+              {' · '}{labels['staff.stay_queue.due']} {formatDate(item.dueDate+'T00:00:00Z', locale)}
             </p>
           </div>
           {item.severity==='attention'&&<span className="rounded-full bg-amber-100 px-12 py-4 text-small font-semibold text-amber-900">

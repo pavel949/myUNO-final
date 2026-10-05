@@ -4,6 +4,7 @@ const TASK_PHOTO_ACCEPT = ['image/jpeg', 'image/png', 'image/webp'].join(',');
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { enumLabel } from '@/lib/enum-labels';
 
 type Unit={id:string;name:string;project:{name:string}};
 type Team={id:string;name:string};
@@ -50,7 +51,7 @@ export default function OperationalTaskCreateForm({
     <input required name="title" placeholder={labels['staff.task_form.title']} className="h-44 rounded-md border border-border-line px-12"/>
     <select required name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.property']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
     <select name="taskType" defaultValue={'custom'} className="h-44 rounded-md border border-border-line px-12">
-      {taskTypes.map(t=><option key={t} value={t}>{t.replace(/_/g,' ')}</option>)}
+      {taskTypes.map(t=><option key={t} value={t}>{enumLabel(labels,'taskType',t)}</option>)}
     </select>
     <input required name="dueAt" type="datetime-local" className="h-44 rounded-md border border-border-line px-12"/>
     <select name="assignedIdentityId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.employee']}</option>{members.map(m=><option key={m.identity.id} value={m.identity.id}>{m.identity.firstName} {m.identity.lastName}</option>)}</select>

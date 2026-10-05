@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { enumLabel } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 type Task = {
   id: string;
@@ -39,6 +42,7 @@ export default function OperationalTaskQueueClient({
   tasks,
   labels,
 }: { tasks: Task[]; labels: Record<string, string> }) {
+  const locale = useLocale();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,10 +83,10 @@ export default function OperationalTaskQueueClient({
           <div>
             <p className="text-small font-semibold text-brand-andaman">{task.project.name} · {task.unit.name}</p>
             <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">
-              {task.title || task.taskType.replace(/_/g, ' ')}
+              {task.title || enumLabel(labels, 'taskType', task.taskType)}
             </h2>
             <p className="mt-4 text-small text-text-secondary">
-              {labels['staff.tasks.due']} {new Date(task.dueAt).toLocaleString()} · {task.status.replace(/_/g, ' ')}
+              {labels['staff.tasks.due']} {formatDate(task.dueAt, locale, 'dateTime')} · {enumLabel(labels, 'taskStatus', task.status)}
               {task.assignee ? ' · ' + task.assignee.firstName + ' ' + task.assignee.lastName : ''}
               {task.assignedTeam ? ' · ' + task.assignedTeam.name : ''}
             </p>

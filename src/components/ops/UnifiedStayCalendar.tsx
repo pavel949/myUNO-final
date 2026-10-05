@@ -140,7 +140,7 @@ export default function UnifiedStayCalendar(props: Props) {
     if (cell.state==='hold') holds++;
     if (cell.state==='conflict') conflicts++;
   }
-  const stats=[['Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
+  const stats=[[props.labels['staff.unified_calendar.homes'] ?? 'Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
     [props.labels['staff.unified_calendar.not_sellable'],String(rows.filter(unit=>!unit.sellable).length)],
     [props.labels['staff.unified_calendar.booked'],String(booked)], [props.labels['staff.unified_calendar.holds'],String(holds)],
     [props.labels['staff.unified_calendar.ready'],String(rows.filter(unit=>unit.readiness==='ready').length)],
@@ -280,7 +280,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   <span className="block text-[11px] text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
                   <span className="block text-[10px] text-text-secondary">
                     {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
-                    {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                    {' · '}{props.labels['staff.unified_calendar.channel_health']}: {(props.labels['staff.unified_calendar.channel_state.'+unit.channelState] ?? unit.channelState.replace(/_/g,' '))}
                   </span>
                 </span>
                 <span className="text-right">
@@ -315,7 +315,7 @@ export default function UnifiedStayCalendar(props: Props) {
                     <span className="block text-[11px] font-normal text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
                     <span className="block text-[10px] font-semibold text-text-secondary">
                       {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
-                      {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                      {' · '}{props.labels['staff.unified_calendar.channel_health']}: {(props.labels['staff.unified_calendar.channel_state.'+unit.channelState] ?? unit.channelState.replace(/_/g,' '))}
                     </span>
                     {!unit.sellable && <span className="block text-[10px] font-semibold text-amber-900">{props.labels['staff.unified_calendar.not_sellable']}</span>}
                   </th>
@@ -366,7 +366,7 @@ export default function UnifiedStayCalendar(props: Props) {
           </div>
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.channel_health']}</span>
-            <span className="font-semibold text-text-ink">{inspect.channelState.replace(/_/g,' ')}</span>
+            <span className="font-semibold text-text-ink">{(props.labels['staff.unified_calendar.channel_state.'+inspect.channelState] ?? inspect.channelState.replace(/_/g,' '))}</span>
           </div>
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.effective_rate']}</span>
@@ -381,7 +381,7 @@ export default function UnifiedStayCalendar(props: Props) {
         {inspect.channelRows.length>0 && <div className="mb-12 space-y-4">
           {inspect.channelRows.map((channel)=><p key={channel.channel} className="text-[11px] text-text-secondary">
             <span className="font-semibold text-text-ink">{channel.channel}</span>
-            {' · '}{channel.state.replace(/_/g,' ')}
+            {' · '}{(props.labels['staff.unified_calendar.channel_state.'+channel.state] ?? channel.state.replace(/_/g,' '))}
             {' · A:'}{channel.availability}{' R:'}{channel.rates}{' I:'}{channel.restrictions}
           </p>)}
         </div>}

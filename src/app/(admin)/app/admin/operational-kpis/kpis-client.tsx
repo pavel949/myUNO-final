@@ -1,9 +1,9 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface KpiRow {
   id: string;
@@ -141,7 +141,7 @@ export default function AdminOperationalKpisClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.kpis.create_title']}
         </h2>
@@ -252,8 +252,8 @@ export default function AdminOperationalKpisClient({
                   <td className="p-12 text-text-ink">{kpi.unitName}</td>
                   <td className="p-12 text-text-secondary">{kpi.metricName}</td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(kpi.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} –{' '}
-                    {new Date(kpi.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                    <LocalDate value={kpi.periodStart} /> –{' '}
+                    <LocalDate value={kpi.periodEnd} />
                   </td>
                   <td className="p-12 text-text-secondary">
                     {kpi.targetValue != null ? kpi.targetValue.toLocaleString(UI_LOCALE) : '—'}

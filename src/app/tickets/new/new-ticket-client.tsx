@@ -73,7 +73,7 @@ export default function NewTicketClient({
         </h1>
 
         {!projectId ? (
-          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <p className="text-body text-text-secondary">
               {labels['tickets.new.missing_context']}
             </p>
@@ -81,7 +81,7 @@ export default function NewTicketClient({
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 flex flex-col gap-16"
+            className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-16"
           >
             <div className="flex flex-col gap-8">
               <p className="text-small text-text-stone">{labels['tickets.new.category']}</p>

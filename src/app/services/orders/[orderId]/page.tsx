@@ -12,6 +12,7 @@ import { buildOrderTimeline } from './order-timeline';
 import { baht, formatBreakdownValue } from './order-money';
 import { prisma } from '@/lib/prisma';
 import { getServiceOrderCustomerView } from '@/modules/services';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -377,7 +378,7 @@ export default async function ServiceOrderDetailPage({
               {order.payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="p-12 border border-border-line rounded bg-surface-ivory"
+                  className="p-12 border border-border-line rounded-sm bg-surface-ivory"
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div>
@@ -389,7 +390,7 @@ export default async function ServiceOrderDetailPage({
                       </p>
                     </div>
                     <span className="text-small text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                      <LocalDate value={payment.createdAt} />
                     </span>
                   </div>
                   {payment.receiptNumber && (

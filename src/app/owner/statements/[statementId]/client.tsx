@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Button, StatTile, EmptyState, MoneyAmount } from '@/components';
 import { SIGNABLE_STATEMENT_STATUSES } from '@/modules/finance';
 import type { LineItemCategory, OwnerStatementStatus } from '@prisma/client';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 export interface StatementLine {
   id: string;
@@ -73,21 +75,6 @@ interface OwnerStatementDetailClientProps {
 // baht-in formatter — one shared component, one conversion rule.
 const toSatang = (baht: number): number => Math.round(baht * 100);
 
-const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'Asia/Bangkok',
-  });
-
-const formatMonth = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    timeZone: 'Asia/Bangkok',
-  });
-
 /**
  * Status → colour comes from the single mapping in doc 06 §3.4; builders never
  * choose status colours ad hoc. Every chip carries its label text as well as
@@ -121,6 +108,11 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   statement,
   labels,
 }) => {
+  const locale = useLocale();
+  const formatDate = (iso: string): string =>
+    formatDateIn(iso, locale, { year: 'numeric', month: 'long', day: 'numeric' });
+  const formatMonth = (iso: string): string =>
+    formatDateIn(iso, locale, { year: 'numeric', month: 'short' });
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [signingOff, setSigningOff] = useState(false);
   const [signOffError, setSignOffError] = useState<string | null>(null);

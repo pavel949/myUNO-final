@@ -115,7 +115,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
           </div>
 
           {intent === 'rent' && home.leaseTerms ? (
-            <div className="mt-24 grid gap-16 rounded-2xl border border-border-line bg-surface-paper p-20 md:grid-cols-2">
+            <div className="mt-24 grid gap-16 rounded-lg border border-border-line bg-surface-paper p-20 md:grid-cols-2">
               {home.leaseTerms.monthlyRentThb ? <p><span className="text-small text-text-secondary">{labels['homes.detail.monthly_rent']}</span><br/><strong>฿{home.leaseTerms.monthlyRentThb.toLocaleString(UI_LOCALE)} {labels['homes.detail.per_month']}</strong></p> : null}
               {home.leaseTerms.minimumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.minimum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</strong></p> : null}
               {home.leaseTerms.maximumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.maximum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.maximumLeaseMonths))}</strong></p> : null}

@@ -155,7 +155,7 @@ export default async function OwnersPage() {
               { href: '/manage', title: labels['audience.owners.lifecycle.manage'], body: labels['audience.owners.lifecycle.manage_body'] },
               { href: '/sell', title: labels['audience.owners.lifecycle.sell'], body: labels['audience.owners.lifecycle.sell_body'] },
             ].map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-2xl border border-border-line bg-surface-ivory p-24 transition hover:border-brand-andaman/40">
+              <Link key={item.href} href={item.href} className="rounded-lg border border-border-line bg-surface-ivory p-24 transition hover:border-brand-andaman/40">
                 <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
                 <p className="mt-8 text-body text-text-secondary">{item.body}</p>
                 <span className="mt-20 inline-block text-small font-semibold text-brand-andaman">Continue →</span>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import {
   getAdminDashboardStats,
   occupancyByCategory,
@@ -10,6 +10,7 @@ import {
 import { listProjects } from '@/modules/projects';
 import { Sparkline, formatThb } from '@/components/viz';
 import { StatTile } from '@/components/StatTile';
+import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,21 +141,15 @@ export default async function AdminDashboardPage() {
           <p className="mt-4 text-small text-white/70">
             {labels['admin.dashboard.as_of'].replace(
               '{time}',
-              reportEnd.toLocaleString('en-GB', {
-                timeZone: 'Asia/Bangkok',
-                day: '2-digit',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              formatDate(reportEnd, getRequestLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
             )}
           </p>
         </div>
         <div className="flex flex-wrap gap-8">
-          <Link href="/app/admin/properties/new" className="rounded-xl bg-white px-16 py-12 text-small font-semibold text-brand-deep shadow-sm hover:bg-surface-sand">
+          <Link href="/app/admin/properties/new" className="rounded-md bg-white px-16 py-12 text-small font-semibold text-brand-deep shadow-card hover:bg-surface-sand">
             {labels['admin.dashboard.add_property']} →
           </Link>
-          <Link href="/ops/calendar/board" className="rounded-xl border border-white/20 bg-white/10 px-16 py-12 text-small font-semibold text-white hover:bg-white/15">
+          <Link href="/ops/calendar/board" className="rounded-md border border-white/20 bg-white/10 px-16 py-12 text-small font-semibold text-white hover:bg-white/15">
             {labels['admin.dashboard.live_calendar']} →
           </Link>
         </div>
@@ -269,7 +264,7 @@ export default async function AdminDashboardPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_revenue']}
             </p>
@@ -285,7 +280,7 @@ export default async function AdminDashboardPage() {
               />
             </div>
           </div>
-          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_nights']}
             </p>
@@ -313,7 +308,7 @@ export default async function AdminDashboardPage() {
             {projectReports.map((report) => (
               <div
                 key={report.id}
-                className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24"
+                className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24"
               >
                 <p className="text-subtitle font-semibold text-text-ink mb-16">{report.name}</p>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">

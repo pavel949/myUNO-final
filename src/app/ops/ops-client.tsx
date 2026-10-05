@@ -16,6 +16,7 @@ import type { BookingRequestBreakdownLine } from '@/modules/booking';
 import ArrivalPassportCaptureModal from '@/components/ops/ArrivalPassportCaptureModal';
 import CheckInConditionReportModal from '@/components/ops/CheckInConditionReportModal';
 import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
+import { LocalDate } from '@/components/LocalDate';
 
 interface OpsBooking {
   id: string;
@@ -277,8 +278,8 @@ export default function OpsBoardClient({
           </span>
         </p>
         <p className="text-small text-text-secondary mt-4">
-          {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
-          {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {booking.party}{' '}
+          <LocalDate value={booking.startDate} /> —{' '}
+          <LocalDate value={booking.endDate} /> · {booking.party}{' '}
           {labels['staff.ops.guest'].toLowerCase()}
         </p>
         {booking.requestExpiresAt ? (
@@ -328,9 +329,9 @@ export default function OpsBoardClient({
           </span>
         </p>
         <p className="text-small text-text-secondary">
-          {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
-          {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {booking.party}{' '}
-          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
+          <LocalDate value={booking.startDate} /> —{' '}
+          <LocalDate value={booking.endDate} /> · {booking.party}{' '}
+          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
         </p>
         <div className="flex flex-wrap gap-8 mt-8">
           <Chip

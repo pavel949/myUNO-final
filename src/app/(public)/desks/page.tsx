@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 export default async function GlobalDesksPage() {
   const labels = await getLabels({
     'desks.index.kicker': 'GLOBAL DESKS',
-    'desks.index.title': 'Phuket property, easier to navigate from wherever you are.',
+    'desks.index.title': 'Phuket property, clearer from wherever you are.',
     'desks.index.body': 'Each desk is a market and language liaison route into the same canonical myUNO property, booking and service platform. Desks do not represent separate inventory or physical offices.',
     'desks.index.cta': 'Open desk',
     'desks.thailand.title': 'Thailand desk',
-    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners navigating Phuket property and services.',
+    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners working with Phuket property and services.',
     'desks.thailand.languages': 'Thai · English',
     'desks.russian.title': 'Russian-speaking desk',
     'desks.russian.body': 'For Russian-speaking buyers, owners, guests and partners engaging with Phuket property.',
@@ -39,7 +39,7 @@ export default async function GlobalDesksPage() {
           <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-text-ink">
             {labels['desks.index.title']}
           </h1>
-          <p className="mt-20 max-w-3xl text-lg leading-relaxed text-text-secondary">{labels['desks.index.body']}</p>
+          <p className="mt-20 max-w-3xl text-subtitle font-normal leading-relaxed text-text-secondary">{labels['desks.index.body']}</p>
         </div>
       </section>
 
@@ -49,7 +49,7 @@ export default async function GlobalDesksPage() {
             <Link
               key={desk.slug}
               href={`/desks/${desk.slug}`}
-              className="group flex min-h-[250px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
+              className="group flex min-h-[250px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
                 <div className="flex h-44 w-44 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">

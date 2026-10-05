@@ -26,7 +26,7 @@ export default async function SavedPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-surface-mint p-32">
-        <div className="max-w-3xl mx-auto text-center bg-surface-paper border border-border-line rounded-2xl shadow-card p-32">
+        <div className="max-w-3xl mx-auto text-center bg-surface-paper border border-border-line rounded-lg shadow-card p-32">
           <h1 className="font-display text-display font-semibold text-text-ink mb-16">
             {labels['saved.title']}
           </h1>

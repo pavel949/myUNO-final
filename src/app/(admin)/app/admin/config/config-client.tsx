@@ -125,7 +125,7 @@ export default function ConfigAdminClient({
       </div>
 
       {editableKeys.map((key) => (
-        <div key={key} className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-16">
+        <div key={key} className="bg-surface-paper border border-border-line rounded-lg shadow-card p-16">
           <div className="flex items-center justify-between mb-8">
             <p className="text-subtitle font-semibold text-text-ink">
               <code>{key}</code>

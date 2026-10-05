@@ -1,12 +1,13 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { shiftCalendarDay } from '@/modules/booking/calendar-projection';
 import type { CalendarCell, CalendarState } from '@/modules/booking/calendar-projection';
+import { formatDate } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface UnitRow {
   id: string;
@@ -71,6 +72,7 @@ const shortLabel: Record<CalendarState, string> = {
 };
 
 export default function UnifiedStayCalendar(props: Props) {
+  const locale = useLocale();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
@@ -91,7 +93,7 @@ export default function UnifiedStayCalendar(props: Props) {
   };
   const refresh = () => {
     router.refresh();
-    setRefreshRequestedAt(new Date().toLocaleTimeString(UI_LOCALE, { timeZone: APP_TZ }));
+    setRefreshRequestedAt(formatDate(new Date(), locale, 'time'));
   };
   useEffect(() => {
     // Periodic revalidation is a fallback, not a claimed external push subscription.
@@ -139,7 +141,7 @@ export default function UnifiedStayCalendar(props: Props) {
     if (cell.state==='hold') holds++;
     if (cell.state==='conflict') conflicts++;
   }
-  const stats=[['Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
+  const stats=[[props.labels['staff.unified_calendar.homes'] ?? 'Homes',String(rows.length)], [props.labels['staff.unified_calendar.available'],String(available)],
     [props.labels['staff.unified_calendar.not_sellable'],String(rows.filter(unit=>!unit.sellable).length)],
     [props.labels['staff.unified_calendar.booked'],String(booked)], [props.labels['staff.unified_calendar.holds'],String(holds)],
     [props.labels['staff.unified_calendar.ready'],String(rows.filter(unit=>unit.readiness==='ready').length)],
@@ -255,7 +257,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <div className="text-center">
             <p className="font-semibold text-text-ink">{mobileDate}</p>
             <p className="text-[11px] text-text-secondary">
-              {new Date(mobileDate+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}
+              {formatDate(mobileDate+'T00:00:00Z', locale, {weekday:'long'}, 'UTC')}
             </p>
           </div>
           <button type="button" disabled={mobileIndex>=props.days.length-1}
@@ -279,7 +281,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   <span className="block text-[11px] text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
                   <span className="block text-[10px] text-text-secondary">
                     {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
-                    {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                    {' · '}{props.labels['staff.unified_calendar.channel_health']}: {(props.labels['staff.unified_calendar.channel_state.'+unit.channelState] ?? unit.channelState.replace(/_/g,' '))}
                   </span>
                 </span>
                 <span className="text-right">
@@ -303,7 +305,7 @@ export default function UnifiedStayCalendar(props: Props) {
               {props.days.map((day)=><th key={day} scope="col"
                 className={day===props.today?'border-b border-l border-brand-deep bg-brand-deep p-8 text-center text-white':'border-b border-l border-border-line bg-surface-mint p-8 text-center text-text-secondary'}>
                 <span className="block font-semibold font-tabular">{day.slice(8)}</span>
-                <span className="block text-[10px]">{new Date(day+'T00:00:00Z').toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'})}</span>
+                <span className="block text-[10px]">{formatDate(day+'T00:00:00Z', locale, {weekday:'short'}, 'UTC')}</span>
               </th>)}
             </tr></thead>
             <tbody>
@@ -314,7 +316,7 @@ export default function UnifiedStayCalendar(props: Props) {
                     <span className="block text-[11px] font-normal text-text-secondary">{unit.projectName} · {unit.categoryName}</span>
                     <span className="block text-[10px] font-semibold text-text-secondary">
                       {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
-                      {' · '}{props.labels['staff.unified_calendar.channel_health']}: {unit.channelState.replace(/_/g,' ')}
+                      {' · '}{props.labels['staff.unified_calendar.channel_health']}: {(props.labels['staff.unified_calendar.channel_state.'+unit.channelState] ?? unit.channelState.replace(/_/g,' '))}
                     </span>
                     {!unit.sellable && <span className="block text-[10px] font-semibold text-amber-900">{props.labels['staff.unified_calendar.not_sellable']}</span>}
                   </th>
@@ -365,7 +367,7 @@ export default function UnifiedStayCalendar(props: Props) {
           </div>
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.channel_health']}</span>
-            <span className="font-semibold text-text-ink">{inspect.channelState.replace(/_/g,' ')}</span>
+            <span className="font-semibold text-text-ink">{(props.labels['staff.unified_calendar.channel_state.'+inspect.channelState] ?? inspect.channelState.replace(/_/g,' '))}</span>
           </div>
           <div className="rounded-md bg-surface-ivory p-12 text-small">
             <span className="block text-text-secondary">{props.labels['staff.unified_calendar.effective_rate']}</span>
@@ -380,7 +382,7 @@ export default function UnifiedStayCalendar(props: Props) {
         {inspect.channelRows.length>0 && <div className="mb-12 space-y-4">
           {inspect.channelRows.map((channel)=><p key={channel.channel} className="text-[11px] text-text-secondary">
             <span className="font-semibold text-text-ink">{channel.channel}</span>
-            {' · '}{channel.state.replace(/_/g,' ')}
+            {' · '}{(props.labels['staff.unified_calendar.channel_state.'+channel.state] ?? channel.state.replace(/_/g,' '))}
             {' · A:'}{channel.availability}{' R:'}{channel.rates}{' I:'}{channel.restrictions}
           </p>)}
         </div>}

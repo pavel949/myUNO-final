@@ -243,7 +243,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {homes.map(home => {
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
-                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+                className="group overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
                 {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
                   className="h-full min-h-[220px] w-full object-cover" /> :
                   <div className="min-h-[220px] bg-surface-ivory"/>}
@@ -256,14 +256,14 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                       {home.sizeSqm ? ' · '+home.sizeSqm+' '+labels['homes.area'] : ''}
                     </p>
                     {intent === 'rent' && home.leaseTerms ? (
-                      <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+                      <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                         {home.leaseTerms.minimumLeaseMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.minimum_term']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</span> : null}
                         {home.leaseTerms.securityDepositMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.deposit']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.securityDepositMonths))}</span> : null}
                         {home.leaseTerms.availableFrom ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.available_from']}: {home.leaseTerms.availableFrom}</span> : null}
                       </div>
                     ) : null}
                     {home.responsibility.verified && home.responsibility.organizationName ? (
-                      <p className="mt-12 text-micro font-medium text-brand-andaman">
+                      <p className="mt-12 text-small font-medium text-brand-andaman">
                         {labels['homes.responsibility_unit'].replace('{org}', home.responsibility.organizationName)}
                       </p>
                     ) : null}
@@ -279,7 +279,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                 </div>
               </Link>;
             })}
-          </div> : <div role="status" className="rounded-xl border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
+          </div> : <div role="status" className="rounded-md border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
             {labels['homes.empty']}
           </div>}
         </div>

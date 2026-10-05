@@ -192,7 +192,7 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
           <Sparkline values={sparkline} max={1} title={labels['owner.units.last30']} />
         </div>
 
-        <div className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-20">
+        <div className="mb-32 rounded-lg border border-border-line bg-surface-paper p-20">
           <div className="flex flex-col gap-4">
             <p className="text-kicker font-semibold uppercase tracking-[0.18em] text-brand-andaman">
               {labels['owner.digital_twin.kicker']}
@@ -461,13 +461,13 @@ export const OwnerUnitDashboardClient: React.FC<OwnerUnitDashboardClientProps> =
                         </h3>
                         <div className="space-y-8 mt-12">
                           <div className="flex justify-between gap-16">
-                            <span className="text-sm text-text-secondary">
+                            <span className="text-small text-text-secondary">
                               {labels['owner.statement.noi']}
                             </span>
                             <MoneyAmount satang={statement.noiTh || 0} />
                           </div>
                           <div className="flex justify-between gap-16">
-                            <span className="text-sm text-text-secondary">
+                            <span className="text-small text-text-secondary">
                               {labels['owner.statement.your_share']}
                             </span>
                             <MoneyAmount satang={statement.ownerShareTh || 0} />

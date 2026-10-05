@@ -114,7 +114,7 @@ export default async function SignalsPage() {
         <p className="text-body text-text-secondary">{labels['admin.signals.subtitle']}</p>
       </div>
 
-      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.signals.funnel.title']}
         </h2>
@@ -135,7 +135,7 @@ export default async function SignalsPage() {
         ) : null}
       </div>
 
-      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card">
         <div className="px-24 py-16 border-b border-border-line">
           <h2 className="text-heading-3 font-semibold text-text-ink">
             {labels['admin.signals.all']} ({signals.length})

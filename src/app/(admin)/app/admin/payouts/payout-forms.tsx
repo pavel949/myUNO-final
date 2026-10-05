@@ -1,9 +1,9 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { LocalDate } from '@/components/LocalDate';
 
 interface EligibleStatement {
   id: string;
@@ -149,7 +149,7 @@ export default function PayoutForms({
   );
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
       <h2 className="text-heading-3 font-bold text-text-ink mb-16">
         {labels['admin.payouts.record_title']}
       </h2>
@@ -175,8 +175,8 @@ export default function PayoutForms({
                   <option value="" />
                   {eligibleStatements.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.unitName} — {new Date(s.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}{' '}
-                      {labels['admin.payouts.period_to']} {new Date(s.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                      {s.unitName} — <LocalDate value={s.periodStart} />{' '}
+                      {labels['admin.payouts.period_to']} <LocalDate value={s.periodEnd} />
                     </option>
                   ))}
                 </select>

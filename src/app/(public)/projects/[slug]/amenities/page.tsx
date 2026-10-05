@@ -51,14 +51,14 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
           <h2 className="mb-16 font-display text-heading-2 font-semibold text-text-ink">{human(group)}</h2>
           <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map(amenity => (
-              <Link key={amenity.id} href={`/projects/${project.slug}/amenities/${amenity.slug}`} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card">
+              <Link key={amenity.id} href={`/projects/${project.slug}/amenities/${amenity.slug}`} className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card">
                 {amenity.coverUrl ? (
                   <Image src={amenity.coverUrl} alt={amenity.name} width={720} height={420} className="aspect-video w-full object-cover" />
                 ) : <div className="aspect-video bg-surface-muted" />}
                 <div className="p-16">
                   <h3 className="font-semibold text-text-ink">{amenity.name}</h3>
                   {amenity.shortDescription ? <p className="mt-8 text-small text-text-secondary">{amenity.shortDescription}</p> : null}
-                  <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+                  <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                     <span className="rounded-full bg-surface-ivory px-8 py-4">{amenity.pricingType === 'free' ? labels['project_amenities.free'] : amenity.pricingType === 'included' ? labels['project_amenities.included'] : human(amenity.pricingType)}</span>
                     {amenity.bookingRequired ? <span className="rounded-full bg-surface-ivory px-8 py-4">{labels['project_amenities.booking_required']}</span> : null}
                     {amenity.accessType !== 'open' ? <span className="rounded-full bg-surface-ivory px-8 py-4">{human(amenity.accessType)}</span> : null}

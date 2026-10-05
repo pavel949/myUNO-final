@@ -152,34 +152,34 @@ export default function HomepagePlacementClient({
   }
 
   return <div className="grid gap-20 xl:grid-cols-[360px_minmax(0,1fr)]">
-    <aside className="rounded-2xl bg-brand-deep p-16 text-white shadow-card">
+    <aside className="rounded-lg bg-brand-deep p-16 text-white shadow-card">
       <p className="text-kicker uppercase text-brand-sun-soft">Homepage control</p>
       <h2 className="mt-4 font-display text-heading-2 font-semibold">Managed placements</h2>
       <p className="mt-8 text-small text-white/70">Ordering only. Canonical readiness, price, availability and authority cannot be overridden here.</p>
       <div className="mt-20 max-h-[520px] space-y-8 overflow-y-auto">
         {placements.map((placement) => (
           <button key={placement.id} type="button" onClick={() => setSelectedId(placement.id)}
-            className={'w-full rounded-xl border p-12 text-left transition ' + (selectedId === placement.id ? 'border-brand-sun bg-white/10' : 'border-white/15 hover:bg-white/5')}>
+            className={'w-full rounded-md border p-12 text-left transition ' + (selectedId === placement.id ? 'border-brand-sun bg-white/10' : 'border-white/15 hover:bg-white/5')}>
             <div className="flex items-center justify-between gap-8">
               <span className="font-semibold">{candidateLabel.get(placement.entityId || '') || placement.entityId || 'Unknown entity'}</span>
-              <span className="text-micro text-white/60">#{placement.position}</span>
+              <span className="text-small text-white/60">#{placement.position}</span>
             </div>
-            <p className="mt-4 text-micro text-white/65">{placement.sectionKey} · {placement.locale || 'all'} · {placement.status}</p>
+            <p className="mt-4 text-small text-white/65">{placement.sectionKey} · {placement.locale || 'all'} · {placement.status}</p>
           </button>
         ))}
       </div>
     </aside>
 
     <div className="space-y-20">
-      {message ? <p role="status" className="rounded-xl border border-border-line bg-surface-paper p-12 text-small">{message}</p> : null}
-      <section className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card">
+      {message ? <p role="status" className="rounded-md border border-border-line bg-surface-paper p-12 text-small">{message}</p> : null}
+      <section className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
         <p className="text-kicker uppercase text-brand-andaman">New placement</p>
         <form onSubmit={createPlacement} className="mt-16">{editorFields(null)}
           <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">Add placement</button>
         </form>
       </section>
 
-      {selected ? <section className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card">
+      {selected ? <section className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-12">
           <div><p className="text-kicker uppercase text-brand-andaman">Selected placement</p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
           <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-12 font-semibold text-state-error disabled:opacity-50">Delete</button>

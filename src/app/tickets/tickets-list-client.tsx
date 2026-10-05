@@ -1,9 +1,8 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { LocalDate } from '@/components/LocalDate';
 
 const STATUSES = [
   'open',
@@ -87,11 +86,11 @@ export default function TicketsListClient({
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-2xl border border-border-line bg-surface-paper shadow-card p-32 text-center">
+          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card p-32 text-center">
             <p className="text-body text-text-secondary">{labels['tickets.list.empty']}</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border-line bg-surface-paper shadow-card">
+          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card">
             {visible.map((ticket) => (
               <div
                 key={ticket.id}
@@ -106,7 +105,7 @@ export default function TicketsListClient({
                   <p className="text-small text-text-secondary">
                     {ticket.place}
                     {ticket.place ? ' · ' : ''}
-                    {new Date(ticket.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                    <LocalDate value={ticket.createdAt} />
                   </p>
                 </div>
                 <div className="flex items-center gap-12">

@@ -65,7 +65,7 @@ export default function AmenityTranslationsEditor({
     } finally { setBusy(false); }
   }
 
-  return <section className="rounded-xl border border-border-line bg-surface-paper p-20">
+  return <section className="rounded-md border border-border-line bg-surface-paper p-20">
     <div className="flex flex-wrap items-start justify-between gap-12">
       <div>
         <h3 className="font-semibold">Guest copy · EN / RU / TH</h3>

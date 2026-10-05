@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface SessionInfo {
   sessionId: string;
@@ -154,7 +155,7 @@ export default function CheckoutClient({
         )}
 
         {session && (
-          <div className="mb-24 space-y-12 rounded-2xl border border-border-line bg-surface-ivory/80 p-20">
+          <div className="mb-24 space-y-12 rounded-lg border border-border-line bg-surface-ivory/80 p-20">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">
@@ -169,8 +170,8 @@ export default function CheckoutClient({
                   {labels['payments.checkout.dates_label']}
                 </span>
                 <span className="text-text-ink">
-                  {new Date(session.booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
-                  {new Date(session.booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                  <LocalDate value={session.booking.startDate} /> —{' '}
+                  <LocalDate value={session.booking.endDate} />
                 </span>
               </div>
             )}

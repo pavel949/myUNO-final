@@ -1,9 +1,8 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ProspectingRow {
   id: string;
@@ -169,7 +168,7 @@ export default function AdminProspectingClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.prospecting.create_title']}
         </h2>
@@ -271,7 +270,7 @@ export default function AdminProspectingClient({
                     </td>
                     <td className="p-12 text-text-secondary">
                       {account.expectedCloseAt
-                        ? new Date(account.expectedCloseAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })
+                        ? <LocalDate value={account.expectedCloseAt} />
                         : '—'}
                     </td>
                     <td className="p-12">

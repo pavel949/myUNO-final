@@ -1,10 +1,9 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface AdminProvider {
   id: string;
@@ -61,14 +60,14 @@ export default function ProvidersAdminClient({
 
   if (providers.length === 0) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32">
         <p className="text-body text-text-secondary">{labels['admin.providers.empty']}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
           <p className="text-body text-state-error">{error}</p>
@@ -85,7 +84,7 @@ export default function ProvidersAdminClient({
               <span className="text-text-secondary font-normal"> · {provider.email}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(provider.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+              <LocalDate value={provider.createdAt} />
             </p>
           </div>
           <span

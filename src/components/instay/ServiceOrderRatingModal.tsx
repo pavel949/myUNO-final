@@ -74,7 +74,7 @@ export const ServiceOrderRatingModal: React.FC<ServiceOrderRatingModalProps> = (
       onClick={onClose}
     >
       <div
-        className="bg-surface-paper rounded-lg shadow-lg max-w-md w-full p-32"
+        className="bg-surface-paper rounded-lg shadow-float max-w-md w-full p-32"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-heading-2 font-semibold text-text-ink mb-16">

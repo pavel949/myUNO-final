@@ -40,7 +40,7 @@ export default function TariffPreviewClient({
     } catch { setResult({ error: labels.failure }); }
     finally { setBusy(false); }
   }
-  return <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mt-24">
+  return <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mt-24">
     <h2 className="text-heading-3 font-semibold text-text-ink">{labels.title}</h2>
     <p className="text-small text-text-secondary mt-8">{labels.draft}</p>
     <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-4 gap-12 mt-16">

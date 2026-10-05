@@ -376,7 +376,7 @@ export default function ServicesClient({
             {visibleServices.map((service) => (
               <div
                 key={service.id}
-                className="flex flex-col overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
+                className="flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
                 {service.coverUrl ? (
                   <Image

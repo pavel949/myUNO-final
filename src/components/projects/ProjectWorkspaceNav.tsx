@@ -22,7 +22,7 @@ export default function ProjectWorkspaceNav({
   const visibleItems = contentOnly
     ? items.filter(item => ['experience', 'media', 'preview'].includes(item.key))
     : items;
-  return <nav aria-label="Project workspace" className="mb-24 flex gap-4 overflow-x-auto rounded-xl border border-border-line bg-surface-paper p-4">
+  return <nav aria-label="Project workspace" className="mb-24 flex gap-4 overflow-x-auto rounded-md border border-border-line bg-surface-paper p-4">
     {visibleItems.map(item => <Link key={item.key} href={item.href(projectId)} aria-current={active === item.key ? 'page' : undefined} className={`shrink-0 rounded-lg px-12 py-8 text-small font-semibold transition ${active === item.key ? 'bg-brand-andaman text-white' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}>
       {item.label}
     </Link>)}

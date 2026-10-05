@@ -264,7 +264,7 @@ export default function BookingReviewClient({
 
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div>
-        <section className="mb-24 rounded-2xl border border-border-line bg-surface-paper shadow-card p-24">
+        <section className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-card p-24">
           <h2 className="mb-16 font-display text-heading-3 text-text-ink">{labels.recap}</h2>
           <dl className="space-y-12 text-body">
             <div className="flex justify-between gap-16">
@@ -285,7 +285,7 @@ export default function BookingReviewClient({
           )}
         </section>
 
-        <section className="mb-24 rounded-2xl border border-border-line bg-surface-paper shadow-card p-24">
+        <section className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-card p-24">
           <h2 className="mb-8 font-display text-heading-3 text-text-ink">{labels.policy}</h2>
           <p className="mb-16 text-body text-text-stone">{policyText}</p>
           <label className="flex items-start gap-12 text-body text-text-ink">
@@ -304,7 +304,7 @@ export default function BookingReviewClient({
 
         <aside className="lg:sticky lg:top-96">
         {breakdown && (
-          <div className="mb-24 rounded-2xl border border-border-line bg-surface-paper shadow-float p-24">
+          <div className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-float p-24">
             <PriceBreakdown
               totalLabel={labels.total}
               totalSatang={Math.round((breakdown.total || 0) * 100)}

@@ -99,7 +99,7 @@ export default async function ProjectCategoryPage({
           href={unit.bookable
             ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
             : `/projects/${project.slug}#lead-form`}
-          className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
+          className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card"
         >
           {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-muted px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
           <div className="p-16">

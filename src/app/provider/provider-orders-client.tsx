@@ -5,6 +5,8 @@ import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { formatDate } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface ProviderOrder {
   id: string;
@@ -39,17 +41,10 @@ function safeIso(value: unknown): string | null {
 }
 
 /** Service appointments use Phuket time, not the browser's local timezone. */
-function formatScheduledStart(value: string): string {
+function formatScheduledStart(value: string, locale: string): string {
   const parsed = safeIso(value);
   if (!parsed) return '—';
-  return new Date(parsed).toLocaleString('en-GB', {
-    timeZone: 'Asia/Bangkok',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }) + ' ICT';
+  return formatDate(parsed, locale, 'dateTime') + ' ICT';
 }
 
 function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
@@ -83,6 +78,7 @@ export default function ProviderOrdersClient({
   initialOrders?: ProviderOrder[];
   labels: Labels;
 }) {
+  const locale = useLocale();
   const [orders, setOrders] = useState<ProviderOrder[]>(initialOrders ?? []);
   const [providerName, setProviderName] = useState<string | null>(null);
   const [loading, setLoading] = useState(!initialOrders);
@@ -203,7 +199,7 @@ export default function ProviderOrdersClient({
   };
 
   return (
-    <div className="stitch-workspace rounded-2xl">
+    <div className="stitch-workspace rounded-lg">
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
           <p className="text-body text-state-error">{error}</p>
@@ -255,7 +251,7 @@ export default function ProviderOrdersClient({
                     </span>
                   </p>
                   <p className="text-small text-text-secondary">
-                    {formatScheduledStart(order.scheduledStart)} · ×{order.quantity} · ฿
+                    {formatScheduledStart(order.scheduledStart, locale)} · ×{order.quantity} · ฿
                     {(order.totalThb / 100).toLocaleString(UI_LOCALE)}
                   </p>
                   {order.noteToProvider && (

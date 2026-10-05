@@ -1,7 +1,5 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -22,6 +20,7 @@ import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
 import { scopeOwnerPortfolio } from './portfolio-scope';
+import { formatDate as formatDateIn } from '@/lib/date';
 
 function fill(template: string, params?: Record<string, string>): string {
   if (!params) return template;
@@ -311,7 +310,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       <p className="text-body text-text-secondary">
                         {resolveLabel(alert.descriptionKey, alert.descriptionParams)}
                       </p>
-                      <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
+                      <p className="text-small text-text-secondary mt-4">{alert.unitName}</p>
                     </div>
                     {alert.actionUrl && (
                       <Link href={alert.actionUrl}>
@@ -490,27 +489,17 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   <div className="flex items-start justify-between gap-12">
                     <div className="flex-1">
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(UI_LOCALE, {
-                          year: 'numeric',
-                          month: 'short',
-                        timeZone: APP_TZ })} – {new Date(statement.periodEnd).toLocaleDateString(UI_LOCALE, {
-                          year: 'numeric',
-                          month: 'short',
-                        timeZone: APP_TZ })}
+                        {labels['owner.statement.period']}: {formatDateIn(statement.periodStart, locale, { year: 'numeric', month: 'short' })} – {formatDateIn(statement.periodEnd, locale, { year: 'numeric', month: 'short' })}
                       </h3>
-                      <p className="text-sm text-text-secondary mb-12">
-                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(UI_LOCALE, {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        timeZone: APP_TZ })}
+                      <p className="text-small text-text-secondary mb-12">
+                        {formatDateIn(statement.publishedAt || statement.createdAt, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                       <div className="space-y-8">
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.noi']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             {/* OwnerStatement stores every amount in satang like the rest of
                                 the platform (CLAUDE.md) — MoneyAmount's contract is satang-in,
                                 so the raw Prisma field goes straight in, no manual /100 (Q47). */}
@@ -518,10 +507,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.your_share']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             <MoneyAmount satang={statement.ownerShareTh || 0} />
                           </span>
                         </div>

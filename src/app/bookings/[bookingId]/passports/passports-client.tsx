@@ -105,7 +105,7 @@ export default function PassportsClient({
           </div>
         )}
 
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['checkin.passports.list_title']}
           </h2>
@@ -133,7 +133,7 @@ export default function PassportsClient({
           )}
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-16">
             {labels['checkin.passports.add_title']}
           </h2>

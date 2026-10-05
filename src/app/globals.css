@@ -58,6 +58,24 @@ body {
   }
 }
 
+/*
+ * Doc 06 §5: 44px minimum touch targets. The PMS workspaces (ops, MC, admin)
+ * are dense tables and pill filters sized for a mouse; on a touch screen —
+ * the on-site host's phone — those controls must still be 44px tall. Scoped
+ * to coarse pointers so desktop density is unchanged, and to padded links
+ * (button-styled) so inline text links are left alone.
+ */
+@media (pointer: coarse) {
+  .pms-touch :is(button, select, summary, input[type='submit'], input[type='button']) {
+    min-height: 44px;
+  }
+  .pms-touch a[class*='px-'] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
 .font-tabular {
   font-variant-numeric: tabular-nums;
 }
@@ -78,19 +96,19 @@ body {
   }
 
   .stitch-hero {
-    @apply rounded-2xl border border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint p-24 shadow-card md:p-32;
+    @apply rounded-lg border border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint p-24 shadow-card md:p-32;
   }
 
   .stitch-hero-dark {
-    @apply rounded-2xl border border-brand-andaman/30 bg-brand-deep p-24 text-white shadow-float md:p-32;
+    @apply rounded-lg border border-brand-andaman/30 bg-brand-deep p-24 text-white shadow-float md:p-32;
   }
 
   .stitch-panel {
-    @apply rounded-2xl border border-border-line bg-surface-paper shadow-card;
+    @apply rounded-lg border border-border-line bg-surface-paper shadow-card;
   }
 
   .stitch-panel-soft {
-    @apply rounded-2xl border border-border-line bg-surface-ivory/80;
+    @apply rounded-lg border border-border-line bg-surface-ivory/80;
   }
 
   .stitch-kicker {
@@ -98,14 +116,14 @@ body {
   }
 
   .stitch-segmented {
-    @apply inline-flex items-center gap-4 rounded-xl border border-border-line bg-surface-sand p-4;
+    @apply inline-flex items-center gap-4 rounded-md border border-border-line bg-surface-sand p-4;
   }
 
   .stitch-control {
-    @apply h-48 rounded-xl border border-border-line bg-surface-paper px-12 text-body text-text-ink shadow-sm outline-none transition focus:border-brand-andaman;
+    @apply h-48 rounded-md border border-border-line bg-surface-paper px-12 text-body text-text-ink shadow-card outline-none transition focus:border-brand-andaman;
   }
 
   .stitch-list-row {
-    @apply rounded-xl border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
+    @apply rounded-md border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
   }
 }

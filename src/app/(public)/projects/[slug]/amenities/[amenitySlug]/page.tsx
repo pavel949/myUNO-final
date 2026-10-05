@@ -68,7 +68,7 @@ export default async function AmenityDetailPage({
           {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.terms']}</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
           {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
         </article>
-        <aside className="rounded-xl border border-border-line bg-surface-paper p-20">
+        <aside className="rounded-md border border-border-line bg-surface-paper p-20">
           <dl className="space-y-12 text-small">
             {amenity.locationLabel ? <div><dt className="text-text-secondary">{labels['project_amenity.location']}</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
             <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>

@@ -62,7 +62,7 @@ export default async function HandbookPage({ params }: HandbookPageProps) {
               {handbookContent}
             </div>
           ) : (
-            <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+            <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
               <p className="text-body text-text-secondary text-center">
                 {labels['booking.handbook.empty_state']}
               </p>

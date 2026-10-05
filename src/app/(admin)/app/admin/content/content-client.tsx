@@ -223,7 +223,7 @@ export default function ContentAdminClient({
         <p className="text-body text-state-success mb-16">{importResult}</p>
       )}
 
-      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         {error && (
           <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
             <p className="text-body text-state-error">{error}</p>

@@ -172,7 +172,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
       <div className="grid gap-16 md:grid-cols-2">
         {project.inventoryCategories.map(category => {
           const { titleKey, descriptionKey } = categoryEditorialKeys(project.slug, category.id, category.categoryKey);
-          return <article key={category.id} className="rounded-xl border border-border-line bg-surface-paper p-24">
+          return <article key={category.id} className="rounded-md border border-border-line bg-surface-paper p-24">
             <h3 className="font-display text-heading-3 font-semibold">{category.name}</h3>
             <p className="mt-4 text-small text-text-secondary">{labels['admin.project_preview.unit_stats'].replace('{bedrooms}', String(category.bedrooms)).replace('{units}', String(category.units.length)).replace('{status}', category.status)}</p>
             {content[titleKey] && <p className="mt-8 font-medium text-brand-andaman">{content[titleKey]}</p>}

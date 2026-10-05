@@ -108,7 +108,7 @@ export default function CrmLifecyclePanel({ labels }: CrmLifecyclePanelProps) {
               className={
                 expandedStage === stage.stage
                   ? 'bg-brand-andaman text-on-dark-text rounded-lg p-16 text-left'
-                  : 'bg-surface-paper border border-border-line rounded-2xl shadow-card p-16 text-left hover:border-brand-andaman'
+                  : 'bg-surface-paper border border-border-line rounded-lg shadow-card p-16 text-left hover:border-brand-andaman'
               }
             >
               <p className="text-caption opacity-80">{stageLabel(stage.stage)}</p>

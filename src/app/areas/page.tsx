@@ -58,7 +58,7 @@ export default async function AreasPage() {
               <Link
                 key={area.id}
                 href={`/areas/${area.slug}`}
-                className="group flex min-h-[240px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card"
+                className="group flex min-h-[240px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card"
               >
                 <div>
                   <p className="text-small font-semibold text-brand-andaman">

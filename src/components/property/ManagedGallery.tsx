@@ -64,10 +64,10 @@ export default function ManagedGallery({ scope, id }: { scope: 'unit' | 'project
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={photo.media.storageKey} alt={`Property photo ${index + 1}`} className="h-[144px] w-full object-cover"/>
         <div className="flex flex-wrap items-center gap-4 p-8">
-          <button disabled={busy || coverId === photo.mediaId} type="button" onClick={() => void action(() => send('PATCH', { orderedMediaIds: photos.map(p => p.mediaId), coverMediaId: photo.mediaId }))} className="rounded border px-8 py-4 text-small">{coverId === photo.mediaId ? 'Cover' : 'Make cover'}</button>
-          <button disabled={busy || index === 0} type="button" aria-label="Move photo left" onClick={() => void move(index,-1)} className="rounded border px-8 py-4">←</button>
-          <button disabled={busy || index === photos.length - 1} type="button" aria-label="Move photo right" onClick={() => void move(index,1)} className="rounded border px-8 py-4">→</button>
-          <button disabled={busy} type="button" onClick={() => void action(() => send('DELETE', undefined, photo.mediaId))} className="rounded border px-8 py-4 text-small">Remove</button>
+          <button disabled={busy || coverId === photo.mediaId} type="button" onClick={() => void action(() => send('PATCH', { orderedMediaIds: photos.map(p => p.mediaId), coverMediaId: photo.mediaId }))} className="rounded-sm border px-8 py-4 text-small">{coverId === photo.mediaId ? 'Cover' : 'Make cover'}</button>
+          <button disabled={busy || index === 0} type="button" aria-label="Move photo left" onClick={() => void move(index,-1)} className="rounded-sm border px-8 py-4">←</button>
+          <button disabled={busy || index === photos.length - 1} type="button" aria-label="Move photo right" onClick={() => void move(index,1)} className="rounded-sm border px-8 py-4">→</button>
+          <button disabled={busy} type="button" onClick={() => void action(() => send('DELETE', undefined, photo.mediaId))} className="rounded-sm border px-8 py-4 text-small">Remove</button>
         </div>
       </div>)}
     </div>

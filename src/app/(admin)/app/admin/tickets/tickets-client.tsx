@@ -123,7 +123,7 @@ export default function AdminTicketsClient({
             <select
               name="projectId"
               defaultValue={activeProjectId}
-              className="w-full md:w-auto px-12 py-8 border border-border-line rounded-2xl bg-surface-paper shadow-card text-text-ink"
+              className="w-full md:w-auto px-12 py-8 border border-border-line rounded-lg bg-surface-paper shadow-card text-text-ink"
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
             >
               <option value="">{labels['admin.tickets.all_projects']}</option>
@@ -154,11 +154,11 @@ export default function AdminTicketsClient({
       </div>
 
       {tickets.length === 0 ? (
-        <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32 text-center">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
           <p className="text-body text-text-secondary">{labels['admin.tickets.empty']}</p>
         </div>
       ) : (
-        <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card">
           {tickets.map((ticket) => {
             const progression = ticketNextStatus(ticket.status);
             const slaBreached = isSlaBreached(ticket.slaDueAt, ticket.status);

@@ -5,7 +5,9 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
 import {
   getOperatingSpaceMembership,
   getOperatingSpaceUnitIds,
@@ -121,7 +123,9 @@ export default async function ReservationDesk({
     }),
   ]);
 
+  const locale=getRequestLocale();
   const labels=await getLabels({
+    ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'reservations.back':'← Operating space',
     'reservations.kicker':'RESERVATION DESK',
     'reservations.title':'Reservations',
@@ -195,7 +199,7 @@ export default async function ReservationDesk({
         <Link href={statusHref('')} className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small">{labels['reservations.all']}</Link>
         {allowedStatuses.map(value=><Link key={value} href={statusHref(value)}
           className={'rounded-full border px-12 py-8 text-small '+(status===value?'border-brand-andaman text-brand-andaman':'border-border-line bg-surface-paper')}>
-          {value.replace(/_/g,' ')}
+          {enumLabel(labels,'bookingStatus',value)}
         </Link>)}
       </nav>
 
@@ -207,9 +211,9 @@ export default async function ReservationDesk({
               <p className="font-semibold text-text-ink">{booking.unit.project.name} · {booking.unit.name}</p>
               <p className="text-small text-text-secondary">{booking.guestIdentity.firstName} {booking.guestIdentity.lastName}</p>
             </div>
-            <div><p className="text-small text-text-secondary">{booking.status.replace(/_/g,' ')}</p><p>{booking.channel}</p></div>
-            <div><p>{booking.startDate.toISOString().slice(0,10)}</p><p className="text-small text-text-secondary">→ {booking.endDate.toISOString().slice(0,10)}</p></div>
-            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString(UI_LOCALE)}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString(UI_LOCALE)}</p></div>
+            <div><p className="text-small text-text-secondary">{enumLabel(labels,'bookingStatus',booking.status)}</p><p>{enumLabel(labels,'bookingChannel',booking.channel)}</p></div>
+            <div><p>{formatDate(booking.startDate,locale)}</p><p className="text-small text-text-secondary">→ {formatDate(booking.endDate,locale)}</p></div>
+            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p></div>
             <div><Link href={'/ops/stays/'+encodeURIComponent(booking.id)} className="text-small font-semibold text-brand-andaman">{labels['reservations.open']}</Link></div>
           </article>;
         })}

@@ -61,6 +61,7 @@ export interface UnitDetailLabels {
   backToResults: string;
   onMyUno: string;
   showAllPhotos: string;
+  photosPending: string;
   representativeMedia: string;
   guestsCount: string;
   bedroomsCount: string;
@@ -260,6 +261,7 @@ export default function UnitDetailClient({
               images={unit.images ?? []}
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
+              emptyLabel={labels.photosPending}
             />
             {unit.photoScope === 'room_type' ? (
               <p className="mt-8 text-small text-text-secondary">
@@ -370,7 +372,7 @@ export default function UnitDetailClient({
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>
               ) : (
-                <div className="mb-20 overflow-hidden rounded-xl border border-border-line bg-surface-sand/60">
+                <div className="mb-20 overflow-hidden rounded-md border border-border-line bg-surface-sand/60">
                   <div className="grid grid-cols-2">
                     <div className="p-12 border-r border-border-line">
                       <p className="text-small text-text-stone m-0 mb-4">{labels.checkIn}</p>
@@ -430,7 +432,7 @@ export default function UnitDetailClient({
               </p>
 
               {error && (
-                <div className="bg-state-error/10 border border-state-error rounded-xl p-12 mb-16">
+                <div className="bg-state-error/10 border border-state-error rounded-md p-12 mb-16">
                   <p className="text-small text-state-error">{error}</p>
                 </div>
               )}

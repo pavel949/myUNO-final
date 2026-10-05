@@ -11,7 +11,7 @@ const ABOUT_LABELS = {
     'Ignatev Estate operates myUNO — a platform designed for 20-year wealth building through serviced living in Phuket.',
   'about.ignatev_title': 'Ignatev Estate',
   'about.ignatev_body':
-    'Founded on principles of long-term value creation, Ignatev Estate manages the complete real estate lifecycle: acquisition, operations, and exit. We qualify assets for stability, operate them to standard, and deliver transparent returns to owners — not short-term arbitrage, but 20-year wealth building.',
+    'Founded on principles of long-term value creation, Ignatev Estate manages the complete real estate lifecycle: acquisition, operations, and exit. We qualify assets for stability, operate them to standard, and report to owners transparently — not short-term arbitrage, but 20-year wealth building.',
   'about.clearview_title': 'ClearView — Asset Qualification',
   'about.clearview_body':
     'Before any property enters myUNO, ClearView conducts due diligence. Title audits, condition surveys, and market assessment ensure only suitable assets carry the Ignatev brand. This qualification is a hard gate: no unit goes live without certified permitted use.',
@@ -20,7 +20,7 @@ const ABOUT_LABELS = {
     'myUNO runs the whole stay: booking, check-in, concierge, services, housekeeping, checkout, and payouts. Guest journeys are transparent — every booking shows the line-item breakdown, every stay gets documented, every service is rated. Owners see real-time bookings and monthly statements tracing every dollar.',
   'about.loop_title': 'The Compounding Loop',
   'about.loop_body':
-    'A guest stays once and becomes a buyer. A buyer sees the returns and becomes an owner. An owner with multiple units becomes managed. The same identity flows through all three roles on one platform — no silos, no separate systems. Repeat guests drive occupancy; owners drive expansion; data drives decision-making.',
+    'A guest stays once and becomes a buyer. A buyer sees how the homes are run and becomes an owner. An owner with multiple units becomes managed. The same identity flows through all three roles on one platform — no silos, no separate systems. Repeat guests drive occupancy; owners drive expansion; data drives decision-making.',
   'about.services_title': 'Services Marketplace',
   'about.services_body':
     'Guests order airport transfers, flower deliveries, spa treatments, and cleaning services within the booking. Providers are vetted; services are priced transparently; ratings are public. Owners see demand patterns; guests get one-tap ordering; the platform earns a margin on each transaction.',

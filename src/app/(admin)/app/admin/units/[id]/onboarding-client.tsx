@@ -106,7 +106,7 @@ export default function OnboardingClient({
       )}
 
       {/* Owner — a mandate cannot exist without one, so it comes first. */}
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.owner_title']}
         </h2>
@@ -154,7 +154,7 @@ export default function OnboardingClient({
       </section>
 
       {/* Mandate — the step that decides whether statements can ever run. */}
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.engagement_title']}
         </h2>
@@ -229,7 +229,7 @@ export default function OnboardingClient({
       </section>
 
       {/* Compliance — the evidence behind the permitted-use gate. */}
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.compliance_title']}
         </h2>
@@ -329,7 +329,7 @@ export default function OnboardingClient({
       </section>
 
       {/* The checklist itself. */}
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="font-display text-heading-3 text-brand-deep mb-16">
           {labels['admin.onboarding.title']}
         </h2>

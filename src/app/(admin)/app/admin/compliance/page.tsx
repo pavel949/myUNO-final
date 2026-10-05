@@ -6,6 +6,7 @@ import { getAdminComplianceOverview } from '@/modules/core';
 import { safeDecrypt } from '@/modules/ops';
 import ComplianceProjectFilter from './compliance-project-filter';
 import RegulatoryCredentialsClient from './regulatory-credentials-client';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -170,7 +171,7 @@ export default async function AdminCompliancePage({
         {TM30_STATUS_ORDER.map((status) => (
           <div
             key={status}
-            className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-16 text-center"
+            className="bg-surface-paper border border-border-line rounded-lg shadow-card p-16 text-center"
           >
             <p className="text-caption text-text-secondary mb-4">
               {tm30StatusLabel(status, labels)}
@@ -182,7 +183,7 @@ export default async function AdminCompliancePage({
         ))}
       </div>
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-12 mb-16">
           <h2 className="text-heading-3 font-bold text-text-ink">
             {labels['admin.compliance.tm30_title']}
@@ -255,7 +256,7 @@ export default async function AdminCompliancePage({
         )}
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-16">
           {labels['admin.compliance.records_title']}
         </h2>
@@ -282,9 +283,9 @@ export default async function AdminCompliancePage({
                   <p className="text-small text-text-secondary">
                     {record.projectName} ·{' '}
                     {recordStatusLabel(record.status, labels)}
-                    {record.expiresOn
-                      ? ` · ${labels['admin.compliance.records_expires']} ${record.expiresOn.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`
-                      : ''}
+                    {record.expiresOn && (
+                      <> · {labels['admin.compliance.records_expires']} <LocalDate value={record.expiresOn} /></>
+                    )}
                   </p>
                 </div>
                 <Link
@@ -299,7 +300,7 @@ export default async function AdminCompliancePage({
         )}
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-8">
           {labels['admin.compliance.credentials.title']}
         </h2>
@@ -309,7 +310,7 @@ export default async function AdminCompliancePage({
         <RegulatoryCredentialsClient labels={labels} projects={projects} units={units} />
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-16">
           {labels['admin.compliance.retention_title']}
         </h2>

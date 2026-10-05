@@ -22,10 +22,14 @@ export function UnitPhotoMosaic({
   images,
   alt,
   showAllLabel,
+  emptyLabel,
 }: {
   images: string[];
   alt: string;
   showAllLabel: string;
+  /** Shown when the home has no published photos yet (doc 06: every
+   *  component ships its empty state, never a blank block). */
+  emptyLabel?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -49,7 +53,17 @@ export function UnitPhotoMosaic({
 
   if (!cover) {
     return (
-      <div className="aspect-[4/3] bg-gradient-to-br from-brand-andaman to-brand-deep rounded-2xl" />
+      <div
+        role="img"
+        aria-label={emptyLabel || alt}
+        className="flex aspect-[4/3] flex-col items-center justify-center gap-12 rounded-lg bg-gradient-to-br from-brand-andaman to-brand-deep p-24 text-center text-surface-ivory"
+      >
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <path d="M4 7h3l2-2h6l2 2h3v12H4z" strokeLinejoin="round" />
+          <circle cx="12" cy="13" r="3.5" />
+        </svg>
+        {emptyLabel ? <p className="max-w-xs text-small text-surface-ivory/80">{emptyLabel}</p> : null}
+      </div>
     );
   }
 
@@ -57,15 +71,15 @@ export function UnitPhotoMosaic({
     <div>
       {/* Desktop: the five-up mosaic. */}
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-8">
-        <div className="col-span-2 row-span-2 relative aspect-[4/3] overflow-hidden rounded-l-2xl">
+        <div className="col-span-2 row-span-2 relative aspect-[4/3] overflow-hidden rounded-l-lg">
           <Image src={cover} alt={alt} fill className="object-cover" priority />
         </div>
         {thumbs.map((src, index) => (
           <div
             key={src}
             className={`relative aspect-[4/3] overflow-hidden ${
-              index === 1 ? 'rounded-tr-2xl' : ''
-            } ${index === 3 ? 'rounded-br-2xl' : ''}`}
+              index === 1 ? 'rounded-tr-lg' : ''
+            } ${index === 3 ? 'rounded-br-lg' : ''}`}
           >
             <Image src={src} alt={alt} fill className="object-cover" />
           </div>
@@ -77,7 +91,7 @@ export function UnitPhotoMosaic({
         <div
           ref={trackRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-2xl
+          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-lg
                      [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           aria-label={alt}
         >
@@ -129,7 +143,7 @@ export function UnitPhotoMosaic({
       {expanded && rest.length > 0 && (
         <div className="mt-12 hidden md:grid grid-cols-2 md:grid-cols-4 gap-8">
           {rest.map((src, index) => (
-            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-md">
               <Image
                 src={src}
                 alt={`${alt} (${index + 6}/${images.length})`}

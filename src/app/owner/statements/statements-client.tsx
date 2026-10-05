@@ -1,10 +1,9 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface StatementRow {
   id: string;
@@ -76,8 +75,8 @@ export default function OwnerStatementsClient({ labels }: { labels: Labels }) {
           {statements.map((s) => (
             <tr key={s.id} className="border-b border-border-line last:border-b-0">
               <td className="px-16 py-12">
-                {new Date(s.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} –{' '}
-                {new Date(s.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                <LocalDate value={s.periodStart} /> –{' '}
+                <LocalDate value={s.periodEnd} />
               </td>
               <td className="px-16 py-12">{s.unitName}</td>
               <td className="px-16 py-12 text-right font-tabular">{(s.noiTh / 100).toFixed(2)}</td>

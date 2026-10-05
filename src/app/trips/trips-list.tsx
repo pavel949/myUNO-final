@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Booking {
   id: string;
@@ -116,7 +117,7 @@ export default function TripsList({ labels }: TripsListProps) {
             {labels['booking.trips.retry']}
           </a>
         ) : trips.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32 text-center">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
             <p className="text-body text-text-secondary mb-16">{labels['booking.trips.empty_title']}</p>
             <Link
               href="/search"
@@ -131,7 +132,7 @@ export default function TripsList({ labels }: TripsListProps) {
               <Link
                 key={trip.id}
                 href={`/trips/${trip.id}`}
-                className="block bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
+                className="block bg-surface-paper border border-border-line rounded-lg shadow-card p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
               >
                 <div className="flex items-start justify-between mb-16">
                   <div>
@@ -156,13 +157,13 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.startDate).toLocaleDateString(UI_LOCALE, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.startDate} />
                     </p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.endDate).toLocaleDateString(UI_LOCALE, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.endDate} />
                     </p>
                   </div>
                 </div>

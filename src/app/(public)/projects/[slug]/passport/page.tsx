@@ -96,7 +96,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
       />
 
       <div className="mx-auto max-w-6xl space-y-24 px-20 py-48 md:px-32 md:py-64">
-        <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+        <section className="rounded-md border border-border-line bg-surface-paper p-24">
           <div className="flex flex-wrap items-center justify-between gap-12">
             <div>
               <p className="text-kicker uppercase tracking-[0.18em] text-brand-andaman">
@@ -130,7 +130,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
           </dl>
         </section>
 
-        <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+        <section className="rounded-md border border-border-line bg-surface-paper p-24">
           <div className="flex flex-wrap items-center justify-between gap-12">
             <h2 className="font-display text-title font-semibold text-text-ink">
               {labels['passport.developer.title']}
@@ -160,7 +160,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
           )}
         </section>
 
-        <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+        <section className="rounded-md border border-border-line bg-surface-paper p-24">
           <div className="flex flex-wrap items-center justify-between gap-12">
             <div className="flex items-center gap-8">
               <h2 className="font-display text-title font-semibold text-text-ink">
@@ -219,7 +219,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
         </section>
 
         <section className="grid gap-24 lg:grid-cols-2">
-          <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+          <article className="rounded-md border border-border-line bg-surface-paper p-24">
             <div className="flex flex-wrap items-center justify-between gap-12">
               <div className="flex items-center gap-8">
                 <h2 className="font-display text-title font-semibold text-text-ink">
@@ -244,7 +244,7 @@ export default async function ProjectPassportPage({ params }: { params: { slug: 
             )}
           </article>
 
-          <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+          <article className="rounded-md border border-border-line bg-surface-paper p-24">
             <div className="flex flex-wrap items-center justify-between gap-12">
               <div className="flex items-center gap-8">
                 <h2 className="font-display text-title font-semibold text-text-ink">

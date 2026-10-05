@@ -101,7 +101,7 @@ export default function UnitsAdminClient({
   };
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
       <input
         ref={fileInputRef}
         type="file"

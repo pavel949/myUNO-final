@@ -33,7 +33,7 @@ export function StayDatePicker({ start, end, min, locale, labels, onChange }: {
     }} className="h-48 rounded-lg border border-border-line bg-surface-ivory px-12 text-left text-text-ink focus-visible:outline-brand-andaman">
       {start ? format(start) : labels.checkIn} → {end ? format(end) : labels.checkOut}
     </button>
-    <dialog ref={dialog} aria-label={`${labels.checkIn} — ${labels.checkOut}`} className="m-auto w-[calc(100%_-_24px)] max-w-sm max-h-[90dvh] overflow-y-auto rounded-2xl border border-border-line bg-surface-paper p-16 text-text-ink shadow-float backdrop:bg-brand-deep/50">
+    <dialog ref={dialog} aria-label={`${labels.checkIn} — ${labels.checkOut}`} className="m-auto w-[calc(100%_-_24px)] max-w-sm max-h-[90dvh] overflow-y-auto rounded-lg border border-border-line bg-surface-paper p-16 text-text-ink shadow-float backdrop:bg-brand-deep/50">
       <div className="flex items-center justify-between gap-8">
         <p className="font-semibold">{labels.checkIn} — {labels.checkOut}</p>
         <button type="button" aria-label={labels.close} onClick={() => dialog.current?.close()} className="min-h-44 min-w-44 rounded-full hover:bg-surface-ivory">×</button>

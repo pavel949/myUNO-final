@@ -89,7 +89,7 @@ export default async function PartnersPage() {
             <Link
               key={path.href}
               href={path.href}
-              className="group flex min-h-[260px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition hover:border-brand-andaman hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
+              className="group flex min-h-[260px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition hover:border-brand-andaman hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
                 <h2 className="font-display text-title font-semibold text-text-ink">

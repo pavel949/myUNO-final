@@ -61,7 +61,7 @@ export default async function ProjectsHubPage() {
             </p>
             <Link
               href="/search"
-              className="inline-flex items-center justify-center bg-brand-andaman text-white px-32 py-16 rounded-xl font-semibold hover:bg-brand-deep"
+              className="inline-flex items-center justify-center bg-brand-andaman text-white px-32 py-16 rounded-md font-semibold hover:bg-brand-deep"
             >
               {labels['projects.hub.search_cta']}
             </Link>

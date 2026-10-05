@@ -335,7 +335,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               <Link
                 key={item.label}
                 href={item.href}
-                className={`rounded-2xl border p-16 transition hover:border-brand-andaman/40 ${item.value > 0 ? 'border-state-warning/40 bg-state-warning-soft' : 'border-border-line bg-surface-paper'}`}
+                className={`rounded-lg border p-16 transition hover:border-brand-andaman/40 ${item.value > 0 ? 'border-state-warning/40 bg-state-warning-soft' : 'border-border-line bg-surface-paper'}`}
               >
                 <p className="font-display text-heading-2 font-semibold tabular-nums text-text-ink">{item.value}</p>
                 <p className="mt-4 text-small text-text-secondary">{item.label}</p>

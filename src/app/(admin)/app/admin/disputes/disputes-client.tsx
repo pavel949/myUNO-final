@@ -1,9 +1,8 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Dispute {
   id: string;
@@ -60,7 +59,7 @@ export default function DisputesAdminClient({
 
   if (disputes.length === 0) {
     return (
-      <div className="p-24 bg-surface-paper border border-border-line rounded-2xl shadow-card text-center">
+      <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
         <p className="text-body text-text-secondary">{labels['admin.disputes.empty']}</p>
       </div>
     );
@@ -76,7 +75,7 @@ export default function DisputesAdminClient({
 
       <ul className="flex flex-col gap-16">
         {disputes.map((dispute) => (
-          <li key={dispute.id} className="p-16 bg-surface-paper border border-border-line rounded-2xl shadow-card">
+          <li key={dispute.id} className="p-16 bg-surface-paper border border-border-line rounded-lg shadow-card">
             <div className="flex flex-wrap items-baseline justify-between gap-16 mb-8">
               <div>
                 <span className="inline-flex items-center px-8 py-8 rounded-full text-small font-medium bg-state-warning-soft text-state-warning mr-8">
@@ -85,7 +84,7 @@ export default function DisputesAdminClient({
                 <span className="text-body font-semibold text-text-ink">{dispute.title}</span>
               </div>
               <span className="text-small text-text-secondary">
-                {new Date(dispute.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                <LocalDate value={dispute.createdAt} />
               </span>
             </div>
 

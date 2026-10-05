@@ -41,7 +41,7 @@ export function ServiceCard({
           alt={image.illustrative ? '' : service.title}
           fill
           sizes={['(max-width: 640px) 100vw', '(max-width: 1024px) 50vw', '33vw'].join(', ')}
-          className="object-cover transition duration-500 group-hover:scale-[1.03]"
+          className="object-cover transition duration-structural group-hover:scale-[1.03]"
         />
         {image.illustrative ? (
           <span className="absolute right-12 top-12 z-10 rounded-full bg-black/35 px-12 py-4 text-small text-white/80 backdrop-blur">
@@ -69,11 +69,11 @@ export function ServiceCard({
   );
 
   return href ? (
-    <Link href={href} className="group block h-full min-w-0 overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition hover:shadow-card">
+    <Link href={href} className="group block h-full min-w-0 overflow-hidden rounded-lg border border-border-line bg-surface-paper transition hover:shadow-card">
       {content}
     </Link>
   ) : (
-    <article className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper">
+    <article className="group overflow-hidden rounded-lg border border-border-line bg-surface-paper">
       {content}
     </article>
   );

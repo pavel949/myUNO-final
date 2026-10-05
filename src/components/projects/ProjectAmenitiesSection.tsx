@@ -87,7 +87,7 @@ export default function ProjectAmenitiesSection({
           <Link
             key={amenity.id}
             href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}${bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : ''}`}
-            className="overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
+            className="overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
           >
             {amenity.coverUrl ? (
               <Image
@@ -102,13 +102,13 @@ export default function ProjectAmenitiesSection({
             )}
             <div className="p-16">
               {amenity.categoryKey ? (
-                <p className="text-micro uppercase text-brand-andaman">{human(amenity.categoryKey)}</p>
+                <p className="text-kicker uppercase text-brand-andaman">{human(amenity.categoryKey)}</p>
               ) : null}
               <h3 className="mt-4 font-display text-subtitle font-semibold text-text-ink">{amenity.name}</h3>
               {amenity.shortDescription ? (
                 <p className="mt-8 line-clamp-3 text-small text-text-secondary">{amenity.shortDescription}</p>
               ) : null}
-              <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+              <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                 <span className="rounded-full bg-surface-sand px-12 py-4">{priceLabel(amenity, labels)}</span>
                 {amenity.bookingRequired ? (
                   <span className="rounded-full bg-surface-sand px-12 py-4">{labels.bookingRequired}</span>

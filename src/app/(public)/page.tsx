@@ -460,7 +460,7 @@ export default async function LandingPage({
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-border-line bg-surface-ivory p-32 text-text-secondary">
+              <div className="rounded-lg border border-border-line bg-surface-ivory p-32 text-text-secondary">
                 {labels['landing.hp.complexes.empty']}
               </div>
             )}
@@ -531,7 +531,7 @@ export default async function LandingPage({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+            <div className="rounded-lg border border-border-line p-32 text-text-secondary">
               {labels['landing.hp.services.empty']}
             </div>
           )}
@@ -561,7 +561,7 @@ export default async function LandingPage({
                   <Link
                     key={area.id}
                     href={`/areas/${area.slug}`}
-                    className="group relative isolate min-h-[320px] overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
+                    className="group relative isolate min-h-[320px] overflow-hidden rounded-lg bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
                   >
                     <Image
                       src={media.src}
@@ -611,7 +611,7 @@ export default async function LandingPage({
                   source: 'homepage_owners',
                   intent: goal.key,
                 }}
-                className={`group flex min-h-[240px] flex-col justify-between rounded-2xl p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+                className={`group flex min-h-[240px] flex-col justify-between rounded-lg p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
                   index === 3
                     ? 'bg-brand-andaman text-surface-ivory'
                     : 'border border-border-line bg-surface-ivory text-text-ink'

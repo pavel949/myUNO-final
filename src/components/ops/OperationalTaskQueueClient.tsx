@@ -1,9 +1,11 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { enumLabel } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 import OpsStatusPill, { opsStateTone } from './OpsStatusPill';
 
 type Task = {
@@ -42,6 +44,7 @@ export default function OperationalTaskQueueClient({
   tasks,
   labels,
 }: { tasks: Task[]; labels: Record<string, string> }) {
+  const locale = useLocale();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,10 +88,10 @@ export default function OperationalTaskQueueClient({
               <p className="text-small font-semibold text-brand-andaman">{task.project.name} · {task.unit.name}</p>
             </div>
             <h2 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">
-              {task.title || task.taskType.replace(/_/g, ' ')}
+              {task.title || enumLabel(labels, 'taskType', task.taskType)}
             </h2>
             <p className="mt-4 text-small text-text-secondary">
-              <span className="font-tabular">{labels['staff.tasks.due']} {new Date(task.dueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}</span>
+              <span className="font-tabular">{labels['staff.tasks.due']} {formatDate(task.dueAt, locale, 'dateTime')}</span> · {enumLabel(labels, 'taskStatus', task.status)}
               {task.assignee ? ' · ' + task.assignee.firstName + ' ' + task.assignee.lastName : ''}
               {task.assignedTeam ? ' · ' + task.assignedTeam.name : ''}
             </p>

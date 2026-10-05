@@ -166,7 +166,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         {labels['admin.gallery.manage']} →
       </Link>
 
-      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">
           <div>
             <h2 className="text-heading-3 font-semibold text-text-ink">
@@ -184,29 +184,29 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-12">
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
-            <p className="text-micro text-text-secondary">{labels['admin.unit360.project']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.project']}</p>
             <p className="font-semibold text-text-ink">{unit.project.name}</p>
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
-            <p className="text-micro text-text-secondary">{labels['admin.unit360.category']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.category']}</p>
             <p className="font-semibold text-text-ink">
               {unit.inventoryCategory?.name || unit.categoryKey || '—'}
             </p>
-            <p className="text-micro text-text-secondary">{categoryState}</p>
+            <p className="text-small text-text-secondary">{categoryState}</p>
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
-            <p className="text-micro text-text-secondary">{labels['admin.unit360.rate_plans']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.rate_plans']}</p>
             <p className="font-semibold text-text-ink">{ratePlans.length}</p>
-            <p className="text-micro text-text-secondary">
+            <p className="text-small text-text-secondary">
               {ratePlans.map((plan) => plan.code).join(', ') || '—'}
             </p>
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
-            <p className="text-micro text-text-secondary">{labels['admin.unit360.base_rate']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.base_rate']}</p>
             <p className="font-semibold text-text-ink">฿{Math.round(unit.baseNightlyThb / 100).toLocaleString(UI_LOCALE)}</p>
           </div>
           <div className="p-12 bg-surface-ivory border border-border-line rounded-md">
-            <p className="text-micro text-text-secondary">{labels['admin.unit360.min_stay']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.unit360.min_stay']}</p>
             <p className="font-semibold text-text-ink">{unit.minNights}</p>
           </div>
         </div>

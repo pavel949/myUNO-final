@@ -33,7 +33,7 @@ export default function ProjectEditorialSections({ editorial, projectId }: {
       <div className="mx-auto max-w-content">
         {editorial.benefitsTitle && <h2 className="mb-24 font-display text-heading-2 font-semibold text-text-ink">{editorial.benefitsTitle}</h2>}
         <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((benefit, index) => <article key={index} className="rounded-2xl border border-border-line bg-surface-paper p-24 shadow-card">
+          {benefits.map((benefit, index) => <article key={index} className="rounded-lg border border-border-line bg-surface-paper p-24 shadow-card">
             <h3 className="font-display text-heading-3 font-semibold text-text-ink">{benefit.title}</h3>
             <p className="mt-12 text-small leading-relaxed text-text-secondary">{benefit.body}</p>
           </article>)}
@@ -49,10 +49,10 @@ export default function ProjectEditorialSections({ editorial, projectId }: {
       </div>
     </section>}
     {(editorial.groupsTitle || editorial.groupsBody) && <section className="bg-surface-sand px-20 py-48 md:px-32 md:py-64">
-      <div className="mx-auto max-w-5xl rounded-2xl border border-border-line bg-surface-paper p-24 shadow-card md:p-40">
+      <div className="mx-auto max-w-5xl rounded-lg border border-border-line bg-surface-paper p-24 shadow-card md:p-40">
         {editorial.groupsTitle && <h2 className="font-display text-heading-2 font-semibold text-text-ink">{editorial.groupsTitle}</h2>}
         {editorial.groupsBody && <p className="mt-12 text-body text-text-secondary">{editorial.groupsBody}</p>}
-        {editorial.groupsCta && <Link href={`/search?projectId=${encodeURIComponent(projectId)}`} className="mt-24 inline-flex min-h-44 items-center rounded-xl bg-brand-andaman px-24 py-12 font-semibold text-white hover:bg-brand-deep">{editorial.groupsCta}</Link>}
+        {editorial.groupsCta && <Link href={`/search?projectId=${encodeURIComponent(projectId)}`} className="mt-24 inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 py-12 font-semibold text-white hover:bg-brand-deep">{editorial.groupsCta}</Link>}
       </div>
     </section>}
   </>;

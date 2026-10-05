@@ -1,9 +1,9 @@
 'use client';
 
-
-import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ReconciliationData {
   unmatchedPayments: Array<{
@@ -95,7 +95,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
         <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
-        <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 text-center">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 text-center">
           <p className="text-body text-text-secondary">{labels['finance.reconciliation.loading']}</p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
         <h1 className="font-display text-display-xl font-semibold text-text-ink">
           {labels['finance.reconciliation.title']}
         </h1>
-        <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 text-center">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 text-center">
           <p className="text-body text-text-secondary">{labels['finance.reconciliation.no_data']}</p>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
       </div>
 
       {totalUnmatched > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
           <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.unmatched_payments']} (${totalUnmatched})`}
           </h2>
@@ -221,7 +221,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       </span>
                     </td>
                     <td className="px-12 py-8 text-text-secondary">
-                      {new Date(payment.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                      <LocalDate value={payment.createdAt} />
                     </td>
                   </tr>
                 ))}
@@ -232,7 +232,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
       )}
 
       {totalFailedRefunds > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
           <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.failed_refunds']} (${totalFailedRefunds})`}
           </h2>
@@ -266,7 +266,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       {labels['finance.reconciliation.col_created']}
                     </p>
                     <p className="text-body text-text-ink">
-                      {new Date(refund.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
+                      <LocalDate value={refund.createdAt} />
                     </p>
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
       )}
 
       {totalPendingPayouts > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
           <h2 className="font-display text-display font-semibold text-text-ink mb-16">
             {`${labels['finance.reconciliation.pending_payouts']} (${totalPendingPayouts})`}
           </h2>
@@ -359,7 +359,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
       )}
 
       {totalUnmatched === 0 && totalFailedRefunds === 0 && totalPendingPayouts === 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 text-center">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 text-center">
           <p className="font-display text-display font-semibold text-text-ink mb-8">
             {labels['finance.reconciliation.all_clear']}
           </p>

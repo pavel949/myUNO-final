@@ -32,7 +32,7 @@ export default async function ProviderLayout({
   });
 
   const navClass =
-    'block rounded-xl px-12 py-8 text-small text-on-dark-text transition-colors duration-micro hover:bg-brand-andaman/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun';
+    'block rounded-md px-12 py-8 text-small text-on-dark-text transition-colors duration-micro hover:bg-brand-andaman/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun';
 
   return (
     <div className="stitch-workspace flex min-h-screen flex-col md:flex-row">

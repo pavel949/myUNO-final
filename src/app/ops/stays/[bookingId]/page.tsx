@@ -3,7 +3,9 @@ import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
 import StayActions from '@/components/ops/StayActions';
 
 export const dynamic='force-dynamic';
@@ -27,7 +29,9 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
   if(!access.some(Boolean))notFound();
   const canSeeFinance=access[4];
+  const locale=getRequestLocale();
   const labels=await getLabels({
+    ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'staff.stay_360.title':'Stay 360',
     'staff.stay_360.back':'Stay operations',
     'staff.stay_360.booking':'Booking',
@@ -86,10 +90,10 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
         <section className="stitch-panel p-20">
           <dl className="grid grid-cols-2 gap-12">
             {[
-              [labels['staff.stay_360.status'],booking.status.replace(/_/g,' ')],
-              [labels['staff.stay_360.channel'],booking.channel.replace(/_/g,' ')],
+              [labels['staff.stay_360.status'],enumLabel(labels,'bookingStatus',booking.status)],
+              [labels['staff.stay_360.channel'],enumLabel(labels,'bookingChannel',booking.channel)],
               [labels['staff.stay_360.guest'],[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')],
-              [labels['staff.stay_360.dates'],booking.startDate.toISOString().slice(0,10)+' — '+booking.endDate.toISOString().slice(0,10)],
+              [labels['staff.stay_360.dates'],formatDate(booking.startDate,locale)+' — '+formatDate(booking.endDate,locale)],
             ].map(([label,value])=><div key={label}><dt className="text-small text-text-secondary">{label}</dt>
               <dd className="mt-4 text-body font-semibold text-text-ink">{value}</dd></div>)}
           </dl>

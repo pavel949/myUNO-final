@@ -5,6 +5,8 @@ import { formatBahtCompact } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { CrmOpportunity } from '@prisma/client';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface SerializedOpportunity extends Omit<CrmOpportunity, 'createdAt' | 'updatedAt' | 'expectedCloseAt' | 'nextActionAt' | 'wonAt' | 'lostAt'> {
   createdAt: string;
@@ -82,20 +84,13 @@ const getDaysInStage = (createdAt: string | Date): number => {
   return days;
 };
 
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return 'Not set';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
   opportunity,
   labels = {},
 }) => {
+  const locale = useLocale();
+  const formatDate = (dateString: string | null): string =>
+    dateString ? formatDateIn(dateString, locale, 'date') : '—';
   const router = useRouter();
   const [activityBusy, setActivityBusy] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);

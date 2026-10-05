@@ -54,8 +54,8 @@ export default function ProjectNearbySection({
 
         <div className="mt-24 grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
           {visible.map((place) => (
-            <article key={place.id} className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card">
-              <p className="text-micro uppercase text-brand-andaman">{human(place.categoryKey)}</p>
+            <article key={place.id} className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
+              <p className="text-kicker uppercase text-brand-andaman">{human(place.categoryKey)}</p>
               <h3 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">
                 {place.name}
               </h3>
@@ -65,9 +65,9 @@ export default function ProjectNearbySection({
                 </p>
               ) : null}
               {place.address ? (
-                <p className="mt-8 text-micro text-text-secondary">{place.address}</p>
+                <p className="mt-8 text-small text-text-secondary">{place.address}</p>
               ) : null}
-              <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+              <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                 {place.distanceMeters !== null ? (
                   <span className="rounded-full bg-surface-sand px-12 py-4">
                     {labels.distance.replace('{distance}', displayDistance(place.distanceMeters))}

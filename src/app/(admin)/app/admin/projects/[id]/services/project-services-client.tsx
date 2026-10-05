@@ -66,15 +66,15 @@ export default function ProjectServicesClient({
     {message ? <div className="rounded-lg bg-surface-muted p-12 text-small">{message}</div> : null}
     {services.map(service => {
       const hasOverride = service.priceOverrideThb !== null || service.leadTimeHours !== null || service.takeRatePct !== null;
-      return <article key={service.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
+      return <article key={service.id} className="rounded-md border border-border-line bg-surface-paper p-16">
         <div className="flex flex-col gap-12 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 xl:w-[288px]">
             <h2 className="font-semibold text-text-ink">{service.title}</h2>
             <p className="mt-4 text-small text-text-secondary">{service.providerName} · {service.categoryKey.replace(/_/g, ' ')}</p>
-            <p className="mt-8 text-micro text-text-secondary">
+            <p className="mt-8 text-small text-text-secondary">
               {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? 'quote' : `฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`} · {service.baseLeadTimeHours}h
             </p>
-            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-brand-sand px-8 py-4 text-micro">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
+            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-brand-sand px-8 py-4 text-small">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
           </div>
           <div className="grid flex-1 gap-8 sm:grid-cols-3">
             <label className="text-small text-text-secondary">{labels['admin.project_services.price_override']}

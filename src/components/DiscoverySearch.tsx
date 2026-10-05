@@ -107,7 +107,7 @@ export function DiscoverySearch({
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border border-border-line bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
+      className="rounded-lg border border-border-line bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
       aria-label={labels.explore}
     >
       <div className="mb-12 grid grid-cols-3 gap-8" role="group" aria-label={labels.explore}>

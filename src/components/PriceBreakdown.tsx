@@ -19,7 +19,7 @@ export function PriceBreakdown({ lines, totalLabel, totalSatang }: PriceBreakdow
   const shownTotal = totalSatang ?? lines.reduce((sum, line) => sum + line.satang, 0);
 
   return (
-    <div className="border border-border-line rounded-xl p-16 bg-surface-sand/60">
+    <div className="border border-border-line rounded-md p-16 bg-surface-sand/60">
       {lines.map((line) => (
         <div key={line.id} className="mb-8 last:mb-0">
           <div className="flex justify-between gap-16">

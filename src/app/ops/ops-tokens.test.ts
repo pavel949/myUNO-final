@@ -33,7 +33,7 @@ describe('ops tokens (Claude Design board 09)', () => {
   });
 
   it('does not use machine date format on claims', () => {
-    expect(claims).toContain('toLocaleDateString');
+    expect(claims).toContain('<LocalDate');
     expect(claims).not.toContain('sv-SE');
   });
 });

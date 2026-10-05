@@ -8,6 +8,7 @@ import BookingRequestRespondActions, {
 } from '@/components/booking/BookingRequestRespondActions';
 import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
+import { LocalDate } from '@/components/LocalDate';
 
 interface McBookingRequestRow {
   id: string;
@@ -67,8 +68,8 @@ export default function McRequestsClient({
                 </span>
               </p>
               <p className="text-small text-text-secondary mt-4">
-                {new Date(request.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
-                {new Date(request.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {party}{' '}
+                <LocalDate value={request.startDate} /> —{' '}
+                <LocalDate value={request.endDate} /> · {party}{' '}
                 {labels['mc.requests.guests']}
               </p>
               {request.requestExpiresAt ? (

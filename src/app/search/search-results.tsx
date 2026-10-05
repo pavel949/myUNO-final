@@ -441,7 +441,7 @@ export default function SearchResults({
         {loading && (
           <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+              <div key={index} className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
                 <div className="aspect-video animate-pulse bg-border-line/60" />
                 <div className="space-y-12 p-16">
                   <div className="h-16 w-[42%] animate-pulse rounded-full bg-border-line/70" />
@@ -454,7 +454,7 @@ export default function SearchResults({
         )}
 
         {error && (
-          <div className="bg-state-error/10 border border-state-error rounded-xl p-16 mb-24">
+          <div className="bg-state-error/10 border border-state-error rounded-md p-16 mb-24">
             <p className="text-body text-state-error">{error}</p>
           </div>
         )}
@@ -468,7 +468,7 @@ export default function SearchResults({
               {categories.map((category) => (
                 <div
                   key={category.inventory_category_id}
-                  className="bg-surface-paper border border-border-line rounded-xl p-16"
+                  className="bg-surface-paper border border-border-line rounded-md p-16"
                 >
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {category.label}
@@ -516,7 +516,7 @@ export default function SearchResults({
               </div>
 
               {units.length === 0 ? (
-                <div className="rounded-xl border border-border-line bg-surface-paper p-32 text-center">
+                <div className="rounded-md border border-border-line bg-surface-paper p-32 text-center">
                   <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
                   <p className="text-small text-text-secondary">{labels.emptyHint}</p>
                 </div>
@@ -541,7 +541,7 @@ export default function SearchResults({
                         className={
                           selectedProjectId && selectedProjectId === unit.project?.id
                             ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
-                            : 'overflow-hidden rounded-xl border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
+                            : 'overflow-hidden rounded-md border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
                         }
                       >
                         {unit.coverUrl ? (

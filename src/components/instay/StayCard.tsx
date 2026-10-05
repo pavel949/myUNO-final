@@ -3,6 +3,8 @@
 import React from 'react';
 import { Chip } from '@/components/Chip';
 import { TrustMark } from '@/components/TrustMark';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface StayCardProps {
   unitName: string;
@@ -22,18 +24,6 @@ interface StayCardProps {
   /** Resolved copy from the content layer — the card never writes its own. */
   labels: Record<string, string>;
 }
-
-const formatStayRange = (startStr: string, endStr: string): string => {
-  const start = new Date(startStr);
-  const end = new Date(endStr);
-  const startLabel = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const endLabel = end.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${startLabel} – ${endLabel}`;
-};
 
 const stayChipStatus = (status: string): 'checked_in' | 'confirmed' | 'cancelled' | 'closed' | 'default' => {
   switch (status) {
@@ -71,6 +61,9 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
     },
     ref
   ) => {
+    const locale = useLocale();
+    const formatStayRange = (startStr: string, endStr: string): string =>
+      `${formatDateIn(startStr, locale, 'dayMonth')} – ${formatDateIn(endStr, locale, 'date')}`;
     const nightsLabel = (labels['home.stay.nights_count'] ?? '').replace(
       '{count}',
       String(nights)
@@ -98,7 +91,7 @@ export const StayCard = React.forwardRef<HTMLDivElement, StayCardProps>(
     return (
       <div
         ref={ref}
-        className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24 lg:grid lg:grid-cols-[1fr_200px] lg:gap-24 lg:items-start"
+        className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24 lg:grid lg:grid-cols-[1fr_200px] lg:gap-24 lg:items-start"
       >
         <div>
           <p className="font-display text-kicker uppercase text-brand-sun m-0 mb-12">

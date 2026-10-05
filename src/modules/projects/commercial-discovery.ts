@@ -2,6 +2,12 @@ import type { PrismaClient } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
 import { assessGalleryReadiness } from '@/modules/media/public-readiness';
+import {
+  matchesLongTermLeaseSearch,
+  normalizeLongTermLeaseTerms,
+  type LongTermLeaseSearch,
+  type LongTermLeaseTerms,
+} from './long-term-lease';
 
 /**
  * Enquiry-only sale / long-lease discovery. Do not reuse the Stay read model:
@@ -21,6 +27,7 @@ export interface PublicCommercialHome {
   images: string[];
   intents: HomeIntent[];
   priceThb: Partial<Record<HomeIntent, number>>;
+  leaseTerms: LongTermLeaseTerms | null;
 }
 
 const kinds = ['sale', 'long_term_rental'];
@@ -76,6 +83,7 @@ export async function listPublicCommercialHomes(
   intent?: HomeIntent,
   unitId?: string,
   projectId?: string,
+  leaseSearch: LongTermLeaseSearch = {},
 ): Promise<PublicCommercialHome[]> {
   const sourceExcluded = new Set(await allExcludedSourceControlledUnitIds(db));
   const rows = await db.unit.findMany({
@@ -115,7 +123,7 @@ export async function listPublicCommercialHomes(
       engagements: { select: { status: true, mandateMediaId: true, startsOn: true, endsOn: true } },
       commercialOfferings: {
         where: { offeringType: { in: kinds } },
-        select: { offeringType: true, status: true, pricingTerms: true },
+        select: { offeringType: true, status: true, pricingTerms: true, rulesAndPolicies: true },
       },
     },
     orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
@@ -139,11 +147,16 @@ export async function listPublicCommercialHomes(
     }, now);
     if (!intents.length || (intent && !intents.includes(intent))) return [];
     const priceThb: Partial<Record<HomeIntent, number>> = {};
+    let leaseTerms: LongTermLeaseTerms | null = null;
     for (const offering of row.commercialOfferings) {
       if (offering.status !== 'active') continue;
       const normalized = publicOfferingPriceThb(offering.offeringType, offering.pricingTerms);
       if (normalized) priceThb[normalized.intent] = normalized.amountThb;
+      if (offering.offeringType === 'long_term_rental') {
+        leaseTerms = normalizeLongTermLeaseTerms(offering.pricingTerms, offering.rulesAndPolicies);
+      }
     }
+    if (intent === 'rent' && leaseTerms && !matchesLongTermLeaseSearch(leaseTerms, leaseSearch)) return [];
     return [{
       id: row.id,
       name: row.name,
@@ -158,6 +171,7 @@ export async function listPublicCommercialHomes(
         : media.urls,
       intents,
       priceThb,
+      leaseTerms,
     }];
   });
 }

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function GlobalDesksPage() {
   const labels = await getLabels({
     'desks.index.kicker': 'GLOBAL DESKS',
-    'desks.index.title': 'Phuket property, easier to navigate from wherever you are.',
+    'desks.index.title': 'Phuket property, clearer from wherever you are.',
     'desks.index.body': 'Each desk is a market and language liaison route into the same canonical myUNO property, booking and service platform. Desks do not represent separate inventory or physical offices.',
     'desks.index.cta': 'Open desk',
     'desks.thailand.title': 'Thailand desk',

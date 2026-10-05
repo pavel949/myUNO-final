@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -248,7 +250,7 @@ export default function StatementActions({
                 <Fragment key={s.id}>
                   <tr className="border-b border-border-line">
                     <td className="px-12 py-8">
-                      {`${new Date(s.periodStart).toLocaleDateString()} – ${new Date(s.periodEnd).toLocaleDateString()}`}
+                      {`${new Date(s.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} – ${new Date(s.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`}
                     </td>
                     <td className="px-12 py-8">{s.ownerName}</td>
                     <td className="px-12 py-8">{s.unitName}</td>

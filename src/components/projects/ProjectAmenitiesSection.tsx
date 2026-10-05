@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -34,7 +35,7 @@ function human(value: string) {
 function priceLabel(amenity: PublicProjectAmenity, labels: { included: string; free: string }) {
   if (amenity.pricingType === 'included') return labels.included;
   if (amenity.pricingType === 'free') return labels.free;
-  if (amenity.priceThb !== null) return `฿${Math.round(amenity.priceThb / 100).toLocaleString()}`;
+  if (amenity.priceThb !== null) return `฿${Math.round(amenity.priceThb / 100).toLocaleString(UI_LOCALE)}`;
   return human(amenity.pricingType);
 }
 

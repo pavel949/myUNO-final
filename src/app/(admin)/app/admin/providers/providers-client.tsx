@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -83,7 +85,7 @@ export default function ProvidersAdminClient({
               <span className="text-text-secondary font-normal"> · {provider.email}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(provider.createdAt).toLocaleDateString()}
+              {new Date(provider.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
             </p>
           </div>
           <span

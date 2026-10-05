@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
@@ -269,7 +271,7 @@ export default function AdminProspectingClient({
                     </td>
                     <td className="p-12 text-text-secondary">
                       {account.expectedCloseAt
-                        ? new Date(account.expectedCloseAt).toLocaleDateString()
+                        ? new Date(account.expectedCloseAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })
                         : '—'}
                     </td>
                     <td className="p-12">

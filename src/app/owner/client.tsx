@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -488,20 +490,20 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   <div className="flex items-start justify-between gap-12">
                     <div className="flex-1">
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(undefined, {
+                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(UI_LOCALE, {
                           year: 'numeric',
                           month: 'short',
-                        })} – {new Date(statement.periodEnd).toLocaleDateString(undefined, {
+                        timeZone: APP_TZ })} – {new Date(statement.periodEnd).toLocaleDateString(UI_LOCALE, {
                           year: 'numeric',
                           month: 'short',
-                        })}
+                        timeZone: APP_TZ })}
                       </h3>
                       <p className="text-sm text-text-secondary mb-12">
-                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(undefined, {
+                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(UI_LOCALE, {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
-                        })}
+                        timeZone: APP_TZ })}
                       </p>
                       <div className="space-y-8">
                         <div className="flex justify-between">

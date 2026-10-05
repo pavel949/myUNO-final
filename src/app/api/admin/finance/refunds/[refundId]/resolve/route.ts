@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
@@ -36,7 +37,7 @@ export async function POST(
         amountThb: refund.amountThb,
         reason: refund.reason,
       },
-      message: `Refund ${body.action === 'retry' ? 'queued for retry' : 'written off'}: ฿${refund.amountThb.toLocaleString()}`,
+      message: `Refund ${body.action === 'retry' ? 'queued for retry' : 'written off'}: ฿${refund.amountThb.toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'Refund not found') {

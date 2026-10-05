@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -185,7 +187,7 @@ export default function OpsBoardClient({
     if (
       !window.confirm(
         fill(labels['staff.ops.confirm_cash'], {
-          amount: order.totalThb.toLocaleString(),
+          amount: order.totalThb.toLocaleString(UI_LOCALE),
         })
       )
     ) {
@@ -275,14 +277,14 @@ export default function OpsBoardClient({
           </span>
         </p>
         <p className="text-small text-text-secondary mt-4">
-          {new Date(booking.startDate).toLocaleDateString()} —{' '}
-          {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
+          {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
+          {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {booking.party}{' '}
           {labels['staff.ops.guest'].toLowerCase()}
         </p>
         {booking.requestExpiresAt ? (
           <p className="text-small text-state-warning mt-4">
             {labels['staff.ops.request_expires']}:{' '}
-            {new Date(booking.requestExpiresAt).toLocaleString()}
+            {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
           </p>
         ) : null}
         <BookingRequestInboxDetails
@@ -326,9 +328,9 @@ export default function OpsBoardClient({
           </span>
         </p>
         <p className="text-small text-text-secondary">
-          {new Date(booking.startDate).toLocaleDateString()} —{' '}
-          {new Date(booking.endDate).toLocaleDateString()} · {booking.party}{' '}
-          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString()}
+          {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
+          {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · {booking.party}{' '}
+          {labels['staff.ops.guest'].toLowerCase()} · ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
         </p>
         <div className="flex flex-wrap gap-8 mt-8">
           <Chip
@@ -540,7 +542,7 @@ export default function OpsBoardClient({
                 if (
                   window.confirm(
                     fill(labels['staff.ops.confirm_cash'], {
-                      amount: booking.totalThb.toLocaleString(),
+                      amount: booking.totalThb.toLocaleString(UI_LOCALE),
                     })
                   )
                 ) {
@@ -599,8 +601,8 @@ export default function OpsBoardClient({
                   <span className="text-text-secondary font-normal"> · {order.ordererName}</span>
                 </p>
                 <p className="text-small text-text-secondary">
-                  {new Date(order.scheduledStart).toLocaleString()} · ฿
-                  {order.totalThb.toLocaleString()}
+                  {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+                  {order.totalThb.toLocaleString(UI_LOCALE)}
                 </p>
               </div>
               <div className="flex items-center gap-8">
@@ -687,7 +689,7 @@ export default function OpsBoardClient({
                   </p>
                   {ticket.slaDueAt ? (
                     <p className="text-small text-text-secondary">
-                      {labels['staff.ops.ticket_due']}: {new Date(ticket.slaDueAt).toLocaleString()}
+                      {labels['staff.ops.ticket_due']}: {new Date(ticket.slaDueAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                     </p>
                   ) : null}
                   {ticket.assigneeName ? (

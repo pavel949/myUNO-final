@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -251,9 +253,9 @@ export default function BookingsAdminClient({
               ) : null}
             </div>
             <p className="text-small text-text-secondary">
-              {new Date(booking.startDate).toLocaleDateString()} —{' '}
-              {new Date(booking.endDate).toLocaleDateString()} · ฿
-              {booking.totalThb.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {new Date(booking.startDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} —{' '}
+              {new Date(booking.endDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+              {booking.totalThb.toLocaleString(UI_LOCALE, { maximumFractionDigits: 2 })}
               {booking.paid && (
                 <span className="text-state-success font-semibold">
                   {' '}

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -209,7 +211,7 @@ export default function ProviderServicesClient({
                         form above does the same conversion, both ways
                         (Q49). */}
                     {service.basePriceThb != null &&
-                      ` · ฿${(service.basePriceThb / 100).toLocaleString()}`}
+                      ` · ฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`}
                   </p>
                 </div>
               )}

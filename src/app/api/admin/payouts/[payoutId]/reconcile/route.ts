@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
@@ -26,7 +27,7 @@ export async function PUT(
         amountThb: payout.amountThb,
         executedOn: payout.executedOn.toISOString().split('T')[0],
       },
-      message: `Payout marked as reconciled: ฿${payout.amountThb.toLocaleString()}`,
+      message: `Payout marked as reconciled: ฿${payout.amountThb.toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'Payout not found') {

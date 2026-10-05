@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
 import { sendEmail } from '@/modules/auth';
@@ -24,7 +25,7 @@ async function notifyOpsNewBooking(
     unit_name: booking.unit?.name || '',
     start_date: booking.startDate.toISOString().slice(0, 10),
     end_date: booking.endDate.toISOString().slice(0, 10),
-    total_thb: totalBaht.toLocaleString(),
+    total_thb: totalBaht.toLocaleString(UI_LOCALE),
     guest_name: booking.guestIdentity
       ? `${booking.guestIdentity.firstName} ${booking.guestIdentity.lastName}`.trim()
       : '',
@@ -110,7 +111,7 @@ export async function notifyBookingConfirmed(
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
       end_date: booking.endDate.toISOString().slice(0, 10),
-      total_thb: booking.totalThb.toLocaleString(),
+      total_thb: booking.totalThb.toLocaleString(UI_LOCALE),
     };
 
     await createNotification(db, {

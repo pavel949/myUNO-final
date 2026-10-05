@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
@@ -270,7 +271,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                   <div className="mt-20 flex flex-wrap items-end justify-between gap-12 border-t border-border-line pt-16">
                     <p className="font-display text-body-strong font-semibold text-text-ink">
                       {price !== null
-                        ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString()
+                        ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString(UI_LOCALE)
                         : labels['homes.price']}
                     </p>
                     <span className="text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>
@@ -293,7 +294,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
               <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.lease_term']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.leaseTermMonths || '—'}</dd></div>
               <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.pets']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.pets === 'yes' ? labels['homes.pets_yes'] : searchParams?.pets === 'no' ? labels['homes.pets_no'] : labels['homes.pets_any']}</dd></div>
             </> : null}
-            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.max_price']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.maxPrice ? '฿'+Number(searchParams.maxPrice).toLocaleString() : '—'}</dd></div>
+            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.max_price']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.maxPrice ? '฿'+Number(searchParams.maxPrice).toLocaleString(UI_LOCALE) : '—'}</dd></div>
           </dl>
           <p className="mt-20 border-t border-border-line pt-16 text-small text-text-secondary">{labels['homes.price_note']}</p>
           <a href="#lead-form" className="mt-20 flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep">

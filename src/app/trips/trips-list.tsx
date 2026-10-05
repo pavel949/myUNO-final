@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -154,13 +156,13 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.startDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      {new Date(trip.startDate).toLocaleDateString(UI_LOCALE, { timeZone: 'UTC' })}
                     </p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.endDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      {new Date(trip.endDate).toLocaleDateString(UI_LOCALE, { timeZone: 'UTC' })}
                     </p>
                   </div>
                 </div>
@@ -169,7 +171,7 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.total']}</p>
                     <p className="font-display text-title font-semibold text-brand-andaman tabular-nums">
-                      ฿{trip.totalThb?.toLocaleString()}
+                      ฿{trip.totalThb?.toLocaleString(UI_LOCALE)}
                     </p>
                   </div>
 

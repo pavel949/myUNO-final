@@ -1,9 +1,10 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicMarketplaceService } from '@/modules/services';
 
 type Labels = Record<string, string>;
-const baht = (satang: number) => (satang / 100).toLocaleString();
+const baht = (satang: number) => (satang / 100).toLocaleString(UI_LOCALE);
 
 export default function ProjectServiceMarketplace({
   projectId,

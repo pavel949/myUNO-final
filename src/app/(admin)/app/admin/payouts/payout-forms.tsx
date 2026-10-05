@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -173,8 +175,8 @@ export default function PayoutForms({
                   <option value="" />
                   {eligibleStatements.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.unitName} — {new Date(s.periodStart).toLocaleDateString()}{' '}
-                      {labels['admin.payouts.period_to']} {new Date(s.periodEnd).toLocaleDateString()}
+                      {s.unitName} — {new Date(s.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}{' '}
+                      {labels['admin.payouts.period_to']} {new Date(s.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                     </option>
                   ))}
                 </select>
@@ -184,7 +186,7 @@ export default function PayoutForms({
                 <p className="text-small text-text-secondary">
                   {labels['admin.payouts.owner_share']}:{' '}
                   <span className="font-mono text-text-ink">
-                    ฿{(selectedStatement.ownerShareTh / 100).toLocaleString()}
+                    ฿{(selectedStatement.ownerShareTh / 100).toLocaleString(UI_LOCALE)}
                   </span>
                 </p>
               )}
@@ -296,17 +298,17 @@ export default function PayoutForms({
                 <div className="text-small text-text-secondary flex flex-col gap-4 bg-surface-ivory rounded-sm p-12">
                   <span>
                     {labels['admin.payouts.fulfilled_total']}: ฿
-                    {(remittance.fulfilledOrdersTotal / 100).toLocaleString()}
+                    {(remittance.fulfilledOrdersTotal / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span>
-                    {labels['admin.payouts.take_rate']}: ฿{(remittance.takeRateThb / 100).toLocaleString()}
+                    {labels['admin.payouts.take_rate']}: ฿{(remittance.takeRateThb / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span>
                     {labels['admin.payouts.refunds_clawed_back']}: ฿
-                    {(remittance.refundsClawedBack / 100).toLocaleString()}
+                    {(remittance.refundsClawedBack / 100).toLocaleString(UI_LOCALE)}
                   </span>
                   <span className="font-semibold text-text-ink">
-                    {labels['admin.payouts.net_amount']}: ฿{(remittance.netThb / 100).toLocaleString()}
+                    {labels['admin.payouts.net_amount']}: ฿{(remittance.netThb / 100).toLocaleString(UI_LOCALE)}
                   </span>
                 </div>
               )}

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
@@ -250,14 +252,14 @@ export default function AdminOperationalKpisClient({
                   <td className="p-12 text-text-ink">{kpi.unitName}</td>
                   <td className="p-12 text-text-secondary">{kpi.metricName}</td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(kpi.periodStart).toLocaleDateString()} –{' '}
-                    {new Date(kpi.periodEnd).toLocaleDateString()}
+                    {new Date(kpi.periodStart).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })} –{' '}
+                    {new Date(kpi.periodEnd).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
                   </td>
                   <td className="p-12 text-text-secondary">
-                    {kpi.targetValue != null ? kpi.targetValue.toLocaleString() : '—'}
+                    {kpi.targetValue != null ? kpi.targetValue.toLocaleString(UI_LOCALE) : '—'}
                   </td>
                   <td className="p-12 text-text-secondary">
-                    {kpi.actualValue != null ? kpi.actualValue.toLocaleString() : '—'}
+                    {kpi.actualValue != null ? kpi.actualValue.toLocaleString(UI_LOCALE) : '—'}
                   </td>
                   <td className="p-12">
                     <span

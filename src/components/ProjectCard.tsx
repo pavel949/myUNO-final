@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicProjectCard as PublicProject } from '@/modules/projects';
@@ -78,7 +79,7 @@ export function ProjectCard({
             <p className="max-w-full text-small font-semibold text-white/90">
               {labels.fromPrice.replace(
                 '{price}',
-                Math.round(project.fromNightlyThb / 100).toLocaleString()
+                Math.round(project.fromNightlyThb / 100).toLocaleString(UI_LOCALE)
               )}
             </p>
           ) : (

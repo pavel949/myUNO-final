@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -18,7 +20,7 @@ interface Stay {
 
 /** Satang everywhere in the platform; baht only at the edge where a human reads it. */
 const baht = (satang: number) =>
-  `฿${(satang / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `฿${(satang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2  })}`;
 
 export default function FileClaimClient({
   stays,
@@ -104,7 +106,7 @@ export default function FileClaimClient({
                 <span>
                   {`${labels['staff.claims.checked_out']}: ${new Date(
                     stay.checkedOutAt
-                  ).toLocaleDateString()}`}
+                  ).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}`}
                 </span>
                 <span>{`${stay.hoursLeft} ${labels['staff.claims.hours_left']}`}</span>
               </div>

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -83,7 +85,7 @@ export default function DisputesAdminClient({
                 <span className="text-body font-semibold text-text-ink">{dispute.title}</span>
               </div>
               <span className="text-small text-text-secondary">
-                {new Date(dispute.createdAt).toLocaleDateString()}
+                {new Date(dispute.createdAt).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}
               </span>
             </div>
 

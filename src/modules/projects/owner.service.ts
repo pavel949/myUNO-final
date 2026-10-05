@@ -1,3 +1,4 @@
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { PrismaClient, Booking, OwnerStatement, TicketStatus } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
@@ -447,7 +448,7 @@ export async function getOwnerAlerts(
           titleKey: 'owner.alert.tm30_overdue.title',
           descriptionKey: 'owner.alert.tm30_overdue.body',
           descriptionParams: {
-            date: filing.booking.startDate.toLocaleDateString(),
+            date: filing.booking.startDate.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ }),
           },
           createdAt: filing.booking.startDate,
           actionUrl: `/ops/tm30`,
@@ -518,7 +519,7 @@ export async function getOwnerAlerts(
         },
         descriptionParams: {
           recordType: record.recordType,
-          date: record.expiresOn.toLocaleDateString(),
+          date: record.expiresOn.toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ }),
         },
         createdAt: now,
       });

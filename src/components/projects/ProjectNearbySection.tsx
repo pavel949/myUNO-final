@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 type NearbyLabels = {
   kicker: string;
   title: string;
@@ -26,7 +27,7 @@ function human(value: string) {
 }
 
 function displayDistance(meters: number) {
-  if (meters < 1000) return Math.max(50, Math.round(meters / 50) * 50).toLocaleString() + ' m';
+  if (meters < 1000) return Math.max(50, Math.round(meters / 50) * 50).toLocaleString(UI_LOCALE) + ' m';
   const kilometres = meters / 1000;
   return (kilometres < 10 ? kilometres.toFixed(1) : Math.round(kilometres).toString()) + ' km';
 }

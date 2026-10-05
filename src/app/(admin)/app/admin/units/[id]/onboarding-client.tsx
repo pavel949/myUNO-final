@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -142,7 +144,7 @@ export default function OnboardingClient({
               name="email"
               type="email"
               required
-              className="block h-40 w-64 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[160px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
           </label>
           <Button type="submit" disabled={busy === 'owner'}>
@@ -168,7 +170,7 @@ export default function OnboardingClient({
                 {/* The server component converts stored satang to this explicit baht DTO
                     field. Do not divide a second time here. */}
                 {e.noiCapAnnualBaht !== null &&
-                  ` · ฿${e.noiCapAnnualBaht.toLocaleString()}`}
+                  ` · ฿${e.noiCapAnnualBaht.toLocaleString(UI_LOCALE)}`}
               </li>
             ))}
           </ul>
@@ -212,7 +214,7 @@ export default function OnboardingClient({
               type="number"
               min="0"
               step="any"
-              className="block h-40 w-48 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[120px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
             <span className="block text-small text-text-secondary mt-4 max-w-xs">
               {labels['admin.onboarding.noi_cap_hint']}
@@ -307,7 +309,7 @@ export default function OnboardingClient({
             {labels['admin.onboarding.label']}
             <input
               name="label"
-              className="block h-40 w-64 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[160px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
           </label>
           <label className="text-small text-text-secondary">

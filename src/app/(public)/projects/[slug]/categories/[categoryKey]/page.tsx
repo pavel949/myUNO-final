@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -47,7 +48,7 @@ export default async function ProjectCategoryPage({
         <div className="mt-16 flex flex-wrap gap-8 text-small text-text-secondary">
           {category.bedrooms !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.bedrooms'].replace('{count}', String(category.bedrooms))}</span> : null}
           <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.available'].replace('{count}', String(category.unitCount))}</span>
-          {category.fromNightlyThb !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4 font-semibold text-text-ink">{labels['project_category.from'].replace('{price}', Math.round(category.fromNightlyThb / 100).toLocaleString())}</span> : null}
+          {category.fromNightlyThb !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4 font-semibold text-text-ink">{labels['project_category.from'].replace('{price}', Math.round(category.fromNightlyThb / 100).toLocaleString(UI_LOCALE))}</span> : null}
         </div>
         <Link
           href={`/search?projectId=${encodeURIComponent(project.id)}&inventoryCategoryId=${encodeURIComponent(category.id)}`}

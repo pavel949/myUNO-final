@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
@@ -296,7 +298,7 @@ export default function RegulatoryCredentialsClient({
                       {row.registrationNumber ? ` · ${row.registrationNumber}` : ''}
                     </td>
                     <td className="p-12 text-text-secondary">
-                      {row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : '—'}
+                      {row.expiryDate ? new Date(row.expiryDate).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ }) : '—'}
                     </td>
                     <td className="p-12 text-text-secondary">{statusLabel(row.status)}{row.evidenceMediaId && <a className="ml-8 text-brand-andaman underline" href={'/api/admin/regulatory-credentials/evidence?id=' + encodeURIComponent(row.evidenceMediaId)}>{labels['admin.compliance.credentials.view_evidence']}</a>}</td>
                     <td className="p-12">

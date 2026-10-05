@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import { notFound } from 'next/navigation';
@@ -115,7 +116,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
 
           {intent === 'rent' && home.leaseTerms ? (
             <div className="mt-24 grid gap-16 rounded-2xl border border-border-line bg-surface-paper p-20 md:grid-cols-2">
-              {home.leaseTerms.monthlyRentThb ? <p><span className="text-small text-text-secondary">{labels['homes.detail.monthly_rent']}</span><br/><strong>฿{home.leaseTerms.monthlyRentThb.toLocaleString()} {labels['homes.detail.per_month']}</strong></p> : null}
+              {home.leaseTerms.monthlyRentThb ? <p><span className="text-small text-text-secondary">{labels['homes.detail.monthly_rent']}</span><br/><strong>฿{home.leaseTerms.monthlyRentThb.toLocaleString(UI_LOCALE)} {labels['homes.detail.per_month']}</strong></p> : null}
               {home.leaseTerms.minimumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.minimum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</strong></p> : null}
               {home.leaseTerms.maximumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.maximum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.maximumLeaseMonths))}</strong></p> : null}
               {home.leaseTerms.securityDepositMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.deposit']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.securityDepositMonths))}</strong></p> : null}
@@ -152,7 +153,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
           </h2>
           {intent === 'rent' && home.leaseTerms?.monthlyRentThb ? (
             <p className="mt-16 font-display text-heading-2 font-semibold text-text-ink">
-              ฿{home.leaseTerms.monthlyRentThb.toLocaleString()} {labels['homes.detail.per_month']}
+              ฿{home.leaseTerms.monthlyRentThb.toLocaleString(UI_LOCALE)} {labels['homes.detail.per_month']}
             </p>
           ) : (
             <p className="mt-16 text-small text-text-secondary">{labels['homes.detail.price']}</p>

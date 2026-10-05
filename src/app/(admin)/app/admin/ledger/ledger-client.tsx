@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatThb } from '@/components/viz';
@@ -110,7 +112,7 @@ export default function LedgerAdminClient({
             <tbody>
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-border-line hover:bg-surface-paper">
-                  <td className="px-12 py-8">{new Date(entry.occurredOn).toLocaleDateString()}</td>
+                  <td className="px-12 py-8">{new Date(entry.occurredOn).toLocaleDateString(UI_LOCALE, { timeZone: APP_TZ })}</td>
                   <td className="px-12 py-8">
                     <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
                       {entry.entryType.replace(/_/g, ' ')}

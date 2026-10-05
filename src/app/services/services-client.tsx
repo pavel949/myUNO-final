@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -58,7 +60,7 @@ function fill(template: string, params: Record<string, string | number>): string
 // as satang (THB × 100) straight from the DB — convert to baht only here, at
 // final render (money rule, CLAUDE.md "Money rules").
 export function baht(satang: number): string {
-  return (satang / 100).toLocaleString();
+  return (satang / 100).toLocaleString(UI_LOCALE);
 }
 
 export default function ServicesClient({
@@ -509,7 +511,7 @@ export default function ServicesClient({
                     {order.serviceTitle || '—'}
                   </p>
                   <p className="text-small text-text-secondary">
-                    {new Date(order.scheduledStart).toLocaleString()} · ฿
+                    {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
                     {baht(order.totalThb)}
                   </p>
                 </div>

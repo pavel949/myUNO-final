@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
@@ -254,7 +256,7 @@ export default function ProviderOrdersClient({
                   </p>
                   <p className="text-small text-text-secondary">
                     {formatScheduledStart(order.scheduledStart)} · ×{order.quantity} · ฿
-                    {(order.totalThb / 100).toLocaleString()}
+                    {(order.totalThb / 100).toLocaleString(UI_LOCALE)}
                   </p>
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">

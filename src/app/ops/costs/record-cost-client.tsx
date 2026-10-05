@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -24,7 +26,7 @@ interface Entry {
 }
 
 /** Satang in, baht on screen — the ledger stores integers to avoid float drift. */
-const baht = (satang: number) => (satang / 100).toLocaleString();
+const baht = (satang: number) => (satang / 100).toLocaleString(UI_LOCALE);
 
 export default function RecordCostClient({
   units,

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { LoadingState, ErrorState } from '@/components/StateComponents';
@@ -224,7 +226,7 @@ export default function AvailabilityPricingPanel({
             {labels['staff.calendar.note']}
             <input
               name="note"
-              className="block h-40 w-64 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[160px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
           </label>
           <Button type="submit" disabled={busy === 'block'}>
@@ -251,7 +253,7 @@ export default function AvailabilityPricingPanel({
                 className="flex flex-wrap items-center gap-12 border-b border-border-line pb-8 last:border-0"
               >
                 <span className="flex-1 min-w-32 text-body text-text-ink">
-                  {r.startDate} → {r.endDate} · ฿{(r.nightlyThb / 100).toLocaleString()}
+                  {r.startDate} → {r.endDate} · ฿{(r.nightlyThb / 100).toLocaleString(UI_LOCALE)}
                   {labels['staff.calendar.per_night']}
                   {r.label && ` · ${r.label}`}
                 </span>
@@ -325,14 +327,14 @@ export default function AvailabilityPricingPanel({
               min="1"
               step="any"
               required
-              className="block h-40 w-48 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[120px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
           </label>
           <label className="text-small text-text-secondary">
             {labels['staff.calendar.label']}
             <input
               name="label"
-              className="block h-40 w-64 mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
+              className="block h-40 w-[160px] mt-4 rounded-sm border border-border-line px-12 text-body text-text-ink"
             />
           </label>
           <Button type="submit" disabled={busy === 'rule'}>

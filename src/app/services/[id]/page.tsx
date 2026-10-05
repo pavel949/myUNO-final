@@ -2,7 +2,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Breadcrumb } from '@/components/Breadcrumb';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { track } from '@/modules/analytics';
+import { getPublicMarketplaceServiceDetail } from '@/modules/services';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
@@ -46,22 +49,21 @@ export default async function ServiceDetailPage({
   const projectId = searchParams.projectId || null;
   const unitId = searchParams.unitId || null;
 
-  let service: ServiceDetail | null = null;
-  try {
-    const detailQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
-    const res = await fetch(`/api/services/${id}${detailQuery}`, {
-      cache: 'no-store',
-    });
-    if (res.ok) {
-      service = await res.json();
-    }
-  } catch {
-    // Service fetch failed
-  }
-
+  // Read through the services module directly: a server-side fetch of our own
+  // API with a relative URL cannot resolve, which left this page always 404.
+  const service: ServiceDetail | null = await getPublicMarketplaceServiceDetail(
+    prisma, id, getRequestLocale(), projectId ?? undefined
+  ).catch(() => null);
   if (!service) {
     notFound();
   }
+  const viewer = await getCurrentUser().catch(() => null);
+  await track(prisma, 'service_service_viewed', {
+    serviceId: service.id,
+    identityId: viewer?.identityId,
+    categoryKey: service.categoryKey,
+    projectId: projectId ?? undefined,
+  }).catch(() => null);
 
   const labels = await getLabels({
     'services.breadcrumb_home': 'Home',
@@ -144,7 +146,7 @@ export default async function ServiceDetailPage({
         {service.coverUrl && (
           <div className="mb-24 rounded-lg overflow-hidden bg-surface-paper">
             <Image
-              src={`/api/uploads/${service.coverUrl}`}
+              src={service.coverUrl}
               alt={service.title}
               width={640}
               height={384}
@@ -228,7 +230,7 @@ export default async function ServiceDetailPage({
               {service.mediaUrls.map((url, idx) => (
                 <Image
                   key={idx}
-                  src={`/api/uploads/${url}`}
+                  src={url}
                   alt={`${service.title} ${idx + 1}`}
                   width={320}
                   height={160}

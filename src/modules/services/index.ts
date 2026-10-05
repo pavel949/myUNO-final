@@ -50,3 +50,9 @@ export {
 } from './service.service';
 
 export { resolveProjectServiceOffer, type ProjectServiceRow, type ResolvedProjectServiceOffer } from './project-service-offer';
+
+export {
+  getServiceOrderCustomerView,
+  type ServiceOrderCustomerView,
+  type ServiceOrderCustomerViewResult,
+} from './service-order-customer-view';

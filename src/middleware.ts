@@ -35,8 +35,8 @@ export function middleware(request: NextRequest) {
   // submit). It is added for development only — production keeps the strict CSP.
   const scriptSrc =
     process.env.NODE_ENV === 'production'
-      ? "script-src 'self' 'unsafe-inline' https://unpkg.com"
-      : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com";
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
 
   response.headers.set(
     'Content-Security-Policy',
@@ -46,7 +46,7 @@ export function middleware(request: NextRequest) {
       // so 'unsafe-inline' is required or all client interactivity is blocked.
       // Tightening to nonces needs Next's nonce plumbing — tracked for post-launch.
       scriptSrc,
-      "style-src 'self' 'unsafe-inline' https://unpkg.com", // Tailwind + pinned MapLibre CSS
+      "style-src 'self' 'unsafe-inline'", // Tailwind; MapLibre CSS is bundled
       "img-src 'self' data: https:",
       "font-src 'self'",
       // Search map raster tiles are loaded by MapLibre over fetch/XHR.

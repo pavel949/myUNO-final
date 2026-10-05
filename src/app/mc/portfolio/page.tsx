@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getMCProjectScopes, getStaffProjectIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
+import { projectCalendar, type CalendarCell, type CalendarEntry, type CalendarState } from '@/modules/booking';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,31 +152,51 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
     }
     return result;
   };
-  const bookingsByUnit = byUnit(bookings);
-  const blocksByUnit = byUnit(blocks);
   const rulesByUnit = byUnit(rules);
   const ticketsByUnit = new Map(tickets.map((ticket) => [ticket.unitId, ticket._count._all]));
-  // Use the same precedence as the visible calendar. A blocked date is not a
-  // sellable night; a pending payment hold is temporarily unavailable, not sold.
-  // The categories are mutually exclusive even when bad upstream data overlaps.
+  // One projection with the ops board: the same Booking/BlockedDate records,
+  // the same precedence (canonical calendar-projection), so occupancy here can
+  // never disagree with the calendar an operator acts on.
+  const entries: CalendarEntry[] = [
+    ...bookings.map((booking) => ({
+      id: booking.id, unitId: booking.unitId, kind: 'booking' as const,
+      startDate: dayKey(booking.startDate), endDate: dayKey(booking.endDate),
+      status: booking.status, holdExpiresAt: booking.holdExpiresAt?.toISOString() ?? null,
+    })),
+    ...blocks.map((block) => ({
+      id: block.id, unitId: block.unitId, kind: 'block' as const,
+      startDate: dayKey(block.startDate), endDate: dayKey(block.endDate),
+      status: 'blocked', reason: block.reason,
+    })),
+  ];
+  const cells = projectCalendar(ids, days.map(dayKey), entries, now);
+  const bookingStatus = new Map(bookings.map((booking) => [booking.id, booking.status]));
+  const OCCUPIED_STATES = new Set<CalendarState>(['confirmed', 'in_house', 'past']);
+  const BLOCKED_STATES = new Set<CalendarState>(['owner', 'maintenance', 'external', 'blocked']);
+  // A conflicted night is unsellable either way; it counts as occupied when a
+  // stay sits on it, otherwise as blocked, and is also reported separately.
+  const nightKind = (cell: CalendarCell): 'occupied' | 'blocked' | 'held' | 'request' | 'free' => {
+    if (cell.state === 'conflict') {
+      return cell.bookingIds.some((id) => ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(bookingStatus.get(id) ?? ''))
+        ? 'occupied' : 'blocked';
+    }
+    if (OCCUPIED_STATES.has(cell.state)) return 'occupied';
+    if (BLOCKED_STATES.has(cell.state)) return 'blocked';
+    if (cell.state === 'hold') return 'held';
+    if (cell.state === 'request') return 'request';
+    return 'free';
+  };
   let occupiedNights = 0;
   let blockedNights = 0;
   let heldNights = 0;
   let conflictedNights = 0;
   for (const unit of units) {
-    const unitBookings = bookingsByUnit.get(unit.id) || [];
-    const unitBlocks = blocksByUnit.get(unit.id) || [];
-    for (const day of days) {
-      const active = unitBookings.filter(booking => inNight(day, booking.startDate, booking.endDate));
-      const occupied = active.some(booking =>
-        ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(booking.status));
-      const blocked = unitBlocks.filter(block => inNight(day, block.startDate, block.endDate));
-      const held = active.some(booking =>
-        booking.status === 'pending_payment' && booking.holdExpiresAt && booking.holdExpiresAt > now);
-      if ((occupied && (held || blocked.length > 0)) || blocked.length > 1) conflictedNights++;
-      if (occupied) occupiedNights++;
-      else if (blocked.length) blockedNights++;
-      else if (held) heldNights++;
+    for (const cell of cells[unit.id] ?? []) {
+      if (cell.state === 'conflict') conflictedNights++;
+      const kind = nightKind(cell);
+      if (kind === 'occupied') occupiedNights++;
+      else if (kind === 'blocked') blockedNights++;
+      else if (kind === 'held') heldNights++;
     }
   }
   const totalNights = units.length * days.length;
@@ -239,8 +260,7 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
               <th scope="col" className="border-b border-border-line px-12 py-12 text-right">Tasks</th>
             </tr></thead>
             <tbody>{units.map((unit, i) => {
-              const unitBookings = bookingsByUnit.get(unit.id) || [];
-              const unitBlocks = blocksByUnit.get(unit.id) || [];
+              const unitCells = cells[unit.id] ?? [];
               const unitRules = rulesByUnit.get(unit.id) || [];
               return <tr key={unit.id} className={i % 2 ? 'bg-surface-ivory/50' : ''}>
                 <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper px-12 py-8 text-left">
@@ -248,17 +268,19 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
                   <span className="block text-text-secondary">{unit.project.name}</span>
                   <span className="block text-brand-andaman">Category: {unit.inventoryCategory?.name || 'Uncategorized'} · {unit.status}</span>
                 </th>
-                {days.map((day) => {
-                  const activeBookings = unitBookings.filter((b) => inNight(day, b.startDate, b.endDate));
-                  const activeBlocks = unitBlocks.filter((b) => inNight(day, b.startDate, b.endDate));
-                  const confirmed = activeBookings.some((b) => ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(b.status));
-                  const hold = activeBookings.some((b) => b.status === 'pending_payment' && b.holdExpiresAt && b.holdExpiresAt > now);
-                  const requested = activeBookings.some((b) => b.status === 'requested');
-                  const conflict = (confirmed && (hold || activeBlocks.length > 0)) || activeBlocks.length > 1;
+                {days.map((day, dayIndex) => {
+                  const cell = unitCells[dayIndex];
+                  const kind = cell ? nightKind(cell) : 'free';
+                  const conflict = cell?.state === 'conflict';
+                  const confirmed = kind === 'occupied';
+                  const blockReasons = blocks.filter((b) => b.unitId === unit.id && cell?.entryIds.includes(b.id)).map((b) => b.reason);
+                  const blocked = kind === 'blocked';
+                  const hold = kind === 'held';
+                  const requested = kind === 'request';
                   const rule = unitRules.find((r) => inNight(day, r.startDate, r.endDate));
-                  const title = `${unit.name} · ${dayKey(day)}: ${conflict ? 'overlap / reconcile' : confirmed ? 'occupied' : activeBlocks.length ? activeBlocks.map((b) => b.reason).join(', ') : hold ? 'payment hold' : requested ? 'request only' : 'available'}${rule ? ` · rate override ฿${asBaht(rule.nightlyThb)}` : ''}`;
+                  const title = `${unit.name} · ${dayKey(day)}: ${conflict ? 'overlap / reconcile' : confirmed ? 'occupied' : blocked ? blockReasons.join(', ') : hold ? 'payment hold' : requested ? 'request only' : 'available'}${rule ? ` · rate override ฿${asBaht(rule.nightlyThb)}` : ''}`;
                   return <td key={dayKey(day)} title={title} className="border-b border-l border-border-line p-4 text-center">
-                    <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} aria-label={title} className={`block rounded-md py-8 font-semibold ${conflict ? 'bg-red-100 text-red-800' : confirmed ? 'bg-brand-andaman text-white' : activeBlocks.length ? 'bg-amber-100 text-amber-900' : hold ? 'bg-violet-100 text-violet-900' : requested ? 'bg-blue-50 text-blue-800' : 'text-text-secondary hover:bg-surface-ivory'}`}>{conflict ? '!' : confirmed ? '■' : activeBlocks.length ? '×' : hold ? 'H' : requested ? '◇' : rule ? '·' : ' '}</Link>
+                    <Link href={user.isAdmin || staffProjectIds.includes(unit.projectId) ? `/ops/calendar/${unit.id}` : `/mc/units/${unit.id}`} aria-label={title} className={`block rounded-md py-8 font-semibold ${conflict ? 'bg-red-100 text-red-800' : confirmed ? 'bg-brand-andaman text-white' : blocked ? 'bg-amber-100 text-amber-900' : hold ? 'bg-violet-100 text-violet-900' : requested ? 'bg-blue-50 text-blue-800' : 'text-text-secondary hover:bg-surface-ivory'}`}>{conflict ? '!' : confirmed ? '■' : blocked ? '×' : hold ? 'H' : requested ? '◇' : rule ? '·' : ' '}</Link>
                   </td>;
                 })}
                 <td className="border-b border-border-line px-12 text-right text-text-ink">฿{asBaht(unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb)}</td>

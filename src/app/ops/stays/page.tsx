@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
+import { bangkokCalendarDay } from '@/modules/booking';
 import { deriveStayWorkItems, stayWorkDepartments } from '@/modules/booking/work-projection';
 import type { StayWorkDepartment } from '@/modules/booking/work-projection';
 

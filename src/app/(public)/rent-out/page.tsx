@@ -44,7 +44,7 @@ export default async function RentOutPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="border-b border-border-line bg-surface-paper">
         <div className="mx-auto grid max-w-content gap-24 px-20 py-56 md:px-32 md:py-80 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-start">
           <div>

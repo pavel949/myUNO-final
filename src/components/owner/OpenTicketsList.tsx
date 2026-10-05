@@ -78,7 +78,7 @@ export const OpenTicketsList = React.forwardRef<HTMLDivElement, OpenTicketsListP
           tickets.map((ticket) => (
               <div
                 key={ticket.id}
-                className="bg-surface-paper border border-border-line rounded-md p-16"
+                className="stitch-panel p-16"
               >
                 <div className="flex justify-between items-start gap-16">
                   <div className="flex-1">

@@ -40,7 +40,7 @@ export default async function SellPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="bg-brand-deep px-20 py-64 text-surface-ivory md:px-32 md:py-96">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['sell.kicker']}</p>

@@ -44,7 +44,7 @@ export default async function OwnerStatementsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <p className="mb-8">
           <Link href="/owner" className="text-brand-andaman font-semibold hover:underline">

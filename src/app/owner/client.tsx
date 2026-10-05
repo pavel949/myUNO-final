@@ -383,7 +383,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {...chartLabels}
               />
             </div>
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <div className="stitch-panel p-24">
               <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.occupancy']}
               </h3>
@@ -407,7 +407,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Compliance Summary (D2) */}
         {visibleCompliance.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.compliance.title']}
             </h2>
             <p className="text-body text-text-secondary mb-16">
@@ -419,7 +419,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                   key={status.unitId}
                   className="stitch-panel p-24"
                 >
-                  <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                  <h3 className="font-display text-heading-3 font-semibold text-text-ink mb-16">
                     {status.unitName}
                   </h3>
                   <div className="space-y-12">
@@ -474,7 +474,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {visibleStatements.length > 0 && (
           <div className="mb-40">
             <div className="flex items-center justify-between gap-16 mb-16">
-              <h2 className="text-heading-2 font-semibold text-text-ink">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink">
                 {labels['owner.statement.title']}
               </h2>
               <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
@@ -485,7 +485,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {visibleStatements.map((statement) => (
                 <div
                   key={statement.id}
-                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
+                  className="stitch-panel p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12">
                     <div className="flex-1">
@@ -552,7 +552,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           <div className="space-y-32">
             {/* Single Unit: Bookings */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.bookings']}
               </h2>
               <BookingsList
@@ -567,7 +567,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Single Unit: Latest Statement */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.statement']}
               </h2>
               <LatestStatementCard statementId={currentUnit?.latestStatementId || null} />
@@ -575,7 +575,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Single Unit: Open Tickets */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
               <OpenTicketsList
@@ -600,7 +600,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {currentUnit ? (
               <div>
-                <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                   {labels['owner.actions.title']}
                 </h2>
                 <OwnerQuickActions unit={currentUnit} />
@@ -638,10 +638,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {filteredUnits.map((unit) => (
                 <div
                   key={unit.id}
-                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
+                  className="stitch-panel p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12 mb-16">
-                    <h3 className="text-heading-3 font-semibold text-text-ink">
+                    <h3 className="font-display text-heading-3 font-semibold text-text-ink">
                       <Link
                         href={`/owner/units/${unit.id}`}
                         className="hover:text-brand-andaman hover:underline"
@@ -710,7 +710,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             </div>
 
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
               <OpenTicketsList

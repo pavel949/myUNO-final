@@ -47,7 +47,7 @@ export default function BuyingClient({
   }, [unitId, message, labels]);
 
   return (
-    <section className="p-24 bg-surface-paper border border-border-line rounded-lg">
+    <section className="stitch-panel p-24">
       <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-8">
         {labels['buying.ask_title']}
       </h2>

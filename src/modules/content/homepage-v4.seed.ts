@@ -98,6 +98,7 @@ export const HOMEPAGE_V4_KEYS = [
   { key: 'landing.hp.owners.manage.title', namespace: 'landing', description: 'Owner goal: management', en: 'Hand over to management', ru: 'Передать в управление', status: 'needs_review' as const },
   { key: 'landing.hp.owners.manage.body', namespace: 'landing', description: 'Owner goal body: management', en: 'Operations, costs and reporting handled for you. Start with an assessment of the property.', ru: 'Эксплуатация, расходы и отчётность — на нас. Начните с оценки объекта.', status: 'needs_review' as const },
   { key: 'landing.hp.owners.manage.cta', namespace: 'landing', description: 'Owner goal CTA: management', en: 'Request an assessment', ru: 'Запросить оценку', status: 'needs_review' as const },
+  { key: 'landing.hp.owners.all', namespace: 'landing', description: 'Owner overview link', en: 'All owner options', ru: 'Все возможности для собственников', th: 'ตัวเลือกทั้งหมดสำหรับเจ้าของ', zh: '全部业主选项', status: 'needs_review' as const },
   { key: 'landing.hp.owners.existing', namespace: 'landing', description: 'Owner existing-client lead-in', en: 'Already a client?', ru: 'Уже клиент?', status: 'needs_review' as const },
   { key: 'landing.hp.owners.existing_cta', namespace: 'landing', description: 'Owner existing-client link', en: 'Open the owner workspace', ru: 'Открыть кабинет собственника', status: 'needs_review' as const },
   { key: 'landing.hp.partners.title', namespace: 'landing', description: 'Partners strip title', en: 'For partners', ru: 'Партнёрам', status: 'needs_review' as const },
@@ -150,4 +151,5 @@ export const HOMEPAGE_V4_KEYS = [
   { key: 'homes.detail.responsibility', namespace: 'homes', description: 'Commercial home detail responsibility', en: 'Managed by {org}', ru: 'Под управлением {org}', th: 'บริหารโดย {org}', zh: '由 {org} 管理', status: 'needs_review' as const },
   { key: 'homes.detail.per_month', namespace: 'homes', description: 'Commercial home detail per month unit', en: 'per month', ru: 'в месяц', th: 'ต่อเดือน', zh: '每月', status: 'needs_review' as const },
   { key: 'homes.detail.months_unit', namespace: 'homes', description: 'Commercial home detail months unit', en: '{count} months', ru: '{count} мес.', th: '{count} เดือน', zh: '{count} 个月', status: 'needs_review' as const },
+  { key: 'admin.content.homepage_placements', namespace: 'admin', description: 'Content admin link to homepage placement editor', en: 'Homepage placements', ru: 'Выкладка главной', th: 'การจัดวางหน้าแรก', zh: '首页编排', status: 'needs_review' as const },
 ];

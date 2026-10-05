@@ -111,6 +111,8 @@ export default async function LandingPage({
       'landing.hp.complexes.homes': '{count} homes',
       'landing.hp.complexes.no_photo': 'Illustrative image',
       'landing.hp.complexes.view': 'Open complex',
+      'landing.hp.complexes.responsibility_project': 'Operations managed by {org}',
+      'landing.hp.complexes.responsibility_selected': 'Selected homes managed by {org}',
       'landing.hp.complexes.empty': 'Complexes are being prepared for publication.',
       'landing.hp.offers.kicker': 'Find your home',
       'landing.hp.offers.title.stay': 'Homes for your holiday',
@@ -445,6 +447,8 @@ export default async function LandingPage({
                         homes: labels['landing.hp.complexes.homes'],
                         noPhoto: labels['landing.hp.complexes.no_photo'],
                         view: labels['landing.hp.complexes.view'],
+                        responsibilityProject: labels['landing.hp.complexes.responsibility_project'],
+                        responsibilitySelected: labels['landing.hp.complexes.responsibility_selected'],
                       }}
                     />
                   </div>

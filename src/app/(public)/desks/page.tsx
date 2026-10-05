@@ -15,7 +15,7 @@ export default async function GlobalDesksPage() {
     'desks.index.body': 'Each desk is a market and language liaison route into the same canonical myUNO property, booking and service platform. Desks do not represent separate inventory or physical offices.',
     'desks.index.cta': 'Open desk',
     'desks.thailand.title': 'Thailand desk',
-    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners navigating Phuket property and services.',
+    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners working with Phuket property and services.',
     'desks.thailand.languages': 'Thai · English',
     'desks.russian.title': 'Russian-speaking desk',
     'desks.russian.body': 'For Russian-speaking buyers, owners, guests and partners engaging with Phuket property.',

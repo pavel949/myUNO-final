@@ -35,7 +35,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
     'desks.detail.help_body': 'Use the Help Center for account, booking, property and trust guidance.',
     'desks.detail.open': 'Open',
     'desks.thailand.title': 'Thailand desk',
-    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners navigating Phuket property and services.',
+    'desks.thailand.body': 'For Thailand-based residents, owners, guests and partners working with Phuket property and services.',
     'desks.thailand.languages': 'Thai · English',
     'desks.russian.title': 'Russian-speaking desk',
     'desks.russian.body': 'For Russian-speaking buyers, owners, guests and partners engaging with Phuket property.',

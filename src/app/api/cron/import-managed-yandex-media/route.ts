@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isCronAuthorized, cronUnauthorized } from '@/jobs';
-import { importManagedYandexBatch, MANAGED_YANDEX_SOURCES } from '@/modules/media/managed-yandex-import';
+import { importManagedYandexBatch, MANAGED_YANDEX_SOURCES } from '@/modules/media';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;

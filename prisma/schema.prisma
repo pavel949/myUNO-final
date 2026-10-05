@@ -495,6 +495,21 @@ enum MobilizationChecklistItemStatus {
 }
 
 enum AnalyticsEventKey {
+  intent_selected
+  search_submitted
+  search_completed
+  search_failed
+  search_zero_results
+  result_opened
+  project_opened
+  unit_opened
+  service_opened
+  owner_goal_selected
+  lead_started
+  login_started
+  login_success
+  quote_succeeded
+  quote_failed
   page_landing_viewed
   page_project_viewed
   page_unit_viewed

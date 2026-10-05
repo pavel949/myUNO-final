@@ -19,6 +19,7 @@ import { track } from '@/modules/analytics';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
+import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,10 +76,17 @@ export default async function ProjectLandingPage({
     orderBy: { startDate: 'asc' },
   }) : null;
 
-  // Track analytics event
-  await track(prisma, 'page_project_viewed', {
+  // Track both the legacy page-view event and the conversion-funnel open.
+  const projectEventDimensions = {
     projectId: project.id,
-  }).catch(() => null);
+    destination: getDestination().key,
+    locale: getRequestLocale(),
+    source: 'project_portal',
+  };
+  await Promise.all([
+    track(prisma, 'page_project_viewed', projectEventDimensions),
+    track(prisma, 'project_opened', projectEventDimensions),
+  ]).catch(() => null);
 
   const serviceCategoryCatalog = await getConfig(prisma, 'catalog.service_categories')
     .catch(() => []) as Array<{ key?: string }>;

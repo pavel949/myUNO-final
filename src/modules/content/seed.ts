@@ -1588,9 +1588,9 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'common.not_found.home', namespace: 'common', description: '404 back-home button', en: 'Back to home', ru: 'На главную', th: 'กลับหน้าแรก', status: NR },
 
   // Navbar
-  { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: search stays', en: 'Find a stay', ru: 'Бронирование', th: 'ค้นหาที่พัก', status: NR },
+  { key: 'nav.find_stay', namespace: 'nav', description: 'Navbar link: holiday rentals', en: 'Holiday', ru: 'Для отдыха', th: 'วันหยุด', zh: '度假租赁', status: NR },
   { key: 'nav.residences', namespace: 'nav', description: 'Navbar link: projects hub', en: 'Residences', ru: 'Резиденции', th: 'ที่พักอาศัย', status: NR },
-  { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', th: 'บริการ', status: NR },
+  { key: 'nav.services', namespace: 'nav', description: 'Navbar link: services marketplace', en: 'Services', ru: 'Услуги', th: 'บริการ', zh: '服务', status: NR },
   { key: 'nav.trust', namespace: 'nav', description: 'Navbar link: trust page', en: 'Trust', ru: 'Гарантии', th: 'ความน่าเชื่อถือ', status: NR },
   { key: 'nav.login', namespace: 'nav', description: 'Navbar button: log in', en: 'Log in', ru: 'Войти', th: 'เข้าสู่ระบบ', status: NR },
   { key: 'nav.register', namespace: 'nav', description: 'Navbar button: sign up', en: 'Sign up', ru: 'Регистрация', th: 'สมัครสมาชิก', status: NR },
@@ -1611,7 +1611,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'nav.footer.services', namespace: 'nav', description: 'Footer link: services', en: 'Services', ru: 'Услуги', th: 'บริการ', status: NR },
   { key: 'nav.footer.ombudsman', namespace: 'nav', description: 'Footer link: ombudsman', en: 'Ombudsman', ru: 'Омбудсмен', th: 'ผู้ตรวจการ', status: NR },
   { key: 'nav.footer.legal_index', namespace: 'nav', description: 'Footer link: legal index', en: 'Legal', ru: 'Правовая информация', th: 'กฎหมาย', status: NR },
-  { key: 'nav.owners', namespace: 'nav', description: 'Navbar link: owners', en: 'Owners', ru: 'Владельцам', th: 'เจ้าของ', status: NR },
+  { key: 'nav.owners', namespace: 'nav', description: 'Navbar link: owners', en: 'Owners', ru: 'Собственникам', th: 'เจ้าของ', zh: '业主', status: NR },
   { key: 'nav.about', namespace: 'nav', description: 'Navbar link: about', en: 'About', ru: 'О нас', th: 'เกี่ยวกับเรา', status: NR },
   { key: 'nav.language', namespace: 'nav', description: 'Locale switcher aria-label', en: 'Language', ru: 'Язык', th: 'ภาษา', status: NR },
   { key: 'nav.locale.en', namespace: 'nav', description: 'Locale option: English', en: 'EN', ru: 'EN', th: 'EN', status: NR },

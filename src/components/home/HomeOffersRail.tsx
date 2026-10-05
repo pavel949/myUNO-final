@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { HOME_INTENTS, homeCatalogHref, useHomeIntent, type HomeIntent } from './HomeIntentProvider';
+import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 const IMAGE_SIZES = '(max-width: 768px) 280px, (max-width: 1024px) 50vw, 33vw';
 
@@ -46,7 +47,7 @@ export interface HomeOffersLabels {
 const MAX_VISIBLE = 6;
 
 export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labels: HomeOffersLabels }) {
-  const { intent, setIntent, place, search } = useHomeIntent();
+  const { intent, locale, destination, setIntent, place, search } = useHomeIntent();
   const visible = items
     .filter((item) => item.intent === intent)
     .filter((item) => {
@@ -115,6 +116,16 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
             <Link
               key={item.key}
               href={contextualHref(item)}
+              onClick={() => trackPublicInteraction('result_opened', {
+                destination,
+                locale,
+                intent,
+                source: 'homepage_offers',
+                deviceClass: deviceClass(),
+                entityType: item.intent === 'stay' ? 'unit' : 'commercial_home',
+                entityId: item.key.split(':').slice(1).join(':'),
+                projectId: item.projectId,
+              })}
               className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:w-auto"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-brand-deep">

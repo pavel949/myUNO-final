@@ -6,6 +6,7 @@ import { StayDatePicker } from '@/components/StayDatePicker';
 import type { PlaceOption } from '@/lib/place-search';
 import { PlaceCombobox, type PlaceComboboxLabels } from './PlaceCombobox';
 import { HOME_INTENTS, useHomeIntent, type HomeIntent } from './HomeIntentProvider';
+import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
 
 export interface HomeFinderLabels {
   aria: string;
@@ -48,7 +49,7 @@ export function HomeFinder({
   places: PlaceOption[];
 }) {
   const router = useRouter();
-  const { intent, setIntent, place, setPlace, search, setSearch } = useHomeIntent();
+  const { intent, locale: activeLocale, destination, setIntent, place, setPlace, search, setSearch } = useHomeIntent();
   const { startDate, endDate, adults, children, unitType, bedrooms, budget, moveIn, leaseTermMonths, pets } = search;
   const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
@@ -58,6 +59,16 @@ export function HomeFinder({
     setError('');
 
     if (intent === 'buy' || intent === 'monthly') {
+      trackPublicInteraction('search_submitted', {
+        destination,
+        locale: activeLocale,
+        intent,
+        source: 'homepage',
+        deviceClass: deviceClass(),
+        projectId: place?.kind === 'project' ? place.id : undefined,
+        areaId: place?.kind === 'area' ? place.id : undefined,
+        hasDates: false,
+      });
       const params = new URLSearchParams({ intent: intent === 'buy' ? 'buy' : 'rent' });
       if (place?.kind === 'area' && place.slug) params.set('area', place.slug);
       if (place?.kind === 'project') params.set('projectId', place.id);
@@ -77,6 +88,16 @@ export function HomeFinder({
       setError(labels.datesError);
       return;
     }
+    trackPublicInteraction('search_submitted', {
+      destination,
+      locale: activeLocale,
+      intent,
+      source: 'homepage',
+      deviceClass: deviceClass(),
+      projectId: place?.kind === 'project' ? place.id : undefined,
+      areaId: place?.kind === 'area' ? place.id : undefined,
+      hasDates: true,
+    });
     const params = new URLSearchParams({
       startDate,
       endDate,

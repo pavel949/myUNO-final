@@ -7,6 +7,8 @@ import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { HomeFinder } from '@/components/home/HomeFinder';
+import { PublicAnalyticsLink } from '@/components/PublicAnalyticsLink';
+import { PUBLIC_ANALYTICS_EVENTS } from '@/components/public-analytics';
 import { HomeIntentProvider, parseHomeIntent } from '@/components/home/HomeIntentProvider';
 import { HomeOffersRail, type HomeOfferItem } from '@/components/home/HomeOffersRail';
 import { getPublicHomepageData } from '@/modules/home/public-homepage.service';
@@ -286,6 +288,7 @@ export default async function LandingPage({
   const perIntent = <T,>(build: (intent: (typeof intents)[number]) => T) =>
     ({ stay: build('stay'), monthly: build('monthly'), buy: build('buy') }) as Record<(typeof intents)[number], T>;
 
+  const ownerGoalEvent = PUBLIC_ANALYTICS_EVENTS.ownerGoalSelected;
   const ownerGoals = [
     { href: '/sell', key: 'sell' },
     { href: '/rent-out', key: 'rent' },
@@ -303,7 +306,7 @@ export default async function LandingPage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
       />
 
-      <HomeIntentProvider initialIntent={initialIntent}>
+      <HomeIntentProvider initialIntent={initialIntent} locale={locale} destination={activeDestination.key}>
         <section
           className="relative isolate min-h-[calc(100svh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px]"
           aria-labelledby="home-title"
@@ -597,9 +600,16 @@ export default async function LandingPage({
 
           <div className="mt-32 grid gap-16 md:grid-cols-2 lg:grid-cols-4">
             {ownerGoals.map((goal, index) => (
-              <Link
+              <PublicAnalyticsLink
                 key={goal.key}
                 href={goal.href}
+                eventKey={ownerGoalEvent}
+                dimensions={{
+                  destination: activeDestination.key,
+                  locale,
+                  source: 'homepage_owners',
+                  intent: goal.key,
+                }}
                 className={`group flex min-h-[240px] flex-col justify-between rounded-2xl p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
                   index === 3
                     ? 'bg-brand-andaman text-surface-ivory'
@@ -615,7 +625,7 @@ export default async function LandingPage({
                 <span className={`mt-24 font-semibold ${index === 3 ? 'text-surface-ivory' : 'text-brand-andaman'}`}>
                   {L(`landing.hp.owners.${goal.key}.cta`)} →
                 </span>
-              </Link>
+              </PublicAnalyticsLink>
             ))}
           </div>
 

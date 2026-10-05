@@ -31,37 +31,29 @@ export default async function ProviderLayout({
     'provider.portal.nav_remittances': 'Remittances',
   });
 
+  const navClass =
+    'block rounded-xl px-12 py-8 text-small text-on-dark-text transition-colors duration-micro hover:bg-brand-andaman/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun';
+
   return (
-    <div className="min-h-screen bg-surface-ivory">
-      <div className="max-w-4xl mx-auto px-24 py-32">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-12 mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink">
-            {labels['provider.portal.title']}
-          </h1>
-          {isMember && (
-            <nav className="flex gap-16">
-              <Link
-                href="/provider"
-                className="text-body text-brand-andaman hover:underline"
-              >
-                {labels['provider.portal.nav_orders']}
-              </Link>
-              <Link
-                href="/provider/services"
-                className="text-body text-brand-andaman hover:underline"
-              >
-                {labels['provider.portal.nav_services']}
-              </Link>
-              <Link
-                href="/provider/remittances"
-                className="text-body text-brand-andaman hover:underline"
-              >
-                {labels['provider.portal.nav_remittances']}
-              </Link>
-            </nav>
-          )}
-        </div>
-        {children}
+    <div className="stitch-workspace flex min-h-screen flex-col md:flex-row">
+      <aside className="shrink-0 border-b border-white/10 bg-brand-deep p-16 text-on-dark-text shadow-float md:min-h-screen md:w-64 md:border-b-0 md:border-r md:p-20">
+        <p className="font-display text-subtitle font-bold">{labels['provider.portal.title']}</p>
+        {isMember && (
+          <nav className="mt-12 flex flex-row flex-wrap gap-4 md:mt-24 md:flex-col">
+            <Link href="/provider" className={navClass}>
+              {labels['provider.portal.nav_orders']}
+            </Link>
+            <Link href="/provider/services" className={navClass}>
+              {labels['provider.portal.nav_services']}
+            </Link>
+            <Link href="/provider/remittances" className={navClass}>
+              {labels['provider.portal.nav_remittances']}
+            </Link>
+          </nav>
+        )}
+      </aside>
+      <div className="min-w-0 flex-1 p-20 md:p-32">
+        <div className="mx-auto max-w-5xl">{children}</div>
       </div>
     </div>
   );

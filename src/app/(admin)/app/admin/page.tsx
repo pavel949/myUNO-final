@@ -269,7 +269,7 @@ export default async function AdminDashboardPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_revenue']}
             </p>
@@ -285,7 +285,7 @@ export default async function AdminDashboardPage() {
               />
             </div>
           </div>
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_nights']}
             </p>
@@ -313,7 +313,7 @@ export default async function AdminDashboardPage() {
             {projectReports.map((report) => (
               <div
                 key={report.id}
-                className="bg-surface-paper border border-border-line rounded-lg p-24"
+                className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24"
               >
                 <p className="text-subtitle font-semibold text-text-ink mb-16">{report.name}</p>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">

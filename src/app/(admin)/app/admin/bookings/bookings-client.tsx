@@ -98,7 +98,7 @@ export default function BookingsAdminClient({
 
   if (loading) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32">
         <p className="text-body text-text-secondary">{labels['admin.bookings.loading'] || 'Loading...'}</p>
       </div>
     );
@@ -179,14 +179,14 @@ export default function BookingsAdminClient({
 
   if (bookings.length === 0) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+      <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-32">
         <p className="text-body text-text-secondary">{labels['admin.bookings.empty']}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+    <div className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24">
       <div className="mb-16">
         <p className="text-small text-text-secondary mb-16">
           {labels['admin.bookings.showing'] || `Showing ${visible.length} of ${total} bookings`}

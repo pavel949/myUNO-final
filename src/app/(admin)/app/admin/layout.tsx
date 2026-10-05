@@ -128,7 +128,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="stitch-workspace flex min-h-screen flex-col md:flex-row">
-      <aside className="sticky top-0 z-30 shrink-0 border-r border-white/10 bg-brand-deep p-16 text-on-dark-text shadow-float md:static md:min-h-screen md:w-72" style={{ minWidth: '288px' }}>
+      <aside className="sticky top-0 z-30 shrink-0 border-r border-white/10 bg-brand-deep p-16 text-on-dark-text shadow-float md:static md:min-h-screen md:w-[288px]" style={{ minWidth: '288px' }}>
         <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
         <details className="md:hidden">
           <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-12 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">

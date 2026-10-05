@@ -154,7 +154,7 @@ export default function CheckoutClient({
         )}
 
         {session && (
-          <div className="mb-24 space-y-10 rounded-2xl border border-border-line bg-surface-ivory/80 p-20">
+          <div className="mb-24 space-y-[10px] rounded-2xl border border-border-line bg-surface-ivory/80 p-20">
             {session.booking?.unitName && (
               <div className="flex justify-between text-small">
                 <span className="text-text-secondary">

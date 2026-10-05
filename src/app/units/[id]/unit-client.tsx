@@ -65,6 +65,7 @@ export interface UnitDetailLabels {
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
+  sizeUnit: string;
   floor: string;
   notChargedYet: string;
   fewerGuests: string;
@@ -295,7 +296,7 @@ export default function UnitDetailClient({
                 </Chip>
                 {(unit.grossAreaSqm || unit.sizeSqm) ? (
                   <Chip variant="neutral">
-                    {String(unit.grossAreaSqm || unit.sizeSqm)} m²
+                    {String(unit.grossAreaSqm || unit.sizeSqm)} {labels.sizeUnit}
                   </Chip>
                 ) : null}
                 {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}
@@ -303,7 +304,7 @@ export default function UnitDetailClient({
               {(unit.viewLabels?.length || unit.featureLabels?.length) ? (
                 <div className="mb-24 flex flex-wrap gap-8">
                   {[...(unit.viewLabels ?? []), ...(unit.featureLabels ?? [])].map((fact) => (
-                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-10 py-6 text-small text-text-secondary">
+                    <span key={fact} className="rounded-full border border-border-line bg-surface-paper px-[10px] py-[6px] text-small text-text-secondary">
                       {fact}
                     </span>
                   ))}

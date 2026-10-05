@@ -75,7 +75,7 @@ export default async function ServiceOrdersPage() {
             <li key={order.id}>
               <Link
                 href={`/services/orders/${order.id}`}
-                className="stitch-panel block p-16 transition duration-structural hover:-translate-y-1 hover:border-brand-andaman hover:shadow-float"
+                className="stitch-panel block p-16 transition duration-structural hover:-translate-y-[4px] hover:border-brand-andaman hover:shadow-float"
               >
                 <div className="flex flex-wrap items-baseline gap-8 mb-4">
                   <p className="text-body font-semibold text-text-ink">{order.service.title}</p>

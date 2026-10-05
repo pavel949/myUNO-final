@@ -600,7 +600,7 @@ export default async function ProjectLandingPage({
                     </p>
                   ) : null}
                   {(unit.views.length > 0 || unit.unitFeatures.some(feature => /^[a-z0-9_]+$/.test(feature))) ? (
-                    <div className="mb-12 flex flex-wrap gap-6">
+                    <div className="mb-12 flex flex-wrap gap-[6px]">
                       {[
                         ...unit.views.map(view => ({
                           key: `view:${view}`,

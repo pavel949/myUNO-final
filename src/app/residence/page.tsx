@@ -197,7 +197,7 @@ export default async function ResidencePage() {
                   <li key={service.id}>
                     <Link
                       href={`/services/${service.id}?projectId=${residence.projectId}`}
-                      className="stitch-panel block p-16 transition duration-structural hover:-translate-y-1 hover:border-brand-andaman hover:shadow-float"
+                      className="stitch-panel block p-16 transition duration-structural hover:-translate-y-[4px] hover:border-brand-andaman hover:shadow-float"
                     >
                       <p className="text-body font-semibold text-text-ink">{service.title}</p>
                       <p className="text-small text-text-secondary">

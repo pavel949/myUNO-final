@@ -13,9 +13,18 @@ import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 interface Unit {
   id: string;
   name: string;
+  marketingTitle?: string | null;
   images?: string[];
   amenityKeys?: string[];
-  description?: string;
+  description?: string | null;
+  floor?: string | null;
+  sizeSqm?: number | null;
+  usableAreaSqm?: number | null;
+  grossAreaSqm?: number | null;
+  outdoorAreaSqm?: number | null;
+  plotAreaSqm?: number | null;
+  unitFeatures?: string[];
+  views?: string[];
   baseNightlyThb: number;
   maxGuests?: number;
   minNights?: number;
@@ -59,7 +68,6 @@ export interface UnitDetailLabels {
   moreGuests: string;
   checkIn: string;
   checkOut: string;
-  defaultDescription: string;
   maxGuests: string;
   minStay: string;
   nights: string;
@@ -258,6 +266,11 @@ export default function UnitDetailClient({
               <h1 className="font-display text-display font-semibold text-text-ink mb-4">
                 {unit.name}
               </h1>
+              {unit.marketingTitle ? (
+                <p className="mb-12 max-w-3xl font-display text-heading-3 font-semibold text-brand-andaman">
+                  {unit.marketingTitle}
+                </p>
+              ) : null}
               {unit.project?.name && (
                 <p className="text-body text-text-stone mb-20">
                   {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
@@ -283,9 +296,11 @@ export default function UnitDetailClient({
                   </Chip>
                 ))}
               </div>
-              <p className="text-body text-text-ink mb-32 max-w-[620px]">
-                {unit.description || labels.defaultDescription}
-              </p>
+              {unit.description ? (
+                <p className="text-body text-text-ink mb-32 max-w-[720px] leading-relaxed">
+                  {unit.description}
+                </p>
+              ) : null}
               {unit.amenityKeys && unit.amenityKeys.length > 0 && (
                 <div className="mb-32">
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">

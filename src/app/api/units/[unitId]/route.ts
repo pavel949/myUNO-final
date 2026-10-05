@@ -7,6 +7,8 @@ import { resolveStayCancellationPolicy } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
 import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
+import { tMany } from '@/modules/content';
+import { getRequestLocale } from '@/lib/i18n';
 
 /**
  * GET /api/units/[unitId]
@@ -58,12 +60,20 @@ export async function GET(
         projectId: true,
         inventoryCategoryId: true,
         name: true,
+        descriptionKey: true,
         unitType: true,
         accommodationType: true,
         bedrooms: true,
         bathrooms: true,
         maxGuests: true,
         sizeSqm: true,
+        usableAreaSqm: true,
+        grossAreaSqm: true,
+        outdoorAreaSqm: true,
+        plotAreaSqm: true,
+        floor: true,
+        unitFeatures: true,
+        views: true,
         amenityKeys: true,
         baseNightlyThb: true,
         minNights: true,
@@ -221,8 +231,22 @@ export async function GET(
       project,
       ...rest
     } = unit;
+    const titleKey = unit.descriptionKey
+      ? unit.descriptionKey.replace(/\.description$/, '.title')
+      : null;
+    const copy = await tMany(
+      prisma,
+      [titleKey, unit.descriptionKey].filter((key): key is string => Boolean(key)),
+      getRequestLocale()
+    );
     const publicUnit = {
       ...rest,
+      marketingTitle: titleKey ? copy[titleKey] : null,
+      description: unit.descriptionKey ? copy[unit.descriptionKey] : null,
+      usableAreaSqm: unit.usableAreaSqm === null ? null : Number(unit.usableAreaSqm),
+      grossAreaSqm: unit.grossAreaSqm === null ? null : Number(unit.grossAreaSqm),
+      outdoorAreaSqm: unit.outdoorAreaSqm === null ? null : Number(unit.outdoorAreaSqm),
+      plotAreaSqm: unit.plotAreaSqm === null ? null : Number(unit.plotAreaSqm),
       inventoryCategory: inventoryCategory
         ? {
             id: inventoryCategory.id,

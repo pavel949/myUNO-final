@@ -6,6 +6,7 @@ import { listBrowsableAreas } from '@/modules/projects/area.service';
 import { listPublicMarketplaceServices } from '@/modules/services';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { tMany, type Locale } from '@/modules/content';
+import { interleaveByProject, rankProjects } from './home-read-model';
 
 export interface HomepageStayUnit {
   id: string;
@@ -15,7 +16,7 @@ export interface HomepageStayUnit {
   maxGuests: number;
   baseNightlyThb: number;
   coverUrl: string | null;
-  project: { id: string; slug: string; name: string };
+  project: { id: string; slug: string; name: string; areaSlug: string | null };
   categoryName: string | null;
 }
 
@@ -34,7 +35,7 @@ async function readHomepageData(locale: Locale) {
   const [projects, commercialHomes, services, rawAreas, units, areaCoverProjects] = await Promise.all([
     listPublicProjects(locale),
     listPublicCommercialHomes(prisma),
-    listPublicMarketplaceServices(prisma, locale, { limit: 8 }).catch(() => []),
+    listPublicMarketplaceServices(prisma, locale, { limit: 24 }).catch(() => []),
     listBrowsableAreas(prisma),
     prisma.unit.findMany({
       where: {
@@ -68,7 +69,7 @@ async function readHomepageData(locale: Locale) {
           orderBy: { sort: 'asc' },
           select: { media: { select: { storageKey: true } } },
         },
-        project: { select: { id: true, slug: true, name: true } },
+        project: { select: { id: true, slug: true, name: true, area: { select: { slug: true } } } },
         inventoryCategory: {
           select: {
             name: true,
@@ -78,7 +79,8 @@ async function readHomepageData(locale: Locale) {
         },
       },
       orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-      take: 8,
+      // Wide read; the shelf is chosen below so one project cannot fill it.
+      take: 48,
     }),
     prisma.project.findMany({
       where: { status: 'live', areaId: { not: null } },
@@ -102,7 +104,7 @@ async function readHomepageData(locale: Locale) {
     }
   }
 
-  const stayUnits: HomepageStayUnit[] = units.map(unit => ({
+  const allStayUnits: HomepageStayUnit[] = units.map(unit => ({
     id: unit.id,
     name: unit.name,
     bedrooms: unit.bedrooms,
@@ -114,11 +116,15 @@ async function readHomepageData(locale: Locale) {
       unit.media[0]?.media.storageKey ??
       unit.inventoryCategory?.coverMedia?.storageKey ??
       null,
-    project: unit.project,
+    project: { id: unit.project.id, slug: unit.project.slug, name: unit.project.name, areaSlug: unit.project.area?.slug ?? null },
     categoryName: unit.inventoryCategory?.name ?? null,
   }));
+  const stayUnits = interleaveByProject(
+    allStayUnits.map(unit => ({ ...unit, projectId: unit.project.id })),
+    8
+  );
 
-  const areas: HomepageArea[] = rawAreas.slice(0, 6).map(area => ({
+  const allAreas: HomepageArea[] = rawAreas.map(area => ({
     id: area.id,
     slug: area.slug,
     displayName: areaCopy[area.nameKey] || area.slug,
@@ -127,7 +133,15 @@ async function readHomepageData(locale: Locale) {
     coverUrl: areaCoverById.get(area.id) ?? null,
   }));
 
-  return { projects, commercialHomes, services, stayUnits, areas };
+  return {
+    projects: rankProjects(projects),
+    commercialHomes,
+    services,
+    stayUnits,
+    /** Areas shown as cards (first six); `placeAreas` feeds the search box. */
+    areas: allAreas.slice(0, 6),
+    placeAreas: allAreas,
+  };
 }
 
 /**
@@ -136,6 +150,6 @@ async function readHomepageData(locale: Locale) {
  */
 export const getPublicHomepageData = unstable_cache(
   readHomepageData,
-  ['public-homepage-v2'],
+  ['public-homepage-v3'],
   { revalidate: 60, tags: ['public-homepage'] }
 );

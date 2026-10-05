@@ -78,11 +78,14 @@ export async function getPropertyReadiness(
         where: { entity_type: 'unit',
           internal_id: { in: project.units.map(unit => unit.id) },
           externalSystem: { system_key: 'layantara_os' } },
-        select: { internal_id: true, externalSystem: { select: { config: true } } },
+        select: { internal_id: true, metadata: true, externalSystem: { select: { config: true } } },
       })
     : [];
-  const sourceConfigByUnit = new Map(sourceMappings.map(mapping =>
-    [mapping.internal_id, mapping.externalSystem.config] as const
+  const sourceMappingByUnit = new Map(sourceMappings.map(mapping =>
+    [mapping.internal_id, {
+      config: mapping.externalSystem.config,
+      metadata: mapping.metadata,
+    }] as const
   ));
 
   const blockers: PropertyReadinessItem[] = [];
@@ -108,6 +111,13 @@ export async function getPropertyReadiness(
 
   if (!project.areaId) add('blocker', 'project.area', 'Select a canonical area.');
   if (!project.descriptionKey) add('blocker', 'project.description', 'Add the project description key.');
+  const latitude = Number(project.latitude);
+  const longitude = Number(project.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      latitude === 0 || longitude === 0 ||
+      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    add('blocker', 'project.location', 'Set verified, non-zero project coordinates.');
+  }
   const projectMedia = assessGalleryReadiness({
     coverMediaId: project.coverMediaId,
     links: project.galleryMedia,
@@ -128,8 +138,14 @@ export async function getPropertyReadiness(
       (link) => !exactUnitMediaIds.has(link.mediaId)
     ).length;
     if (project.galleryMedia.length > 0 && projectOnlyPhotoCount === 0) {
+      // A resort/villa-estate portal is a property-level promise. Reusing only
+      // exact-unit photos as its project gallery makes a villa look like shared
+      // resort context. Keep this a hard publication gate for those project
+      // types while leaving exact-unit media fully usable on the unit itself.
+      const provenanceSeverity: ReadinessSeverity =
+        ['resort', 'villa_estate'].includes(project.projectType ?? '') ? 'blocker' : 'warning';
       add(
-        'warning',
+        provenanceSeverity,
         'project.media_provenance',
         'Project gallery is composed entirely of exact-unit media. Curate project/common-area photography so the portal does not present villa photos as shared property context.',
         { href: `/app/admin/projects/${project.id}/media` }
@@ -175,21 +191,30 @@ export async function getPropertyReadiness(
   for (const unit of project.units) {
     const href = `/app/admin/units/${unit.id}`;
     const options = { scope: 'unit' as const, unitId: unit.id, unitName: unit.name, href };
-    if (sourceConfigByUnit.has(unit.id)) {
-      const raw = sourceConfigByUnit.get(unit.id);
-      const config = typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-        ? raw as Record<string, unknown> : {};
+    if (sourceMappingByUnit.has(unit.id)) {
+      const source = sourceMappingByUnit.get(unit.id)!;
+      const rawConfig = source.config;
+      const config = typeof rawConfig === 'object' && rawConfig !== null && !Array.isArray(rawConfig)
+        ? rawConfig as Record<string, unknown> : {};
+      const rawMetadata = source.metadata;
+      const metadata = typeof rawMetadata === 'object' && rawMetadata !== null && !Array.isArray(rawMetadata)
+        ? rawMetadata as Record<string, unknown> : {};
       if (config.bookingAuthority !== 'myuno' || config.cutoverVerified !== true) {
         add('blocker', 'unit.source_authority',
           'Layantara source calendar remains authoritative; signed cutover is required.', options);
+      }
+      if (metadata.specification_verification !== 'confirmed') {
+        add('blocker', 'unit.source_specification',
+          'Confirm the physical villa specification against the Layantara source crosswalk before publication.', options);
       }
       const canonicalStay = unit.commercialOfferings.find(offering =>
         offering.offeringType === 'short_term_stay');
       const terms = canonicalStay?.pricingTerms;
       const validated = typeof terms === 'object' && terms !== null &&
         !Array.isArray(terms) &&
-        (terms as Record<string, unknown>).quoteEngine !== undefined &&
-        (terms as Record<string, unknown>).quoteEngine !== 'pending_validation';
+        (terms as Record<string, unknown>).quoteEngine === 'canonical_tariff_grid_v1' &&
+        (terms as Record<string, unknown>).taxPolicyVerified === true &&
+        (terms as Record<string, unknown>).policyEngineVerified === true;
       if (unit.baseNightlyThb <= 0 || !validated) {
         add('blocker', 'unit.source_pricing',
           'Validate the source tariff grid and enable the canonical price engine before sale.', options);
@@ -320,7 +345,13 @@ export async function assertProjectReadyForActivation(db: PrismaClient, projectI
   if (!project.projectType) return;
   const report = await getPropertyReadiness(db, projectId);
   if (!report) throw new Error(`Project ${projectId} not found`);
-  if (!report.readyForActivation) {
-    throw new Error(`Project cannot go live: ${report.blockers.map((item) => item.message).join(' ')}`);
+  // A Project is the public residence/resort portal, not the sum of every
+  // physical unit's sellability. Draft or evidence-incomplete units stay
+  // private through their own activation gate and public read-model filters.
+  // Requiring all unit blockers here made a 39-villa resort impossible to
+  // publish incrementally and conflated project presentation with inventory.
+  const projectBlockers = report.blockers.filter((item) => item.scope === 'project');
+  if (projectBlockers.length > 0) {
+    throw new Error(`Project cannot go live: ${projectBlockers.map((item) => item.message).join(' ')}`);
   }
 }

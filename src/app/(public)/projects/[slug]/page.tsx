@@ -306,35 +306,35 @@ export default async function ProjectLandingPage({
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory">
+      <section className="relative overflow-hidden border-b border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint">
         {project.coverUrl ? (
           <Image
             src={project.coverUrl}
             alt={project.name}
             fill
             priority
-            className="absolute inset-0 object-cover opacity-30"
+            className="absolute inset-0 object-cover opacity-[0.10]"
           />
         ) : null}
-        <div className="relative max-w-4xl mx-auto text-center py-64 px-24">
-          {areaLabel ? <p className="text-small mb-16">{areaLabel}</p> : null}
-          <h1 className="font-display text-display-xl font-semibold mb-16">{project.name}</h1>
-          {editorial.headline && <p className="mb-12 text-body text-surface-ivory/90">{editorial.headline}</p>}
-          <p className="text-body text-surface-ivory/90">{project.address}</p>
+        <div className="relative mx-auto max-w-6xl px-24 py-48 md:py-56">
+          {areaLabel ? <p className="stitch-kicker mb-12">{areaLabel}</p> : null}
+          <h1 className="max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-brand-deep">{project.name}</h1>
+          {editorial.headline && <p className="mt-12 max-w-3xl text-body text-text-ink">{editorial.headline}</p>}
+          <p className="mt-8 text-body text-text-secondary">{project.address}</p>
         </div>
       </section>
 
       {/* Project-level editorial gallery. Unit galleries remain separate. */}
       {project.galleryUrls.length > 0 ? (
         <section className="mx-auto max-w-6xl px-24 py-24 md:py-40" aria-label={project.name}>
-          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-2xl md:grid-cols-4 md:gap-12">
+          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-2xl border border-border-line bg-surface-paper p-8 shadow-card md:grid-cols-4 md:gap-12">
             {project.galleryUrls.slice(0, 5).map((url, index) => (
               <div key={url + index} className={`relative overflow-hidden bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
                 <Image src={url} alt={`${project.name} — photo ${index + 1}`} fill sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'} className="object-cover" />
@@ -350,7 +350,7 @@ export default async function ProjectLandingPage({
       <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
-      {project.units.length > 0 && <section id="availability" className="bg-surface-ivory py-40 px-24">
+      {project.units.length > 0 && <section id="availability" className="border-y border-border-line bg-surface-paper px-24 py-40">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-heading-2 font-bold text-text-ink mb-24 text-center">
             {labels['project_page.availability.title']}

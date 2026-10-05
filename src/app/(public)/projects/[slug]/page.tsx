@@ -285,6 +285,7 @@ export default async function ProjectLandingPage({
     ...(story ? { description: story.slice(0, 300) } : {}),
   };
 
+  const projectInquiryAudience: 'renters' = 'renters';
   const portalNavItems = [
     ...(project.units.length > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
     ...(project.units.length > 0 || buyHomeCount > 0 || rentHomeCount > 0 ? [{ href: '#homes', label: labels['project_page.nav.homes'] }] : []),
@@ -670,7 +671,7 @@ export default async function ProjectLandingPage({
         }}
       />
 
-      <LeadFormSection audience="renters" projectId={project.id} />
+      <LeadFormSection audience={projectInquiryAudience} projectId={project.id} />
 
       {/* Handbook teaser */}
       {handbookTeaser ? (

@@ -59,7 +59,7 @@ export default async function ResidencePage() {
     return (
       <main className="stitch-workspace p-20 md:p-32">
         <div className="max-w-3xl mx-auto">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
+          <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg mb-16">
             {labels['residence.title']}
           </h1>
           <div className="stitch-panel p-24">
@@ -197,7 +197,7 @@ export default async function ResidencePage() {
                   <li key={service.id}>
                     <Link
                       href={`/services/${service.id}?projectId=${residence.projectId}`}
-                      className="stitch-panel block p-16 transition duration-structural hover:-translate-y-1 hover:border-brand-andaman hover:shadow-float"
+                      className="stitch-panel block p-16 transition duration-structural hover:-translate-y-4 hover:border-brand-andaman hover:shadow-float"
                     >
                       <p className="text-body font-semibold text-text-ink">{service.title}</p>
                       <p className="text-small text-text-secondary">

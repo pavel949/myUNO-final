@@ -87,7 +87,7 @@ export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersLis
     return (
       <div ref={ref} className="space-y-12">
         {orders.map((order) => (
-          <div key={order.id} className="bg-surface-paper border border-border-line rounded-md p-16">
+          <div key={order.id} className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-16">
             <div className="flex justify-between items-start gap-16">
               <div className="flex-1">
                 <p className="text-body font-semibold text-text-ink m-0 mb-4">{order.serviceName}</p>

@@ -128,8 +128,14 @@ export async function getPropertyReadiness(
       (link) => !exactUnitMediaIds.has(link.mediaId)
     ).length;
     if (project.galleryMedia.length > 0 && projectOnlyPhotoCount === 0) {
+      // A resort/villa-estate portal is a property-level promise. Reusing only
+      // exact-unit photos as its project gallery makes a villa look like shared
+      // resort context. Keep this a hard publication gate for those project
+      // types while leaving exact-unit media fully usable on the unit itself.
+      const provenanceSeverity: ReadinessSeverity =
+        ['resort', 'villa_estate'].includes(project.projectType ?? '') ? 'blocker' : 'warning';
       add(
-        'warning',
+        provenanceSeverity,
         'project.media_provenance',
         'Project gallery is composed entirely of exact-unit media. Curate project/common-area photography so the portal does not present villa photos as shared property context.',
         { href: `/app/admin/projects/${project.id}/media` }
@@ -188,8 +194,9 @@ export async function getPropertyReadiness(
       const terms = canonicalStay?.pricingTerms;
       const validated = typeof terms === 'object' && terms !== null &&
         !Array.isArray(terms) &&
-        (terms as Record<string, unknown>).quoteEngine !== undefined &&
-        (terms as Record<string, unknown>).quoteEngine !== 'pending_validation';
+        (terms as Record<string, unknown>).quoteEngine === 'canonical_tariff_grid_v1' &&
+        (terms as Record<string, unknown>).taxPolicyVerified === true &&
+        (terms as Record<string, unknown>).policyEngineVerified === true;
       if (unit.baseNightlyThb <= 0 || !validated) {
         add('blocker', 'unit.source_pricing',
           'Validate the source tariff grid and enable the canonical price engine before sale.', options);
@@ -320,7 +327,13 @@ export async function assertProjectReadyForActivation(db: PrismaClient, projectI
   if (!project.projectType) return;
   const report = await getPropertyReadiness(db, projectId);
   if (!report) throw new Error(`Project ${projectId} not found`);
-  if (!report.readyForActivation) {
-    throw new Error(`Project cannot go live: ${report.blockers.map((item) => item.message).join(' ')}`);
+  // A Project is the public residence/resort portal, not the sum of every
+  // physical unit's sellability. Draft or evidence-incomplete units stay
+  // private through their own activation gate and public read-model filters.
+  // Requiring all unit blockers here made a 39-villa resort impossible to
+  // publish incrementally and conflated project presentation with inventory.
+  const projectBlockers = report.blockers.filter((item) => item.scope === 'project');
+  if (projectBlockers.length > 0) {
+    throw new Error(`Project cannot go live: ${projectBlockers.map((item) => item.message).join(' ')}`);
   }
 }

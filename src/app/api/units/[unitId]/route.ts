@@ -113,7 +113,11 @@ export async function GET(
       },
     });
 
-    const managedImported = await managedImportedInventoryIds(prisma);
+    const [managedImported, sourceBlockedIds] = await Promise.all([
+      managedImportedInventoryIds(prisma),
+      excludedSourceControlledUnits(prisma, [params.unitId]),
+    ]);
+    const sourceBlocked = sourceBlockedIds.includes(params.unitId);
     const unitPublished =
       unit?.status === 'live' ||
       (unit?.status === 'draft' && managedImported.unitIds.includes(unit.id));
@@ -126,6 +130,7 @@ export async function GET(
     if (
       !unit ||
       !unitPublished ||
+      sourceBlocked ||
       unit.assetStatus === 'suspended' ||
       !projectPublished ||
       unit.inventoryCategory?.status !== 'live' ||

@@ -18,6 +18,9 @@ type SearchParams = {
   maxArea?: string;
   minPrice?: string;
   maxPrice?: string;
+  moveIn?: string;
+  leaseTermMonths?: string;
+  pets?: string;
 };
 
 const positiveNumber = (value?: string) => {
@@ -33,7 +36,12 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       prisma,
       intent,
       undefined,
-      searchParams?.projectId
+      searchParams?.projectId,
+      {
+        moveIn: searchParams?.moveIn,
+        leaseTermMonths: positiveNumber(searchParams?.leaseTermMonths),
+        pets: searchParams?.pets === 'yes' || searchParams?.pets === 'no' ? searchParams.pets : 'any',
+      }
     ).catch(() => []),
     getLabels({
       'homes.kicker': 'myUNO · REAL ESTATE',
@@ -68,6 +76,15 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       'homes.sale_price': 'Asking price',
       'homes.monthly_price': 'Monthly rent',
       'homes.contact': 'Tell us what you are looking for',
+      'homes.move_in': 'Move-in',
+      'homes.lease_term': 'Lease term, months',
+      'homes.pets': 'Pets',
+      'homes.pets_any': 'Any',
+      'homes.pets_yes': 'Pet-friendly only',
+      'homes.pets_no': 'No pets needed',
+      'homes.minimum_term': 'Minimum term',
+      'homes.deposit': 'Deposit',
+      'homes.available_from': 'Available from',
     }),
   ]);
 
@@ -78,6 +95,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
   const maxArea = positiveNumber(searchParams?.maxArea);
   const minPrice = positiveNumber(searchParams?.minPrice);
   const maxPrice = positiveNumber(searchParams?.maxPrice);
+  const leaseTermMonths = positiveNumber(searchParams?.leaseTermMonths);
 
   const homes = allHomes.filter((home) => {
     const price = home.priceThb[intent] ?? null;
@@ -160,6 +178,24 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {labels['homes.min_price']}
             <input name="minPrice" type="number" min="0" step="1000" defaultValue={searchParams?.minPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
           </label>
+          {intent === 'rent' ? <>
+            <label className="text-small text-text-secondary">
+              {labels['homes.move_in']}
+              <input name="moveIn" type="month" defaultValue={searchParams?.moveIn || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.lease_term']}
+              <input name="leaseTermMonths" type="number" min="1" defaultValue={searchParams?.leaseTermMonths || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
+            </label>
+            <label className="text-small text-text-secondary">
+              {labels['homes.pets']}
+              <select name="pets" defaultValue={searchParams?.pets || 'any'} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
+                <option value="any">{labels['homes.pets_any']}</option>
+                <option value="yes">{labels['homes.pets_yes']}</option>
+                <option value="no">{labels['homes.pets_no']}</option>
+              </select>
+            </label>
+          </> : null}
           <label className="text-small text-text-secondary">
             {labels['homes.max_price']}
             <input name="maxPrice" type="number" min="0" step="1000" defaultValue={searchParams?.maxPrice || ''} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink" />
@@ -191,6 +227,13 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                   ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString()
                   : labels['homes.price']}
               </p>
+              {intent === 'rent' && home.leaseTerms ? (
+                <p className="text-micro text-text-secondary">
+                  {home.leaseTerms.minimumLeaseMonths ? labels['homes.minimum_term'] + ': ' + home.leaseTerms.minimumLeaseMonths + ' mo' : ''}
+                  {home.leaseTerms.securityDepositMonths ? ' · ' + labels['homes.deposit'] + ': ' + home.leaseTerms.securityDepositMonths + ' mo' : ''}
+                  {home.leaseTerms.availableFrom ? ' · ' + labels['homes.available_from'] + ': ' + home.leaseTerms.availableFrom : ''}
+                </p>
+              ) : null}
               <span className="inline-block text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>
             </div>
           </Link>;

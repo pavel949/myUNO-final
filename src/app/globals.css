@@ -56,3 +56,21 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Doc 06 §5: 44px minimum touch targets. The PMS workspaces (ops, MC, admin)
+ * are dense tables and pill filters sized for a mouse; on a touch screen —
+ * the on-site host's phone — those controls must still be 44px tall. Scoped
+ * to coarse pointers so desktop density is unchanged, and to padded links
+ * (button-styled) so inline text links are left alone.
+ */
+@media (pointer: coarse) {
+  .pms-touch :is(button, select, summary, input[type='submit'], input[type='button']) {
+    min-height: 44px;
+  }
+  .pms-touch a[class*='px-'] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

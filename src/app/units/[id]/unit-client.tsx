@@ -50,6 +50,7 @@ export interface UnitDetailLabels {
   backToResults: string;
   onMyUno: string;
   showAllPhotos: string;
+  photosPending: string;
   representativeMedia: string;
   guestsCount: string;
   bedroomsCount: string;
@@ -248,6 +249,7 @@ export default function UnitDetailClient({
               images={unit.images ?? []}
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
+              emptyLabel={labels.photosPending}
             />
             {unit.photoScope === 'room_type' ? (
               <p className="mt-8 text-small text-text-secondary">

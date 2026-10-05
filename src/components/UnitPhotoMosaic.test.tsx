@@ -52,3 +52,11 @@ describe('every photo is reachable on mobile (T-062)', () => {
     expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
   });
 });
+
+describe('a home with no published photos', () => {
+  it('says so instead of rendering a blank block', () => {
+    render(<UnitPhotoMosaic images={[]} alt="Villa" showAllLabel="Show all" emptyLabel="Photos are being prepared." />);
+    expect(screen.getByRole('img', { name: 'Photos are being prepared.' })).toBeTruthy();
+    expect(screen.getByText('Photos are being prepared.')).toBeTruthy();
+  });
+});

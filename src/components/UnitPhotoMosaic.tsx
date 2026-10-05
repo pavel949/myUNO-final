@@ -22,10 +22,14 @@ export function UnitPhotoMosaic({
   images,
   alt,
   showAllLabel,
+  emptyLabel,
 }: {
   images: string[];
   alt: string;
   showAllLabel: string;
+  /** Shown when the home has no published photos yet (doc 06: every
+   *  component ships its empty state, never a blank block). */
+  emptyLabel?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -49,7 +53,17 @@ export function UnitPhotoMosaic({
 
   if (!cover) {
     return (
-      <div className="aspect-[4/3] bg-gradient-to-br from-brand-andaman to-brand-deep rounded-lg" />
+      <div
+        role="img"
+        aria-label={emptyLabel || alt}
+        className="flex aspect-[4/3] flex-col items-center justify-center gap-12 rounded-lg bg-gradient-to-br from-brand-andaman to-brand-deep p-24 text-center text-surface-ivory"
+      >
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <path d="M4 7h3l2-2h6l2 2h3v12H4z" strokeLinejoin="round" />
+          <circle cx="12" cy="13" r="3.5" />
+        </svg>
+        {emptyLabel ? <p className="max-w-xs text-small text-surface-ivory/80">{emptyLabel}</p> : null}
+      </div>
     );
   }
 

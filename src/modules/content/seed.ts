@@ -4565,6 +4565,7 @@ const AUDIT_FIX_KEYS: KeyDef[] = [
   { key: 'staff.unified_calendar.channel_state.error', namespace: 'staff', description: 'Channel connection state', en: 'Error', ru: 'Ошибка', th: 'ข้อผิดพลาด', status: NR },
   { key: 'staff.unified_calendar.channel_state.connected', namespace: 'staff', description: 'Channel connection state', en: 'Connected', ru: 'Подключён', th: 'เชื่อมต่อแล้ว', status: NR },
   { key: 'staff.unified_calendar.channel_state.manual_only', namespace: 'staff', description: 'Channel connection state: no channel, managed manually', en: 'Manual only', ru: 'Только вручную', th: 'จัดการด้วยตนเองเท่านั้น', status: NR },
+  { key: 'listing.photos_pending', namespace: 'listing', description: 'Unit page: empty state when a home has no published photos yet', en: 'Photos of this home are being prepared.', ru: 'Фотографии этого дома готовятся.', th: 'กำลังเตรียมภาพถ่ายของบ้านหลังนี้', status: NR },
 ];
 
 export async function seedContent(

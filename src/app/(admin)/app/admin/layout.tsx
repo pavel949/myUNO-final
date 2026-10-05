@@ -127,7 +127,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-surface-ivory">
+    <div className="pms-touch min-h-screen flex flex-col md:flex-row bg-surface-ivory">
       <aside className="sticky top-0 z-30 shrink-0 bg-brand-deep text-on-dark-text p-16 md:static md:w-56 md:min-h-screen" style={{ minWidth: '220px' }}>
         <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
         <details className="md:hidden">

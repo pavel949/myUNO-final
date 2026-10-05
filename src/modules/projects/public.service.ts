@@ -182,9 +182,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
           assetStatus: { not: 'suspended' },
           OR: [
             { status: 'live' },
-            ...(managedImported.unitIds.length
-              ? [{ status: 'draft' as const, id: { in: managedImported.unitIds } }]
-              : []),
+            { status: 'draft', assetStatus: 'managed' },
           ],
         },
         select: {
@@ -319,9 +317,7 @@ export async function getPublicProjectBySlug(
           assetStatus: { not: 'suspended' },
           OR: [
             { status: 'live' },
-            ...(managedImported.unitIds.length
-              ? [{ status: 'draft' as const, id: { in: managedImported.unitIds } }]
-              : []),
+            { status: 'draft', assetStatus: 'managed' },
           ],
         },
         orderBy: [{ name: 'asc' }],

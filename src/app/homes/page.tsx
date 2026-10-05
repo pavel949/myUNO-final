@@ -118,6 +118,16 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
     return '/homes?' + params.toString();
   };
 
+  const detailHref = (id: string) => {
+    const params = new URLSearchParams({ intent });
+    for (const key of ['area', 'type', 'bedrooms', 'minArea', 'maxArea', 'minPrice', 'maxPrice', 'moveIn', 'leaseTermMonths', 'pets'] as const) {
+      const value = searchParams?.[key];
+      if (value) params.set(key, value);
+    }
+    if (searchParams?.projectId) params.set('projectId', searchParams.projectId);
+    return '/homes/' + encodeURIComponent(id) + '?' + params.toString();
+  };
+
   return <main className="min-h-screen bg-surface-ivory">
     <section className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">
       <div className="mx-auto max-w-6xl">
@@ -211,7 +221,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       {homes.length ? <div className="grid gap-20 sm:grid-cols-2 lg:grid-cols-3">
         {homes.map(home => {
           const price = home.priceThb[intent] ?? null;
-          return <Link href={'/homes/'+encodeURIComponent(home.id)+'?intent='+intent} key={home.id}
+          return <Link href={detailHref(home.id)} key={home.id}
             className="group overflow-hidden rounded-xl border border-border-line bg-surface-paper hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
             {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
               className="aspect-[3/2] w-full object-cover" /> :

@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'omwoglpcwaiflaprgrne.supabase.co', pathname: '/storage/v1/object/public/villa-media/**' },
+      // Admin uploads (media.service → Vercel Blob). Without this every
+      // uploaded cover and gallery photo returned 400 from /_next/image —
+      // The Title Legendary's 80-photo gallery among them.
+      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com', pathname: '/**' },
+      // Layantara's own photography, referenced from the resort's site by the
+      // source import. Re-hosting to Blob is the durable fix; until then the
+      // cover and the homepage hero must not render broken.
+      { protocol: 'https', hostname: 'layantararesort.com', pathname: '/wp-content/uploads/**' },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',

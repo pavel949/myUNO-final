@@ -5,6 +5,7 @@ import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { servicePresentationImage } from '@/lib/presentation-media';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { ServiceCategoryIcon } from '@/components/ServiceCategoryIcon';
@@ -378,17 +379,27 @@ export default function ServicesClient({
                 key={service.id}
                 className="flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
-                {service.coverUrl ? (
-                  <Image
-                    src={service.coverUrl}
-                    alt={service.title}
-                    width={640}
-                    height={360}
-                    className="aspect-[4/3] w-full object-cover"
-                  />
-                ) : (
-                  <div aria-hidden="true" className="aspect-[4/3] w-full bg-surface-sand" />
-                )}
+                {(() => {
+                  // Same rule as the homepage card: a real cover wins; otherwise a
+                  // category-matched photo, labelled as illustrative.
+                  const image = servicePresentationImage(service.id, service.coverUrl, service.categoryKey);
+                  return (
+                    <div className="relative">
+                      <Image
+                        src={image.src}
+                        alt={image.illustrative ? '' : service.title}
+                        width={640}
+                        height={480}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                      {image.illustrative ? (
+                        <span className="absolute right-12 top-12 rounded-full bg-black/35 px-12 py-4 text-small text-white/80 backdrop-blur">
+                          {labels['landing.services.no_photo']}
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-1 flex-col p-20">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-display text-title font-semibold text-text-ink">

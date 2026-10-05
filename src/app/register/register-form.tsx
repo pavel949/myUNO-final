@@ -32,7 +32,9 @@ function calculatePasswordStrength(pass: string): number {
 export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams?.get('next') || '';
+  const requestedNext = searchParams?.get('next') || '';
+  const next =
+    requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');

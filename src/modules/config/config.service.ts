@@ -26,6 +26,16 @@ class ConfigCache {
     return entry.value;
   }
 
+  has(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) return false;
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return false;
+    }
+    return true;
+  }
+
   set(key: string, value: any): void {
     this.cache.set(key, {
       value,
@@ -72,69 +82,64 @@ export async function getConfig<K extends ConfigKey>(
   const unitId = options?.unitId;
   const projectId = options?.projectId;
 
-  // Try unit-level cache first
+  // Cache every level independently, including a negative lookup. Pricing reads
+  // are often unit-scoped but fall back to the same project/global values. The
+  // previous implementation only checked project/global cache when no unitId
+  // was supplied, so a 24-card search repeatedly queried identical fallback
+  // rows for every unit and could saturate the serverless DB pool.
   if (unitId) {
-    const cacheKey = getCacheKey(key, unitId);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) return cached;
-  }
-
-  // Try project-level cache
-  if (projectId && !unitId) {
-    const cacheKey = getCacheKey(key, undefined, projectId);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) return cached;
-  }
-
-  // Try global cache
-  if (!unitId && !projectId) {
-    const cacheKey = getCacheKey(key);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) return cached;
-  }
-
-  // Resolve from database
-  let value: any = undefined;
-
-  // 1. Try unit-level override
-  if (unitId) {
-    const override = await db.configOverride.findUnique({
-      where: {
-        parameterKey_scopeType_scopeId: {
-          parameterKey: key,
-          scopeType: 'unit',
-          scopeId: unitId,
+    const unitKey = getCacheKey(key, unitId);
+    if (cache.has(unitKey)) {
+      const cached = cache.get(unitKey);
+      if (cached !== undefined) return cached;
+      // undefined is a cached "no unit override" marker; continue to project.
+    } else {
+      const override = await db.configOverride.findUnique({
+        where: {
+          parameterKey_scopeType_scopeId: {
+            parameterKey: key,
+            scopeType: 'unit',
+            scopeId: unitId,
+          },
         },
-      },
-    });
-    if (override) {
-      value = override.value;
-      cache.set(getCacheKey(key, unitId), value);
-      return value;
+      });
+      if (override) {
+        cache.set(unitKey, override.value);
+        return override.value as AllConfig[K];
+      }
+      cache.set(unitKey, undefined);
     }
   }
 
-  // 2. Try project-level override
   if (projectId) {
-    const override = await db.configOverride.findUnique({
-      where: {
-        parameterKey_scopeType_scopeId: {
-          parameterKey: key,
-          scopeType: 'project',
-          scopeId: projectId,
+    const projectKey = getCacheKey(key, undefined, projectId);
+    if (cache.has(projectKey)) {
+      const cached = cache.get(projectKey);
+      if (cached !== undefined) return cached;
+      // undefined means no project override; continue to global.
+    } else {
+      const override = await db.configOverride.findUnique({
+        where: {
+          parameterKey_scopeType_scopeId: {
+            parameterKey: key,
+            scopeType: 'project',
+            scopeId: projectId,
+          },
         },
-      },
-    });
-    if (override) {
-      value = override.value;
-      cache.set(getCacheKey(key, undefined, projectId), value);
-      return value;
+      });
+      if (override) {
+        cache.set(projectKey, override.value);
+        return override.value as AllConfig[K];
+      }
+      cache.set(projectKey, undefined);
     }
   }
 
-  // 3. Try a global override (scopeType/scopeId = 'global'). This is what the
-  //    admin editor writes for a platform-wide value change; without reading it
-  //    here, every global config edit was silently ignored.
+  const globalKey = getCacheKey(key);
+  if (cache.has(globalKey)) {
+    return cache.get(globalKey) as AllConfig[K] | undefined;
+  }
+
   const globalOverride = await db.configOverride.findUnique({
     where: {
       parameterKey_scopeType_scopeId: {
@@ -145,23 +150,17 @@ export async function getConfig<K extends ConfigKey>(
     },
   });
   if (globalOverride) {
-    value = globalOverride.value;
-    cache.set(getCacheKey(key), value);
-    return value;
+    cache.set(globalKey, globalOverride.value);
+    return globalOverride.value as AllConfig[K];
   }
 
-  // 4. Fall back to the seeded ConfigParameter default
   const param = await db.configParameter.findUnique({
     where: { key },
   });
 
-  if (param) {
-    value = param.defaultValue;
-    cache.set(getCacheKey(key), value);
-    return value;
-  }
-
-  return undefined;
+  const value = param?.defaultValue as AllConfig[K] | undefined;
+  cache.set(globalKey, value);
+  return value;
 }
 
 /**

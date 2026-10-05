@@ -54,6 +54,8 @@ export default async function CommercialHomePage({ params, searchParams }: {
     'homes.detail.utilities_included': 'Included utilities',
     'homes.detail.utilities_excluded': 'Additional utilities',
     'homes.detail.responsibility': 'Managed by {org}',
+    'homes.detail.per_month': 'per month',
+    'homes.detail.months_unit': '{count} months',
   });
   const leaseContext = intent === 'rent'
     ? [
@@ -97,11 +99,11 @@ export default async function CommercialHomePage({ params, searchParams }: {
       </div>
       {intent === 'rent' && home.leaseTerms ? (
         <div className="mt-24 grid gap-12 rounded-xl border border-border-line bg-surface-paper p-20 md:grid-cols-2">
-          {home.leaseTerms.monthlyRentThb ? <p><span className="text-small text-text-secondary">{labels['homes.detail.monthly_rent']}</span><br/><strong>฿{home.leaseTerms.monthlyRentThb.toLocaleString()} / month</strong></p> : null}
-          {home.leaseTerms.minimumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.minimum_term']}</span><br/><strong>{home.leaseTerms.minimumLeaseMonths} months</strong></p> : null}
-          {home.leaseTerms.maximumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.maximum_term']}</span><br/><strong>{home.leaseTerms.maximumLeaseMonths} months</strong></p> : null}
-          {home.leaseTerms.securityDepositMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.deposit']}</span><br/><strong>{home.leaseTerms.securityDepositMonths} months</strong></p> : null}
-          {home.leaseTerms.advanceRentMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.advance']}</span><br/><strong>{home.leaseTerms.advanceRentMonths} months</strong></p> : null}
+          {home.leaseTerms.monthlyRentThb ? <p><span className="text-small text-text-secondary">{labels['homes.detail.monthly_rent']}</span><br/><strong>฿{home.leaseTerms.monthlyRentThb.toLocaleString()} {labels['homes.detail.per_month']}</strong></p> : null}
+          {home.leaseTerms.minimumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.minimum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</strong></p> : null}
+          {home.leaseTerms.maximumLeaseMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.maximum_term']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.maximumLeaseMonths))}</strong></p> : null}
+          {home.leaseTerms.securityDepositMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.deposit']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.securityDepositMonths))}</strong></p> : null}
+          {home.leaseTerms.advanceRentMonths ? <p><span className="text-small text-text-secondary">{labels['homes.detail.advance']}</span><br/><strong>{labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.advanceRentMonths))}</strong></p> : null}
           {home.leaseTerms.availableFrom ? <p><span className="text-small text-text-secondary">{labels['homes.detail.available_from']}</span><br/><strong>{home.leaseTerms.availableFrom}</strong></p> : null}
           {home.leaseTerms.petsAllowed !== null ? <p><strong>{home.leaseTerms.petsAllowed ? labels['homes.detail.pets_yes'] : labels['homes.detail.pets_no']}</strong></p> : null}
           {home.leaseTerms.utilitiesIncluded.length ? <p><span className="text-small text-text-secondary">{labels['homes.detail.utilities_included']}</span><br/><strong>{home.leaseTerms.utilitiesIncluded.join(', ')}</strong></p> : null}

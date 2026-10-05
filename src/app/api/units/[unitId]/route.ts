@@ -6,11 +6,13 @@ import { excludedSourceControlledUnits } from '@/modules/booking/source-authorit
 import { resolveStayCancellationPolicy } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
+import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
 
 /**
  * GET /api/units/[unitId]
  * Public unit detail for the guest-facing unit page (S4).
- * Only live units are visible; returns the guest-safe subset of fields
+ * Live units and provenance-backed imported managed drafts can be visible;
+ * returns the guest-safe subset of fields
  * (no owner identity, no engagement economics, no internal status detail).
  *
  * When startDate + endDate are supplied, `pricing` is resolved through the
@@ -111,13 +113,21 @@ export async function GET(
       },
     });
 
-    // A unit is public only when both the unit and project are live and the
-    // physical asset is not suspended.
+    const managedImported = await managedImportedInventoryIds(prisma);
+    const unitPublished =
+      unit?.status === 'live' ||
+      (unit?.status === 'draft' && managedImported.unitIds.includes(unit.id));
+    const projectPublished =
+      unit?.project.status === 'live' ||
+      (unit?.project.status === 'draft' && managedImported.projectIds.includes(unit.project.id));
+
+    // Legacy imported managed rows can be public before their old draft bit is
+    // reconciled, but they still pass the complete stay-readiness gates below.
     if (
       !unit ||
-      unit.status !== 'live' ||
+      !unitPublished ||
       unit.assetStatus === 'suspended' ||
-      unit.project.status !== 'live' ||
+      !projectPublished ||
       unit.inventoryCategory?.status !== 'live' ||
       (Boolean(unit.project.projectType) && !unit.commercialOfferings.some(offer =>
         ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active'))

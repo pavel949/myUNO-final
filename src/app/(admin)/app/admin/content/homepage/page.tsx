@@ -12,7 +12,7 @@ export default async function HomepagePlacementPage() {
     }),
     prisma.project.findMany({
       where: { status: 'live' },
-      select: { id: true, name: true },
+      select: { id: true, title: true },
       orderBy: { name: 'asc' },
       take: 200,
     }),
@@ -39,7 +39,7 @@ export default async function HomepagePlacementPage() {
   const candidates = [
     ...projects.map((item) => ({ id: item.id, label: item.name, type: 'project' })),
     ...units.map((item) => ({ id: item.id, label: item.project.name + ' · ' + item.name, type: 'unit' })),
-    ...services.map((item) => ({ id: item.id, label: item.name, type: 'service' })),
+    ...services.map((item) => ({ id: item.id, label: item.title, type: 'service' })),
     ...areas.map((item) => ({ id: item.id, label: item.slug, type: 'area' })),
   ];
 

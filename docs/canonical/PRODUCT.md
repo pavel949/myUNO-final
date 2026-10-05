@@ -69,6 +69,8 @@ Tertiary, quiet: `List or manage a property`
 
 Do not make management/company audiences equal primary choices in the hero.
 
+**Homepage v4 (2026-10-05)** supersedes the section list below where they differ: hero search has three modes (Holiday · Long-term · Buy) over one `area or complex` box; then Complexes, Offers (same chosen mode), Services by situation, Areas, Owners (four separate goals + partner strip), My UNO continuity, Help. Owner links stay quiet in the hero (one line). See `DECISIONS_CHANGELOG.md` → "Homepage v4" for what is deliberately not yet done.
+
 Then:
 - Places on myUNO;
 - Find by intent: private pool villas, beach, family, long stay, groups/retreats, workation;

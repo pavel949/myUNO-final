@@ -175,7 +175,7 @@ export default function ComplianceChecklistsClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.checklists.create_template']}
         </h2>
@@ -203,7 +203,7 @@ export default function ComplianceChecklistsClient({
         </div>
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.checklists.schedule_title']}
         </h2>

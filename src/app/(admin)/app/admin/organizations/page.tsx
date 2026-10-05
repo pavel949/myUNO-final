@@ -78,7 +78,7 @@ export default async function AdminOrganizationsPage() {
       </p>
 
       {developers.length > 0 ? (
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <section className="bg-surface-paper border border-border-line rounded-2xl shadow-card p-24 mb-24">
           <div className="mb-16">
             <h2 className="text-heading-3 font-semibold text-text-ink">
               {labels['admin.organizations.developer360_title']}

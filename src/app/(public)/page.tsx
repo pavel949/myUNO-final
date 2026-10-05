@@ -423,7 +423,7 @@ export default async function LandingPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border-line bg-surface-ivory p-32 text-text-secondary">
+            <div className="rounded-lg border border-border-line bg-surface-ivory p-32 text-text-secondary">
               {labels['landing.collection.empty']}
             </div>
           )}
@@ -479,14 +479,14 @@ export default async function LandingPage() {
               </p>
 
               <div className="mt-44 grid gap-12 md:grid-cols-2">
-                <div className="rounded-2xl border border-border-line bg-surface-ivory p-20 md:p-24">
+                <div className="rounded-lg border border-border-line bg-surface-ivory p-20 md:p-24">
                   <p className="text-kicker uppercase text-brand-andaman">{labels['landing.vacation.guest_title']}</p>
                   <p className="mt-8 text-body text-text-secondary">{labels['landing.vacation.guest_body']}</p>
                   <Link href="/search" className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
                     {labels['landing.vacation.guest_cta']} →
                   </Link>
                 </div>
-                <div className="rounded-2xl border border-border-line bg-surface-ivory p-20 md:p-24">
+                <div className="rounded-lg border border-border-line bg-surface-ivory p-20 md:p-24">
                   <p className="text-kicker uppercase text-brand-andaman">{labels['landing.vacation.owner_title']}</p>
                   <p className="mt-8 text-body text-text-secondary">{labels['landing.vacation.owner_body']}</p>
                   <Link href="/rent-out" className="mt-40 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">
@@ -496,7 +496,7 @@ export default async function LandingPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-32">
+            <div className="rounded-lg bg-brand-deep p-24 text-surface-ivory md:p-32">
               <p className="font-display text-title font-semibold">{labels['landing.vacation.kicker']}</p>
               <div className="mt-40 space-y-12">
                 {[
@@ -536,7 +536,7 @@ export default async function LandingPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="group rounded-2xl border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
+                className="group rounded-lg border border-border-line bg-surface-paper p-20 transition-shadow duration-structural hover:shadow-card md:p-24"
               >
                 <TrustMark size={20} filled className="text-brand-andaman" />
                 <h3 className="mt-44 font-display text-title font-semibold text-text-ink">{item.title}</h3>
@@ -586,7 +586,7 @@ export default async function LandingPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+            <div className="rounded-lg border border-border-line p-32 text-text-secondary">
               {labels['landing.services.empty']}
             </div>
           )}
@@ -620,7 +620,7 @@ export default async function LandingPage() {
                   <Link
                     key={area.id}
                     href={`/areas/${area.slug}`}
-                    className="group relative isolate min-h-[320px] overflow-hidden rounded-2xl bg-brand-deep"
+                    className="group relative isolate min-h-[320px] overflow-hidden rounded-lg bg-brand-deep"
                   >
                     <Image
                       src={media.src}
@@ -697,7 +697,7 @@ export default async function LandingPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex min-h-[220px] flex-col justify-between rounded-2xl p-24 transition-shadow duration-structural hover:shadow-card md:p-32 ${
+                className={`group flex min-h-[220px] flex-col justify-between rounded-lg p-24 transition-shadow duration-structural hover:shadow-card md:p-32 ${
                   item.accent
                     ? 'bg-brand-andaman text-surface-ivory'
                     : 'border border-border-line bg-surface-paper text-text-ink'
@@ -741,7 +741,7 @@ export default async function LandingPage() {
               <Link
                 key={desk.slug}
                 href={`/desks/${desk.slug}`}
-                className="group w-[220px] shrink-0 snap-start rounded-2xl border border-border-line bg-surface-paper/92 p-20 shadow-sm backdrop-blur transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
+                className="group w-[220px] shrink-0 snap-start rounded-lg border border-border-line bg-surface-paper/92 p-20 shadow-card backdrop-blur transition-all duration-structural hover:-translate-y-[1px] hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman md:w-auto"
               >
                 <div className="flex h-40 w-40 items-center justify-center rounded-full bg-brand-andaman/10 font-display text-small font-semibold tracking-[0.08em] text-brand-andaman">
                   {desk.code}

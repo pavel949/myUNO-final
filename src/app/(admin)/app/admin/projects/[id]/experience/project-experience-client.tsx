@@ -227,7 +227,7 @@ export default function ProjectExperienceClient({
 
   return <div className="grid gap-20 lg:grid-cols-[300px_1fr]">
     <aside className="space-y-12">
-      <form onSubmit={createAmenity} className="rounded-xl border border-border-line bg-surface-paper p-16">
+      <form onSubmit={createAmenity} className="rounded-md border border-border-line bg-surface-paper p-16">
         <h2 className="font-semibold text-text-ink">Add amenity or facility</h2>
         <label className="mt-12 block text-small">Name<input name="name" required className={input} placeholder="Cinema room, sauna, beach shuttle…" /></label>
         <label className="mt-8 block text-small">Group / category<input name="categoryKey" className={input} placeholder="wellness, entertainment, transport…" /></label>
@@ -238,17 +238,17 @@ export default function ProjectExperienceClient({
       <input value={query} onChange={e => setQuery(e.target.value)} className={input} placeholder="Search amenities…" />
       <div className="max-h-[640px] space-y-8 overflow-y-auto pr-4">
         {filtered.map(row => <button key={row.id} onClick={() => setSelectedId(row.id)} className={`w-full rounded-lg border p-12 text-left ${selectedId === row.id ? 'border-brand-andaman bg-surface-paper' : 'border-border-line bg-surface-ivory'}`}>
-          <div className="flex justify-between gap-8"><span className="font-medium text-text-ink">{row.name}</span><span className="text-micro text-text-secondary">{row.published ? 'Live' : 'Draft'}</span></div>
-          <p className="mt-8 text-micro text-text-secondary">{row.categoryKey || 'Uncategorized'}{row.bookingRequired ? ' · booking' : ''}</p>
+          <div className="flex justify-between gap-8"><span className="font-medium text-text-ink">{row.name}</span><span className="text-small text-text-secondary">{row.published ? 'Live' : 'Draft'}</span></div>
+          <p className="mt-8 text-small text-text-secondary">{row.categoryKey || 'Uncategorized'}{row.bookingRequired ? ' · booking' : ''}</p>
         </button>)}
       </div>
     </aside>
 
     <section>
       {message ? <p role="status" className="mb-12 rounded-lg bg-surface-muted p-12 text-small">{message}</p> : null}
-      {!selected ? <div className="rounded-xl border border-border-line bg-surface-paper p-24 text-text-secondary">Select an amenity or add a new one.</div> : (
+      {!selected ? <div className="rounded-md border border-border-line bg-surface-paper p-24 text-text-secondary">Select an amenity or add a new one.</div> : (
         <form key={selected.id} onSubmit={saveAmenity} className="space-y-20">
-          <div className="rounded-xl border border-border-line bg-surface-paper p-20">
+          <div className="rounded-md border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12">
               <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Project-level amenity · ID {selected.id}</p>{selected.bookingRequired && canOperateReservations ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
               <div className="flex gap-8">
@@ -271,7 +271,7 @@ export default function ProjectExperienceClient({
 
           <AmenityTranslationsEditor projectId={projectId} amenityId={selected.id} />
 
-          <div className="rounded-xl border border-border-line bg-surface-paper p-20">
+          <div className="rounded-md border border-border-line bg-surface-paper p-20">
             <h3 className="font-semibold">Access, use and booking</h3>
             <p className="mt-4 text-small text-text-secondary">Values are open, not tied to a fixed amenity list. Use project-specific wording where needed.</p>
             <div className="mt-12 grid gap-12 md:grid-cols-2">
@@ -299,7 +299,7 @@ export default function ProjectExperienceClient({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border-line bg-surface-paper p-20">
+          <div className="rounded-md border border-border-line bg-surface-paper p-20">
             <h3 className="font-semibold">Hours, rules and terms</h3>
             <div className="mt-12 grid gap-12 md:grid-cols-2">
               <label className="text-small">Opening hours<textarea name="openingHours" defaultValue={stringify(selected.openingHours)} className={area} placeholder={'Mon-Sun 07:00-22:00\nor JSON for complex schedules'}/></label>
@@ -308,12 +308,12 @@ export default function ProjectExperienceClient({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border-line bg-surface-paper p-20">
+          <div className="rounded-md border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12"><div><h3 className="font-semibold">Amenity gallery</h3><p className="text-small text-text-secondary">Photos belong to this amenity, not to the whole project or a unit.</p></div><label className="cursor-pointer rounded-md border border-border-line px-12 py-8 text-small font-semibold">Upload photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} className="hidden"/></label></div>
             <div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
               {selected.media.map(row => <div key={row.mediaId} className="relative overflow-hidden rounded-lg border border-border-line">
                 <Image src={row.media.storageKey} alt={selected.name} width={420} height={260} className="aspect-video w-full object-cover"/>
-                <div className="flex flex-wrap gap-8 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-micro font-semibold text-brand-andaman">{selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'}</button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-micro text-state-error">Remove</button></div>
+                <div className="flex flex-wrap gap-8 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-small font-semibold text-brand-andaman">{selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'}</button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-small text-state-error">Remove</button></div>
               </div>)}
             </div>
           </div>

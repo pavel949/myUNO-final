@@ -48,7 +48,7 @@ export default function ManualReservationForm({
     router.refresh();
   }
 
-  return <form onSubmit={submit} className="space-y-12 rounded-xl border border-border-line bg-surface-paper p-16">
+  return <form onSubmit={submit} className="space-y-12 rounded-md border border-border-line bg-surface-paper p-16">
     <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.create']}</h2>
     <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
       <label className="text-small font-semibold text-text-secondary">{labels['reservations.unit']}

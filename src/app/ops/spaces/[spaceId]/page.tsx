@@ -149,7 +149,7 @@ export default async function OperatingSpaceHome({
       <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">
         {links.map(([label, href]) => (
           <Link key={label} href={href}
-            className="rounded-xl border border-border-line bg-surface-paper p-20 font-semibold text-text-ink hover:border-brand-andaman">
+            className="rounded-md border border-border-line bg-surface-paper p-20 font-semibold text-text-ink hover:border-brand-andaman">
             {label} →
           </Link>
         ))}

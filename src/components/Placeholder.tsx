@@ -7,7 +7,7 @@ interface PlaceholderProps {
 export function Placeholder({ message }: PlaceholderProps) {
   return React.createElement(
     'div',
-    { className: 'p-4 bg-gray-100 rounded' },
+    { className: 'p-4 bg-gray-100 rounded-sm' },
     message
   );
 }

@@ -112,7 +112,7 @@ export default function LedgerAdminClient({
                 <tr key={entry.id} className="border-b border-border-line hover:bg-surface-paper">
                   <td className="px-12 py-8">{new Date(entry.occurredOn).toLocaleDateString()}</td>
                   <td className="px-12 py-8">
-                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
+                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded-sm text-small font-semibold">
                       {entry.entryType.replace(/_/g, ' ')}
                     </span>
                   </td>

@@ -143,7 +143,7 @@ export default async function HelpPage() {
           {sections.map((section) => (
             <article
               key={section.title}
-              className="rounded-xl border border-border-line bg-surface-paper p-24"
+              className="rounded-md border border-border-line bg-surface-paper p-24"
             >
               <h2 className="font-display text-title font-semibold text-text-ink">
                 {section.title}

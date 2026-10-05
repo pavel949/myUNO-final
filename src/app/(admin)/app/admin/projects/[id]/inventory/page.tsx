@@ -49,7 +49,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
     </div>
 
     <div className="space-y-16">
-      {project.inventoryCategories.map(category => <section key={category.id} className="rounded-xl border border-border-line bg-surface-paper">
+      {project.inventoryCategories.map(category => <section key={category.id} className="rounded-md border border-border-line bg-surface-paper">
         <div className="flex flex-wrap items-start justify-between gap-12 border-b border-border-line p-16">
           <div>
             <h2 className="font-display text-heading-2 font-semibold">{category.name}</h2>
@@ -70,7 +70,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
           {!category.units.length ? <p className="p-16 text-small text-text-secondary">No exact units assigned to this category.</p> : null}
         </div>
       </section>)}
-      {!project.inventoryCategories.length ? <div className="rounded-xl border border-dashed border-border-line p-32 text-center text-text-secondary">No canonical inventory categories yet.</div> : null}
+      {!project.inventoryCategories.length ? <div className="rounded-md border border-dashed border-border-line p-32 text-center text-text-secondary">No canonical inventory categories yet.</div> : null}
     </div>
   </main>;
 }

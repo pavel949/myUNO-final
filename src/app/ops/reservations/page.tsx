@@ -181,7 +181,7 @@ export default async function ReservationDesk({
           [labels['reservations.arrivals'],arrivals],
           [labels['reservations.requests'],requests],
           [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString()],
-        ].map(([label,value])=><div key={String(label)} className="rounded-xl border border-border-line bg-surface-paper p-16">
+        ].map(([label,value])=><div key={String(label)} className="rounded-md border border-border-line bg-surface-paper p-16">
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-4 font-display text-heading-2 font-bold">{value}</p>
         </div>)}
@@ -198,7 +198,7 @@ export default async function ReservationDesk({
         </Link>)}
       </nav>
 
-      <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+      <section className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
         {bookings.map(booking=>{
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
           return <article key={booking.id} className="grid gap-12 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
@@ -217,7 +217,7 @@ export default async function ReservationDesk({
       <section>
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.groups']}</h2>
         <div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
-          {groups.map(group=><article key={group.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
+          {groups.map(group=><article key={group.id} className="rounded-md border border-border-line bg-surface-paper p-16">
             <p className="font-display text-heading-3 font-semibold">{group.title||group.id.slice(0,8)}</p>
             <p className="mt-4 text-small text-text-secondary">{group.guest.firstName} {group.guest.lastName}</p>
             <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString())}</p>

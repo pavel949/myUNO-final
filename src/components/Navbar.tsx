@@ -169,7 +169,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <summary className="cursor-pointer list-none rounded-lg px-8 py-8 text-body font-semibold text-text-ink hover:text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
               {labels.more}
             </summary>
-            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+            <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-md border border-border-line bg-surface-paper p-20 shadow-float">
               {exploreLinks.map((link) => (
                 <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                   {link.label}
@@ -190,7 +190,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
                   {user.firstName} · My myUNO
                 </summary>
-                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-20 shadow-float">
+                <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-md border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
                     <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                       {link.label}

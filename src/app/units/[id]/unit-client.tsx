@@ -316,7 +316,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-96 rounded-xl border border-border-line bg-surface-paper p-24 shadow-card">
+            <div className="sticky top-96 rounded-md border border-border-line bg-surface-paper p-24 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote
@@ -401,7 +401,7 @@ export default function UnitDetailClient({
               </p>
 
               {error && (
-                <div className="bg-state-error/10 border border-state-error rounded-xl p-12 mb-16">
+                <div className="bg-state-error/10 border border-state-error rounded-md p-12 mb-16">
                   <p className="text-small text-state-error">{error}</p>
                 </div>
               )}

@@ -376,7 +376,7 @@ export default async function ServiceOrderDetailPage({
               {order.payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="p-12 border border-border-line rounded bg-surface-ivory"
+                  className="p-12 border border-border-line rounded-sm bg-surface-ivory"
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div>

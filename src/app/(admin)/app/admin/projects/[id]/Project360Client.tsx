@@ -152,7 +152,7 @@ export default function Project360Client({
               className="block p-12 bg-surface-ivory rounded-md border border-border-line hover:border-brand-andaman transition-colors"
             >
               <p className="font-medium text-text-ink">{developerOrg.tradingName || developerOrg.name}</p>
-              {developerOrg.website ? <p className="text-micro text-text-secondary break-all">{developerOrg.website}</p> : null}
+              {developerOrg.website ? <p className="text-small text-text-secondary break-all">{developerOrg.website}</p> : null}
               <p className="text-small text-brand-andaman mt-8">{labels['admin.project360.open_developer']} →</p>
             </Link>
           ) : (
@@ -164,14 +164,14 @@ export default function Project360Client({
           </h3>
           <div className="space-y-4 text-small">
             {orgRoles.map((role) => (
-              <div key={role.id} className="flex justify-between items-center gap-12 p-8 bg-surface-ivory rounded">
+              <div key={role.id} className="flex justify-between items-center gap-12 p-8 bg-surface-ivory rounded-sm">
                 <div>
                   <span className="font-medium">{role.organization.name}</span>
-                  {role.provenance ? <p className="text-micro text-text-secondary">{role.provenance}</p> : null}
+                  {role.provenance ? <p className="text-small text-text-secondary">{role.provenance}</p> : null}
                 </div>
                 <div className="flex gap-4 items-center">
-                  {role.isPrimary ? <span className="text-micro px-8 py-8 bg-brand-andaman text-on-dark-text rounded">{labels['admin.project360.primary']}</span> : null}
-                  <span className="text-micro px-8 py-8 bg-brand-sand text-text-ink rounded">
+                  {role.isPrimary ? <span className="text-small px-8 py-8 bg-brand-andaman text-on-dark-text rounded-sm">{labels['admin.project360.primary']}</span> : null}
+                  <span className="text-small px-8 py-8 bg-brand-sand text-text-ink rounded-sm">
                     {role.roleKey.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export default function Project360Client({
               [labels['admin.project360.metric_canonical_coverage'], `${canonicalCoveragePct}%`],
             ].map(([label, value]) => (
               <div key={String(label)} className="p-12 bg-surface-ivory border border-border-line rounded-md">
-                <p className="text-micro text-text-secondary">{label}</p>
+                <p className="text-small text-text-secondary">{label}</p>
                 <p className="font-display text-title font-semibold text-text-ink">{value}</p>
               </div>
             ))}
@@ -239,7 +239,7 @@ export default function Project360Client({
               <tbody>
                 {canonicalInventory.categories.map((category) => (
                   <tr key={category.id} className="border-b border-border-line last:border-0">
-                    <td className="py-12 pr-12"><p className="font-medium text-text-ink">{category.name}</p><p className="text-micro text-text-secondary">{category.categoryKey}</p></td>
+                    <td className="py-12 pr-12"><p className="font-medium text-text-ink">{category.name}</p><p className="text-small text-text-secondary">{category.categoryKey}</p></td>
                     <td className="py-12 pr-12">{category.unitCount}</td>
                     <td className="py-12 pr-12">{category.bedrooms} / {category.bathrooms}</td>
                     <td className="py-12 pr-12">{category.maxGuests}</td>
@@ -264,8 +264,8 @@ export default function Project360Client({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {canonicalInventory.ratePlans.map((plan) => (
               <div key={plan.id} className="p-12 bg-surface-ivory border border-border-line rounded-md">
-                <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-micro text-text-secondary">{plan.status}</span></div>
-                <p className="text-micro text-text-secondary mt-8">{plan.code}</p>
+                <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-small text-text-secondary">{plan.status}</span></div>
+                <p className="text-small text-text-secondary mt-8">{plan.code}</p>
                 <p className="text-small mt-8 text-text-ink">
                   {plan.unitId
                     ? labels['admin.project360.scope_unit']

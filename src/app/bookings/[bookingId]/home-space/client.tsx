@@ -264,7 +264,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
       />
 
       <div className="mx-auto max-w-content px-16 py-24 lg:px-32">
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-20">
+        <section className="mb-24 rounded-md border border-border-line bg-surface-paper p-20">
           <ProcessStepper
             steps={[
               { label: labels['home.pass.booked'], state: stepState('booked') },

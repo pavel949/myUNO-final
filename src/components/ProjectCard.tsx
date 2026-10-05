@@ -24,7 +24,7 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-lg bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
         featured ? 'min-h-[340px] md:min-h-[516px]' : 'min-h-[280px] md:min-h-[250px]'
       }`}
     >
@@ -33,7 +33,7 @@ export function ProjectCard({
         alt={image.illustrative ? '' : project.name}
         fill
         sizes={featured ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw'}
-        className="object-cover transition duration-700 group-hover:scale-[1.03]"
+        className="object-cover transition duration-structural group-hover:scale-[1.03]"
       />
 
       {image.illustrative ? (

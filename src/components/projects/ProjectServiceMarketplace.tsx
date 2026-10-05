@@ -68,7 +68,7 @@ export default function ProjectServiceMarketplace({
             <Link
               key={service.id}
               href={`/services/${service.id}?${serviceParams()}`}
-              className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
+              className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card"
             >
               {service.coverUrl ? (
                 <Image

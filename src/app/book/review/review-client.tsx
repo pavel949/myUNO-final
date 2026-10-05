@@ -262,7 +262,7 @@ export default function BookingReviewClient({
         </h1>
         {headline && <p className="mb-24 text-body text-text-ink">{headline}</p>}
 
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
+        <section className="mb-24 rounded-md border border-border-line bg-surface-paper p-24">
           <h2 className="mb-16 font-display text-heading-3 text-text-ink">{labels.recap}</h2>
           <dl className="space-y-12 text-body">
             <div className="flex justify-between gap-16">
@@ -284,7 +284,7 @@ export default function BookingReviewClient({
         </section>
 
         {breakdown && (
-          <div className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
+          <div className="mb-24 rounded-md border border-border-line bg-surface-paper p-24">
             <PriceBreakdown
               totalLabel={labels.total}
               totalSatang={Math.round((breakdown.total || 0) * 100)}
@@ -311,7 +311,7 @@ export default function BookingReviewClient({
           </div>
         )}
 
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
+        <section className="mb-24 rounded-md border border-border-line bg-surface-paper p-24">
           <h2 className="mb-8 font-display text-heading-3 text-text-ink">{labels.policy}</h2>
           <p className="mb-16 text-body text-text-stone">{policyText}</p>
           <label className="flex items-start gap-12 text-body text-text-ink">

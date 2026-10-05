@@ -79,7 +79,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
   ];
   return (
     <main className="max-w-6xl space-y-24 pb-40">
-      <header className="rounded-xl border border-border-line bg-surface-paper p-24">
+      <header className="rounded-md border border-border-line bg-surface-paper p-24">
         <Link href="/app/admin/bookings" className="text-small text-brand-andaman underline">← All bookings</Link>
         <p className="text-kicker uppercase text-brand-andaman mt-16 mb-4">Canonical booking journey</p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink">{booking.unit.name}</h1>
@@ -92,7 +92,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
           <Link href="/app/admin/statements" className="text-small text-brand-andaman underline">Owner statements</Link>
         </div>
       </header>
-      <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+      <section className="rounded-md border border-border-line bg-surface-paper p-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-16">One booking · one lifecycle</h2>
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
           {stages.map((stage, i) => {
@@ -108,7 +108,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
         </ol>
         <p className="text-small text-text-secondary mt-16">Stages reflect the existing Booking status. Actions remain in the booking and operations screens; this view does not create another reservation.</p>
       </section>
-      <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+      <section className="rounded-md border border-border-line bg-surface-paper p-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-16">Financial closure</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mb-20">
           <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary">Booking total</p><p className="font-display text-title font-semibold">฿{money(booking.totalThb)}</p></div>
@@ -123,7 +123,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
         </div>
         <p className="text-small text-text-secondary mt-16">Operational completion and financial distribution are different milestones. A checked-out stay is not automatically financially closed.</p>
       </section>
-      <section className="rounded-xl border border-border-line bg-surface-paper p-24">
+      <section className="rounded-md border border-border-line bg-surface-paper p-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-12">Linked evidence</h2>
         <p className="text-small text-text-secondary">{booking.payments.length} payments · {booking.ledgerEntries.length} ledger entries · {booking.depositClaims.length} deposit claims · {statements.length} owner statements</p>
         {booking.depositPreauth && <p className="text-small mt-8">Deposit authorization: {booking.depositPreauth.status} · ฿{money(booking.depositPreauth.amountThb)}</p>}

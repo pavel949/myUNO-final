@@ -35,7 +35,7 @@ export default function AmenityReservationsClient({ reservations }: { reservatio
 
   return <div className="space-y-12">
     {message ? <p role="status" className="rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
-    {reservations.map(row => <article key={row.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
+    {reservations.map(row => <article key={row.id} className="rounded-md border border-border-line bg-surface-paper p-16">
       <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString()} – {new Date(row.endAt).toLocaleTimeString()}</p>
@@ -50,6 +50,6 @@ export default function AmenityReservationsClient({ reservations }: { reservatio
         </div>
       </div>
     </article>)}
-    {!reservations.length ? <p className="rounded-xl border border-dashed border-border-line p-24 text-center text-text-secondary">No amenity reservations yet.</p> : null}
+    {!reservations.length ? <p className="rounded-md border border-dashed border-border-line p-24 text-center text-text-secondary">No amenity reservations yet.</p> : null}
   </div>;
 }

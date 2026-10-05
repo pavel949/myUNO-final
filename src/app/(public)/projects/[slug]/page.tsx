@@ -297,7 +297,7 @@ export default async function ProjectLandingPage({
       {/* Project-level editorial gallery. Unit galleries remain separate. */}
       {project.galleryUrls.length > 0 ? (
         <section className="mx-auto max-w-6xl px-24 py-24 md:py-40" aria-label={project.name}>
-          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-2xl md:grid-cols-4 md:gap-12">
+          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-lg md:grid-cols-4 md:gap-12">
             {project.galleryUrls.slice(0, 5).map((url, index) => (
               <div key={url + index} className={`relative overflow-hidden bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
                 <Image src={url} alt={`${project.name} — photo ${index + 1}`} fill sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'} className="object-cover" />
@@ -331,7 +331,7 @@ export default async function ProjectLandingPage({
 
       {(buyHomeCount > 0 || rentHomeCount > 0) ? (
         <section className="mx-auto max-w-6xl px-24 py-40">
-          <div className="rounded-2xl border border-border-line bg-surface-paper p-24 md:p-32">
+          <div className="rounded-lg border border-border-line bg-surface-paper p-24 md:p-32">
             <h2 className="font-display text-heading-2 font-semibold text-text-ink">
               {labels['project_page.commercial.title']}
             </h2>
@@ -342,7 +342,7 @@ export default async function ProjectLandingPage({
               {buyHomeCount > 0 ? (
                 <Link
                   href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
-                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                  className="rounded-md border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
                 >
                   <p className="font-display text-heading-3 font-semibold text-text-ink">
                     {labels['project_page.commercial.buy']}
@@ -358,7 +358,7 @@ export default async function ProjectLandingPage({
               {rentHomeCount > 0 ? (
                 <Link
                   href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
-                  className="rounded-xl border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
+                  className="rounded-md border border-border-line bg-surface-ivory p-20 transition hover:shadow-card"
                 >
                   <p className="font-display text-heading-3 font-semibold text-text-ink">
                     {labels['project_page.commercial.rent']}
@@ -543,7 +543,7 @@ export default async function ProjectLandingPage({
             ))}
           </div>
         )}
-        <div className="mt-40 flex flex-wrap items-center justify-between gap-16 rounded-xl border border-border-line bg-surface-ivory p-24">
+        <div className="mt-40 flex flex-wrap items-center justify-between gap-16 rounded-md border border-border-line bg-surface-ivory p-24">
           <div>
             <h3 className="font-display text-heading-3 font-semibold text-text-ink">{labels['project_page.owner_intake.title']}</h3>
             <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
@@ -594,7 +594,7 @@ export default async function ProjectLandingPage({
       {(houseRules || shuttleSchedule) ? (
         <section className="mx-auto grid max-w-6xl gap-16 px-24 py-48 md:grid-cols-2 md:py-64">
           {houseRules ? (
-            <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+            <article className="rounded-md border border-border-line bg-surface-paper p-24">
               <h2 className="font-display text-heading-2 font-semibold text-text-ink">
                 {labels['project_page.rules.title']}
               </h2>
@@ -602,7 +602,7 @@ export default async function ProjectLandingPage({
             </article>
           ) : null}
           {shuttleSchedule ? (
-            <article className="rounded-xl border border-border-line bg-surface-paper p-24">
+            <article className="rounded-md border border-border-line bg-surface-paper p-24">
               <h2 className="font-display text-heading-2 font-semibold text-text-ink">
                 {labels['project_page.shuttle.title']}
               </h2>

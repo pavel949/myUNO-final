@@ -164,7 +164,7 @@ export default function Developer360Client({
               [labels['admin.dev360.track_units_delivered'], trackRecord.totalUnitsDelivered],
             ].map(([label, value]) => (
               <div key={String(label)} className="p-12 rounded-md bg-surface-ivory border border-border-line">
-                <p className="text-micro text-text-secondary">{label}</p>
+                <p className="text-small text-text-secondary">{label}</p>
                 <p className="font-display text-title font-semibold text-text-ink">{valueOrDash(value as React.ReactNode)}</p>
               </div>
             ))}
@@ -203,20 +203,20 @@ export default function Developer360Client({
                   </div>
                   <div className="flex gap-8 flex-wrap justify-end">
                     {relationship.isPrimary ? (
-                      <span className="text-micro px-8 py-8 bg-brand-andaman text-on-dark-text rounded-full">
+                      <span className="text-small px-8 py-8 bg-brand-andaman text-on-dark-text rounded-full">
                         {labels['admin.dev360.primary']}
                       </span>
                     ) : null}
-                    <span className="text-micro px-8 py-8 bg-brand-sand text-text-ink rounded-full">
+                    <span className="text-small px-8 py-8 bg-brand-sand text-text-ink rounded-full">
                       {relationship.roleKey.replace(/_/g, ' ')}
                     </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-8 text-center">
-                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_units']}</p><p className="font-semibold">{relationship.project.unitsCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_categories']}</p><p className="font-semibold">{relationship.project.categoryCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_rate_plans']}</p><p className="font-semibold">{relationship.project.ratePlanCount}</p></div>
-                  <div><p className="text-micro text-text-secondary">{labels['admin.dev360.metric_bookings']}</p><p className="font-semibold">{relationship.project.bookingsCount}</p></div>
+                  <div><p className="text-small text-text-secondary">{labels['admin.dev360.metric_units']}</p><p className="font-semibold">{relationship.project.unitsCount}</p></div>
+                  <div><p className="text-small text-text-secondary">{labels['admin.dev360.metric_categories']}</p><p className="font-semibold">{relationship.project.categoryCount}</p></div>
+                  <div><p className="text-small text-text-secondary">{labels['admin.dev360.metric_rate_plans']}</p><p className="font-semibold">{relationship.project.ratePlanCount}</p></div>
+                  <div><p className="text-small text-text-secondary">{labels['admin.dev360.metric_bookings']}</p><p className="font-semibold">{relationship.project.bookingsCount}</p></div>
                 </div>
               </Link>
             ))}

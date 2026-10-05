@@ -68,7 +68,7 @@ export default async function OperatingSpacesPage() {
       ) : (
         <section className="grid gap-16 md:grid-cols-2 xl:grid-cols-3">
           {spaces.map((space) => (
-            <article key={space.id} className="rounded-xl border border-border-line bg-surface-paper p-20">
+            <article key={space.id} className="rounded-md border border-border-line bg-surface-paper p-20">
               <p className="text-small font-semibold text-brand-andaman">{space.key}</p>
               <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{space.name}</h2>
               <div className="mt-16 grid grid-cols-2 gap-8">

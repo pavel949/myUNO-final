@@ -45,7 +45,7 @@ export default async function ProcessesPage() {
   }), getProcessState(prisma)]);
   return (
     <main className="mx-auto max-w-7xl space-y-24 pb-40">
-      <header className="rounded-xl border border-border-line bg-surface-paper p-24 md:p-32">
+      <header className="rounded-md border border-border-line bg-surface-paper p-24 md:p-32">
         <p className="text-kicker uppercase tracking-wider text-brand-andaman font-semibold mb-8">{labels['admin.processes.kicker']}</p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.processes.title']}</h1>
         <p className="text-body text-text-secondary max-w-3xl">{labels['admin.processes.subtitle']}</p>
@@ -75,7 +75,7 @@ export default async function ProcessesPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             {lane.items.map((process) => (
-              <article key={process.number} className="flex flex-col rounded-xl border border-border-line bg-surface-paper p-20 md:p-24">
+              <article key={process.number} className="flex flex-col rounded-md border border-border-line bg-surface-paper p-20 md:p-24">
                 <div className="flex items-start gap-12">
                   <span className="shrink-0 rounded-md bg-surface-ivory px-12 py-8 text-small font-semibold text-brand-andaman tabular-nums">{process.number}</span>
                   <div>

@@ -279,7 +279,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
                     )}
                   </td>
                   <td className="px-12 py-8">
-                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold font-mono">
+                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded-sm text-small font-semibold font-mono">
                       {entry.action}
                     </span>
                   </td>

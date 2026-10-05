@@ -73,7 +73,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
           <h1 className="mt-8 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-text-ink">
             {labels[desk.titleKey]}
           </h1>
-          <p className="mt-12 max-w-2xl text-lg leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
+          <p className="mt-12 max-w-2xl text-subtitle font-normal leading-relaxed text-text-secondary">{labels[desk.bodyKey]}</p>
           <p className="mt-12 text-small font-semibold text-brand-andaman">{labels[desk.languagesKey]}</p>
           <p className="mt-20 max-w-3xl text-small leading-relaxed text-text-secondary">{labels['desks.detail.body']}</p>
         </div>
@@ -85,7 +85,7 @@ export default async function GlobalDeskDetailPage({ params }: { params: { slug:
             <Link
               key={action.href}
               href={action.href}
-              className="group flex min-h-[210px] flex-col justify-between rounded-2xl border border-border-line bg-surface-paper p-24 transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
+              className="group flex min-h-[210px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
                 <h2 className="font-display text-title font-semibold text-text-ink">{action.title}</h2>

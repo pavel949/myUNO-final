@@ -309,7 +309,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       <p className="text-body text-text-secondary">
                         {resolveLabel(alert.descriptionKey, alert.descriptionParams)}
                       </p>
-                      <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
+                      <p className="text-small text-text-secondary mt-4">{alert.unitName}</p>
                     </div>
                     {alert.actionUrl && (
                       <Link href={alert.actionUrl}>
@@ -496,7 +496,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           month: 'short',
                         })}
                       </h3>
-                      <p className="text-sm text-text-secondary mb-12">
+                      <p className="text-small text-text-secondary mb-12">
                         {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'long',
@@ -505,10 +505,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       </p>
                       <div className="space-y-8">
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.noi']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             {/* OwnerStatement stores every amount in satang like the rest of
                                 the platform (CLAUDE.md) — MoneyAmount's contract is satang-in,
                                 so the raw Prisma field goes straight in, no manual /100 (Q47). */}
@@ -516,10 +516,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.your_share']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             <MoneyAmount satang={statement.ownerShareTh || 0} />
                           </span>
                         </div>

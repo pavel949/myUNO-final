@@ -118,7 +118,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
           </Link>)}
       </nav>
 
-      <form method="get" className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-16 md:p-20">
+      <form method="get" className="mb-32 rounded-lg border border-border-line bg-surface-paper p-16 md:p-20">
         <input type="hidden" name="intent" value={intent} />
         <div className="flex items-center justify-between gap-16">
           <h2 className="font-display text-title font-semibold text-text-ink">{labels['homes.filters']}</h2>
@@ -175,7 +175,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
         {homes.map(home => {
           const price = home.priceThb[intent] ?? null;
           return <Link href={'/homes/'+encodeURIComponent(home.id)+'?intent='+intent} key={home.id}
-            className="group overflow-hidden rounded-xl border border-border-line bg-surface-paper hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+            className="group overflow-hidden rounded-md border border-border-line bg-surface-paper hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
             {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
               className="aspect-[3/2] w-full object-cover" /> :
               <div className="aspect-[3/2] bg-surface-ivory"/>}
@@ -195,7 +195,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             </div>
           </Link>;
         })}
-      </div> : <div role="status" className="rounded-xl border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
+      </div> : <div role="status" className="rounded-md border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
         {labels['homes.empty']}
       </div>}
     </div>

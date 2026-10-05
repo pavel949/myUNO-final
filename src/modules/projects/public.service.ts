@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { managedImportedInventoryIds } from './public-managed-import';
 import { categoryEditorialKeys } from './project-editorial';
 import { tMany, type Locale } from '@/modules/content';
 import { listPublicProjectAmenities } from './project-amenities.service';
@@ -16,9 +17,12 @@ import {
 } from './public-responsibility';
 
 /** Public accommodation projections must apply the same offering and source-authority scope as Stay Search. */
-function publicStayUnitWhere(excludedIds: string[]): Prisma.UnitWhereInput {
+function publicStayUnitWhere(excludedIds: string[], managedUnitIds: string[] = []): Prisma.UnitWhereInput {
   return {
-    status: 'live',
+    OR: [
+      { status: 'live' },
+      ...(managedUnitIds.length ? [{ status: 'draft' as const, id: { in: managedUnitIds } }] : []),
+    ],
     assetStatus: { not: 'suspended' },
     inventoryCategory: { status: 'live' },
     ...(excludedIds.length ? { id: { notIn: excludedIds } } : {}),
@@ -126,9 +130,19 @@ export interface PublicProjectDetail {
 
 /** All live projects, for the /projects hub and the sitemap. */
 export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicProjectCard[]> {
-  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const [excludedIds, managedImported] = await Promise.all([
+    allExcludedSourceControlledUnitIds(prisma),
+    managedImportedInventoryIds(prisma),
+  ]);
   const projects = await prisma.project.findMany({
-    where: { status: 'live' },
+    where: {
+      OR: [
+        { status: 'live' },
+        ...(managedImported.projectIds.length
+          ? [{ status: 'draft' as const, id: { in: managedImported.projectIds } }]
+          : []),
+      ],
+    },
     orderBy: { createdAt: 'asc' },
     include: {
       coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
@@ -155,7 +169,15 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
         take: 4,
       },
       units: {
-        where: { status: 'live', assetStatus: { not: 'suspended' } },
+        where: {
+          assetStatus: { not: 'suspended' },
+          OR: [
+            { status: 'live' },
+            ...(managedImported.unitIds.length
+              ? [{ status: 'draft' as const, id: { in: managedImported.unitIds } }]
+              : []),
+          ],
+        },
         select: {
           id: true,
           project: { select: { projectType: true } },
@@ -270,7 +292,10 @@ export async function getPublicProjectBySlug(
   slug: string,
   locale: Locale = 'en'
 ): Promise<PublicProjectDetail | null> {
-  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const [excludedIds, managedImported] = await Promise.all([
+    allExcludedSourceControlledUnitIds(prisma),
+    managedImportedInventoryIds(prisma),
+  ]);
   const project = await prisma.project.findUnique({
     where: { slug },
     include: {
@@ -281,7 +306,15 @@ export async function getPublicProjectBySlug(
         include: { media: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } } },
       },
       units: {
-        where: { status: 'live', assetStatus: { not: 'suspended' } },
+        where: {
+          assetStatus: { not: 'suspended' },
+          OR: [
+            { status: 'live' },
+            ...(managedImported.unitIds.length
+              ? [{ status: 'draft' as const, id: { in: managedImported.unitIds } }]
+              : []),
+          ],
+        },
         orderBy: [{ name: 'asc' }],
         include: {
           coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
@@ -313,7 +346,10 @@ export async function getPublicProjectBySlug(
     },
   });
 
-  if (!project || project.status !== 'live') return null;
+  if (
+    !project ||
+    (project.status !== 'live' && !managedImported.projectIds.includes(project.id))
+  ) return null;
 
   const publicUnits = project.units.map((unit) => {
     const media = assessUnitMediaReadiness({
@@ -511,9 +547,23 @@ export interface PublicUnitDetail extends PublicProjectUnit {
 }
 
 export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
-  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const [excludedIds, managedImported] = await Promise.all([
+    allExcludedSourceControlledUnitIds(prisma),
+    managedImportedInventoryIds(prisma),
+  ]);
   const unit = await prisma.unit.findFirst({
-    where: { id, ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
+    where: {
+      id,
+      ...publicStayUnitWhere(excludedIds, managedImported.unitIds),
+      project: {
+        OR: [
+          { status: 'live' },
+          ...(managedImported.projectIds.length
+            ? [{ status: 'draft' as const, id: { in: managedImported.projectIds } }]
+            : []),
+        ],
+      },
+    },
     include: {
       coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       media: {
@@ -536,6 +586,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
       },
       project: {
         select: {
+          id: true,
           slug: true,
           name: true,
           address: true,
@@ -548,7 +599,12 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     },
   });
 
-  if (!unit || unit.status !== 'live' || unit.project.status !== 'live' || unit.inventoryCategory?.status !== 'live') return null;
+  if (
+    !unit ||
+    (unit.status !== 'live' && !managedImported.unitIds.includes(unit.id)) ||
+    (unit.project.status !== 'live' && !managedImported.projectIds.includes(unit.project.id)) ||
+    unit.inventoryCategory?.status !== 'live'
+  ) return null;
 
   const media = assessUnitMediaReadiness({
     projectType: unit.project.projectType,
@@ -591,9 +647,22 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
 
 /** Live units (id only) for the sitemap. */
 export async function listPublicUnitIds(): Promise<string[]> {
-  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
+  const [excludedIds, managedImported] = await Promise.all([
+    allExcludedSourceControlledUnitIds(prisma),
+    managedImportedInventoryIds(prisma),
+  ]);
   const units = await prisma.unit.findMany({
-    where: { ...publicStayUnitWhere(excludedIds), project: { status: 'live' } },
+    where: {
+      ...publicStayUnitWhere(excludedIds, managedImported.unitIds),
+      project: {
+        OR: [
+          { status: 'live' },
+          ...(managedImported.projectIds.length
+            ? [{ status: 'draft' as const, id: { in: managedImported.projectIds } }]
+            : []),
+        ],
+      },
+    },
     select: {
       id: true,
       accommodationType: true,

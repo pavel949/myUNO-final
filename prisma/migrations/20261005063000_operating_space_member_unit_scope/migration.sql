@@ -12,20 +12,20 @@ CREATE TABLE "operating_space_member_unit" (
   CONSTRAINT "operating_space_member_unit_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "operating_space_member_unit_space_identity_unit_key"
+CREATE UNIQUE INDEX "operating_space_member_unit_operating_space_id_identity_id__key"
   ON "operating_space_member_unit"("operating_space_id","identity_id","unit_id");
-CREATE INDEX "operating_space_member_unit_identity_unit_active_idx"
+CREATE INDEX "operating_space_member_unit_identity_id_unit_id_active_idx"
   ON "operating_space_member_unit"("identity_id","unit_id","active");
-CREATE INDEX "operating_space_member_unit_space_active_idx"
+CREATE INDEX "operating_space_member_unit_operating_space_id_active_idx"
   ON "operating_space_member_unit"("operating_space_id","active");
 
 ALTER TABLE "operating_space_member_unit"
-  ADD CONSTRAINT "operating_space_member_unit_member_fkey"
+  ADD CONSTRAINT "operating_space_member_unit_operating_space_id_identity_id_fkey"
   FOREIGN KEY ("operating_space_id","identity_id")
   REFERENCES "operating_space_member"("operating_space_id","identity_id")
   ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "operating_space_member_unit"
-  ADD CONSTRAINT "operating_space_member_unit_unit_fkey"
+  ADD CONSTRAINT "operating_space_member_unit_unit_id_fkey"
   FOREIGN KEY ("unit_id") REFERENCES "unit"("id")
   ON DELETE CASCADE ON UPDATE CASCADE;
 

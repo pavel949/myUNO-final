@@ -12,7 +12,7 @@ export default async function HomepagePlacementPage() {
     }),
     prisma.project.findMany({
       where: { status: 'live' },
-      select: { id: true, title: true },
+      select: { id: true, name: true },
       orderBy: { name: 'asc' },
       take: 200,
     }),
@@ -24,8 +24,8 @@ export default async function HomepagePlacementPage() {
     }),
     prisma.service.findMany({
       where: { status: 'active' },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
+      select: { id: true, title: true },
+      orderBy: { title: 'asc' },
       take: 300,
     }),
     prisma.area.findMany({

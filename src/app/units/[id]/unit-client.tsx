@@ -65,6 +65,7 @@ export interface UnitDetailLabels {
   guestsCount: string;
   bedroomsCount: string;
   minNightsCount: string;
+  sizeUnit: string;
   floor: string;
   notChargedYet: string;
   fewerGuests: string;
@@ -295,7 +296,7 @@ export default function UnitDetailClient({
                 </Chip>
                 {(unit.grossAreaSqm || unit.sizeSqm) ? (
                   <Chip variant="neutral">
-                    {String(unit.grossAreaSqm || unit.sizeSqm)} m²
+                    {String(unit.grossAreaSqm || unit.sizeSqm)} {labels.sizeUnit}
                   </Chip>
                 ) : null}
                 {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}

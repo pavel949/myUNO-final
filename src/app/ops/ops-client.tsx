@@ -366,7 +366,7 @@ export default function OpsBoardClient({
     bookings: OpsBooking[];
     action: (booking: OpsBooking) => React.ReactNode;
   }) => (
-    <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+    <section className="stitch-panel mb-24 p-24">
       <h2 className="font-display text-title font-semibold text-text-ink mb-8">{title}</h2>
       {bookings.length === 0 ? (
         <p className="text-body text-text-secondary py-8">{labels['staff.ops.empty']}</p>
@@ -387,7 +387,7 @@ export default function OpsBoardClient({
       )}
 
       {mobilizationUnits.length > 0 && (
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <section className="stitch-panel mb-24 p-24">
           <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['staff.ops.mobilization_title']}
           </h2>
@@ -427,7 +427,7 @@ export default function OpsBoardClient({
         </section>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="stitch-panel mb-24 p-24">
         <div className="flex items-center justify-between gap-16 mb-8">
           <h2 className="font-display text-title font-semibold text-text-ink">
             {labels['staff.ops.booking_requests']}

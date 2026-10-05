@@ -142,26 +142,26 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
     return '/homes/' + encodeURIComponent(id) + '?' + params.toString();
   };
 
-  return <main className="min-h-screen bg-surface-ivory">
-    <section className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">
+  return <main className="stitch-workspace">
+    <section className="border-b border-border-line bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32 md:py-48">
       <div className="mx-auto max-w-6xl">
-        <p className="text-kicker uppercase tracking-widest text-brand-sun-soft">{labels['homes.kicker']}</p>
-        <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['homes.title']}</h1>
-        <p className="mt-12 max-w-2xl text-body text-surface-ivory/90">{labels['homes.subtitle']}</p>
+        <p className="stitch-kicker">{labels['homes.kicker']}</p>
+        <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{labels['homes.title']}</h1>
+        <p className="mt-12 max-w-2xl text-body text-text-secondary">{labels['homes.subtitle']}</p>
       </div>
     </section>
 
     <div className="mx-auto max-w-6xl px-20 py-40 md:px-32">
-      <nav aria-label={labels['homes.title']} className="mb-24 flex flex-wrap gap-8">
+      <nav aria-label={labels['homes.title']} className="stitch-segmented mb-24 flex-wrap">
         {(['buy','rent'] as const).map(mode =>
           <Link key={mode} href={modeLink(mode)} aria-current={intent===mode?'page':undefined}
-            className={'rounded-full border px-24 py-12 text-small font-semibold '+
+            className={'rounded-lg border px-20 py-10 text-small font-semibold transition '+
               (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper text-text-ink')}>
             {mode==='buy'?labels['homes.buy']:labels['homes.rent']}
           </Link>)}
       </nav>
 
-      <form method="get" className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-16 shadow-card md:p-20">
+      <form method="get" className="stitch-panel mb-32 p-16 md:p-20">
         <input type="hidden" name="intent" value={intent} />
         {searchParams?.projectId && <input type="hidden" name="projectId" value={searchParams.projectId} />}
         <div className="flex items-center justify-between gap-16">
@@ -173,7 +173,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
         <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-5">
           <label className="text-small text-text-secondary">
             {labels['homes.area_filter']}
-            <select name="area" defaultValue={area} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
+            <select name="area" defaultValue={area} className="stitch-control mt-8 w-full">
               <option value="">{labels['homes.all_areas']}</option>
               {areas.map((slug) => <option key={slug} value={slug}>{slug}</option>)}
             </select>
@@ -243,7 +243,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {homes.map(home => {
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
-                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[260px_minmax(0,1fr)]">
+                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-1 hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
                 {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
                   className="h-full min-h-[220px] w-full object-cover" /> :
                   <div className="min-h-[220px] bg-surface-ivory"/>}
@@ -284,7 +284,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
           </div>}
         </div>
 
-        <aside className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card lg:sticky lg:top-96">
+        <aside className="stitch-panel p-20 lg:sticky lg:top-96">
           <p className="text-kicker uppercase text-brand-andaman">{labels['homes.filters']}</p>
           <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{labels['homes.contact']}</h2>
           <dl className="mt-20 space-y-12 text-small">

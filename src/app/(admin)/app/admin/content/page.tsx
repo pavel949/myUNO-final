@@ -49,7 +49,7 @@ export default async function AdminContentPage({
           {labels['admin.content.title']}
         </h1>
         <Link href="/app/admin/content/homepage" className="rounded-lg border border-border-line px-16 py-10 font-semibold text-brand-andaman">
-          Homepage placements
+          {labels['admin.content.homepage_placements']}
         </Link>
       </div>
       <ContentAdminClient

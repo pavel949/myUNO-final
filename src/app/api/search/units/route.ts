@@ -569,6 +569,22 @@ export async function GET(req: NextRequest) {
       };
     };
 
+    const priceUnitsInBatches = async (
+      units: UnitWithListRelations[],
+      batchSize = 4
+    ): Promise<Array<PricedUnit | null>> => {
+      const results: Array<PricedUnit | null> = [];
+      for (let index = 0; index < units.length; index += batchSize) {
+        // Keep a small amount of parallelism, but do not fan every candidate
+        // into the serverless DB pool at once. The pricing calculator performs
+        // several scoped config/rule reads per unit; bounded batches let the
+        // config fallback cache warm and keep search latency predictable.
+        const batch = units.slice(index, index + batchSize);
+        results.push(...(await Promise.all(batch.map(priceUnit))));
+      }
+      return results;
+    };
+
     const passesPriceBounds = (priced: PricedUnit) =>
       (minPrice === undefined || priced.effectiveNightlyThb >= minPrice) &&
       (maxPrice === undefined || priced.effectiveNightlyThb <= maxPrice);
@@ -585,7 +601,7 @@ export async function GET(req: NextRequest) {
 
     if (needsCanonicalPricingAcrossCandidates) {
       const candidates = await prisma.unit.findMany({ where, include: listInclude });
-      const priced = await Promise.all(candidates.map(priceUnit));
+      const priced = await priceUnitsInBatches(candidates);
       let filtered = priced
         .filter((value): value is PricedUnit => value !== null)
         .filter(passesPriceBounds);
@@ -671,7 +687,7 @@ export async function GET(req: NextRequest) {
             .filter((u): u is (typeof page)[number] => Boolean(u))
         : page;
 
-      const priced = await Promise.all(orderedPage.map(priceUnit));
+      const priced = await priceUnitsInBatches(orderedPage);
       pricedUnits = priced.filter((value): value is PricedUnit => value !== null);
       total = await prisma.unit.count({ where });
 
@@ -767,7 +783,15 @@ export async function GET(req: NextRequest) {
         sort: sort.key,
         mapProjects,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          // Search is advisory; booking creation always re-checks price and
+          // availability transactionally. A very short edge cache removes
+          // repeated cold reads while bounding stale discovery exposure.
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+        },
+      }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

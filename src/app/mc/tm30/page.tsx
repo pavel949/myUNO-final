@@ -126,7 +126,7 @@ export default async function McTm30Page({ searchParams }: McTm30PageProps) {
   const activeContextKey = `${activeScope.projectId}:${activeScope.organizationId}`;
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['mc.tm30.back']}

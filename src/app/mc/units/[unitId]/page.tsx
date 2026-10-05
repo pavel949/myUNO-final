@@ -53,7 +53,7 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
   ]);
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="max-w-4xl mx-auto px-24 py-32">
         <Link
           href={`/mc/calendar?projectId=${encodeURIComponent(unit.projectId)}`}

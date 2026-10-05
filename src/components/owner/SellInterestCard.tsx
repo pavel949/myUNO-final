@@ -17,7 +17,7 @@ export const SellInterestCard = React.forwardRef<HTMLDivElement, SellInterestCar
     return (
       <div
         ref={ref}
-        className="bg-surface-paper border border-border-line rounded-md p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-24"
+        className="stitch-panel p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-24"
       >
         <div>
           <h3 className="font-display text-title font-semibold text-text-ink m-0 mb-4">

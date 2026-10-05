@@ -72,7 +72,7 @@ export default async function BuyingPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
           {labels['buying.title']}

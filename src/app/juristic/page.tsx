@@ -108,7 +108,7 @@ export default async function JuristicPortalPage({
 
   if (projects.length === 0) {
     return (
-      <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+      <main className="stitch-workspace p-24 md:p-32">
         <div className="max-w-3xl mx-auto">
           <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
             {labels['juristic.title']}
@@ -140,7 +140,7 @@ export default async function JuristicPortalPage({
   );
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
           {labels['juristic.title']}
@@ -183,7 +183,7 @@ export default async function JuristicPortalPage({
                 return (
                   <li
                     key={announcement.id}
-                    className="p-16 bg-surface-paper border border-border-line rounded-lg"
+                    className="stitch-panel p-16"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-8 mb-4">
                       <p className="text-body font-semibold text-text-ink m-0">
@@ -228,7 +228,7 @@ export default async function JuristicPortalPage({
                 }) => (
                   <li
                     key={ticket.id}
-                    className="p-16 bg-surface-paper border border-border-line rounded-lg flex items-center justify-between gap-12"
+                    className="stitch-panel p-16 flex items-center justify-between gap-12"
                   >
                     <div>
                       <p className="text-body font-semibold text-text-ink m-0">{ticket.title}</p>

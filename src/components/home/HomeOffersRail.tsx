@@ -59,13 +59,19 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
   const catalogHref = homeCatalogHref(intent, place, search);
 
   const contextualHref = (item: HomeOfferItem) => {
-    if (item.intent !== 'stay' || !search.startDate || !search.endDate) return item.href;
     const url = new URL(item.href, 'https://myuno.local');
-    url.searchParams.set('startDate', search.startDate);
-    url.searchParams.set('endDate', search.endDate);
-    url.searchParams.set('adults', String(Math.max(1, search.adults)));
-    url.searchParams.set('children', String(Math.max(0, search.children)));
-    return url.pathname + '?' + url.searchParams.toString();
+    if (item.intent === 'stay' && search.startDate && search.endDate) {
+      url.searchParams.set('startDate', search.startDate);
+      url.searchParams.set('endDate', search.endDate);
+      url.searchParams.set('adults', String(Math.max(1, search.adults)));
+      url.searchParams.set('children', String(Math.max(0, search.children)));
+    }
+    if (item.intent === 'monthly') {
+      if (search.moveIn) url.searchParams.set('moveIn', search.moveIn);
+      if (search.leaseTermMonths) url.searchParams.set('leaseTermMonths', search.leaseTermMonths);
+      if (search.pets !== 'any') url.searchParams.set('pets', search.pets);
+    }
+    return url.pathname + (url.searchParams.size ? '?' + url.searchParams.toString() : '');
   };
 
   return (

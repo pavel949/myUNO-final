@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
@@ -320,18 +320,11 @@ export async function GET(req: NextRequest) {
         : {};
     where.id = { ...existingIdFilter, in: mediaEligibleUnitIds };
 
-    // Commercially unapproved imported inventory is an unavailable search
-    // candidate, not a reason to fail the whole public discovery request.
-    // Unexpected calculator/database failures must still surface as errors.
-    const isUnavailablePriceError = (error: unknown) =>
-      error instanceof Error && [
-        'below minimum of',
-        'source tariff has not been validated',
-        'Validated monthly tariff is required',
-        'Source booking policy requires approval',
-        'Arrival tariff identity missing',
-        'No active short-stay offering',
-      ].some(reason => error.message.includes(reason));
+    // A unit that cannot be sold for this stay (minimum nights, dates outside
+    // the published season, party size, pets, an offering not yet approved) is
+    // not a search result — it is never a reason to fail the whole discovery
+    // request. Unexpected calculator/database failures still surface as errors.
+    const isUnavailablePriceError = (error: unknown) => error instanceof StayUnquotableError;
 
     if (groupBy === 'category') {
       const categoryUnits = await prisma.unit.findMany({

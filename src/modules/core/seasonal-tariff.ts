@@ -7,6 +7,8 @@
  * Calendar dates are UTC date-only and check-out is exclusive.
  * A missing/overlapping season fails closed rather than guessing a price.
  */
+import { StayUnquotableError } from './stay-unquotable';
+
 export type TariffRow = {
   sourceRateId: string;
   seasonCode: string;
@@ -85,7 +87,10 @@ export function quoteSeasonalTariffGrid(
   for (let t = from; t < to; t += DAY) {
     const date = new Date(t).toISOString().slice(0, 10);
     const matches = rows.filter(r => r.dateWindows.some(w => matchWindow(date, w)));
-    if (matches.length !== 1) throw new Error('Missing or overlapping tariff season on ' + date);
+    // No published season covering a night: not sellable for these dates.
+    if (matches.length === 0) throw new StayUnquotableError('Missing or overlapping tariff season on ' + date);
+    // Two seasons on one night is a broken grid, not an availability answer.
+    if (matches.length > 1) throw new Error('Missing or overlapping tariff season on ' + date);
     const row = matches[0];
     if (t === from) firstMin = row.minimumNights ?? (mode === 'monthly' ? 30 : 1);
     if (includesTaxes === undefined) {
@@ -96,7 +101,7 @@ export function quoteSeasonalTariffGrid(
     if (row.includesTaxes !== includesTaxes ||
       row.includesServiceCharge !== includesServiceCharge ||
       row.includesBreakfast !== includesBreakfast)
-      throw new Error('Mixed tariff tax/service inclusion requires separate quote');
+      throw new StayUnquotableError('Mixed tariff tax/service inclusion requires separate quote');
     if (row.sourceRateId !== precedingId) runLength = 0;
     const amount = mode === 'daily' ? row.amountSatang :
       Math.floor(row.amountSatang * (runLength + 1) / 30) -
@@ -106,7 +111,7 @@ export function quoteSeasonalTariffGrid(
     precedingId = row.sourceRateId;
     runLength += 1;
   }
-  if (nights < firstMin) throw new Error('Stay length below seasonal minimum of ' + firstMin);
+  if (nights < firstMin) throw new StayUnquotableError('Stay length below seasonal minimum of ' + firstMin);
   if (!Number.isSafeInteger(subtotalSatang)) throw new Error('Tariff total overflow');
   return { mode, lines, subtotalSatang, includesTaxes: includesTaxes!,
     includesServiceCharge: includesServiceCharge!, includesBreakfast: includesBreakfast!,

@@ -9,6 +9,7 @@ import {
 } from '@/lib/date';
 import { getApplicableSeason, type PriceBreakdown } from './availability.service';
 import { quoteSeasonalTariffGrid, type TariffMode } from './seasonal-tariff';
+import { StayUnquotableError } from './stay-unquotable';
 import { resolveSourceBookingTerms } from './commercial-booking-terms';
 
 function applyRatePlanAdjustment(
@@ -104,12 +105,12 @@ export async function computeCanonicalPriceBreakdown(
     throw new Error('Unit project is not live');
   }
   if (guestCount > unit.maxGuests) {
-    throw new Error(`Party size ${guestCount} exceeds unit max of ${unit.maxGuests}`);
+    throw new StayUnquotableError(`Party size ${guestCount} exceeds unit max of ${unit.maxGuests}`);
   }
   if (pets > 0) {
-    if (unit.petsAllowed !== true) throw new Error('This unit does not accept pets');
+    if (unit.petsAllowed !== true) throw new StayUnquotableError('This unit does not accept pets');
     if (unit.maxPets !== null && unit.maxPets !== undefined && pets > unit.maxPets) {
-      throw new Error(`This unit accepts up to ${unit.maxPets} pet(s), not ${pets}`);
+      throw new StayUnquotableError(`This unit accepts up to ${unit.maxPets} pet(s), not ${pets}`);
     }
   }
 
@@ -136,7 +137,7 @@ export async function computeCanonicalPriceBreakdown(
   // quotable for admin previews.
   if ((unit.status === 'live' || unit.project.projectType) && !stayOffers.some(offer =>
     ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active')) {
-    throw new Error('No active short-stay offering for this property');
+    throw new StayUnquotableError('No active short-stay offering for this property');
   }
   const validatedGrid = (type: string) => {
     const offer = stayOffers.find(o => o.offeringType === type);
@@ -158,7 +159,7 @@ export async function computeCanonicalPriceBreakdown(
   // Never fall back to zero/placeholder category pricing for imported supply:
   // even a mistakenly live unit must stay unquotable until tariff approval.
   if (sourceOwnedTariff && shortGrid === null)
-    throw new Error('This stay is not available: source tariff has not been validated');
+    throw new StayUnquotableError('This stay is not available: source tariff has not been validated');
   if (shortGrid !== null) {
     // Prefer the explicit monthly tariff from 30 nights, with no stacked LOS
     // discount. A draft/unverified monthly offer cannot be silently substituted
@@ -166,7 +167,7 @@ export async function computeCanonicalPriceBreakdown(
     const mode: TariffMode =
       options.calendarProjection ? 'daily' : nights >= 30 ? 'monthly' : 'daily';
     if (mode === 'monthly' && monthlyGrid === null)
-      throw new Error('Validated monthly tariff is required for this stay');
+      throw new StayUnquotableError('Validated monthly tariff is required for this stay');
     const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
     const quoted = quoteSeasonalTariffGrid(
       selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
@@ -177,12 +178,12 @@ export async function computeCanonicalPriceBreakdown(
     let commercialTerms: PriceBreakdown['commercialTerms'];
     if (terms.sourceSystem === 'layantara_os') {
       if (terms.policyEngineVerified !== true)
-        throw new Error('Source booking policy requires approval');
+        throw new StayUnquotableError('Source booking policy requires approval');
       const gridRows = selectedGrid as Array<Record<string, unknown>>;
       const arrivalRate = gridRows.find(row =>
         row.sourceRateId === quoted.lines[0].sourceRateId);
       if (!arrivalRate || typeof arrivalRate.seasonCode !== 'string')
-        throw new Error('Arrival tariff identity missing');
+        throw new StayUnquotableError('Arrival tariff identity missing');
       const policies = selectedOffer.rulesAndPolicies;
       const rules = typeof policies === 'object' && policies !== null &&
         !Array.isArray(policies)
@@ -191,7 +192,7 @@ export async function computeCanonicalPriceBreakdown(
         rules, mode, arrivalRate.seasonCode,
       );
       if (!options.calendarProjection && nights < commercialTerms.minimumNights)
-        throw new Error('Stay length below booking-policy minimum of ' +
+        throw new StayUnquotableError('Stay length below booking-policy minimum of ' +
           commercialTerms.minimumNights);
     }
     const cleaningFee = quoted.includesServiceCharge
@@ -244,7 +245,7 @@ export async function computeCanonicalPriceBreakdown(
     ratePlan?.minNights ?? unit.inventoryCategory?.minNights ?? unit.minNights;
   const minNights = arrivalRule?.minNightsOverride ?? canonicalMinNights;
   if (!options.calendarProjection && nights < minNights) {
-    throw new Error(`Stay length ${nights} nights is below minimum of ${minNights}`);
+    throw new StayUnquotableError(`Stay length ${nights} nights is below minimum of ${minNights}`);
   }
 
   const categoryKey = unit.inventoryCategory?.categoryKey ?? unit.categoryKey;

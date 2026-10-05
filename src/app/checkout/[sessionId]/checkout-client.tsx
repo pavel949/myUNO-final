@@ -115,7 +115,7 @@ export default function CheckoutClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-ivory">
+      <div className="stitch-workspace flex min-h-screen items-center justify-center">
         <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
       </div>
     );
@@ -140,7 +140,7 @@ export default function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-ivory px-24">
+    <div className="stitch-workspace flex min-h-screen items-center justify-center bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32">
       <div className="stitch-panel w-full max-w-lg p-24 shadow-float md:p-32">
         <h1 className="mb-24 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">
           {labels['payments.checkout.title']}

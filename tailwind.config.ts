@@ -46,9 +46,9 @@ const config: Config = {
       },
       fontSize: {
         // Typography (doc 06 §2.2)
-        'display-hero': ['52px', { lineHeight: '56px', letterSpacing: '-2%' }],
-        'display-hero-lg': ['72px', { lineHeight: '76px', letterSpacing: '-2%' }],
-        'display-xl': ['40px', { lineHeight: '44px', letterSpacing: '-1%' }],
+        'display-hero': ['36px', { lineHeight: '44px', letterSpacing: '-2%' }],
+        'display-hero-lg': ['56px', { lineHeight: '64px', letterSpacing: '-2%' }],
+        'display-xl': ['32px', { lineHeight: '40px', letterSpacing: '-1%' }],
         'display': ['28px', { lineHeight: '34px' }],
         'title': ['20px', { lineHeight: '26px', fontWeight: '600' }],
         'subtitle': ['16px', { lineHeight: '24px', fontWeight: '500' }],

@@ -196,6 +196,6 @@ async function readHomepageData(locale: Locale) {
  */
 export const getPublicHomepageData = unstable_cache(
   readHomepageData,
-  ['public-homepage-v3'],
+  ['public-homepage-v4'],
   { revalidate: 60, tags: ['public-homepage'] }
 );

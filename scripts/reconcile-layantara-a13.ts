@@ -13,9 +13,6 @@ async function main() {
       name: true,
       projectId: true,
       descriptionKey: true,
-      externalMappings: {
-        select: { external_id: true, metadata: true, externalSystem: { select: { system_key: true } } },
-      },
     },
   });
 
@@ -31,7 +28,14 @@ async function main() {
       })
     : null;
 
-  const source = unit.externalMappings.find(row => row.externalSystem.system_key === 'layantara_os');
+  const source = await db.externalMapping.findFirst({
+    where: {
+      entity_type: 'unit',
+      internal_id: unit.id,
+      externalSystem: { system_key: 'layantara_os' },
+    },
+    select: { metadata: true },
+  });
   const sourceCode =
     source && typeof source.metadata === 'object' && source.metadata
       ? (source.metadata as Record<string, unknown>).unit_code

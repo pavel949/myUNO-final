@@ -24,6 +24,9 @@ interface LoginFormLabels {
 export function LoginForm({ labels }: { labels: LoginFormLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedNext = searchParams?.get('next') || '';
+  const next =
+    requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +63,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
         return;
       }
 
-      const next = searchParams?.get('next');
-      router.push(next && next.startsWith('/') ? next : '/');
+      router.push(next || '/');
       router.refresh();
     } catch {
       setError(labels.errorGeneric);
@@ -72,7 +74,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-24">
-      <GoogleLoginButton label={labels.googleButton} />
+      <GoogleLoginButton label={labels.googleButton} next={next} />
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -111,7 +113,10 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
       <div className="flex flex-col gap-8 text-center">
         <p className="text-small text-text-secondary">
           {labels.noAccount}{' '}
-          <Link href="/register" className="text-brand-andaman font-semibold hover:underline">
+          <Link
+            href={next ? `/register?next=${encodeURIComponent(next)}` : '/register'}
+            className="text-brand-andaman font-semibold hover:underline"
+          >
             {labels.registerLink}
           </Link>
         </p>

@@ -35,6 +35,19 @@ interface KeyDef {
 
 const COMMON_KEYS: KeyDef[] = [
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
+  { key: 'homes.detail.show_all_photos', namespace: 'homes', description: 'Commercial home detail: show all photos', en: 'Show all {count} photos', ru: 'Показать все фото ({count})', th: 'ดูรูปทั้งหมด {count} รูป', status: 'needs_review' },
+  { key: 'listing.representative_media', namespace: 'listing', description: 'Stay detail: representative room-type media disclosure', en: 'Representative room-type photography. The exact room is assigned from this category.', ru: 'Фотографии показывают тип номера. Конкретный номер назначается из этой категории.', th: 'รูปภาพเป็นตัวแทนของประเภทห้อง ห้องจริงจะถูกจัดจากประเภทนี้', status: 'needs_review' },
+  { key: 'project_category.representative_media', namespace: 'project_category', description: 'Project category unit card: representative media disclosure', en: 'Representative room-type photos', ru: 'Представительные фото типа номера', th: 'รูปตัวอย่างประเภทห้อง', status: 'needs_review' },
+  { key: 'project_page.units.representative_media', namespace: 'project_page', description: 'Project unit card: representative media disclosure', en: 'Representative room-type photos', ru: 'Представительные фото типа номера', th: 'รูปตัวอย่างประเภทห้อง', status: 'needs_review' },
+  { key: 'project_page.commercial.title', namespace: 'project_page', description: 'Project Space commercial capabilities heading', en: 'Ways to own or live here', ru: 'Как купить или жить здесь', th: 'ทางเลือกในการเป็นเจ้าของหรืออยู่อาศัยที่นี่', status: 'needs_review' },
+  { key: 'project_page.commercial.body', namespace: 'project_page', description: 'Project Space commercial capabilities body', en: 'Verified homes appear here only when the relevant listing authority and property media are ready.', ru: 'Здесь показываются только проверенные объекты с подтверждёнными полномочиями на публикацию и готовыми материалами.', th: 'จะแสดงเฉพาะบ้านที่ผ่านการตรวจสอบเมื่อสิทธิ์ในการลงประกาศและสื่อของทรัพย์สินพร้อมแล้ว', status: 'needs_review' },
+  { key: 'project_page.commercial.buy', namespace: 'project_page', description: 'Project Space buy capability label', en: 'Homes for sale', ru: 'Объекты на продажу', th: 'บ้านสำหรับขาย', status: 'needs_review' },
+  { key: 'project_page.commercial.rent', namespace: 'project_page', description: 'Project Space long-term rent capability label', en: 'Long-term rentals', ru: 'Долгосрочная аренда', th: 'เช่าระยะยาว', status: 'needs_review' },
+  { key: 'project_page.commercial.count', namespace: 'project_page', description: 'Project Space commercial availability count', en: '{count} available', ru: 'Доступно: {count}', th: 'ว่าง {count} รายการ', status: 'needs_review' },
+  { key: 'project_page.commercial.view', namespace: 'project_page', description: 'Project Space commercial capability CTA', en: 'View available homes →', ru: 'Посмотреть доступные объекты →', th: 'ดูบ้านที่พร้อมให้บริการ →', status: 'needs_review' },
+  { key: 'project_page.styles.generic_title', namespace: 'project_page', description: 'Project Space: neutral property styles heading', en: 'Property styles', ru: 'Типы недвижимости', th: 'รูปแบบที่พัก', status: 'needs_review' },
+  { key: 'project_page.categories.generic_title', namespace: 'project_page', description: 'Project Space: neutral accommodation categories heading', en: 'Accommodation categories', ru: 'Категории размещения', th: 'ประเภทที่พัก', status: 'needs_review' },
+  { key: 'project_page.categories.homes_count', namespace: 'project_page', description: 'Project Space: neutral category unit count', en: '{count} homes', ru: '{count} объектов', th: '{count} ที่พัก', status: 'needs_review' },
   // Actions
   {
     key: 'common.action.save',
@@ -4444,6 +4457,21 @@ const SCHEDULER_KEYS: KeyDef[] = [
 ];
 
 
+// Audit 2026-10-01 fixes (check-in gate, category booking, sales authority,
+// pricing display, PMS localization) — EN/RU/TH drafts pending founder review.
+const AUDIT_FIX_KEYS: KeyDef[] = [
+  { key: 'booking.checkin.blocked.not_confirmed', namespace: 'booking', description: 'Check-in refused: booking not confirmed', en: 'Only a confirmed booking can be checked in.', ru: 'Заселить можно только подтверждённое бронирование.', th: 'เช็คอินได้เฉพาะการจองที่ยืนยันแล้วเท่านั้น', status: NR },
+  { key: 'booking.checkin.blocked.before_arrival', namespace: 'booking', description: 'Check-in refused: before arrival date', en: 'Check-in opens on the arrival date.', ru: 'Заселение доступно с даты заезда.', th: 'เช็คอินได้ตั้งแต่วันที่เข้าพัก', status: NR },
+  { key: 'booking.checkin.blocked.after_departure', namespace: 'booking', description: 'Check-in refused: stay already ended', en: 'The stay has ended; this booking can no longer be checked in.', ru: 'Срок проживания истёк — заселить по этому бронированию уже нельзя.', th: 'การเข้าพักสิ้นสุดแล้ว ไม่สามารถเช็คอินการจองนี้ได้', status: NR },
+  { key: 'booking.checkin.blocked.guests_incomplete', namespace: 'booking', description: 'Check-in refused: party not fully registered', en: 'Register every guest in the party (adults, children and infants) before check-in.', ru: 'Перед заселением зарегистрируйте всех гостей — взрослых, детей и младенцев.', th: 'ลงทะเบียนผู้เข้าพักทุกคน (ผู้ใหญ่ เด็ก และทารก) ก่อนเช็คอิน', status: NR },
+  { key: 'booking.checkin.blocked.passport_missing', namespace: 'booking', description: 'Check-in refused: foreign guest without passport (TM30)', en: 'Every foreign guest needs a passport number on file before check-in (TM30).', ru: 'Для заселения нужны паспортные данные каждого иностранного гостя (TM30).', th: 'ผู้เข้าพักชาวต่างชาติทุกคนต้องมีหมายเลขหนังสือเดินทางก่อนเช็คอิน (TM30)', status: NR },
+  { key: 'admin.compliance.credentials.type.sale_authority', namespace: 'admin', description: 'Admin compliance: credential type — owner\'s sale mandate', en: 'Sale authority (owner mandate)', ru: 'Полномочия на продажу (мандат собственника)', th: 'อำนาจในการขาย (หนังสือมอบอำนาจจากเจ้าของ)', status: NR },
+  { key: 'listing.average_for_dates', namespace: 'listing', description: 'Unit page: headline price note when dates are chosen', en: 'Average per night for your dates, before fees', ru: 'Средняя цена за ночь на ваши даты, без сборов', th: 'ราคาเฉลี่ยต่อคืนสำหรับวันที่ของคุณ ก่อนค่าธรรมเนียม', status: NR },
+  { key: 'listing.base_rate_note', namespace: 'listing', description: 'Unit page: headline price note without dates', en: 'Base rate — the price for your dates depends on the season', ru: 'Базовый тариф — цена на ваши даты зависит от сезона', th: 'ราคาพื้นฐาน — ราคาสำหรับวันที่ของคุณขึ้นอยู่กับฤดูกาล', status: NR },
+  { key: 'booking.review.policy_step', namespace: 'booking', description: 'Review page: one refund step of the cancellation policy', en: '{pct}% refund when cancelled at least {days} days before check-in', ru: 'Возврат {pct}% при отмене не позднее чем за {days} дн. до заезда', th: 'คืนเงิน {pct}% เมื่อยกเลิกอย่างน้อย {days} วันก่อนเช็คอิน', status: NR },
+  { key: 'booking.review.policy_step_last', namespace: 'booking', description: 'Review page: refund for cancellations after the last step', en: '{pct}% refund for later cancellations', ru: 'Возврат {pct}% при более поздней отмене', th: 'คืนเงิน {pct}% สำหรับการยกเลิกหลังจากนั้น', status: NR },
+];
+
 export async function seedContent(
   db: PrismaClient,
   systemIdentityId?: string
@@ -4469,7 +4497,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS, ...PMS_OPERATIONS_KEYS, ...PMS_COMPLETION_KEYS];
+  const registryKeys: KeyDef[] = [...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS, ...PMS_OPERATIONS_KEYS, ...PMS_COMPLETION_KEYS, ...AUDIT_FIX_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.

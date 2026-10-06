@@ -55,3 +55,15 @@ Before touching a finding: inspect current branch code and this matrix. Do not r
 | Project inquiry → CRM | **fix** | Existing public lead path accepts a validated live `projectId`; resulting CRM opportunity is bound to that Project. |
 | Public portal navigation | **extend** | One sticky in-page portal navigation over the existing Project Space; no parallel portal route. |
 | Production migration/runtime | **not checked until deployment** | Additive Prisma migration must be applied before the new nearby-place reads are exercised in production. |
+
+
+## Layantara reservations → canonical bookings — 2026-10-06
+
+| Concern | Disposition | Evidence / target |
+|---|---|---|
+| Booking authority | **already fixed / preserve** | `external_system.layantara-source-live` config `bookingAuthority=myuno`, `cutoverVerified=true` (2026-10-05). The DB cutover guard stays as defence in depth. |
+| Operator workbook → bookings | **fix** | `integrations/layantara/workbook-import.ts` parses the operator's .xlsx and replays each stay through `applyChannelEvent` (inbox dedup, version checkpoints, exact protection-block conversion, BookingChange on edits). Admin panel on `/app/admin/layantara`: check (no writes) → import; re-upload applies only changes. |
+| Draft villas hosting real guests | **extend** | `operatingRecord` intake mode accepts operator bookings on `draft` units whose crosswalk is operationally confirmed. Public sale stays behind the readiness gates; nothing becomes sellable. |
+| Channels | **extend** | `BookingChannel` gains `expedia`, `trip_com` (expand-only migration `20261006090000`). Agents keep `agent` with the agency name in `priceBreakdown.sourceChannelName`. |
+| Pricing source | **preserve** | The workbook's price list is ignored (founder 2026-10-06: system tariffs are correct). Workbook revenue is the stay's sold total. |
+| Payment dates / party size | **not checked** | Q79, Q80 in `docs/open_questions.md`. |

@@ -14,7 +14,7 @@ export const ENUM_GROUPS = {
   },
   bookingChannel: {
     prefix: 'common.channel',
-    values: ['direct', 'airbnb', 'booking_com', 'agoda', 'agent', 'manual'],
+    values: ['direct', 'airbnb', 'booking_com', 'agoda', 'agent', 'manual', 'expedia', 'trip_com'],
   },
   taskType: {
     prefix: 'common.task_type',

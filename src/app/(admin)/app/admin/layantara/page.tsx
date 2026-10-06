@@ -3,8 +3,69 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
+import { ReservationsImport } from './reservations-import';
 
 export const dynamic = 'force-dynamic';
+
+/** English fallbacks for the reservations import panel (content keys, doc 05). */
+const IMPORT_LABELS = {
+  'admin.layantara_import.title': 'Import reservations workbook',
+  'admin.layantara_import.body': 'Upload the reservations .xlsx. Check shows every stay and what will happen — nothing is saved. Import turns confirmed stays into bookings, replaces their calendar blocks, keeps cancelled stays as history and records payments your team received. Upload a newer workbook later to apply only the changes. Prices are not read from the file.',
+  'admin.layantara_import.choose': 'Choose .xlsx file',
+  'admin.layantara_import.check': 'Check file',
+  'admin.layantara_import.checking': 'Checking…',
+  'admin.layantara_import.apply': 'Import {count} changes',
+  'admin.layantara_import.importing': 'Importing…',
+  'admin.layantara_import.done': 'Import complete. Multi-villa groups: {groups}. Past stays recorded as completed: {completed}.',
+  'admin.layantara_import.done_with_issues': 'Import finished; {failed} stays were refused — see the Result column. Fix them in the workbook and upload again.',
+  'admin.layantara_import.untouched': 'Calendar blocks not in this workbook (kept as they are):',
+  'admin.layantara_import.problem': 'Row {row} ({ref}): {problem}',
+  'admin.layantara_import.past': 'past stay',
+  'admin.layantara_import.action.create': 'New booking',
+  'admin.layantara_import.action.create_cancelled': 'Cancelled (history)',
+  'admin.layantara_import.action.change': 'Update',
+  'admin.layantara_import.action.cancel': 'Cancel booking',
+  'admin.layantara_import.action.unchanged': 'No change',
+  'admin.layantara_import.action.skip': 'Not imported',
+  'admin.layantara_import.col.ref': 'Booking',
+  'admin.layantara_import.col.villa': 'Villa',
+  'admin.layantara_import.col.guest': 'Guest',
+  'admin.layantara_import.col.channel': 'Channel',
+  'admin.layantara_import.col.dates': 'Dates',
+  'admin.layantara_import.col.total': 'Total',
+  'admin.layantara_import.col.paid': 'Received',
+  'admin.layantara_import.col.result': 'Result',
+  'admin.layantara_import.reason.other': 'Needs review ({code})',
+  'admin.layantara_import.reason.unknown_villa': 'Villa code not found',
+  'admin.layantara_import.reason.pending_kept_protected': 'Pending — dates stay blocked until confirmed',
+  'admin.layantara_import.reason.unknown_status': 'Unknown booking status',
+  'admin.layantara_import.reason.occupied_stay_needs_manual_cancellation': 'Guest already checked in — cancel it in Stay operations',
+  'admin.layantara_import.reason.cancelled_overlaps_live_stay': 'Cancelled stay overlaps a current stay — kept out',
+  'admin.layantara_import.reason.calendar_conflict': 'Dates clash with another stay or block on this villa',
+  'admin.layantara_import.reason.unreconciled_inventory_block': 'Calendar block does not match these dates exactly',
+  'admin.layantara_import.reason.inventory_conflict': 'Villa already booked for these dates',
+  'admin.layantara_import.problem.dates': 'check-in/check-out dates',
+  'admin.layantara_import.problem.villa': 'villa code missing',
+  'admin.layantara_import.problem.revenue': 'revenue',
+  'admin.layantara_import.problem.guest': 'guest name',
+  'admin.layantara_import.problem.duplicate_ref': 'booking ID used twice',
+  'admin.layantara_import.error.workbook_unreadable': 'This file is not a readable .xlsx workbook.',
+  'admin.layantara_import.error.workbook_sheet_missing': 'The workbook has no “Reservations” sheet.',
+  'admin.layantara_import.error.workbook_header_missing': 'The Reservations sheet has no “Booking ID” header row.',
+  'admin.layantara_import.error.workbook_column_missing': 'A required column is missing from the Reservations sheet.',
+  'admin.layantara_import.error.layantara_cutover_not_verified': 'Booking control has not moved to myUNO yet.',
+  'admin.layantara_import.error.layantara_system_missing': 'The Layantara source connection is not set up.',
+  'admin.layantara_import.error.file_required': 'Choose a file first.',
+  'admin.layantara_import.error.file_too_large': 'The file is larger than 5 MB.',
+  'admin.layantara_import.error.import_failed': 'The import could not finish. Each stay is saved completely or not at all — please try again.',
+  'common.channel.direct': 'Direct',
+  'common.channel.airbnb': 'Airbnb',
+  'common.channel.booking_com': 'Booking.com',
+  'common.channel.agoda': 'Agoda',
+  'common.channel.agent': 'Agent',
+  'common.channel.expedia': 'Expedia',
+  'common.channel.trip_com': 'Trip.com',
+};
 const SOURCE_SYSTEM_KEY = 'layantara_os';
 
 /**
@@ -36,7 +97,7 @@ export default async function LayantaraOperationsPage() {
 
   // Only aggregates are shown here: no guest names, passport, finance details or
   // secret source payloads are exposed to browser clients.
-  const [audit, sourceStates, specifications, mapped, blockers, unitCount, categoryCount, bookings, project, labels] =
+  const [audit, sourceStates, specifications, mapped, blockers, unitCount, categoryCount, bookings, project, labels, importLabels, sourceSystem] =
     await Promise.all([
       // The source snapshot schema exists only where the import ran.
       prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`.catch(() => [] as SourceAudit[]),
@@ -73,8 +134,13 @@ export default async function LayantaraOperationsPage() {
         'admin.layantara.passed':'Verified',
         'admin.layantara.failed':'Requires review',
         'admin.layantara.draft':'Sales paused · source calendar authoritative',
+        'admin.layantara.authority_myuno':'Bookings are managed in myUNO · villas stay in draft until ready for sale',
       }),
+      getLabels(IMPORT_LABELS),
+      prisma.externalSystem.findFirst({ where: { system_key: SOURCE_SYSTEM_KEY }, select: { config: true } }),
     ]);
+  const sourceConfig = (sourceSystem?.config ?? {}) as Record<string, unknown>;
+  const myunoAuthority = sourceConfig.bookingAuthority === 'myuno' && sourceConfig.cutoverVerified === true;
   const approved = audit.filter(row => row.verified && row.source_count === row.copied_count).length;
   const stats = [
     [labels['admin.layantara.categories'],categoryCount],
@@ -89,7 +155,7 @@ export default async function LayantaraOperationsPage() {
       <p className="text-kicker font-bold uppercase tracking-wider text-brand-andaman">{labels['admin.layantara.project']}</p>
       <h1 className="font-display text-display-xl font-semibold text-text-ink">{project?.name || labels['admin.layantara.title']}</h1>
       <p className="max-w-3xl text-body text-text-secondary">{labels['admin.layantara.subtitle']}</p>
-      <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-12 py-4 text-small font-semibold text-amber-900">{labels['admin.layantara.draft']}</span>
+      <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-12 py-4 text-small font-semibold text-amber-900">{myunoAuthority ? labels['admin.layantara.authority_myuno'] : labels['admin.layantara.draft']}</span>
       <div className="flex flex-wrap gap-8">
         <Link className="rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white" href={projectId ? '/ops/calendar/board?projectId='+projectId : '/ops/calendar/board'}>{labels['admin.layantara.calendar']}</Link>
         <Link className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink" href="/app/admin/units">{labels['admin.layantara.inventory']}</Link>
@@ -100,6 +166,7 @@ export default async function LayantaraOperationsPage() {
     <section className="grid grid-cols-2 gap-12 md:grid-cols-3">
       {stats.map(([name,value])=><div key={name} className="rounded-lg border border-border-line bg-surface-paper p-16"><p className="text-small text-text-secondary">{name}</p><p className="mt-4 font-display text-heading-2 text-text-ink">{value}</p></div>)}
     </section>
+    {myunoAuthority ? <ReservationsImport labels={importLabels} /> : null}
     <section className="rounded-lg border border-amber-300 bg-amber-50 p-20">
       <h2 className="font-display text-heading-3 font-semibold text-amber-950">{labels['admin.layantara.gate']}</h2>
       <p className="mt-8 text-body text-amber-950">{labels['admin.layantara.gate_text']}</p>

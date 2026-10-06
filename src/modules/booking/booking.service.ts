@@ -17,7 +17,7 @@ export interface CreateBookingInput {
   projectId: string;
   guestIdentityId: string;
   bookingType: 'guest_stay' | 'owner_stay';
-  channel: 'direct' | 'airbnb' | 'booking_com' | 'agoda' | 'agent' | 'manual';
+  channel: 'direct' | 'airbnb' | 'booking_com' | 'agoda' | 'agent' | 'manual' | 'expedia' | 'trip_com';
   startDate: Date;
   endDate: Date;
   adults: number;

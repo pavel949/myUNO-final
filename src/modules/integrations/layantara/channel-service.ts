@@ -9,6 +9,12 @@ function verified(metadata:unknown) {
   return !!metadata && typeof metadata==='object' && !Array.isArray(metadata) &&
     (metadata as Record<string,unknown>).verified===true;
 }
+/** Crosswalk confirmed by the 2026-10 operational unit audit. */
+function operationallyConfirmed(metadata:unknown) {
+  if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))return false;
+  const m=metadata as Record<string,unknown>;
+  return m.operational_verification==='confirmed'&&m.cutover_verified===true;
+}
 async function mapping(tx:Tx,systemId:string,type:string,id:string) {
   return tx.externalMapping.findFirst({where:{
     external_system_id:systemId,entity_type:type,external_id:id,
@@ -24,9 +30,19 @@ async function hasBookingConflict(tx:Tx,unitId:string,start:Date,end:Date,except
 /** Authoritative channel intake; all writes share existing Booking, BlockedDate,
  * Payment and LedgerEntry. Only activated, mapped systems may submit events. */
 export async function applyChannelEvent(
-  db:PrismaClient, input:{event:ChannelEvent;rawBody:string;environment:string},
+  db:PrismaClient,
+  input:{event:ChannelEvent;rawBody:string;environment:string;
+    /**
+     * Admin-uploaded operator reservations (Layantara workbook import).
+     * These villas physically host guests while their public listing is
+     * still a draft, and their crosswalk was confirmed by the operational
+     * audit rather than a signed adapter. Public sale stays gated by the
+     * readiness checks; nothing here makes a unit sellable.
+     */
+    operatingRecord?:boolean},
 ):Promise<Outcome> {
   const {event:e,rawBody,environment}=input,hash=channelPayloadHash(rawBody);
+  const operatingRecord=input.operatingRecord===true;
   const system=await db.externalSystem.findFirst({
     where:{system_key:'layantara_os',environment,status:{in:['active','staging']}},
   });
@@ -73,7 +89,9 @@ export async function applyChannelEvent(
       return{status:'stale',bookingId:null};
     }
     const unitMapping=await mapping(tx,system.id,'unit',e.externalUnitId);
-    if(!unitMapping||!verified(unitMapping.metadata))return quarantine('unverified_unit_mapping');
+    if(!unitMapping||!(verified(unitMapping.metadata)||
+       (operatingRecord&&operationallyConfirmed(unitMapping.metadata))))
+      return quarantine('unverified_unit_mapping');
     const unit=await tx.unit.findUnique({where:{id:unitMapping.internal_id},
       select:{id:true,projectId:true,inventoryCategoryId:true,status:true}});
     if(!unit||!unit.inventoryCategoryId||unit.status==='offboarded')return quarantine('unit_not_onboarded');
@@ -112,7 +130,8 @@ export async function applyChannelEvent(
          e.adults===undefined||e.children===undefined||e.totalSatang===undefined||
          !Number.isSafeInteger(e.totalSatang)||e.currency!=='THB')
         return quarantine('invalid_booking_contract');
-      if(unit.status!=='live')return quarantine('unit_not_sellable');
+      if(unit.status!=='live'&&!(operatingRecord&&unit.status==='draft'))
+        return quarantine('unit_not_sellable');
       if(e.eventType==='booking.changed'&&!bookingId)return quarantine('booking_mapping_missing');
       const start=day(e.startDate),end=day(e.endDate);
       if(await hasBookingConflict(tx,unit.id,start,end,bookingId??undefined))
@@ -204,7 +223,9 @@ export async function applyChannelEvent(
           status:'confirmed',startDate:start,endDate:end,adults:e.adults,children:e.children,
           totalThb:e.totalSatang,balanceDueThb:e.totalSatang,
           priceBreakdown:{source:'layantara',externalBookingId:e.externalBookingId,
-            currency:'THB',totalSatang:e.totalSatang,sourceVersion:e.eventVersion},
+            currency:'THB',totalSatang:e.totalSatang,sourceVersion:e.eventVersion,
+            ...(e.sourceChannelName?{sourceChannelName:e.sourceChannelName}:{}),
+            ...(operatingRecord?{importedFrom:'operator_workbook'}:{})},
         }});
         bookingId=created.id;
         await tx.externalMapping.create({data:{

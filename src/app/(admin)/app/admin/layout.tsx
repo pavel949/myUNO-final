@@ -149,7 +149,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </p>
         </div>
       </aside>
-      <div className="min-w-0 flex-1 bg-surface-mint p-20 md:p-32">{children}</div>
+      <div className="min-w-0 flex-1 bg-surface-mint p-20 md:p-32">
+        <div className="stitch-admin-content mx-auto w-full max-w-[1500px]">{children}</div>
+      </div>
     </div>
   );
 }

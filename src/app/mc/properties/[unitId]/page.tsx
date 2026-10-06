@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
+import { getMCOrganizationIdsForProject, hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getUnitReadinessMap } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
@@ -32,18 +32,23 @@ function bangkokDate(value: Date | null | undefined, locale: string) {
 function bangkokDateTime(value: Date | null | undefined, locale: string) {
   return formatDate(value, locale, 'dateTime') || '—';
 }
-function tabHref(unitId: string, tab: Tab, focusDate?: string) {
-  const q = new URLSearchParams({ tab });
-  if (focusDate) q.set('date', focusDate);
-  return `/mc/properties/${encodeURIComponent(unitId)}?${q.toString()}`;
-}
 
 export default async function MCPropertyWorkspace({
   params,
   searchParams,
 }: {
   params: { unitId: string };
-  searchParams?: { tab?: string; date?: string };
+  searchParams?: {
+    tab?: string;
+    date?: string;
+    projectId?: string;
+    organizationId?: string;
+    origin?: string;
+    categoryId?: string;
+    calendarStart?: string;
+    days?: string;
+    bookingId?: string;
+  };
 }) {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=/mc/properties/${params.unitId}`);
@@ -63,7 +68,7 @@ export default async function MCPropertyWorkspace({
       engagements: {
         where: { status: 'active' },
         select: {
-          id: true, engagementType: true, startsOn: true, endsOn: true,
+          id: true, engagementType: true, managementOrgId: true, startsOn: true, endsOn: true,
           feeOverridePct: true, noiCapAnnualThb: true,
           managementOrg: { select: { name: true } },
         },
@@ -74,10 +79,75 @@ export default async function MCPropertyWorkspace({
   if (!unit) notFound();
   if (!(await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id }))) notFound();
 
+  const allowedOrganizationIds = getMCOrganizationIdsForProject(user, unit.projectId);
+  const managedEngagements = unit.engagements.filter((engagement) =>
+    engagement.engagementType === 'via_management_company' &&
+    Boolean(engagement.managementOrgId) &&
+    (user.isAdmin || allowedOrganizationIds.includes(engagement.managementOrgId as string))
+  );
+  const requestedOrganizationId =
+    typeof searchParams?.organizationId === 'string' ? searchParams.organizationId : '';
+  const activeOrganizationId =
+    requestedOrganizationId &&
+    managedEngagements.some((engagement) => engagement.managementOrgId === requestedOrganizationId)
+      ? requestedOrganizationId
+      : managedEngagements[0]?.managementOrgId || '';
+
+  const rawOrigin = typeof searchParams?.origin === 'string' ? searchParams.origin : 'dashboard';
+  const origin = ['dashboard','calendar','requests','portfolio','legacy'].includes(rawOrigin)
+    ? rawOrigin : 'dashboard';
+  const categoryId = typeof searchParams?.categoryId === 'string' ? searchParams.categoryId : '';
+  const calendarStart =
+    typeof searchParams?.calendarStart === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.calendarStart)
+      ? searchParams.calendarStart : '';
+  const days = ['7','14','30'].includes(String(searchParams?.days || ''))
+    ? String(searchParams?.days) : '';
+  const bookingId = typeof searchParams?.bookingId === 'string' ? searchParams.bookingId : '';
+
   const rawTab = typeof searchParams?.tab === 'string' ? searchParams.tab : 'overview';
   const tab: Tab = (TABS as readonly string[]).includes(rawTab) ? rawTab as Tab : 'overview';
   const focusDate = typeof searchParams?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date)
     ? searchParams.date : undefined;
+
+  const workspaceHref = (targetTab: Tab) => {
+    const query = new URLSearchParams({
+      tab: targetTab,
+      projectId: unit.projectId,
+      origin,
+    });
+    if (activeOrganizationId) query.set('organizationId', activeOrganizationId);
+    if (focusDate) query.set('date', focusDate);
+    if (categoryId) query.set('categoryId', categoryId);
+    if (calendarStart) query.set('calendarStart', calendarStart);
+    if (days) query.set('days', days);
+    if (bookingId) query.set('bookingId', bookingId);
+    return `/mc/properties/${encodeURIComponent(unit.id)}?${query.toString()}`;
+  };
+  const calendarHref = (() => {
+    const query = new URLSearchParams({
+      projectId: unit.projectId,
+      unitId: unit.id,
+    });
+    if (activeOrganizationId) query.set('organizationId', activeOrganizationId);
+    if (categoryId) query.set('categoryId', categoryId);
+    if (focusDate || calendarStart) query.set('start', focusDate || calendarStart);
+    if (days) query.set('days', days);
+    return '/mc/calendar?' + query.toString();
+  })();
+  const dashboardQuery = new URLSearchParams({ projectId: unit.projectId });
+  if (activeOrganizationId) dashboardQuery.set('organizationId', activeOrganizationId);
+  const dashboardHref = '/mc?' + dashboardQuery.toString() + '#managed-properties';
+  const backHref = origin === 'calendar'
+    ? calendarHref
+    : origin === 'requests'
+      ? '/mc/requests?' + dashboardQuery.toString()
+      : dashboardHref;
+  const backLabel = origin === 'calendar'
+    ? '← Calendar'
+    : origin === 'requests'
+      ? '← Booking requests'
+      : '← Today';
+
   const now = new Date();
   const recentStart = new Date(now); recentStart.setDate(recentStart.getDate() - 30);
   const futureEnd = new Date(now); futureEnd.setDate(futureEnd.getDate() + 90);
@@ -174,7 +244,7 @@ export default async function MCPropertyWorkspace({
       <header className="mb-20">
         <div className="flex flex-wrap items-center justify-between gap-12">
           <div>
-            <Link href="/mc" className="text-small font-semibold text-brand-andaman">← Today</Link>
+            <Link href={backHref} className="text-small font-semibold text-brand-andaman">{backLabel}</Link>
             <div className="mt-8 flex flex-wrap items-center gap-8">
               <p className="text-small font-semibold uppercase tracking-[0.12em] text-brand-andaman">Property Workspace</p>
               {focusDate && <span className={pill}>Context date · {formatDate(new Date(focusDate+'T00:00:00.000Z'), locale, { weekday: 'short', day: '2-digit', month: 'short' }, 'UTC')}</span>}
@@ -183,7 +253,7 @@ export default async function MCPropertyWorkspace({
             <p className="mt-4 text-body text-text-secondary">{unit.project.name}{unit.inventoryCategory ? ' · '+unit.inventoryCategory.name : ''}</p>
           </div>
           <div className="flex flex-wrap gap-8">
-            <Link href={`/mc/calendar?projectId=${encodeURIComponent(unit.projectId)}&unitId=${encodeURIComponent(unit.id)}${focusDate ? '&start='+encodeURIComponent(focusDate) : ''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open calendar</Link>
+            <Link href={calendarHref} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open calendar</Link>
             <Link href={`/ops/units/${encodeURIComponent(unit.id)}/edit`} className="rounded-md border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold">Edit property</Link>
           </div>
         </div>
@@ -197,7 +267,7 @@ export default async function MCPropertyWorkspace({
             ['Property',['owner','property','media','activity']],
           ].map(([group,items]) => <div key={String(group)} className="flex items-end gap-4">
             <span className="px-4 pb-8 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary">{group}</span>
-            {(items as readonly Tab[]).map(item => <Link key={item} href={tabHref(unit.id,item,focusDate)}
+            {(items as readonly Tab[]).map(item => <Link key={item} href={workspaceHref(item)}
               className={`px-12 py-8 text-small font-semibold capitalize ${tab===item?'border-b-2 border-brand-andaman text-brand-andaman':'text-text-secondary'}`}>
               {item}
             </Link>)}
@@ -211,27 +281,27 @@ export default async function MCPropertyWorkspace({
             <p className={small}>Current stay</p><p className="mt-4 font-semibold">{activeBooking.guestIdentity.firstName} {activeBooking.guestIdentity.lastName}</p>
             <p className={small}>{bangkokDate(activeBooking.startDate, locale)} → {bangkokDate(activeBooking.endDate, locale)} · {activeBooking.status.replace(/_/g,' ')}</p>
           </Link> : <div className={card}><p className={small}>Current stay</p><p className="mt-4 font-semibold">Vacant</p></div>}
-          <Link href={tabHref(unit.id,'operations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></Link>
-          <Link href={tabHref(unit.id,'channels',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></Link>
-          <Link href={tabHref(unit.id,'reservations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></Link>
+          <Link href={workspaceHref('operations')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></Link>
+          <Link href={workspaceHref('channels')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></Link>
+          <Link href={workspaceHref('reservations')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></Link>
           {nextBooking ? <Link href={`/ops/stays/${nextBooking.id}`} className={card+' transition hover:border-brand-andaman'}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{bangkokDate(nextBooking.startDate, locale)}</p><p className={small}>{nextBooking.guestIdentity.firstName} {nextBooking.guestIdentity.lastName} · {nextBooking.status.replace(/_/g,' ')}</p></Link>
             : <div className={card}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">—</p><p className={small}>No upcoming stay</p></div>}
         </section>
         <section className="grid gap-16 xl:grid-cols-2">
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Requires attention</h2><div className="mt-12 space-y-8">
-            {readiness.state!=='ready' && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'operations',focusDate)}>Readiness · {readiness.state.replace(/_/g,' ')} →</Link>}
-            {channel.state!=='healthy' && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'channels',focusDate)}>Channel health · {channel.state.replace(/_/g,' ')} →</Link>}
-            {upcomingBalance>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'reservations',focusDate)}>Outstanding guest payments · {money(upcomingBalance)} →</Link>}
-            {tickets.length>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={tabHref(unit.id,'operations',focusDate)}>Open issues · {tickets.length} →</Link>}
-            {expiringRequests.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={tabHref(unit.id,'reservations',focusDate)}>Booking requests expiring soon · {expiringRequests.length} →</Link>}
-            {expiringHolds.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={tabHref(unit.id,'reservations',focusDate)}>Payment holds expiring soon · {expiringHolds.length} →</Link>}
-            {hasArrivalReadinessRisk && <Link className="block rounded-md bg-red-50 p-12" href={tabHref(unit.id,'operations',focusDate)}>Arrival today · property not ready →</Link>}
+            {readiness.state!=='ready' && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('operations')}>Readiness · {readiness.state.replace(/_/g,' ')} →</Link>}
+            {channel.state!=='healthy' && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('channels')}>Channel health · {channel.state.replace(/_/g,' ')} →</Link>}
+            {upcomingBalance>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('reservations')}>Outstanding guest payments · {money(upcomingBalance)} →</Link>}
+            {tickets.length>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('operations')}>Open issues · {tickets.length} →</Link>}
+            {expiringRequests.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={workspaceHref('reservations')}>Booking requests expiring soon · {expiringRequests.length} →</Link>}
+            {expiringHolds.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={workspaceHref('reservations')}>Payment holds expiring soon · {expiringHolds.length} →</Link>}
+            {hasArrivalReadinessRisk && <Link className="block rounded-md bg-red-50 p-12" href={workspaceHref('operations')}>Arrival today · property not ready →</Link>}
             {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && tickets.length===0 && expiringRequests.length===0 && expiringHolds.length===0 && !hasArrivalReadinessRisk && <p className={small}>No operational exceptions.</p>}
           </div></div>
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Quick actions</h2><div className="mt-12 grid gap-8 sm:grid-cols-2">
-            <Link className="rounded-md border border-border-line p-12 font-semibold" href={tabHref(unit.id,'calendar',focusDate)}>Block dates / rate override →</Link>
+            <Link className="rounded-md border border-border-line p-12 font-semibold" href={workspaceHref('calendar')}>Block dates / rate override →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/tasks?mc=1&unitId=${unit.id}`}>Open tasks →</Link>
-            <Link className="rounded-md border border-border-line p-12 font-semibold" href={tabHref(unit.id,'reservations',focusDate)}>Reservations →</Link>
+            <Link className="rounded-md border border-border-line p-12 font-semibold" href={workspaceHref('reservations')}>Reservations →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/units/${unit.id}/edit`}>Property & media →</Link>
           </div></div>
         </section>
@@ -245,18 +315,18 @@ export default async function MCPropertyWorkspace({
               <p className="mt-8 text-body text-text-secondary">Confirmed stays and live payment holds lock inventory automatically. Manual closures are stored as canonical BlockedDate records.</p>
               {focusDate && <p className="mt-8 text-small font-semibold text-brand-andaman">Selected date: {focusDate}</p>}
             </div>
-            <Link href={`/mc/calendar?projectId=${unit.projectId}&unitId=${unit.id}${focusDate?'&start='+focusDate:''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
+            <Link href={calendarHref} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
           </div>
         </section>
         <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} />
       </div>}
 
       {tab==='reservations' && <section className="space-y-16">
-        <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/mc" className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
+        <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href={dashboardHref} className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
         {bookings.length===0?<div className={card}>No stays from {bangkokDate(recentStart, locale)} to {bangkokDate(futureEnd, locale)}.</div>:
           bookingGroups.map(([group,items]) => items.length ? <section key={group}>
             <h3 className="mb-8 text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{group} · {items.length}</h3>
-            <div className="space-y-8">{items.map(b=><article key={b.id} className={card}>
+            <div className="space-y-8">{items.map(b=><article key={b.id} id={`booking-${b.id}`} className={card + (bookingId===b.id ? ' ring-2 ring-brand-andaman' : '')}>
               <div className="flex flex-wrap items-center justify-between gap-8">
                 <div>
                   <p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p>
@@ -286,7 +356,7 @@ export default async function MCPropertyWorkspace({
           <div><p className={small}>Current rule</p><p className="font-semibold">{activeRule?money(activeRule.nightlyThb):'None'}</p><p className={small}>{activeRule?.label||'No unit-specific override today'}</p></div>
           <div><p className={small}>Next rule</p><p className="font-semibold">{nextRule?bangkokDate(nextRule.startDate, locale):'—'}</p><p className={small}>{nextRule?money(nextRule.nightlyThb)+(nextRule.label?' · '+nextRule.label:''):'No upcoming override'}</p></div>
         </div>
-        <Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link>
+        <Link href={workspaceHref('calendar')} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link>
       </section>}
 
       {tab==='channels' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Channels</h2><p className="mt-8 text-body text-text-secondary">Health: <span className="font-semibold capitalize text-text-ink">{channel.state.replace(/_/g,' ')}</span></p><div className="mt-12 space-y-8">{channel.rows.length?channel.rows.map(row=><div key={row.channel} className="rounded-md bg-surface-ivory p-12">

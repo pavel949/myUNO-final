@@ -28,6 +28,32 @@ export async function POST(
   }
 
   try {
+    if (params.identityId === identity.id) {
+      return NextResponse.json(
+        { error: 'Founder / Super Admin cannot block the currently authenticated root identity' },
+        { status: 409 }
+      );
+    }
+
+    const target = await prisma.identity.findUnique({
+      where: { id: params.identityId },
+      select: { id: true, isAdmin: true, status: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+    }
+    if (target.isAdmin && target.status === 'active') {
+      const activeAdmins = await prisma.identity.count({
+        where: { isAdmin: true, status: 'active' },
+      });
+      if (activeAdmins <= 1) {
+        return NextResponse.json(
+          { error: 'The last active Founder / Super Admin cannot be blocked' },
+          { status: 409 }
+        );
+      }
+    }
+
     const blocked = await people.blockIdentity(prisma, {
       identityId: params.identityId,
     });

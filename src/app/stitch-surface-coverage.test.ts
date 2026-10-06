@@ -16,6 +16,8 @@ describe('Stitch system-wide surface coverage', () => {
     }
     expect(source('src/app/(admin)/app/admin/layout.tsx')).toContain('stitch-workspace');
     expect(source('src/app/(admin)/app/admin/layout.tsx')).toContain('stitch-admin-content');
+    expect(source('src/app/ops/layout.tsx')).toContain('getDepartmentProjectIds');
+    expect(source('src/app/ops/layout.tsx')).toContain("['finance','front_desk']");
   });
 
   it('keeps the authenticated guest and commerce route families inside Stitch', () => {

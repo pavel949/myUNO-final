@@ -122,7 +122,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
 
   return (
     <div className="space-y-24">
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+      <section className="stitch-panel p-24">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-12 mb-16">
           <div>
             <h2 className="text-heading-3 font-bold text-text-ink mb-4">
@@ -178,7 +178,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
         </p>
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+      <section className="stitch-panel p-24">
         <h2 className="text-heading-3 font-bold text-text-ink mb-16">
           {labels['provider.remittances.history_title']}
         </h2>

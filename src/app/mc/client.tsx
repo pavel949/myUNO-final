@@ -21,6 +21,7 @@ import {
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
 import { LocalDate } from '@/components/LocalDate';
+import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
 
 interface Unit {
   id: string;
@@ -195,7 +196,7 @@ export function MCDashboardClient({
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
   const [reservationView, setReservationView] = useState<
-    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+    'requests' | 'pending_payment' | 'arrivals' | 'in_house' | 'departures' | 'all'
   >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
@@ -540,15 +541,10 @@ export function MCDashboardClient({
     return <span className="text-small text-text-secondary">—</span>;
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayBangkok = bangkokCalendarDay();
 
-  const isSameLocalDay = (value: Date | string) => {
-    const date = new Date(value);
-    return date >= today && date < tomorrow;
-  };
+  const isSameLocalDay = (value: Date | string) =>
+    bangkokCalendarDay(new Date(value)) === todayBangkok;
 
   const arrivalsToday = bookings.filter(
     (booking) => isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
@@ -564,9 +560,8 @@ export function MCDashboardClient({
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
   const visibleBookings = bookings.filter((booking) => {
     if (reservationView === 'all') return true;
-    if (reservationView === 'requests') {
-      return ['requested', 'pending_payment'].includes(booking.status);
-    }
+    if (reservationView === 'requests') return booking.status === 'requested';
+    if (reservationView === 'pending_payment') return booking.status === 'pending_payment';
     if (reservationView === 'arrivals') {
       return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
     }
@@ -680,9 +675,18 @@ export function MCDashboardClient({
               <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
-              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('overview');
+                  window.requestAnimationFrame(() => {
+                    document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
                 {labels['mc.workspace.portfolio']}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('service_orders')}
@@ -730,6 +734,26 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
+              <div className="mb-16">
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {labels['mc.workspace.portfolio_pulse']}
+                </p>
+                <div className="mt-8 grid grid-cols-2 gap-8 sm:grid-cols-3 xl:grid-cols-6">
+                  {[
+                    [labels['mc.stats.units'], units.length],
+                    [labels['mc.workspace.arrivals'], arrivalsToday],
+                    [labels['mc.workspace.departures'], departuresToday],
+                    [labels['mc.attention.requests'], requestedBookings],
+                    [labels['mc.workspace.payment_issues'], pendingPayments.length],
+                    [labels['mc.workspace.channel_issues'], icalConflicts.length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="stitch-panel p-12">
+                      <p className="text-caption text-text-secondary">{label}</p>
+                      <p className="mt-4 font-display text-heading-2 font-semibold tabular-nums text-text-ink">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
                 <div className="stitch-panel p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
@@ -746,15 +770,23 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
-                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
-                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
-                    ].map(([label, value, hint]) => (
-                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint'], 'arrivals'],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint'], 'departures'],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint'], 'in_house'],
+                    ].map(([label, value, hint, view]) => (
+                      <button
+                        key={String(label)}
+                        type="button"
+                        onClick={() => {
+                          setReservationView(view as typeof reservationView);
+                          setActiveTab('bookings');
+                        }}
+                        className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman"
+                      >
                         <p className="text-small font-semibold text-text-ink">{label}</p>
                         <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -772,7 +804,12 @@ export function MCDashboardClient({
                       <button
                         key={String(label)}
                         type="button"
-                        onClick={() => setActiveTab(target as typeof activeTab)}
+                        onClick={() => {
+                          if (String(label) === labels['mc.workspace.pending_payments']) {
+                            setReservationView('pending_payment');
+                          }
+                          setActiveTab(target as typeof activeTab);
+                        }}
                         className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-8 text-left hover:border-brand-andaman"
                       >
                         <span className="text-small text-text-ink">{label}</span>
@@ -812,6 +849,46 @@ export function MCDashboardClient({
                   ))}
                 </div>
               </div>
+
+              <div id="managed-properties" className="stitch-panel mt-16 scroll-mt-44 p-20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                      {labels['mc.workspace.managed_properties']}
+                    </p>
+                    <p className="mt-4 max-w-3xl text-small text-text-secondary">
+                      {labels['mc.workspace.managed_properties_hint']}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                    className="text-small font-semibold text-brand-andaman hover:underline"
+                  >
+                    {labels['mc.workspace.view_all_calendar']} →
+                  </Link>
+                </div>
+                {units.length === 0 ? (
+                  <p className="mt-16 text-small text-text-secondary">{labels['mc.workspace.no_properties']}</p>
+                ) : (
+                  <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
+                    {units.map((unit) => (
+                      <Link
+                        key={unit.id}
+                        href={`/mc/properties/${encodeURIComponent(unit.id)}`}
+                        className="rounded-lg border border-border-line bg-surface-ivory p-16 transition hover:border-brand-andaman hover:shadow-card"
+                      >
+                        <p className="font-display text-heading-3 font-semibold text-text-ink">{unit.name}</p>
+                        <p className="mt-4 text-small text-text-secondary">
+                          {unit.status.replace(/_/g, ' ')}
+                        </p>
+                        <p className="mt-12 text-small font-semibold text-brand-andaman">
+                          {labels['mc.workspace.open_property']} →
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </section>
           )}
 
@@ -832,6 +909,7 @@ export function MCDashboardClient({
               <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
                 {[
                   ['requests', labels['mc.workspace.requests']],
+                  ['pending_payment', labels['mc.workspace.pending_payments']],
                   ['arrivals', labels['mc.workspace.arrivals']],
                   ['in_house', labels['mc.workspace.in_house']],
                   ['departures', labels['mc.workspace.departures']],

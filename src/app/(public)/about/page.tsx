@@ -17,7 +17,7 @@ const ABOUT_LABELS = {
     'Before any property enters myUNO, ClearView conducts due diligence. Title audits, condition surveys, and market assessment ensure only suitable assets carry the Ignatev brand. This qualification is a hard gate: no unit goes live without certified permitted use.',
   'about.myuno_title': 'myUNO — Operating Platform',
   'about.myuno_body':
-    'myUNO runs the whole stay: booking, check-in, concierge, services, housekeeping, checkout, and payouts. Guest journeys are transparent — every booking shows the line-item breakdown, every stay gets documented, every service is rated. Owners see real-time bookings and monthly statements tracing every dollar.',
+    'myUNO runs the whole stay: booking, check-in, concierge, services, housekeeping, checkout, and payouts. Guest journeys are transparent — every booking shows the line-item breakdown, every stay gets documented, every service is rated. Owners see real-time bookings and monthly statements tracing every baht.',
   'about.loop_title': 'The Compounding Loop',
   'about.loop_body':
     'A guest stays once and becomes a buyer. A buyer sees how the homes are run and becomes an owner. An owner with multiple units becomes managed. The same identity flows through all three roles on one platform — no silos, no separate systems. Repeat guests drive occupancy; owners drive expansion; data drives decision-making.',
@@ -26,10 +26,10 @@ const ABOUT_LABELS = {
     'Guests order airport transfers, flower deliveries, spa treatments, and cleaning services within the booking. Providers are vetted; services are priced transparently; ratings are public. Owners see demand patterns; guests get one-tap ordering; the platform earns a margin on each transaction.',
   'about.commitment_title': 'Our Commitment',
   'about.commitment_body':
-    'Ignatev Estate is licensed to operate in Thailand. Every guest is verified; every payment is recorded; every complaint is tracked. Personal data is encrypted and audited. Immigration compliance (TM30) is automatic. We operate transparently — no surprises, no hidden fees, no invention.',
-  'about.toplight_title': 'About Toplight Asia Pacific',
-  'about.toplight_body':
-    'Toplight Asia Pacific Co., Ltd. (DBD 0115658039800) operates myUNO as a service brand. Toplight manages day-to-day operations, guest relations, and platform development under the Ignatev Estate business model.',
+    'myUNO is operated by Ignatev Estate Co., Ltd., a company registered in Thailand. Every guest is verified; every payment is recorded; every complaint is tracked. Personal data is encrypted and audited. Immigration compliance (TM30) is automatic. We operate transparently — no surprises, no hidden fees, no invention.',
+  'about.operator_title': 'Who operates myUNO',
+  'about.operator_body':
+    'myUNO by Ignatev Estate Co., Ltd. (DBD 083-5-56602358-7), Phuket. Ignatev Estate runs day-to-day operations, guest relations and platform development.',
   'about.team_title': 'Leadership',
   'about.team_body':
     'Pavel Ignatev, Founder — 20+ years in real estate economics and operations in Southeast Asia. The model reflects decades of learning from properties that worked and those that did not.',
@@ -88,9 +88,9 @@ export default async function AboutPage() {
       body: labels['about.commitment_body'],
     },
     {
-      key: 'toplight',
-      title: labels['about.toplight_title'],
-      body: labels['about.toplight_body'],
+      key: 'operator',
+      title: labels['about.operator_title'],
+      body: labels['about.operator_body'],
     },
     {
       key: 'team',

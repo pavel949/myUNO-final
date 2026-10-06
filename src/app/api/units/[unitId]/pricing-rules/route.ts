@@ -6,6 +6,7 @@ import {
   can,
   createPricingRule,
   getUnitPricingRules,
+  usesTariffGrid,
 } from '@/modules/core';
 import { logAudit } from '@/modules/audit';
 
@@ -102,6 +103,12 @@ export async function POST(req: NextRequest, { params }: { params: { unitId: str
     }
     if (typeof nightlyThb !== 'number') {
       return NextResponse.json({ error: 'nightlyThb (satang) is required' }, { status: 400 });
+    }
+    if (await usesTariffGrid(prisma, unit.id)) {
+      return NextResponse.json(
+        { error: 'This villa is priced by seasons. Change its rates in “Rates and seasons”.', code: 'tariff_grid_unit' },
+        { status: 409 },
+      );
     }
 
     const rule = await createPricingRule(prisma, {

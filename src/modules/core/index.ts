@@ -114,3 +114,7 @@ export {
   type Landing,
   type LandingContext,
 } from './landing';
+export {
+  readTariffDraft, saveTariffDraft, validateTariffDraft, usesTariffGrid,
+  type TariffDraft, type SeasonRate, type TariffValidation, type TariffIssue,
+} from './tariff-editor';

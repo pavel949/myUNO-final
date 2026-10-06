@@ -162,7 +162,7 @@ export default async function MCPropertyWorkspace({
   const attentionDeadline = new Date(now.getTime() + 3 * 60 * 60 * 1000);
   const expiringRequests = bookings.filter(b => b.status==='requested' && b.requestExpiresAt && b.requestExpiresAt <= attentionDeadline);
   const expiringHolds = bookings.filter(b => b.status==='pending_payment' && b.holdExpiresAt && b.holdExpiresAt <= attentionDeadline);
-  const arrivalToday = bookings.find(b => b.status==='confirmed' && bangkokDate(b.startDate, locale)===bangkokDate(now));
+  const arrivalToday = bookings.find(b => b.status==='confirmed' && bangkokDate(b.startDate, locale)===bangkokDate(now, locale));
   const hasArrivalReadinessRisk = Boolean(arrivalToday && readiness.state!=='ready');
 
   const card = 'rounded-lg border border-border-line bg-surface-paper p-16';
@@ -248,7 +248,7 @@ export default async function MCPropertyWorkspace({
             <Link href={`/mc/calendar?projectId=${unit.projectId}&unitId=${unit.id}${focusDate?'&start='+focusDate:''}`} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open portfolio calendar</Link>
           </div>
         </section>
-        <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} initialDate={focusDate} />
+        <AvailabilityPricingPanel unitId={unit.id} labels={calendarLabels} />
       </div>}
 
       {tab==='reservations' && <section className="space-y-16">

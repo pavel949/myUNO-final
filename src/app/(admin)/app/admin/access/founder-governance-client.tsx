@@ -274,7 +274,7 @@ export default function FounderGovernanceClient({
         <p className="mt-8 max-w-4xl text-body text-white/70">
           {labels['admin.governance.subtitle']}
         </p>
-        <div className="mt-20 flex flex-wrap gap-8">
+        <div className="mt-40 flex flex-wrap gap-8">
           <Link href="/app/admin/people" className="rounded-md bg-white px-16 py-12 text-small font-semibold text-brand-deep">
             {labels['admin.governance.people_link']} →
           </Link>
@@ -326,7 +326,7 @@ export default function FounderGovernanceClient({
                 }
               >
                 <p className="font-semibold text-text-ink">{space.name}</p>
-                <p className="mt-2 text-small text-text-secondary">{space.organization.name}</p>
+                <p className="mt-4 text-small text-text-secondary">{space.organization.name}</p>
                 <p className="mt-8 text-kicker uppercase tracking-wider text-text-secondary">
                   {space.units.length} {labels['admin.governance.metrics_homes']} · {space.members.filter((member) => member.active).length} {labels['admin.governance.metrics_people']}
                 </p>
@@ -334,7 +334,7 @@ export default function FounderGovernanceClient({
             ))}
           </div>
 
-          <div className="mt-20 border-t border-border-line pt-16">
+          <div className="mt-40 border-t border-border-line pt-16">
             <h3 className="font-semibold text-text-ink">{labels['admin.governance.create_title']}</h3>
             <p className="mt-4 text-small text-text-secondary">{labels['admin.governance.create_hint']}</p>
             <div className="mt-12 space-y-8">
@@ -515,7 +515,7 @@ export default function FounderGovernanceClient({
                         {labels['admin.governance.search']}
                       </button>
                     </div>
-                    <div className="mt-8 space-y-6">
+                    <div className="mt-8 space-y-8">
                       {searchResults.map((person) => (
                         <button
                           key={person.id}

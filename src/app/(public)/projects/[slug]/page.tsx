@@ -625,11 +625,14 @@ export default async function ProjectLandingPage({
                             key: `feature:${feature}`,
                             label: editorialCopy[`catalog.unit_features.${feature}.label`],
                           })),
-                      ].slice(0, 4).map((fact) => (
-                        <span key={fact.key} className="rounded-full bg-surface-sand px-12 py-4 text-[12px] text-text-secondary">
-                          {fact.label}
-                        </span>
-                      ))}
+                      ]
+                        .filter((fact): fact is { key: string; label: string } => Boolean(fact.label))
+                        .slice(0, 4)
+                        .map((fact) => (
+                          <span key={fact.key} className="rounded-full bg-surface-sand px-12 py-4 text-[12px] text-text-secondary">
+                            {fact.label}
+                          </span>
+                        ))}
                     </div>
                   ) : null}
                   {unit.bookable && unit.baseNightlyThb > 0 ? (

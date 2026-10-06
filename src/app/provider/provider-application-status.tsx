@@ -40,7 +40,7 @@ export default function ProviderApplicationStatus({ labels }: { labels: Labels }
 
   if (loading) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+      <div className="stitch-panel p-24">
         <p className="text-body text-text-secondary">{labels['provider.application.loading']}</p>
       </div>
     );
@@ -48,14 +48,14 @@ export default function ProviderApplicationStatus({ labels }: { labels: Labels }
 
   if (error || !name || !status) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+      <div className="stitch-panel p-24">
         <p className="text-body text-state-error">{error || labels['provider.application.error']}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+    <div className="stitch-panel p-24">
       <h2 className="text-heading-3 font-bold text-text-ink mb-8">
         {labels['provider.application.title']}
       </h2>

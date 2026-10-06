@@ -5,12 +5,22 @@
 DO $$
 DECLARE
   project_id_text text := 'layantara-project-328e43e8-942d-432a-a2a1-6ded9cbfb7de';
+  unit_count integer;
+  category_count integer;
 BEGIN
-  IF (SELECT count(*) FROM unit WHERE project_id = project_id_text) <> 39 THEN
+  -- Production-data repair, not schema. A fresh CI database has no Layantara
+  -- inventory; fail only when a partial copy is present.
+  SELECT count(*) INTO unit_count FROM unit WHERE project_id = project_id_text;
+  SELECT count(*) INTO category_count FROM inventory_category WHERE project_id = project_id_text;
+  IF unit_count = 0 AND category_count = 0 THEN
+    RETURN;
+  END IF;
+
+  IF unit_count <> 39 THEN
     RAISE EXCEPTION 'Layantara reconciliation expected 39 units';
   END IF;
 
-  IF (SELECT count(*) FROM inventory_category WHERE project_id = project_id_text) <> 8 THEN
+  IF category_count <> 8 THEN
     RAISE EXCEPTION 'Layantara reconciliation expected 8 inventory categories';
   END IF;
 

@@ -263,17 +263,17 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     unpaid: pendingPayment.length,
   });
 
-  const navClass = 'text-small font-semibold text-brand-andaman hover:underline';
+  const navClass = 'rounded-lg bg-white/10 px-12 py-8 text-small font-semibold text-white transition hover:bg-white/15';
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col gap-16 lg:flex-row lg:items-start lg:justify-between mb-24">
+        <div className="stitch-hero-dark mb-24 flex flex-col gap-20 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+            <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">
               {labels['staff.ops.title']}
             </h1>
-            <p className="text-body text-text-stone">{boardSubtitle}</p>
+            <p className="text-body text-white/70">{boardSubtitle}</p>
           </div>
           <div className="flex flex-wrap items-center gap-12">
             <Link href={opsHref('/ops/costs', validActiveProjectId)} className={navClass}>
@@ -335,7 +335,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               <Link
                 key={item.label}
                 href={item.href}
-                className={`rounded-2xl border p-16 transition hover:border-brand-andaman/40 ${item.value > 0 ? 'border-state-warning/40 bg-state-warning-soft' : 'border-border-line bg-surface-paper'}`}
+                className={`rounded-lg border p-16 transition hover:border-brand-andaman/40 ${item.value > 0 ? 'border-state-warning/40 bg-state-warning-soft' : 'border-border-line bg-surface-paper'}`}
               >
                 <p className="font-display text-heading-2 font-semibold tabular-nums text-text-ink">{item.value}</p>
                 <p className="mt-4 text-small text-text-secondary">{item.label}</p>

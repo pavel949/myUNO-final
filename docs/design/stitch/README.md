@@ -59,3 +59,20 @@ Added 2026-10-05 from the founder's Stitch export (`stitch_myuno_ui_design_flows
 | `the_title_legendary_f_302_mobile_4` | — | code.html, screen.png |
 | `the_title_legendary_myuno` | — | code.html, screen.png |
 | `uno_the_title_legendary_f_302` | — | code.html, screen.png |
+
+## Specs exported alongside the screens (`specs/`)
+
+Reference only. **None of these may be applied as-is** — see `SCHEMA_RECONCILIATION.md` for what was adopted, deferred or rejected and why.
+
+| File | What it is | Caution |
+|---|---|---|
+| `specs/tailwind-theme-tokens.md` | Stitch Tailwind theme + component recipes | Written for default Tailwind spacing; this repo replaces the spacing scale (doc 06 §2.3). Tokens are reconciled into `src/lib/design-tokens.ts`, not pasted. |
+| `specs/app-router-route-specification.md` | Proposed route groups, screen↔route map, middleware | Existing working URLs are kept. The proposed middleware trusts a client-readable role cookie — **not adopted** (forgeable). |
+| `specs/readme-export-master-spec.md` | Master export spec, screen registry | Placeholder ids (`SCREEN_nnn`) refer to the Stitch canvas, not to files here. |
+| `specs/stitch-schema.prisma.txt` | Stitch's Prisma schema | Diffed in `SCHEMA_RECONCILIATION.md`; never to be applied over `prisma/schema.prisma`. |
+| `specs/stitch-seed.ts.txt` | Seed for the Stitch schema | **DESTRUCTIVE** (starts with `deleteMany()` on every table) and written for models that do not exist here. Do not run. Content reference only; contains invented facts (phones, ratings). |
+| `specs/homepage-strategy-ru.md` | Homepage strategy brief (RU) | Implemented as homepage v4. |
+
+## Images
+
+The Stitch HTML references **121 distinct images hosted on `lh3.googleusercontent.com`** (Stitch's own hosting); the export contained no image files other than `screen.png` renders. Real photos must come from the platform's media layer (`MediaAsset`, with rights and `actual`/`representative` flags) — not from these links.

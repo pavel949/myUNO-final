@@ -44,7 +44,7 @@ export default async function RentOutPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="border-b border-border-line bg-surface-paper">
         <div className="mx-auto grid max-w-content gap-24 px-20 py-56 md:px-32 md:py-80 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-start">
           <div>
@@ -70,7 +70,7 @@ export default async function RentOutPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-brand-deep p-24 text-surface-ivory md:p-32">
+          <div className="rounded-lg bg-brand-deep p-24 text-surface-ivory md:p-32">
             <h2 className="font-display text-title font-semibold">{copy.howTitle}</h2>
             <div className="mt-40 flex flex-wrap gap-8">
               {activation.map((step, index) => (
@@ -101,7 +101,7 @@ export default async function RentOutPage() {
             <Link
               key={goal.title}
               href={goal.href}
-              className="group rounded-2xl border border-border-line bg-surface-paper p-24 transition hover:border-brand-andaman hover:shadow-card"
+              className="group rounded-lg border border-border-line bg-surface-paper p-24 transition hover:border-brand-andaman hover:shadow-card"
             >
               <h3 className="font-display text-title font-semibold text-text-ink">{goal.title}</h3>
               <p className="mt-8 text-body text-text-secondary">{goal.body}</p>
@@ -113,7 +113,7 @@ export default async function RentOutPage() {
         </div>
 
         <div className="mt-32 grid gap-16 border-t border-border-line pt-32 md:grid-cols-2">
-          <div className="rounded-2xl border border-border-line bg-surface-paper p-24">
+          <div className="rounded-lg border border-border-line bg-surface-paper p-24">
             <p className="text-kicker uppercase text-brand-andaman">{copy.owner}</p>
             <p className="mt-8 text-body text-text-secondary">{copy.listingBody}</p>
             <Link
@@ -123,7 +123,7 @@ export default async function RentOutPage() {
               {copy.list} →
             </Link>
           </div>
-          <div className="rounded-2xl border border-border-line bg-surface-paper p-24">
+          <div className="rounded-lg border border-border-line bg-surface-paper p-24">
             <p className="text-kicker uppercase text-brand-andaman">{copy.company}</p>
             <p className="mt-8 text-body text-text-secondary">{copy.managementBody}</p>
             <Link

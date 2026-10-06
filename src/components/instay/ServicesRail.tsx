@@ -46,7 +46,7 @@ export const ServicesRail = React.forwardRef<HTMLDivElement, ServicesRailProps>(
             <a
               key={service.id}
               href={hrefForService(service.id)}
-              className="snap-start shrink-0 w-[240px] lg:w-auto bg-surface-paper border border-border-line rounded-lg overflow-hidden hover:border-brand-andaman transition"
+              className="snap-start shrink-0 w-[240px] lg:w-auto bg-surface-paper border border-border-line rounded-lg shadow-card overflow-hidden hover:border-brand-andaman transition"
             >
               <div className="h-80 bg-gradient-to-br from-brand-andaman to-brand-deep" />
               <div className="p-12">

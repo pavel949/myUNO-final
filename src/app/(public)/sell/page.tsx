@@ -40,14 +40,14 @@ export default async function SellPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="bg-brand-deep px-20 py-64 text-surface-ivory md:px-32 md:py-96">
         <div className="mx-auto max-w-7xl">
           <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['sell.kicker']}</p>
           <h1 className="mt-12 max-w-4xl font-display text-[clamp(3rem,6vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
             {labels['sell.title']}
           </h1>
-          <p className="mt-20 max-w-2xl text-lg leading-relaxed text-surface-ivory/75">{labels['sell.body']}</p>
+          <p className="mt-20 max-w-2xl text-subtitle font-normal leading-relaxed text-surface-ivory/75">{labels['sell.body']}</p>
           <div className="mt-32 flex flex-col gap-12 sm:flex-row">
             <Link href="/property/onboard?offers=sale" className="inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep">
               {labels['sell.cta']} →

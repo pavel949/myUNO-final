@@ -51,7 +51,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
   ]);
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="max-w-4xl mx-auto px-24 py-32">
         <Link
           href={opsHref('/ops/calendar', unit.projectId)}
@@ -66,7 +66,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
         <div className="mt-16">
-          <Link href={'/ops/calendar/board?projectId='+unit.projectId+'&unitId='+unit.id} className="inline-flex rounded-md bg-brand-deep px-16 py-8 text-small font-semibold text-white">
+          <Link href={'/ops/calendar/board?projectId='+unit.projectId+'&unitId='+unit.id} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {labels['staff.ops.calendar.occupancy']}
           </Link>
         </div>

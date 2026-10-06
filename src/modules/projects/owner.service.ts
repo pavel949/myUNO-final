@@ -1,3 +1,4 @@
+
 import { PrismaClient, Booking, OwnerStatement, TicketStatus } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { getUnitComplianceRecords, getUnitMobilizationChecklist } from '@/modules/core';
@@ -6,6 +7,7 @@ import { getMetricsSeries, getUnitOccupancySparklines } from '@/modules/analytic
 import { notifyOwnerStayBooked } from './notify-owner-stay';
 import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
 import { satangToBaht } from '@/lib/money';
+import { toCalendarDay } from '@/lib/date';
 import { allocateBookingGrossToPeriod } from './owner-period-allocation';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
@@ -447,7 +449,7 @@ export async function getOwnerAlerts(
           titleKey: 'owner.alert.tm30_overdue.title',
           descriptionKey: 'owner.alert.tm30_overdue.body',
           descriptionParams: {
-            date: filing.booking.startDate.toLocaleDateString(),
+            date: toCalendarDay(filing.booking.startDate),
           },
           createdAt: filing.booking.startDate,
           actionUrl: `/ops/tm30`,
@@ -518,7 +520,7 @@ export async function getOwnerAlerts(
         },
         descriptionParams: {
           recordType: record.recordType,
-          date: record.expiresOn.toLocaleDateString(),
+          date: toCalendarDay(record.expiresOn),
         },
         createdAt: now,
       });

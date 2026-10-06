@@ -181,7 +181,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     : labels['home.welcome'];
 
   const conciergeCard = conciergeWhatsappUrl ? (
-    <div className="bg-brand-deep rounded-lg p-24 mb-24">
+    <div className="stitch-hero-dark mb-24 p-24">
       <p className="font-display text-subtitle font-semibold text-on-dark-text m-0 mb-16">
         {labels['home.concierge.kicker']}
       </p>
@@ -207,7 +207,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     ) : null;
 
   const handbookBlock = (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+    <div className="stitch-panel mb-24 p-24">
       <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-12">
         {labels['home.handbook.title']}
       </h2>
@@ -239,7 +239,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-surface-ivory">
+    <div className="stitch-workspace">
       <RecordPageHeader
         eyebrow={welcomeLine}
         title={booking.unit.project.name}
@@ -264,7 +264,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
       />
 
       <div className="mx-auto max-w-content px-16 py-24 lg:px-32">
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-20">
+        <section className="stitch-panel mb-24 p-20">
           <ProcessStepper
             steps={[
               { label: labels['home.pass.booked'], state: stepState('booked') },
@@ -352,7 +352,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
             <div className="lg:hidden">{conciergeCard}</div>
 
             {shuttleText ? (
-              <div className="bg-surface-paper border border-border-line rounded-md p-24 mb-24">
+              <div className="stitch-panel mb-24 p-24">
                 <h2 className="font-display text-title font-semibold text-text-ink m-0 mb-12">
                   {labels['home.shuttle.title']}
                 </h2>

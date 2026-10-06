@@ -7,7 +7,7 @@ import {
   findAvailableUnitsForCategory,
 } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
@@ -341,6 +341,9 @@ export async function POST(req: NextRequest) {
         { error: error.message, code: 'DOUBLE_BOOK' },
         { status: 409 }
       );
+    }
+    if (error instanceof StayUnquotableError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;

@@ -3,7 +3,9 @@ import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
 import StayActions from '@/components/ops/StayActions';
 
 export const dynamic='force-dynamic';
@@ -27,7 +29,9 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
   if(!access.some(Boolean))notFound();
   const canSeeFinance=access[4];
+  const locale=getRequestLocale();
   const labels=await getLabels({
+    ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'staff.stay_360.title':'Stay 360',
     'staff.stay_360.back':'Stay operations',
     'staff.stay_360.booking':'Booking',
@@ -59,13 +63,13 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   });
   const paid=booking.payments.filter(p=>p.status==='succeeded').reduce((s,p)=>s+p.amountThb,0);
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-5xl space-y-24">
       <Link href="/ops/stays" className="text-small font-semibold text-brand-andaman">
         ← {labels['staff.stay_360.back']}
       </Link>
-      <header className="rounded-lg border border-border-line bg-surface-paper p-24">
-        <p className="text-kicker font-semibold tracking-widest text-brand-andaman">{labels['staff.stay_360.booking']} · {booking.id}</p>
+      <header className="stitch-panel p-24">
+        <p className="stitch-kicker">{labels['staff.stay_360.booking']} · {booking.id}</p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.stay_360.title']}</h1>
         <p className="mt-8 text-body text-text-secondary">
           {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
@@ -77,19 +81,19 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           [labels['staff.stay_360.collected'],amount(paid)],
           [labels['staff.stay_360.balance'],amount(booking.balanceDueThb)],
           [labels['staff.stay_360.refund'],amount(booking.refundAccruedThb)],
-        ].map(([label,value])=><div key={label} className="rounded-lg border border-border-line bg-surface-paper p-16">
+        ].map(([label,value])=><div key={label} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-8 font-display text-heading-3 font-semibold text-text-ink">{value}</p>
         </div>)}
       </div>}
       <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
-        <section className="rounded-lg border border-border-line bg-surface-paper p-20">
+        <section className="stitch-panel p-20">
           <dl className="grid grid-cols-2 gap-12">
             {[
-              [labels['staff.stay_360.status'],booking.status.replace(/_/g,' ')],
-              [labels['staff.stay_360.channel'],booking.channel.replace(/_/g,' ')],
+              [labels['staff.stay_360.status'],enumLabel(labels,'bookingStatus',booking.status)],
+              [labels['staff.stay_360.channel'],enumLabel(labels,'bookingChannel',booking.channel)],
               [labels['staff.stay_360.guest'],[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')],
-              [labels['staff.stay_360.dates'],booking.startDate.toISOString().slice(0,10)+' — '+booking.endDate.toISOString().slice(0,10)],
+              [labels['staff.stay_360.dates'],formatDate(booking.startDate,locale)+' — '+formatDate(booking.endDate,locale)],
             ].map(([label,value])=><div key={label}><dt className="text-small text-text-secondary">{label}</dt>
               <dd className="mt-4 text-body font-semibold text-text-ink">{value}</dd></div>)}
           </dl>
@@ -101,14 +105,14 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           canRecordMoney={canSeeFinance} canManageReservations={access[0]} canManageFrontDesk={access[1]}
           labels={labels}/>
       </div>
-      {canSeeFinance && <section className="rounded-lg border border-border-line bg-surface-paper p-20">
+      {canSeeFinance && <section className="stitch-panel p-20">
         <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.payment_history']}</h2>
         {booking.payments.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_payments']}</p>:
           <ul className="mt-12 space-y-8">{booking.payments.map(p=><li key={p.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
             <span>{p.method} · {p.status} {p.receiptRef??''}</span><span>{amount(p.amountThb)}</span>
           </li>)}</ul>}
       </section>}
-      <section className="rounded-lg border border-border-line bg-surface-paper p-20">
+      <section className="stitch-panel p-20">
         <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.change_history']}</h2>
         {booking.changes.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_changes']}</p>:
           <ul className="mt-12 space-y-8">{booking.changes.map(c=><li key={c.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">

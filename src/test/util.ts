@@ -153,6 +153,7 @@ export interface UnitFactoryOpts {
   ownerIdentityId?: string;
   name?: string;
   status?: 'draft' | 'mobilizing' | 'live' | 'paused' | 'offboarded';
+  assetStatus?: 'managed' | 'verified_partner' | 'one_off_sourced' | 'suspended';
   /** Create a live unit WITHOUT the default active stay offering (gate tests). */
   withoutStayOffering?: boolean;
   baseNightlyThb?: number;
@@ -376,6 +377,7 @@ export async function createUnit(projectIdOrOpts: string | UnitFactoryOpts = {})
       minNights,
       instantBook: opts.instantBook ?? true,
       status,
+      assetStatus: opts.assetStatus ?? 'managed',
     },
   });
   // A live unit is sellable only through an active stay offering (canonical

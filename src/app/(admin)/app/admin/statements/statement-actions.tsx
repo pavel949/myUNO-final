@@ -3,6 +3,7 @@
 import { useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Statement {
   id: string;
@@ -144,7 +145,7 @@ export default function StatementActions({
     <div className="flex flex-col gap-24">
       <form
         onSubmit={generate}
-        className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-12"
+        className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-12"
       >
         <div>
           <h2 className="text-heading-3 font-bold text-text-ink mb-4">
@@ -248,11 +249,11 @@ export default function StatementActions({
                 <Fragment key={s.id}>
                   <tr className="border-b border-border-line">
                     <td className="px-12 py-8">
-                      {`${new Date(s.periodStart).toLocaleDateString()} – ${new Date(s.periodEnd).toLocaleDateString()}`}
+                      <LocalDate value={s.periodStart} /> – <LocalDate value={s.periodEnd} />
                     </td>
                     <td className="px-12 py-8">{s.ownerName}</td>
                     <td className="px-12 py-8">{s.unitName}</td>
-                    <td className="px-12 py-8 text-right font-mono">{(s.noiTh / 100).toFixed(2)}</td>
+                    <td className="px-12 py-8 text-right font-tabular">{(s.noiTh / 100).toFixed(2)}</td>
                     <td className="px-12 py-8">
                       <span
                         className={`px-8 py-8 rounded-full text-small font-medium ${
@@ -320,7 +321,7 @@ export default function StatementActions({
                                 <tr key={item.id}>
                                   <td className="py-4">{item.category}</td>
                                   <td className="py-4">{item.description}</td>
-                                  <td className="py-4 text-right font-mono">
+                                  <td className="py-4 text-right font-tabular">
                                     {(item.amountThb / 100).toFixed(2)}
                                   </td>
                                 </tr>

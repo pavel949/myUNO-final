@@ -117,7 +117,7 @@ export function KpiTile({
   meta?: ReactNode;
 }) {
   return (
-    <article className="rounded-xl border border-border-line bg-surface-paper p-20">
+    <article className="rounded-md border border-border-line bg-surface-paper p-20">
       <p className="text-small text-text-secondary">{label}</p>
       <div className="mt-8 flex items-baseline gap-8">
         <p className="font-display text-display font-semibold text-text-ink">{value}</p>
@@ -187,7 +187,7 @@ export function StandardFilterBar({
   clearLabel?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-end gap-8 rounded-xl border border-border-line bg-surface-paper p-12">
+    <div className="flex flex-wrap items-end gap-8 rounded-md border border-border-line bg-surface-paper p-12">
       <div className="flex min-w-0 flex-1 flex-wrap gap-8">{children}</div>
       {clearHref ? (
         <Link href={clearHref} className="inline-flex min-h-44 items-center px-12 text-small font-semibold text-brand-andaman hover:underline">
@@ -234,7 +234,7 @@ export function CtaBar({
   primary: ReactNode;
 }) {
   return (
-    <div className="sticky bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur md:static md:rounded-xl md:border md:px-20">
+    <div className="sticky bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur md:static md:rounded-md md:border md:px-20">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-16">
         <div className="min-w-0 flex-1">{summary}</div>
         <div className="flex shrink-0 items-center gap-8">
@@ -256,7 +256,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border-line bg-surface-paper p-24">
+    <div className="rounded-md border border-border-line bg-surface-paper p-24">
       <h3 className="font-display text-title font-semibold text-text-ink">{title}</h3>
       {body ? <div className="mt-8 max-w-2xl text-body text-text-secondary">{body}</div> : null}
       {action ? <div className="mt-20">{action}</div> : null}

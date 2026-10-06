@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import {
   getAdminDashboardStats,
   occupancyByCategory,
@@ -10,6 +10,7 @@ import {
 import { listProjects } from '@/modules/projects';
 import { Sparkline, formatThb } from '@/components/viz';
 import { StatTile } from '@/components/StatTile';
+import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -132,41 +133,35 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <header className="mb-24 flex flex-col gap-12 sm:flex-row sm:items-end sm:justify-between">
+      <header className="stitch-hero-dark mb-24 flex flex-col gap-16 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-display-xl font-semibold text-text-ink">
+          <h1 className="font-display text-display-xl font-semibold tracking-[-0.025em] text-white">
             {labels['admin.dashboard.title']}
           </h1>
-          <p className="text-small text-text-secondary mt-4">
+          <p className="mt-4 text-small text-white/70">
             {labels['admin.dashboard.as_of'].replace(
               '{time}',
-              reportEnd.toLocaleString('en-GB', {
-                timeZone: 'Asia/Bangkok',
-                day: '2-digit',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              formatDate(reportEnd, getRequestLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
             )}
           </p>
         </div>
         <div className="flex flex-wrap gap-8">
-          <Link href="/app/admin/properties/new" className="rounded-md bg-brand-andaman px-16 py-12 text-small font-semibold text-on-dark-text hover:opacity-90">
+          <Link href="/app/admin/properties/new" className="rounded-md bg-white px-16 py-12 text-small font-semibold text-brand-deep shadow-card hover:bg-surface-sand">
             {labels['admin.dashboard.add_property']} →
           </Link>
-          <Link href="/ops/calendar/board" className="rounded-md border border-border-line px-16 py-12 text-small font-semibold text-text-ink hover:border-brand-andaman">
+          <Link href="/ops/calendar/board" className="rounded-md border border-white/20 bg-white/10 px-16 py-12 text-small font-semibold text-white hover:bg-white/15">
             {labels['admin.dashboard.live_calendar']} →
           </Link>
         </div>
       </header>
-      <section className="mb-24 rounded-lg border border-brand-andaman bg-surface-paper p-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-16">
+      <section className="stitch-panel mb-24 flex flex-col gap-16 p-24 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-title font-semibold text-text-ink mb-4">{labels['admin.dashboard.process_title']}</h2>
           <p className="text-small text-text-secondary">{labels['admin.dashboard.process_hint']}</p>
         </div>
         <Link href="/app/admin/processes" className="shrink-0 rounded-md bg-brand-andaman text-on-dark-text px-16 py-12 text-small font-semibold hover:opacity-90 transition-opacity">{labels['admin.dashboard.process_action']}</Link>
       </section>
-      <section aria-labelledby="admin-attention-title" className="mb-24 rounded-lg border border-border-line bg-surface-paper p-24">
+      <section aria-labelledby="admin-attention-title" className="stitch-panel mb-24 p-24">
         <h2 id="admin-attention-title" className="font-display text-title font-semibold text-text-ink">
           {labels['admin.dashboard.attention_title']}
         </h2>
@@ -252,7 +247,7 @@ export default async function AdminDashboardPage() {
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
         {kpiTiles.map((tile) => (
-          <div key={tile.label} className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div key={tile.label} className="stitch-panel p-24">
             <p className="text-small text-text-secondary mb-8">{tile.label}</p>
             <p className="font-display text-display font-semibold tabular-nums text-text-ink">{tile.value}</p>
           </div>
@@ -269,7 +264,7 @@ export default async function AdminDashboardPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_revenue']}
             </p>
@@ -285,7 +280,7 @@ export default async function AdminDashboardPage() {
               />
             </div>
           </div>
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['admin.dashboard.last30_nights']}
             </p>
@@ -313,7 +308,7 @@ export default async function AdminDashboardPage() {
             {projectReports.map((report) => (
               <div
                 key={report.id}
-                className="bg-surface-paper border border-border-line rounded-lg p-24"
+                className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24"
               >
                 <p className="text-subtitle font-semibold text-text-ink mb-16">{report.name}</p>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">

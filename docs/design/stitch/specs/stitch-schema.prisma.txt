@@ -1,0 +1,733 @@
+// ============================================================================
+// myUNO Destination Living & Hospitality OS — Comprehensive Prisma Schema
+// Version: 2.4-canonical | Date: October 2026
+// Design System: Andaman Sanctuary & Architectural Living
+// Target Database: PostgreSQL 15+ / Supabase
+// ============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------------------------------
+// 1. GLOBAL ENUMS & DOMAIN TYPES
+// ----------------------------------------------------------------------------
+
+enum UserRole {
+  GUEST
+  OWNER
+  AGENT
+  VENDOR_PARTNER
+  FRONT_DESK
+  HOUSEKEEPER
+  CLEAN_SUPERVISOR
+  MAINTENANCE_ENGINEER
+  NIGHT_AUDITOR
+  HOTEL_MANAGER
+  SUPER_ADMIN
+}
+
+enum IdentityProvider {
+  EMAIL_OTP
+  PHONE_SMS
+  GOOGLE
+  APPLE
+  SALTO_KEY
+}
+
+enum DestinationStatus {
+  ACTIVE
+  IN_DEVELOPMENT
+  PLANNED
+}
+
+enum ProjectType {
+  RESIDENTIAL_COMPLEX
+  VILLA_COMMUNITY
+  RESORT_CONDOMINIUM
+  BOUTIQUE_HOTEL
+}
+
+enum MandateType {
+  FULL_BUILDING_MANAGEMENT      // Layantara style (весь комплекс)
+  EXCLUSIVE_UNITS_MANAGEMENT    // The Title Legendary style (пул апартаментов)
+  MARKETPLACE_LISTING_ONLY      // Самостоятельное размещение
+}
+
+enum MandateStatus {
+  DRAFT
+  UNDER_REVIEW
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum OfferingType {
+  HOLIDAY_RENTAL      // Посуточная аренда (Stay)
+  LONG_TERM_LEASE     // Долгосрочная аренда (1 - 12+ месяцев)
+  SALE_INVESTMENT     // Покупка / Инвестиция (Buy & ROI)
+}
+
+enum PriceCalculationMode {
+  TOTAL_TRANSPARENT_QUOTE   // Фиксированная итоговая цена (Total Price Display)
+  NIGHTLY_DYNAMIC           // Динамическая ставка по ночам + сборы
+  MONTHLY_PLUS_UTILITIES    // Месячная ставка + счетчики (вода/электричество)
+  CAPITAL_PURCHASE          // Инвестиционная стоимость продажи
+  ON_REQUEST                // По запросу
+}
+
+enum BookingStatus {
+  INQUIRY
+  PENDING_PAYMENT
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  UNPAID
+  AUTHORIZED
+  CAPTURED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  FAILED
+}
+
+enum PaymentGateway {
+  STRIPE
+  OMISE_PROMPTPAY
+  BANK_TRANSFER_SWIFT
+  CRYPTO_USDT
+  CASH_FRONT_DESK
+}
+
+enum CleanlinessStatus {
+  CLEAN
+  DIRTY
+  INSPECTION_PENDING
+  TOUCH_UP_NEEDED
+  OUT_OF_ORDER
+}
+
+enum RoomOccupancyStatus {
+  VACANT
+  OCCUPIED
+  BLOCKED_OWNER_STAY
+  BLOCKED_MAINTENANCE
+  DAY_USE
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
+}
+
+enum MaintenanceStatus {
+  REPORTED
+  ASSIGNED
+  IN_PROGRESS
+  PENDING_PARTS
+  RESOLVED
+  CLOSED
+}
+
+enum ServiceCategory {
+  AIRPORT_TRANSFER
+  PRIVATE_CHEF
+  RENTAL_CAR
+  YACHT_CHARTER
+  WELLNESS_SPA
+  HOUSEKEEPING_EXTRA
+  BABYSITTER
+  EXCURSION
+}
+
+enum ServiceOrderStatus {
+  REQUESTED
+  CONFIRMED
+  EN_ROUTE
+  IN_SERVICE
+  COMPLETED
+  CANCELLED
+}
+
+enum BrokerDealStage {
+  NEW_LEAD
+  QUALIFIED
+  VIEWING_SCHEDULED
+  DEPOSIT_RESERVED
+  CONTRACT_SIGNED
+  COMMISSION_CLEARED
+  LOST
+}
+
+enum LedgerTransactionType {
+  GUEST_BOOKING_PAYMENT
+  OWNER_REVENUE_SHARE_80
+  MYUNO_OPERATING_COMMISSION_20
+  VENDOR_PAYOUT
+  BROKER_COMMISSION_SPLIT
+  SECURITY_DEPOSIT_HOLD
+  SECURITY_DEPOSIT_RELEASE
+  DAMAGE_FEE_CHARGE
+}
+
+// ----------------------------------------------------------------------------
+// 2. IDENTITY, PROFILES & ACCESS CONTROL (IAM & RBAC)
+// ----------------------------------------------------------------------------
+
+model User {
+  id                String            @id @default(uuid())
+  email             String?           @unique
+  phoneNumber       String?           @unique
+  firstName         String
+  lastName          String
+  avatarUrl         String?
+  role              UserRole          @default(GUEST)
+  identityProvider  IdentityProvider  @default(EMAIL_OTP)
+  locale            String            @default("ru")
+  currencyPreference String           @default("THB") // THB, USD, EUR, RUB
+  isActive          Boolean           @default(true)
+  isVerified        Boolean           @default(false)
+  passportNumber    String?
+  passportCountry   String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Связи
+  sessions          Session[]
+  auditLogs         AuditLog[]
+  ownedUnits        Unit[]            @relation("UnitOwner")
+  bookings          Booking[]         @relation("GuestBookings")
+  serviceOrders     ServiceOrder[]    @relation("GuestServiceOrders")
+  assignedInspections CleaningInspection[] @relation("Inspector")
+  assignedCleanings  HousekeepingTask[]   @relation("Housekeeper")
+  reportedTickets   MaintenanceTicket[]  @relation("TicketReporter")
+  assignedTickets   MaintenanceTicket[]  @relation("TicketAssignee")
+  agentDeals        AgentDeal[]       @relation("AgentUser")
+  vendorProfile     VendorPartner?
+  payoutAccounts    PayoutAccount[]
+
+  @@index([role, isActive])
+  @@index([email])
+  @@index([phoneNumber])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String   // e.g., "UNIT_PRICE_UPDATE", "CHECK_IN_EXPRESS", "SPLIT_PAYOUT_TRIGGERED"
+  entityType   String   // "Unit", "Booking", "LedgerTransaction", "OperatingMandate"
+  entityId     String
+  diffJson     Json?    // Предыдущие и новые значения
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+}
+
+// ----------------------------------------------------------------------------
+// 3. GEOGRAPHY, RESIDENCES & INVENTORY (PROJECTS & UNITS)
+// ----------------------------------------------------------------------------
+
+model Destination {
+  id               String            @id @default(uuid())
+  slug             String            @unique // "phuket", "algarve", "barcelona"
+  nameRu           String
+  nameEn           String
+  countryCode      String            @db.VarChar(2) // "TH", "PT", "ES"
+  currencyCode     String            @db.VarChar(3) // "THB", "EUR"
+  timeZone         String            @default("Asia/Bangkok")
+  status           DestinationStatus @default(ACTIVE)
+  lat              Decimal?          @db.Decimal(9, 6)
+  lng              Decimal?          @db.Decimal(9, 6)
+  supportDeskEmail String?
+  supportDeskPhone String?
+  createdAt        DateTime          @default(now())
+
+  areas            DestinationArea[]
+  projects         Project[]
+}
+
+model DestinationArea {
+  id            String       @id @default(uuid())
+  destinationId String
+  slug          String       // "bang-tao", "layan", "surin", "rawai"
+  nameRu        String
+  nameEn        String
+  descriptionRu String?
+  descriptionEn String?
+  destination   Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  projects      Project[]
+
+  @@unique([destinationId, slug])
+}
+
+model Project {
+  id                  String       @id @default(uuid())
+  destinationId       String
+  areaId              String
+  slug                String       @unique // "the-title-legendary", "layantara"
+  name                String       // e.g. "The Title Legendary Bang Tao"
+  projectType         ProjectType  @default(RESIDENTIAL_COMPLEX)
+  descriptionRu       String       @db.Text
+  descriptionEn       String       @db.Text
+  address             String
+  coverImageUrl       String
+  galleryUrls         String[]
+  totalFloors         Int?
+  distanceToBeachMeters Int?
+  hasPool             Boolean      @default(true)
+  hasGym              Boolean      @default(true)
+  hasReception24h     Boolean      @default(true)
+  saltoKsInstallation Boolean      @default(true)
+  isPublished         Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  destination         Destination     @relation(fields: [destinationId], references: [id])
+  area                DestinationArea @relation(fields: [areaId], references: [id])
+  units               Unit[]
+  operatingMandate    OperatingMandate?
+  categories          InventoryCategory[]
+
+  @@index([destinationId, isPublished])
+}
+
+model InventoryCategory {
+  id              String       @id @default(uuid())
+  projectId       String
+  nameRu          String       // e.g. "1-Bedroom Deluxe Pool Access"
+  nameEn          String
+  bedrooms        Int          @default(1)
+  bathrooms       Int          @default(1)
+  maxGuests       Int          @default(2)
+  areaSquareMeters Decimal     @db.Decimal(6, 2)
+  representativeImages String[]
+  baseNightlyThb  Decimal      @db.Decimal(10, 2)
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  units           Unit[]
+
+  @@index([projectId])
+}
+
+model Unit {
+  id                  String             @id @default(uuid())
+  projectId           String
+  categoryId          String?
+  ownerId             String?
+  unitNumber          String             // e.g. "F-302", "Villa 04"
+  building            String?            // "Building F"
+  floor               Int?               // 3
+  bedrooms            Int                @default(1)
+  bathrooms           Int                @default(1)
+  areaSqm             Decimal            @db.Decimal(6, 2)
+  viewType            String?            // "Pool & Garden View", "Lagoon Access"
+  cleanlinessStatus   CleanlinessStatus  @default(CLEAN)
+  occupancyStatus     RoomOccupancyStatus @default(VACANT)
+  
+  // IoT & Smart Living Hardware
+  smartLockType       String?            @default("SALTO_KS") // "SALTO_KS", "YALE_LINUS"
+  smartLockDeviceId   String?
+  smartLockBatteryPct Int?               @default(94)
+  hvacType            String?            @default("DAIKIN_VRV")
+  hvacGatewayId       String?
+  
+  // Media & Legal Gates
+  actualPhotos        String[]
+  floorPlanUrl        String?
+  isVerifiedByMyUno   Boolean            @default(false)
+  isPublished         Boolean            @default(true)
+  tm30PropertyCode    String?            // Регистрационный код отеля в иммиграции
+  
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  project             Project            @relation(fields: [projectId], references: [id])
+  category            InventoryCategory? @relation(fields: [categoryId], references: [id])
+  owner               User?              @relation("UnitOwner", fields: [ownerId], references: [id])
+  
+  offerings           CommercialOffering[]
+  bookings            Booking[]
+  housekeepingTasks   HousekeepingTask[]
+  cleaningInspections CleaningInspection[]
+  maintenanceTickets  MaintenanceTicket[]
+  agentDeals          AgentDeal[]
+
+  @@unique([projectId, unitNumber])
+  @@index([projectId, cleanlinessStatus, occupancyStatus])
+}
+
+// ----------------------------------------------------------------------------
+// 4. OPERATING MANDATES & COMMERCIAL OFFERINGS
+// ----------------------------------------------------------------------------
+
+model OperatingMandate {
+  id                   String        @id @default(uuid())
+  projectId            String        @unique
+  mandateType          MandateType   @default(EXCLUSIVE_UNITS_MANAGEMENT)
+  status               MandateStatus @default(ACTIVE)
+  managedUnitsCount    Int           @default(0)
+  revenueShareOwnerPct Decimal       @default(80.00) @db.Decimal(5, 2) // 80% собственнику
+  revenueShareMyUnoPct Decimal       @default(20.00) @db.Decimal(5, 2) // 20% myUNO
+  contractSignedDate   DateTime?
+  validUntilDate       DateTime?
+  contractPdfUrl       String?
+  slaResponseMinutes   Int           @default(3) // 3-минутный регламент консьержа
+  
+  project              Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model CommercialOffering {
+  id                   String               @id @default(uuid())
+  unitId               String
+  offeringType         OfferingType         @default(HOLIDAY_RENTAL)
+  priceCalculationMode PriceCalculationMode @default(TOTAL_TRANSPARENT_QUOTE)
+  
+  // Holiday Stay
+  baseNightlyRateThb   Decimal?             @db.Decimal(10, 2)
+  minStayNights        Int                  @default(2)
+  cleaningFeeThb       Decimal?             @default(1500.00) @db.Decimal(10, 2)
+  serviceFeePercent    Decimal?             @default(5.00) @db.Decimal(5, 2)
+  refundableDepositThb Decimal?             @default(10000.00) @db.Decimal(10, 2)
+
+  // Long-Term Lease
+  monthlyRentThb       Decimal?             @db.Decimal(10, 2)
+  minLeaseMonths       Int?                 @default(1)
+  utilitiesIncluded    Boolean              @default(false)
+  depositMonthsCount   Int?                 @default(2)
+
+  // Investment / Sale
+  salePriceThb         Decimal?             @db.Decimal(12, 2)
+  projectedNetRoiPct   Decimal?             @db.Decimal(5, 2) // e.g. 8.4%
+  ownershipType        String?              // "FREEHOLD", "LEASEHOLD"
+
+  isActive             Boolean              @default(true)
+  instantBookable      Boolean              @default(true)
+  updatedAt            DateTime             @updatedAt
+
+  unit                 Unit                 @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  bookings             Booking[]
+
+  @@index([unitId, offeringType, isActive])
+}
+
+// ----------------------------------------------------------------------------
+// 5. BOOKINGS, DIGITAL VOUCHER & GUEST CHECK-IN
+// ----------------------------------------------------------------------------
+
+model Booking {
+  id                   String             @id @default(uuid())
+  bookingNumber        String             @unique // e.g. "UN-84920"
+  guestId              String
+  unitId               String
+  offeringId           String
+  
+  checkInDate          DateTime           @db.Date
+  checkOutDate         DateTime           @db.Date
+  adultsCount          Int                @default(2)
+  childrenCount        Int                @default(0)
+  totalNights          Int
+  
+  // Total Price Display Model (полная прозрачность)
+  baseAccommodationThb Decimal            @db.Decimal(10, 2)
+  cleaningFeeThb       Decimal            @db.Decimal(10, 2)
+  serviceFeeThb        Decimal            @db.Decimal(10, 2)
+  taxesVatThb          Decimal            @db.Decimal(10, 2)
+  refundableDepositThb Decimal            @db.Decimal(10, 2)
+  totalAmountThb       Decimal            @db.Decimal(10, 2) // Total Price Display
+  
+  status               BookingStatus      @default(CONFIRMED)
+  paymentStatus        PaymentStatus      @default(CAPTURED)
+  paymentGateway       PaymentGateway     @default(STRIPE)
+  stripePaymentIntentId String?           @unique
+
+  // Digital Voucher & Salto KS Access
+  digitalVoucherCode   String             @unique // "VCHR-F302-84920"
+  saltoPinCode         String?            // "928401"
+  saltoAccessGranted   Boolean            @default(false)
+  wifiSsid             String?            @default("TheTitle_F302_5G")
+  wifiPassword         String?            @default("legendary2026")
+  qrVoucherPayload     String?            @db.Text
+  
+  // Immigration TM.30
+  tm30RegistrationNumber String?          // "TM30-TH-940212"
+  tm30ApprovedAt       DateTime?
+  
+  // PMS Operational Links
+  folio                GuestFolio?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  guest                User               @relation("GuestBookings", fields: [guestId], references: [id])
+  unit                 Unit               @relation(fields: [unitId], references: [id])
+  offering             CommercialOffering @relation(fields: [offeringId], references: [id])
+  serviceOrders        ServiceOrder[]
+  transactions         LedgerTransaction[]
+
+  @@index([unitId, checkInDate, checkOutDate])
+  @@index([guestId])
+  @@index([status])
+}
+
+model GuestFolio {
+  id                String             @id @default(uuid())
+  bookingId         String             @unique
+  folioNumber       String             @unique // "FOL-UN84920"
+  totalChargesThb   Decimal            @default(0.00) @db.Decimal(10, 2)
+  totalPaymentsThb  Decimal            @default(0.00) @db.Decimal(10, 2)
+  balanceDueThb     Decimal            @default(0.00) @db.Decimal(10, 2)
+  isClosedAtCheckout Boolean           @default(false)
+  createdAt         DateTime           @default(now())
+
+  booking           Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  charges           FolioLineItem[]
+}
+
+model FolioLineItem {
+  id              String      @id @default(uuid())
+  folioId         String
+  description     String      // "Room Charge", "Private Chef Dinners", "Late Checkout"
+  amountThb       Decimal     @db.Decimal(10, 2)
+  isDebit         Boolean     @default(true) // true = charge, false = payment/credit
+  category        String      // "ROOM", "CONCIERGE_SERVICE", "DEPOSIT", "DAMAGE"
+  postedAt        DateTime    @default(now())
+
+  folio           GuestFolio  @relation(fields: [folioId], references: [id], onDelete: Cascade)
+
+  @@index([folioId])
+}
+
+// ----------------------------------------------------------------------------
+// 6. CONCIERGE SERVICES MARKETPLACE & LIVE DISPATCH
+// ----------------------------------------------------------------------------
+
+model VendorPartner {
+  id                String            @id @default(uuid())
+  userId            String            @unique
+  companyName       String            // "Andaman Culinary Masters Ltd."
+  brandTitleRu      String
+  serviceCategory   ServiceCategory   @default(PRIVATE_CHEF)
+  isAccredited      Boolean           @default(true)
+  commissionRatePct Decimal           @default(20.00) @db.Decimal(5, 2) // сплит 80/20
+  rating            Decimal           @default(4.9) @db.Decimal(3, 2)
+  completedOrdersCount Int            @default(0)
+  payoutIbanOrPromptPay String?
+
+  user              User              @relation(fields: [userId], references: [id])
+  services          ServiceCatalogItem[]
+  serviceOrders     ServiceOrder[]
+
+  @@index([serviceCategory, isAccredited])
+}
+
+model ServiceCatalogItem {
+  id                String            @id @default(uuid())
+  vendorId          String
+  category          ServiceCategory
+  titleRu           String            // "Персональный шеф-повар на виллу"
+  titleEn           String
+  descriptionRu     String            @db.Text
+  priceThb          Decimal           @db.Decimal(10, 2)
+  priceUnit         String            // "PER_DINNER", "PER_DAY", "PER_TRANSFER"
+  leadTimeHours     Int               @default(24) // Заказ минимум за 24 ч
+  instantConfirm    Boolean           @default(false)
+  imageUrl          String
+  isActive          Boolean           @default(true)
+
+  vendor            VendorPartner     @relation(fields: [vendorId], references: [id])
+  orders            ServiceOrder[]
+
+  @@index([category, isActive])
+}
+
+model ServiceOrder {
+  id                String             @id @default(uuid())
+  orderNumber       String             @unique // "SRV-9042"
+  bookingId         String?            // Может быть заказан и без проживания (Standalone)
+  guestId           String
+  vendorId          String
+  serviceItemId     String
+  
+  status            ServiceOrderStatus @default(CONFIRMED)
+  scheduledFor      DateTime           // 2026-11-21 19:30:00
+  guestNotes        String?
+  totalPriceThb     Decimal            @db.Decimal(10, 2)
+  vendorShareThb    Decimal            @db.Decimal(10, 2) // 80%
+  myUnoFeeThb       Decimal            @db.Decimal(10, 2) // 20%
+  
+  // Live Tracking Dispatch
+  assignedStaffName String?            // "Шеф Сомчай Тан"
+  assignedStaffPhone String?
+  liveLocationLat   Decimal?           @db.Decimal(9, 6)
+  liveLocationLng   Decimal?           @db.Decimal(9, 6)
+  
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  booking           Booking?           @relation(fields: [bookingId], references: [id])
+  guest             User               @relation("GuestServiceOrders", fields: [guestId], references: [id])
+  vendor            VendorPartner      @relation(fields: [vendorId], references: [id])
+  serviceItem       ServiceCatalogItem @relation(fields: [serviceItemId], references: [id])
+  transactions      LedgerTransaction[]
+
+  @@index([status, scheduledFor])
+}
+
+// ----------------------------------------------------------------------------
+// 7. PMS OPERATIONS: HOUSEKEEPING, INSPECTIONS & MAINTENANCE
+// ----------------------------------------------------------------------------
+
+model HousekeepingTask {
+  id                 String             @id @default(uuid())
+  unitId             String
+  housekeeperId      String?
+  scheduledDate      DateTime           @db.Date
+  priority           Int                @default(1) // 1 - обычная, 2 - заезд сегодня, 3 - VIP
+  isCompleted        Boolean            @default(false)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  cleanType          String             @default("CHECKOUT_CLEAN") // "DAILY", "DEEP_CLEAN", "INSPECTION"
+
+  unit               Unit               @relation(fields: [unitId], references: [id])
+  housekeeper        User?              @relation("Housekeeper", fields: [housekeeperId], references: [id])
+  inspection         CleaningInspection?
+
+  @@index([unitId, scheduledDate, isCompleted])
+}
+
+model CleaningInspection {
+  id                 String             @id @default(uuid())
+  taskId             String             @unique
+  unitId             String
+  inspectorId        String
+  passed             Boolean            @default(false)
+  bedroomPassed      Boolean            @default(true)
+  bathroomPassed     Boolean            @default(true)
+  kitchenPassed      Boolean            @default(true)
+  terracePoolPassed  Boolean            @default(true)
+  photoProofUrls     String[]           // Массив фото-доказательств чистоты 8 зон
+  notes              String?
+  inspectedAt        DateTime           @default(now())
+
+  task               HousekeepingTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  unit               Unit               @relation(fields: [unitId], references: [id])
+  inspector          User               @relation("Inspector", fields: [inspectorId], references: [id])
+}
+
+model MaintenanceTicket {
+  id                 String              @id @default(uuid())
+  ticketNumber       String              @unique // "MNT-2026-104"
+  unitId             String
+  reporterId         String?
+  assigneeId         String?
+  title              String              // "Кондиционер VRV Daikin шумит в спальне"
+  description        String              @db.Text
+  priority           MaintenancePriority @default(HIGH)
+  status             MaintenanceStatus   @default(ASSIGNED)
+  photoAttachmentUrls String[]
+  estimatedCostThb   Decimal?            @db.Decimal(10, 2)
+  actualCostThb      Decimal?            @db.Decimal(10, 2)
+  isOodCaused        Boolean             @default(false) // Привело ли к выводу номера из эксплуатации (OOD)
+  resolvedAt         DateTime?
+  createdAt          DateTime            @default(now())
+
+  unit               Unit                @relation(fields: [unitId], references: [id])
+  reporter           User?               @relation("TicketReporter", fields: [reporterId], references: [id])
+  assignee           User?               @relation("TicketAssignee", fields: [assigneeId], references: [id])
+
+  @@index([unitId, status])
+}
+
+// ----------------------------------------------------------------------------
+// 8. AGENT HUB: BROKER CRM & COMMISSION ENGINE
+// ----------------------------------------------------------------------------
+
+model AgentDeal {
+  id                 String          @id @default(uuid())
+  agentId            String
+  unitId             String?
+  clientName         String          // "Виктор Самойлов"
+  clientPhone        String
+  clientEmail        String?
+  stage              BrokerDealStage @default(NEW_LEAD)
+  dealType           OfferingType    @default(SALE_INVESTMENT)
+  dealValueThb       Decimal         @db.Decimal(12, 2) // ฿14,200,000
+  commissionRatePct  Decimal         @default(3.00) @db.Decimal(5, 2) // 3%
+  commissionTotalThb Decimal         @db.Decimal(10, 2) // ฿426,000
+  isWhiteLabelShared Boolean         @default(true)
+  notes              String?         @db.Text
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  agent              User            @relation("AgentUser", fields: [agentId], references: [id])
+  unit               Unit?           @relation(fields: [unitId], references: [id])
+
+  @@index([agentId, stage])
+}
+
+// ----------------------------------------------------------------------------
+// 9. SUPERADMIN GLOBAL OS: LEDGER, SPLIT ENGINE & PAYOUTS
+// ----------------------------------------------------------------------------
+
+model LedgerTransaction {
+  id                 String                @id @default(uuid())
+  transactionRef     String                @unique // "LEDGER-2026-94810"
+  bookingId          String?
+  serviceOrderId     String?
+  transactionType    LedgerTransactionType
+  grossAmountThb     Decimal               @db.Decimal(12, 2)
+  ownerShareThb      Decimal?              @default(0.00) @db.Decimal(12, 2) // 80%
+  platformShareThb   Decimal?              @default(0.00) @db.Decimal(12, 2) // 20%
+  vendorOrBrokerFee  Decimal?              @default(0.00) @db.Decimal(12, 2)
+  paymentStatus      PaymentStatus         @default(CAPTURED)
+  clearedAt          DateTime?
+  createdAt          DateTime              @default(now())
+
+  booking            Booking?              @relation(fields: [bookingId], references: [id])
+  serviceOrder       ServiceOrder?         @relation(fields: [serviceOrderId], references: [id])
+
+  @@index([transactionType, paymentStatus])
+  @@index([createdAt])
+}
+
+model PayoutAccount {
+  id                 String                @id @default(uuid())
+  userId             String
+  bankName           String                // "Bangkok Bank" / "Kasikornbank" / "SWIFT Wire"
+  accountNumber      String
+  accountHolderName  String
+  currency           String                @default("THB")
+  cryptoWalletUsdt   String?
+  isDefault          Boolean               @default(true)
+
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

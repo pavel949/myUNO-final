@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,6 +20,8 @@ import {
 } from '@/components/viz';
 import { toCsv } from '@/lib/csv';
 import { statusClasses } from '@/lib/status';
+import { LocalDate } from '@/components/LocalDate';
+import { bangkokCalendarDay } from '@/modules/booking/calendar-projection';
 
 interface Unit {
   id: string;
@@ -168,11 +172,11 @@ function monthToPeriod(monthValue: string): { periodStart: string; periodEnd: st
   };
 }
 
-function formatReportPeriod(periodStart: string, periodEnd: string): string {
-  const start = new Date(periodStart);
+/** A half-open report period shown inclusively (the end date is exclusive). */
+function ReportPeriod({ periodStart, periodEnd }: { periodStart: string; periodEnd: string }) {
   const end = new Date(periodEnd);
   end.setUTCDate(end.getUTCDate() - 1);
-  return `${start.toLocaleDateString()} — ${end.toLocaleDateString()}`;
+  return <><LocalDate value={periodStart} /> — <LocalDate value={end} /></>;
 }
 
 export function MCDashboardClient({
@@ -192,7 +196,7 @@ export function MCDashboardClient({
     'overview' | 'bookings' | 'tickets' | 'service_orders' | 'reports'
   >('overview');
   const [reservationView, setReservationView] = useState<
-    'requests' | 'arrivals' | 'in_house' | 'departures' | 'all'
+    'requests' | 'pending_payment' | 'arrivals' | 'in_house' | 'departures' | 'all'
   >('requests');
   const [reportMonth, setReportMonth] = useState(currentMonthValue);
   const [feeReport, setFeeReport] = useState<FeeReport | null>(null);
@@ -311,7 +315,8 @@ export function MCDashboardClient({
         labels['mc.reports.export.fee_amount'],
       ],
       ...feeReport.feeLines.map((line) => [
-        new Date(line.date).toLocaleDateString(),
+        // CSV is read by spreadsheets: an unambiguous ISO day, not a locale string.
+        new Date(line.date).toISOString().slice(0, 10),
         line.type,
         line.unitName || '',
         line.description,
@@ -492,7 +497,7 @@ export function MCDashboardClient({
               if (
                 window.confirm(
                   fill(labels['mc.bookings.confirm_cash'], {
-                    amount: booking.totalThb.toLocaleString(),
+                    amount: booking.totalThb.toLocaleString(UI_LOCALE),
                   })
                 )
               ) {
@@ -536,15 +541,10 @@ export function MCDashboardClient({
     return <span className="text-small text-text-secondary">—</span>;
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayBangkok = bangkokCalendarDay();
 
-  const isSameLocalDay = (value: Date | string) => {
-    const date = new Date(value);
-    return date >= today && date < tomorrow;
-  };
+  const isSameLocalDay = (value: Date | string) =>
+    bangkokCalendarDay(new Date(value)) === todayBangkok;
 
   const arrivalsToday = bookings.filter(
     (booking) => isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status)
@@ -560,9 +560,8 @@ export function MCDashboardClient({
   const pendingPayments = bookings.filter((booking) => booking.status === 'pending_payment');
   const visibleBookings = bookings.filter((booking) => {
     if (reservationView === 'all') return true;
-    if (reservationView === 'requests') {
-      return ['requested', 'pending_payment'].includes(booking.status);
-    }
+    if (reservationView === 'requests') return booking.status === 'requested';
+    if (reservationView === 'pending_payment') return booking.status === 'pending_payment';
     if (reservationView === 'arrivals') {
       return isSameLocalDay(booking.startDate) && ['confirmed', 'checked_in'].includes(booking.status);
     }
@@ -575,7 +574,7 @@ export function MCDashboardClient({
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       {/* MC workspace shell */}
       <section className="bg-surface-paper border-b border-border-line">
         <div className="max-w-[1600px] mx-auto px-16 lg:px-24 py-16">
@@ -676,9 +675,18 @@ export function MCDashboardClient({
               <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
-              <Link href="/mc/portfolio" className="whitespace-nowrap rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('overview');
+                  window.requestAnimationFrame(() => {
+                    document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
+                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
+              >
                 {labels['mc.workspace.portfolio']}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('service_orders')}
@@ -726,12 +734,32 @@ export function MCDashboardClient({
 
           {activeTab === 'overview' && (
             <section className="px-16 lg:px-24 pt-24">
+              <div className="mb-16">
+                <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {labels['mc.workspace.portfolio_pulse']}
+                </p>
+                <div className="mt-8 grid grid-cols-2 gap-8 sm:grid-cols-3 xl:grid-cols-6">
+                  {[
+                    [labels['mc.stats.units'], units.length],
+                    [labels['mc.workspace.arrivals'], arrivalsToday],
+                    [labels['mc.workspace.departures'], departuresToday],
+                    [labels['mc.attention.requests'], requestedBookings],
+                    [labels['mc.workspace.payment_issues'], pendingPayments.length],
+                    [labels['mc.workspace.channel_issues'], icalConflicts.length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="stitch-panel p-12">
+                      <p className="text-caption text-text-secondary">{label}</p>
+                      <p className="mt-4 font-display text-heading-2 font-semibold tabular-nums text-text-ink">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid gap-16 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]">
-                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="stitch-panel p-20">
                   <div className="flex items-center justify-between gap-12 mb-16">
                     <div>
                       <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.workspace.today']}</p>
-                      <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
+                      <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.timeline']}</h2>
                     </div>
                     <Link
                       href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
@@ -742,22 +770,30 @@ export function MCDashboardClient({
                   </div>
                   <div className="grid sm:grid-cols-3 gap-12">
                     {[
-                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint']],
-                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint']],
-                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint']],
-                    ].map(([label, value, hint]) => (
-                      <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
+                      [labels['mc.workspace.arrivals'], arrivalsToday, labels['mc.workspace.arrivals_hint'], 'arrivals'],
+                      [labels['mc.workspace.departures'], departuresToday, labels['mc.workspace.departures_hint'], 'departures'],
+                      [labels['mc.workspace.in_house'], inHouseNow, labels['mc.workspace.in_house_hint'], 'in_house'],
+                    ].map(([label, value, hint, view]) => (
+                      <button
+                        key={String(label)}
+                        type="button"
+                        onClick={() => {
+                          setReservationView(view as typeof reservationView);
+                          setActiveTab('bookings');
+                        }}
+                        className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman"
+                      >
                         <p className="text-small font-semibold text-text-ink">{label}</p>
                         <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border-line bg-surface-paper p-20">
+                <div className="stitch-panel p-20">
                   <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{labels['mc.attention.title']}</p>
-                  <h2 className="mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
+                  <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">{labels['mc.workspace.action_queue']}</h2>
                   <div className="mt-16 space-y-8">
                     {[
                       [labels['mc.attention.requests'], requestedBookings, 'bookings' as const],
@@ -768,7 +804,12 @@ export function MCDashboardClient({
                       <button
                         key={String(label)}
                         type="button"
-                        onClick={() => setActiveTab(target as typeof activeTab)}
+                        onClick={() => {
+                          if (String(label) === labels['mc.workspace.pending_payments']) {
+                            setReservationView('pending_payment');
+                          }
+                          setActiveTab(target as typeof activeTab);
+                        }}
                         className="w-full flex items-center justify-between rounded-md border border-border-line px-12 py-8 text-left hover:border-brand-andaman"
                       >
                         <span className="text-small text-text-ink">{label}</span>
@@ -779,13 +820,13 @@ export function MCDashboardClient({
                 </div>
               </div>
 
-              <div className="mt-16 rounded-lg border border-border-line bg-surface-paper p-20">
+              <div className="stitch-panel mt-16 p-20">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
                       {labels['mc.workspace.health']}
                     </p>
-                    <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                    <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">
                       {labels['mc.workspace.health_title']}
                     </h2>
                   </div>
@@ -808,6 +849,46 @@ export function MCDashboardClient({
                   ))}
                 </div>
               </div>
+
+              <div id="managed-properties" className="stitch-panel mt-16 scroll-mt-44 p-20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                      {labels['mc.workspace.managed_properties']}
+                    </p>
+                    <p className="mt-4 max-w-3xl text-small text-text-secondary">
+                      {labels['mc.workspace.managed_properties_hint']}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
+                    className="text-small font-semibold text-brand-andaman hover:underline"
+                  >
+                    {labels['mc.workspace.view_all_calendar']} →
+                  </Link>
+                </div>
+                {units.length === 0 ? (
+                  <p className="mt-16 text-small text-text-secondary">{labels['mc.workspace.no_properties']}</p>
+                ) : (
+                  <div className="mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
+                    {units.map((unit) => (
+                      <Link
+                        key={unit.id}
+                        href={`/mc/properties/${encodeURIComponent(unit.id)}?projectId=${encodeURIComponent(activeContext?.projectId || unit.projectId)}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}&origin=dashboard`}
+                        className="rounded-lg border border-border-line bg-surface-ivory p-16 transition hover:border-brand-andaman hover:shadow-card"
+                      >
+                        <p className="font-display text-heading-3 font-semibold text-text-ink">{unit.name}</p>
+                        <p className="mt-4 text-small text-text-secondary">
+                          {unit.status.replace(/_/g, ' ')}
+                        </p>
+                        <p className="mt-12 text-small font-semibold text-brand-andaman">
+                          {labels['mc.workspace.open_property']} →
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </section>
           )}
 
@@ -821,13 +902,14 @@ export function MCDashboardClient({
                 <p className="text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">
                   {labels['mc.workspace.reservations']}
                 </p>
-                <h2 className="mt-4 text-heading-2 font-bold text-text-ink">
+                <h2 className="font-display mt-4 text-heading-2 font-bold text-text-ink">
                   {labels['mc.bookings.title']}
                 </h2>
               </div>
               <div className="flex gap-8 overflow-x-auto" role="group" aria-label={labels['mc.workspace.reservation_views']}>
                 {[
                   ['requests', labels['mc.workspace.requests']],
+                  ['pending_payment', labels['mc.workspace.pending_payments']],
                   ['arrivals', labels['mc.workspace.arrivals']],
                   ['in_house', labels['mc.workspace.in_house']],
                   ['departures', labels['mc.workspace.departures']],
@@ -889,13 +971,13 @@ export function MCDashboardClient({
                             )}
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.startDate).toLocaleDateString()}
+                            <LocalDate value={booking.startDate} />
                           </td>
                           <td className="p-16 text-small text-text-secondary">
-                            {new Date(booking.endDate).toLocaleDateString()}
+                            <LocalDate value={booking.endDate} />
                           </td>
                           <td className="p-16 text-body font-semibold text-text-ink tabular-nums">
-                            ฿{booking.totalThb.toLocaleString()}
+                            ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
                           </td>
                           <td className="p-16">
                             <span
@@ -908,7 +990,7 @@ export function MCDashboardClient({
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
                               <p className="text-caption text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
-                                {new Date(booking.requestExpiresAt).toLocaleString()}
+                                {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                               </p>
                             ) : null}
                           </td>
@@ -926,7 +1008,7 @@ export function MCDashboardClient({
         {/* Tickets Tab */}
         {activeTab === 'tickets' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
+            <h2 className="font-display text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.tickets.title']}
             </h2>
             {ticketError && (
@@ -936,14 +1018,14 @@ export function MCDashboardClient({
             )}
             <div className="space-y-16">
               {tickets.length === 0 ? (
-                <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
+                <div className="stitch-panel p-24 text-center">
                   <p className="text-text-secondary">{labels['mc.tickets.empty']}</p>
                 </div>
               ) : (
                 tickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    className="bg-surface-paper border border-border-line rounded-lg p-20 hover:shadow-card transition"
+                    className="stitch-panel p-20 hover:shadow-card transition"
                   >
                     <div className="flex justify-between items-start mb-12">
                       <div>
@@ -956,7 +1038,7 @@ export function MCDashboardClient({
                             {statusLabel(ticket.status)}
                           </span>
                         </div>
-                        <h3 className="text-heading-3 font-bold text-text-ink mt-8">
+                        <h3 className="font-display text-heading-3 font-bold text-text-ink mt-8">
                           {ticket.title}
                         </h3>
                       </div>
@@ -1004,10 +1086,10 @@ export function MCDashboardClient({
         {/* Calendar Tab — month heat strip per unit */}
         {activeTab === 'service_orders' && (
           <div>
-            <h2 className="text-heading-2 font-bold text-text-ink mb-20">
+            <h2 className="font-display text-heading-2 font-bold text-text-ink mb-20">
               {labels['mc.service_orders.title']}
             </h2>
-            <div className="bg-surface-paper border border-border-line rounded-lg p-20 mb-20">
+            <div className="stitch-panel p-20 mb-20">
               <p className="text-body text-text-secondary mb-12">
                 {labels['mc.service_orders.order_hint']}
               </p>
@@ -1047,18 +1129,18 @@ export function MCDashboardClient({
             )}
             <div className="space-y-16">
               {serviceOrders.length === 0 ? (
-                <div className="bg-surface-paper border border-border-line rounded-lg p-24 text-center">
+                <div className="stitch-panel p-24 text-center">
                   <p className="text-text-secondary">{labels['mc.service_orders.empty']}</p>
                 </div>
               ) : (
                 serviceOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-surface-paper border border-border-line rounded-lg p-20"
+                    className="stitch-panel p-20"
                   >
                     <div className="flex items-start justify-between gap-12">
                       <div>
-                        <h3 className="text-heading-3 font-bold text-text-ink">
+                        <h3 className="font-display text-heading-3 font-bold text-text-ink">
                           {order.service?.title || labels['mc.service_orders.unknown_service']}
                         </h3>
                         <p className="text-small text-text-secondary mt-4">
@@ -1068,8 +1150,8 @@ export function MCDashboardClient({
                             : labels['mc.service_orders.unknown_orderer']}
                         </p>
                         <p className="text-small text-text-secondary mt-4">
-                          {new Date(order.scheduledStart).toLocaleString()} · ฿
-                          {order.totalThb.toLocaleString()}
+                          {new Date(order.scheduledStart).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })} · ฿
+                          {order.totalThb.toLocaleString(UI_LOCALE)}
                         </p>
                         {order.noteToProvider && (
                           <p className="text-small text-text-secondary mt-4">
@@ -1110,7 +1192,7 @@ export function MCDashboardClient({
                               if (
                                 window.confirm(
                                   fill(labels['mc.service_orders.confirm_cash'], {
-                                    amount: order.totalThb.toLocaleString(),
+                                    amount: order.totalThb.toLocaleString(UI_LOCALE),
                                   })
                                 )
                               ) {
@@ -1150,9 +1232,9 @@ export function MCDashboardClient({
 
         {/* Reports Tab */}
         {activeTab === 'reports' && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-16 mb-20">
-              <h2 className="text-heading-2 font-bold text-text-ink">
+              <h2 className="font-display text-heading-2 font-bold text-text-ink">
                 {labels['mc.reports.title']}
               </h2>
               <div className="flex flex-wrap items-end gap-12">
@@ -1189,10 +1271,10 @@ export function MCDashboardClient({
             ) : (
               <div>
                 <p className="text-small text-text-secondary mb-16">
-                  {formatReportPeriod(
-                    String(feeReport.periodStart),
-                    String(feeReport.periodEnd)
-                  )}
+                  <ReportPeriod
+                    periodStart={String(feeReport.periodStart)}
+                    periodEnd={String(feeReport.periodEnd)}
+                  />
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-32">
                   <HeroNumber
@@ -1204,7 +1286,7 @@ export function MCDashboardClient({
                     label={labels['mc.reports.fees']}
                   />
                 </div>
-                <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                <h3 className="font-display text-heading-3 font-semibold text-text-ink mb-16">
                   {labels['mc.reports.by_unit']}
                 </h3>
                 <HBarStack

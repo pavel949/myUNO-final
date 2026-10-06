@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
@@ -141,26 +142,26 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
     return '/homes/' + encodeURIComponent(id) + '?' + params.toString();
   };
 
-  return <main className="min-h-screen bg-surface-ivory">
-    <section className="bg-brand-deep px-20 py-48 text-surface-ivory md:px-32 md:py-64">
+  return <main className="stitch-workspace">
+    <section className="border-b border-border-line bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32 md:py-48">
       <div className="mx-auto max-w-6xl">
-        <p className="text-kicker uppercase tracking-widest text-brand-sun-soft">{labels['homes.kicker']}</p>
-        <h1 className="mt-12 font-display text-display-xl font-semibold">{labels['homes.title']}</h1>
-        <p className="mt-12 max-w-2xl text-body text-surface-ivory/90">{labels['homes.subtitle']}</p>
+        <p className="stitch-kicker">{labels['homes.kicker']}</p>
+        <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{labels['homes.title']}</h1>
+        <p className="mt-12 max-w-2xl text-body text-text-secondary">{labels['homes.subtitle']}</p>
       </div>
     </section>
 
     <div className="mx-auto max-w-6xl px-20 py-40 md:px-32">
-      <nav aria-label={labels['homes.title']} className="mb-24 flex flex-wrap gap-8">
+      <nav aria-label={labels['homes.title']} className="stitch-segmented mb-24 flex-wrap">
         {(['buy','rent'] as const).map(mode =>
           <Link key={mode} href={modeLink(mode)} aria-current={intent===mode?'page':undefined}
-            className={'rounded-full border px-24 py-12 text-small font-semibold '+
+            className={'rounded-lg border px-20 py-12 text-small font-semibold transition '+
               (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper text-text-ink')}>
             {mode==='buy'?labels['homes.buy']:labels['homes.rent']}
           </Link>)}
       </nav>
 
-      <form method="get" className="mb-32 rounded-2xl border border-border-line bg-surface-paper p-16 shadow-card md:p-20">
+      <form method="get" className="stitch-panel mb-32 p-16 md:p-20">
         <input type="hidden" name="intent" value={intent} />
         {searchParams?.projectId && <input type="hidden" name="projectId" value={searchParams.projectId} />}
         <div className="flex items-center justify-between gap-16">
@@ -172,7 +173,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
         <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-5">
           <label className="text-small text-text-secondary">
             {labels['homes.area_filter']}
-            <select name="area" defaultValue={area} className="mt-8 h-48 w-full rounded-lg border border-border-line bg-white px-12 text-text-ink">
+            <select name="area" defaultValue={area} className="stitch-control mt-8 w-full">
               <option value="">{labels['homes.all_areas']}</option>
               {areas.map((slug) => <option key={slug} value={slug}>{slug}</option>)}
             </select>
@@ -242,7 +243,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
             {homes.map(home => {
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
-                className="group overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[260px_minmax(0,1fr)]">
+                className="group overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
                 {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
                   className="h-full min-h-[220px] w-full object-cover" /> :
                   <div className="min-h-[220px] bg-surface-ivory"/>}
@@ -255,14 +256,14 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                       {home.sizeSqm ? ' · '+home.sizeSqm+' '+labels['homes.area'] : ''}
                     </p>
                     {intent === 'rent' && home.leaseTerms ? (
-                      <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+                      <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                         {home.leaseTerms.minimumLeaseMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.minimum_term']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.minimumLeaseMonths))}</span> : null}
                         {home.leaseTerms.securityDepositMonths ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.deposit']}: {labels['homes.detail.months_unit'].replace('{count}', String(home.leaseTerms.securityDepositMonths))}</span> : null}
                         {home.leaseTerms.availableFrom ? <span className="rounded-full bg-surface-ivory px-12 py-8">{labels['homes.available_from']}: {home.leaseTerms.availableFrom}</span> : null}
                       </div>
                     ) : null}
                     {home.responsibility.verified && home.responsibility.organizationName ? (
-                      <p className="mt-12 text-micro font-medium text-brand-andaman">
+                      <p className="mt-12 text-small font-medium text-brand-andaman">
                         {labels['homes.responsibility_unit'].replace('{org}', home.responsibility.organizationName)}
                       </p>
                     ) : null}
@@ -270,7 +271,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                   <div className="mt-20 flex flex-wrap items-end justify-between gap-12 border-t border-border-line pt-16">
                     <p className="font-display text-body-strong font-semibold text-text-ink">
                       {price !== null
-                        ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString()
+                        ? (intent === 'buy' ? labels['homes.sale_price'] : labels['homes.monthly_price']) + ': ฿' + price.toLocaleString(UI_LOCALE)
                         : labels['homes.price']}
                     </p>
                     <span className="text-small font-semibold text-brand-andaman group-hover:underline">{labels['homes.details']} →</span>
@@ -278,12 +279,12 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
                 </div>
               </Link>;
             })}
-          </div> : <div role="status" className="rounded-xl border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
+          </div> : <div role="status" className="rounded-md border border-border-line bg-surface-paper p-24 text-body text-text-secondary">
             {labels['homes.empty']}
           </div>}
         </div>
 
-        <aside className="rounded-2xl border border-border-line bg-surface-paper p-20 shadow-card lg:sticky lg:top-96">
+        <aside className="stitch-panel p-20 lg:sticky lg:top-96">
           <p className="text-kicker uppercase text-brand-andaman">{labels['homes.filters']}</p>
           <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">{labels['homes.contact']}</h2>
           <dl className="mt-20 space-y-12 text-small">
@@ -293,7 +294,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
               <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.lease_term']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.leaseTermMonths || '—'}</dd></div>
               <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.pets']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.pets === 'yes' ? labels['homes.pets_yes'] : searchParams?.pets === 'no' ? labels['homes.pets_no'] : labels['homes.pets_any']}</dd></div>
             </> : null}
-            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.max_price']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.maxPrice ? '฿'+Number(searchParams.maxPrice).toLocaleString() : '—'}</dd></div>
+            <div className="flex justify-between gap-12"><dt className="text-text-secondary">{labels['homes.max_price']}</dt><dd className="text-right font-semibold text-text-ink">{searchParams?.maxPrice ? '฿'+Number(searchParams.maxPrice).toLocaleString(UI_LOCALE) : '—'}</dd></div>
           </dl>
           <p className="mt-20 border-t border-border-line pt-16 text-small text-text-secondary">{labels['homes.price_note']}</p>
           <a href="#lead-form" className="mt-20 flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep">

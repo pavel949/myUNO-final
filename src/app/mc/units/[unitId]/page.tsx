@@ -1,19 +1,18 @@
-/* eslint-disable local-rules/no-literal-ui-text */
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
-import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
-import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
-import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
-import UnitIcalConflictBanner, { UNIT_ICAL_CALENDAR_SURFACES } from '@/components/units/UnitIcalConflictBanner';
-import { getLabels, getRequestLocale } from '@/lib/i18n';
+import {
+  getMCOrganizationIdsForProject,
+  hasManagedUnitMcAccess,
+} from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getUnitIcalConflictAlerts, listIntegrationAccounts } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MCUnitCalendarPage({ params }: { params: { unitId: string } }) {
+/**
+ * Legacy MC unit route retained only for old bookmarks and external links.
+ * Canonical management now lives in Property Workspace.
+ */
+export default async function MCUnitCompatibilityPage({ params }: { params: { unitId: string } }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/mc/units/${params.unitId}`);
@@ -21,72 +20,34 @@ export default async function MCUnitCalendarPage({ params }: { params: { unitId:
 
   const unit = await prisma.unit.findUnique({
     where: { id: params.unitId },
-    select: {
-      id: true,
-      name: true,
-      projectId: true,
-      project: { select: { name: true } },
+    select: { id: true, projectId: true },
+  });
+  if (!unit) notFound();
+
+  if (!(await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id }))) {
+    notFound();
+  }
+
+  const organizationIds = getMCOrganizationIdsForProject(user, unit.projectId);
+  const engagement = await prisma.unitEngagement.findFirst({
+    where: {
+      unitId: unit.id,
+      engagementType: 'via_management_company',
+      status: 'active',
+      ...(!user.isAdmin ? { managementOrgId: { in: organizationIds } } : {}),
     },
+    select: { managementOrgId: true },
+    orderBy: { createdAt: 'desc' },
   });
-  if (!unit) {
-    notFound();
-  }
 
-  const allowed = await hasManagedUnitMcAccess(user, {
+  const query = new URLSearchParams({
     projectId: unit.projectId,
-    unitId: unit.id,
+    origin: 'legacy',
+    tab: 'calendar',
   });
-  if (!allowed) {
-    notFound();
+  if (engagement?.managementOrgId) {
+    query.set('organizationId', engagement.managementOrgId);
   }
 
-  const [labels, locale, integrationAccounts, conflictAlerts] = await Promise.all([
-    getLabels({
-      'mc.units.calendar.back': '← MC portal',
-      'mc.units.calendar.title': 'Availability & pricing',
-      'mc.units.calendar.subtitle': 'Manage calendar blocks and one-off rates for this unit.',
-      ...UNIT_CALENDAR_LABEL_KEYS,
-    }),
-    getRequestLocale(),
-    listIntegrationAccounts(prisma, 'unit', unit.id),
-    getUnitIcalConflictAlerts(prisma, unit.id),
-  ]);
-
-  return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="max-w-4xl mx-auto px-24 py-32">
-        <Link
-          href={`/mc/calendar?projectId=${encodeURIComponent(unit.projectId)}`}
-          className="text-small font-semibold text-brand-andaman hover:underline"
-        >
-          {labels['mc.units.calendar.back']}
-        </Link>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mt-12">
-          {unit.name} · {labels['mc.units.calendar.title']}
-        </h1>
-        <p className="text-body text-text-secondary mt-8">
-          {unit.project.name} — {labels['mc.units.calendar.subtitle']}
-        </p>
-        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold text-brand-andaman">Edit property facts →</Link>
-        <div className="mt-24">
-          <UnitIcalConflictBanner
-            conflicts={conflictAlerts}
-            labels={labels}
-            calendarSurface={UNIT_ICAL_CALENDAR_SURFACES.mc}
-          />
-          <UnitIntegrationHealthStrip
-            accounts={integrationAccounts.map((account) => ({
-              integrationKey: account.integrationKey,
-              status: account.status,
-              lastSyncAt: account.lastSyncAt,
-              lastError: account.lastError,
-            }))}
-            labels={labels}
-            locale={locale}
-          />
-          <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
-        </div>
-      </section>
-    </main>
-  );
+  redirect(`/mc/properties/${encodeURIComponent(unit.id)}?${query.toString()}`);
 }

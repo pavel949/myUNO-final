@@ -1,9 +1,10 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicMarketplaceService } from '@/modules/services';
 
 type Labels = Record<string, string>;
-const baht = (satang: number) => (satang / 100).toLocaleString();
+const baht = (satang: number) => (satang / 100).toLocaleString(UI_LOCALE);
 
 export default function ProjectServiceMarketplace({
   projectId,
@@ -29,8 +30,8 @@ export default function ProjectServiceMarketplace({
     ...extra,
   }).toString();
   return (
-    <section className="bg-surface-ivory px-24 py-48 md:py-64" id="services">
-      <div className="mx-auto max-w-6xl">
+    <section className="bg-surface-sand px-20 py-48 md:px-32 md:py-64" id="services">
+      <div className="mx-auto max-w-content">
         <p className="text-kicker font-semibold uppercase text-brand-andaman">
           {labels['project.services.eyebrow']}
         </p>
@@ -56,7 +57,7 @@ export default function ProjectServiceMarketplace({
             <Link
               key={category}
               href={`/services?${serviceParams({ category })}`}
-              className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small text-text-ink hover:border-brand-andaman"
+              className="rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:border-brand-andaman"
             >
               {labels[`services.category.${category}`] || category.replace(/_/g, ' ')}
             </Link>
@@ -68,24 +69,24 @@ export default function ProjectServiceMarketplace({
             <Link
               key={service.id}
               href={`/services/${service.id}?${serviceParams()}`}
-              className="overflow-hidden rounded-xl border border-border-line bg-surface-paper transition hover:shadow-card"
+              className="overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
             >
               {service.coverUrl ? (
                 <Image
                   src={service.coverUrl}
                   alt={service.title}
                   width={640}
-                  height={360}
-                  className="aspect-video w-full object-cover"
+                  height={480}
+                  className="aspect-[4/3] w-full object-cover"
                 />
               ) : (
-                <div className="aspect-video bg-surface-muted" />
+                <div className="aspect-[4/3] bg-surface-paper" />
               )}
               <div className="p-16">
                 <p className="text-small text-brand-andaman">
                   {labels[`services.category.${service.categoryKey}`] || service.categoryKey.replace(/_/g, ' ')}
                 </p>
-                <h3 className="mt-4 font-semibold text-text-ink">{service.title}</h3>
+                <h3 className="mt-4 font-display text-subtitle font-semibold text-text-ink">{service.title}</h3>
                 {service.providerName && (
                   <p className="mt-4 text-small text-text-secondary">{service.providerName}</p>
                 )}

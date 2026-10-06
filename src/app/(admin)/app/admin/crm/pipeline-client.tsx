@@ -125,7 +125,7 @@ export default function CrmPipelineClient({
 
   return (
     <div>
-      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card shadow-card p-24 mb-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-16">
           {labels['admin.crm.pipeline_breakdown']}
         </h2>
@@ -165,7 +165,7 @@ export default function CrmPipelineClient({
       {showForm ? (
         <form
           onSubmit={submit}
-          className="grid md:grid-cols-2 gap-16 bg-surface-paper border border-border-line rounded-lg shadow-card p-20 mb-24"
+          className="grid md:grid-cols-2 gap-16 bg-surface-paper border border-border-line rounded-lg shadow-card shadow-card p-20 mb-24"
         >
           <Select
             required
@@ -207,7 +207,7 @@ export default function CrmPipelineClient({
             return (
               <article
                 key={item.id}
-                className="bg-surface-paper border border-border-line rounded-lg shadow-card p-20"
+                className="bg-surface-paper border border-border-line rounded-lg shadow-card shadow-card p-20"
               >
                 <div className="flex flex-wrap items-center justify-between gap-8 mb-8">
                   <Chip

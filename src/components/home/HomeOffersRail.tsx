@@ -127,7 +127,7 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
                 entityId: item.key.split(':').slice(1).join(':'),
                 projectId: item.projectId,
               })}
-              className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:w-auto"
+              className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:w-auto"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-brand-deep">
                 <Image
@@ -165,7 +165,7 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-border-line bg-surface-paper p-24 text-small text-text-secondary">
+        <div className="rounded-lg border border-border-line bg-surface-paper p-24 text-small text-text-secondary">
           {labels.empty}
         </div>
       )}

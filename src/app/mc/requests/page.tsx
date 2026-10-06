@@ -104,7 +104,7 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
   const activeContextKey = `${activeScope.projectId}:${activeScope.organizationId}`;
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="stitch-workspace p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <Link href={backHref} className="text-small font-semibold text-brand-andaman hover:underline">
           {labels['mc.requests.back']}
@@ -154,6 +154,8 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
             breakdownLines: request.breakdownLines,
           }))}
           labels={labels}
+          projectId={activeScope.projectId}
+          organizationId={activeScope.organizationId}
         />
       </div>
     </main>

@@ -206,7 +206,7 @@ export default function AdminContractsClient({
     <div className="flex flex-col gap-24">
       <form
         onSubmit={create}
-        className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-12"
+        className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-12"
       >
         <h2 className="text-heading-3 font-bold text-text-ink">
           {labels['admin.contracts.create_title']}
@@ -428,7 +428,7 @@ export default function AdminContractsClient({
       )}
 
       {selectedId ? (
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 flex flex-col gap-16">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-16">
           <div className="flex items-center justify-between">
             <h2 className="text-heading-3 font-bold text-text-ink">
               {labels['admin.contracts.fees_title']}
@@ -536,7 +536,7 @@ export default function AdminContractsClient({
                       {fee.periodStart} – {fee.periodEnd}
                     </td>
                     <td className="px-12 py-8">{fee.calculationBasis}</td>
-                    <td className="px-12 py-8 text-right font-mono">{formatThb(fee.amount)}</td>
+                    <td className="px-12 py-8 text-right font-tabular">{formatThb(fee.amount)}</td>
                     <td className="px-12 py-8">{fee.status}</td>
                   </tr>
                 ))}

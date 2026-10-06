@@ -43,7 +43,7 @@ export default function ProjectStoryEditor({
     if (res.ok) router.refresh();
   }
 
-  return <section className="rounded-xl border border-border-line bg-surface-paper p-20">
+  return <section className="rounded-md border border-border-line bg-surface-paper p-20">
     <div className="mb-16">
       <h2 className="font-display text-heading-2 font-semibold text-text-ink">Story, positioning & guest rules</h2>
       <p className="mt-4 max-w-3xl text-small text-text-secondary">
@@ -54,7 +54,7 @@ export default function ProjectStoryEditor({
     <div className="space-y-16">
       {fields.map(field => <div key={field.key} className="rounded-lg border border-border-line p-16">
         <p className="font-semibold text-text-ink">{field.label}</p>
-        <p className="mt-8 text-micro text-text-secondary">{field.key}</p>
+        <p className="mt-8 text-small text-text-secondary">{field.key}</p>
         <div className="mt-12 grid gap-12 lg:grid-cols-3">
           {locales.map(locale => {
             const id = `${field.key}::${locale}`;

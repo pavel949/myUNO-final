@@ -249,7 +249,7 @@ export function AnnouncementsComposer({
                 className="p-16 bg-surface-paper border border-border-line rounded-lg"
               >
                 <div className="flex flex-wrap items-baseline gap-8 mb-8">
-                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
+                  <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded-sm text-small font-semibold">
                     {labels[`admin.announcements.status.${a.status}`]}
                   </span>
                   <span className="text-small text-text-secondary">

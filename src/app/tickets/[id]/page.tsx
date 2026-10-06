@@ -126,14 +126,14 @@ export default async function TicketDetailPage({
   };
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         <p className="mb-12">
           <Link href="/tickets" className="text-brand-andaman font-semibold hover:underline">
             {labels['tickets.detail.back']}
           </Link>
         </p>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-20">
+        <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg mb-20">
           {labels['tickets.detail.title']}
         </h1>
         {ticket.threadId && (

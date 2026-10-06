@@ -250,19 +250,21 @@ export default function BookingReviewClient({
   }));
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
-      <div className="mx-auto max-w-2xl">
+    <main className="min-h-screen bg-surface-mint px-20 py-32 md:px-32 md:py-48">
+      <div className="mx-auto max-w-content">
         <p className="mb-16">
           <Link href={backHref} className="font-semibold text-brand-andaman hover:underline">
             {labels.back}
           </Link>
         </p>
-        <h1 className="mb-8 font-display text-display-xl font-semibold text-text-ink">
+        <h1 className="mb-8 font-display text-display-hero font-semibold text-brand-andaman md:text-display-hero-lg">
           {labels.title}
         </h1>
-        {headline && <p className="mb-24 text-body text-text-ink">{headline}</p>}
+        {headline && <p className="mb-32 text-body text-text-secondary md:text-subtitle">{headline}</p>}
 
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
+        <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+        <div>
+        <section className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-card p-24">
           <h2 className="mb-16 font-display text-heading-3 text-text-ink">{labels.recap}</h2>
           <dl className="space-y-12 text-body">
             <div className="flex justify-between gap-16">
@@ -283,8 +285,26 @@ export default function BookingReviewClient({
           )}
         </section>
 
+        <section className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-card p-24">
+          <h2 className="mb-8 font-display text-heading-3 text-text-ink">{labels.policy}</h2>
+          <p className="mb-16 text-body text-text-stone">{policyText}</p>
+          <label className="flex items-start gap-12 text-body text-text-ink">
+            <input
+              type="checkbox"
+              checked={consented}
+              onChange={(event) => setConsented(event.target.checked)}
+              className="mt-4"
+            />
+            <span>{labels.policyConsent}</span>
+          </label>
+        </section>
+
+        <p className="mb-24 text-body text-text-stone">{labels.verificationNote}</p>
+        </div>
+
+        <aside className="lg:sticky lg:top-96">
         {breakdown && (
-          <div className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
+          <div className="mb-24 rounded-lg border border-border-line bg-surface-paper shadow-float p-24">
             <PriceBreakdown
               totalLabel={labels.total}
               totalSatang={Math.round((breakdown.total || 0) * 100)}
@@ -310,22 +330,6 @@ export default function BookingReviewClient({
             />
           </div>
         )}
-
-        <section className="mb-24 rounded-xl border border-border-line bg-surface-paper p-24">
-          <h2 className="mb-8 font-display text-heading-3 text-text-ink">{labels.policy}</h2>
-          <p className="mb-16 text-body text-text-stone">{policyText}</p>
-          <label className="flex items-start gap-12 text-body text-text-ink">
-            <input
-              type="checkbox"
-              checked={consented}
-              onChange={(event) => setConsented(event.target.checked)}
-              className="mt-4"
-            />
-            <span>{labels.policyConsent}</span>
-          </label>
-        </section>
-
-        <p className="mb-24 text-body text-text-stone">{labels.verificationNote}</p>
 
         <div className="mb-24">
           <Select
@@ -356,6 +360,8 @@ export default function BookingReviewClient({
         >
           {labels.confirm}
         </Button>
+        </aside>
+        </div>
       </div>
     </main>
   );

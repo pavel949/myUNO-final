@@ -143,7 +143,7 @@ export default function ProjectNearbyEditor({
   }
 
   return (
-    <section className="rounded-xl border border-border-line bg-surface-ivory p-20">
+    <section className="rounded-md border border-border-line bg-surface-ivory p-20">
       <div className="mb-16">
         <p className="text-kicker uppercase text-brand-andaman">Around the project</p>
         <h2 className="mt-4 font-display text-heading-2 font-semibold text-text-ink">
@@ -158,7 +158,7 @@ export default function ProjectNearbyEditor({
 
       <div className="grid gap-20 lg:grid-cols-[300px_1fr]">
         <aside className="space-y-12">
-          <form onSubmit={createPlace} className="rounded-xl border border-border-line bg-surface-paper p-16">
+          <form onSubmit={createPlace} className="rounded-md border border-border-line bg-surface-paper p-16">
             <h3 className="font-semibold text-text-ink">Add nearby place</h3>
             <label className="mt-12 block text-small">
               Name
@@ -201,11 +201,11 @@ export default function ProjectNearbyEditor({
               >
                 <div className="flex justify-between gap-8">
                   <span className="font-medium text-text-ink">{place.name}</span>
-                  <span className="text-micro text-text-secondary">
+                  <span className="text-small text-text-secondary">
                     {place.published ? 'Live' : 'Draft'}
                   </span>
                 </div>
-                <p className="mt-4 text-micro text-text-secondary">{place.categoryKey}</p>
+                <p className="mt-4 text-small text-text-secondary">{place.categoryKey}</p>
               </button>
             ))}
           </div>
@@ -218,11 +218,11 @@ export default function ProjectNearbyEditor({
             </p>
           ) : null}
           {!selected ? (
-            <div className="rounded-xl border border-border-line bg-surface-paper p-24 text-text-secondary">
+            <div className="rounded-md border border-border-line bg-surface-paper p-24 text-text-secondary">
               Select a nearby place or add a new one.
             </div>
           ) : (
-            <form key={selected.id} onSubmit={savePlace} className="rounded-xl border border-border-line bg-surface-paper p-20">
+            <form key={selected.id} onSubmit={savePlace} className="rounded-md border border-border-line bg-surface-paper p-20">
               <div className="flex flex-wrap items-start justify-between gap-12">
                 <div>
                   <h3 className="font-display text-heading-3 font-semibold text-text-ink">{selected.name}</h3>

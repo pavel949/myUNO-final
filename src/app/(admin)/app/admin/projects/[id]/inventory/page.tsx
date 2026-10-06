@@ -1,4 +1,5 @@
 /* eslint-disable local-rules/no-literal-ui-text */
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -49,14 +50,14 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
     </div>
 
     <div className="space-y-16">
-      {project.inventoryCategories.map(category => <section key={category.id} className="rounded-xl border border-border-line bg-surface-paper">
+      {project.inventoryCategories.map(category => <section key={category.id} className="rounded-md border border-border-line bg-surface-paper">
         <div className="flex flex-wrap items-start justify-between gap-12 border-b border-border-line p-16">
           <div>
             <h2 className="font-display text-heading-2 font-semibold">{category.name}</h2>
             <p className="mt-4 text-small text-text-secondary">{category.categoryKey} · {category.bedrooms} bd / {category.bathrooms} ba · up to {category.maxGuests} guests · {category.status}</p>
           </div>
           <div className="text-right text-small">
-            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString()} base</p>
+            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString(UI_LOCALE)} base</p>
             <p className="text-text-secondary">{category.minNights} night minimum · {category.units.length} units</p>
           </div>
         </div>
@@ -70,7 +71,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
           {!category.units.length ? <p className="p-16 text-small text-text-secondary">No exact units assigned to this category.</p> : null}
         </div>
       </section>)}
-      {!project.inventoryCategories.length ? <div className="rounded-xl border border-dashed border-border-line p-32 text-center text-text-secondary">No canonical inventory categories yet.</div> : null}
+      {!project.inventoryCategories.length ? <div className="rounded-md border border-dashed border-border-line p-32 text-center text-text-secondary">No canonical inventory categories yet.</div> : null}
     </div>
   </main>;
 }

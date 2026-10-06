@@ -1,11 +1,13 @@
 'use client';
 
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 import BankTransferInstructions from '@/components/booking/BankTransferInstructions';
+import { LocalDate } from '@/components/LocalDate';
 
 interface BookingDetail {
   id: string;
@@ -162,7 +164,7 @@ export default function BookingDetailClient({
     const paid = booking.payments.some((p) => p.status === 'succeeded');
     const message = paid
       ? fill(labels['booking.detail.cancel_confirm'], {
-          refund: (booking.refundPreviewThb ?? 0).toLocaleString(),
+          refund: (booking.refundPreviewThb ?? 0).toLocaleString(UI_LOCALE),
         })
       : labels['booking.detail.cancel_confirm_unpaid'];
     if (!window.confirm(message)) return;
@@ -313,7 +315,7 @@ export default function BookingDetailClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <p className="text-body text-text-secondary text-center">
           {labels['booking.detail.loading']}
         </p>
@@ -323,7 +325,7 @@ export default function BookingDetailClient({
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-32">
+      <div className="min-h-screen bg-surface-mint p-32">
         <div className="max-w-3xl mx-auto">
           <div className="bg-state-error-soft border border-state-error rounded-lg p-16">
             <p className="text-body text-state-error">
@@ -349,7 +351,7 @@ export default function BookingDetailClient({
   const rebookUrl = rebookHref(booking);
 
   return (
-    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <div className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="max-w-3xl mx-auto">
         <p className="mb-16">
           <Link href="/trips" className="text-brand-andaman font-semibold hover:underline">
@@ -357,10 +359,10 @@ export default function BookingDetailClient({
           </Link>
         </p>
 
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <div className="flex items-start justify-between mb-16">
             <div>
-              <h1 className="font-display text-display-xl font-semibold text-text-ink">
+              <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg">
                 {booking.unit?.name || labels['booking.detail.title']}
               </h1>
               {booking.project?.name && (
@@ -380,7 +382,7 @@ export default function BookingDetailClient({
             <div>
               <p className="text-small text-text-secondary">{labels['booking.detail.check_in']}</p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.startDate).toLocaleDateString()}
+                <LocalDate value={booking.startDate} />
               </p>
             </div>
             <div>
@@ -388,7 +390,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.check_out']}
               </p>
               <p className="text-body font-semibold text-text-ink">
-                {new Date(booking.endDate).toLocaleDateString()}
+                <LocalDate value={booking.endDate} />
               </p>
             </div>
             <div>
@@ -400,7 +402,7 @@ export default function BookingDetailClient({
             <div>
               <p className="text-small text-text-secondary">{labels['booking.detail.total']}</p>
               <p className="text-body font-semibold text-brand-andaman">
-                ฿{booking.totalThb.toLocaleString()}
+                ฿{booking.totalThb.toLocaleString(UI_LOCALE)}
               </p>
             </div>
           </div>
@@ -446,7 +448,7 @@ export default function BookingDetailClient({
         </div>
 
         {/* Guest Trip Timeline */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-16">
             {labels['booking.detail.timeline_title'] || 'Trip Timeline'}
           </h2>
@@ -464,7 +466,7 @@ export default function BookingDetailClient({
               </p>
               {booking.createdAt && (
                 <p className="text-small text-text-secondary">
-                  {new Date(booking.createdAt).toLocaleDateString()}
+                  <LocalDate value={booking.createdAt} />
                 </p>
               )}
             </div>
@@ -482,7 +484,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkin'] || 'Check-in'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.startDate).toLocaleDateString()}
+                <LocalDate value={booking.startDate} />
               </p>
             </div>}
             {stayStartedOrConfirmed && <div className="relative">
@@ -491,7 +493,7 @@ export default function BookingDetailClient({
                 {labels['booking.detail.timeline_checkout'] || 'Check-out'}
               </p>
               <p className="text-small text-text-secondary">
-                {new Date(booking.endDate).toLocaleDateString()}
+                <LocalDate value={booking.endDate} />
               </p>
             </div>}
           </div>
@@ -597,7 +599,7 @@ export default function BookingDetailClient({
           )}
 
         {/* Payment */}
-        <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['booking.detail.payment_title']}
           </h2>
@@ -640,7 +642,7 @@ export default function BookingDetailClient({
 
         {/* Change dates */}
         {booking.cancellable && upcoming && booking.viewer.isGuest && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
             <h2 className="text-heading-3 font-bold text-text-ink mb-12">
               {labels['booking.detail.modify_title']}
             </h2>
@@ -681,7 +683,7 @@ export default function BookingDetailClient({
 
         {/* Cancel */}
         {booking.cancellable && booking.viewer.isGuest && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             <h2 className="text-heading-3 font-bold text-text-ink mb-12">
               {labels['booking.detail.cancel_title']}
             </h2>
@@ -695,7 +697,7 @@ export default function BookingDetailClient({
         {booking.viewer.isGuest &&
           new Date(booking.endDate) < new Date() &&
           !booking.hasReview && (
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+            <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
               <h2 className="text-heading-3 font-bold text-text-ink mb-12">
                 {labels['booking.detail.review_title']}
               </h2>
@@ -780,13 +782,13 @@ export default function BookingDetailClient({
 
         {/* Damage claim (F-DIS-1 guest path) */}
         {booking.viewer.isGuest && booking.depositClaim && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
             <h2 className="text-heading-3 font-bold text-text-ink mb-12">
               {labels['booking.detail.deposit_claim_title']}
             </h2>
             <p className="text-body text-text-secondary mb-12">
               {fill(labels['booking.detail.deposit_claim_body'], {
-                amount: booking.depositClaim.claimedAmountThb.toLocaleString(),
+                amount: booking.depositClaim.claimedAmountThb.toLocaleString(UI_LOCALE),
                 description: booking.depositClaim.description,
               })}
             </p>
@@ -874,7 +876,7 @@ export default function BookingDetailClient({
 
         {/* Dispute */}
         {booking.viewer.isGuest && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
             <h2 className="text-heading-3 font-bold text-text-ink mb-12">
               {labels['booking.detail.dispute_title']}
             </h2>
@@ -941,7 +943,7 @@ export default function BookingDetailClient({
         )}
 
         {booking.status === 'cancelled' && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
             {booking.refundDisplayState === 'processing' ? (
               <>
                 <h2 className="text-heading-3 font-bold text-text-ink mb-8">
@@ -961,7 +963,7 @@ export default function BookingDetailClient({
             ) : (booking.refundAccruedThb ?? 0) > 0 ? (
               <p className="text-body text-text-secondary">
                 {fill(labels['booking.detail.cancelled_note'], {
-                  refund: (booking.refundAccruedThb ?? 0).toLocaleString(),
+                  refund: (booking.refundAccruedThb ?? 0).toLocaleString(UI_LOCALE),
                 })}
               </p>
             ) : (

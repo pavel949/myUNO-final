@@ -156,14 +156,14 @@ export function SearchResultsMap({
 
   if (failed) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-border-line bg-surface-paper p-24 text-center text-small text-text-secondary">
+      <div className="flex min-h-[420px] items-center justify-center rounded-md border border-border-line bg-surface-paper p-24 text-center text-small text-text-secondary">
         {labels.unavailable}
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[420px] overflow-hidden rounded-xl border border-border-line bg-surface-paper lg:sticky lg:top-[88px] lg:h-[calc(100vh-120px)]">
+    <div className="relative min-h-[420px] overflow-hidden rounded-md border border-border-line bg-surface-paper lg:sticky lg:top-[88px] lg:h-[calc(100vh-120px)]">
       {!ready ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-paper text-small text-text-secondary">
           {labels.loading}

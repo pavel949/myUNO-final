@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicProjectCard as PublicProject } from '@/modules/projects';
@@ -26,7 +27,7 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+      className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-lg bg-brand-deep shadow-card transition-shadow hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
         featured ? 'min-h-[340px] md:min-h-[516px]' : 'min-h-[280px] md:min-h-[250px]'
       }`}
     >
@@ -35,11 +36,11 @@ export function ProjectCard({
         alt={image.illustrative ? '' : project.name}
         fill
         sizes={featured ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw'}
-        className="object-cover transition duration-700 group-hover:scale-[1.03]"
+        className="object-cover transition duration-structural group-hover:scale-[1.03]"
       />
 
       {image.illustrative ? (
-        <span className="absolute right-16 top-16 z-10 rounded-full bg-black/40 px-12 py-4 text-small text-white/80 backdrop-blur">
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-white/15 px-12 py-4 text-small font-semibold text-white backdrop-blur">
           {labels.noPhoto}
         </span>
       ) : null}
@@ -78,14 +79,14 @@ export function ProjectCard({
             <p className="max-w-full text-small font-semibold text-white/90">
               {labels.fromPrice.replace(
                 '{price}',
-                Math.round(project.fromNightlyThb / 100).toLocaleString()
+                Math.round(project.fromNightlyThb / 100).toLocaleString(UI_LOCALE)
               )}
             </p>
           ) : (
             <span />
           )}
 
-          <span className="shrink-0 text-small font-semibold text-white transition-transform duration-structural group-hover:translate-x-4">
+          <span className="shrink-0 rounded-full bg-brand-sun px-16 py-8 text-small font-semibold text-brand-deep transition-transform duration-structural group-hover:translate-x-4">
             {labels.view || 'Explore'} →
           </span>
         </div>

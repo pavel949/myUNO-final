@@ -7,11 +7,12 @@ html {
   --font-outfit: 'Outfit Variable', sans-serif;
   --font-manrope: 'Manrope Variable', sans-serif;
   --font-noto-thai: 'Noto Sans Thai Variable', sans-serif;
+  --font-serif-cyr: 'Source Serif 4 Variable', Georgia, serif;
   --font-display-active: var(--font-outfit);
 }
 
 html[lang='ru'] {
-  --font-display-active: var(--font-manrope);
+  --font-display-active: var(--font-serif-cyr);
 }
 
 html[lang='th'] {
@@ -19,7 +20,7 @@ html[lang='th'] {
 }
 
 body {
-  @apply bg-surface-ivory text-text-ink font-sans;
+  @apply bg-surface-mint text-text-ink font-sans;
 }
 
 /*
@@ -54,5 +55,75 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Doc 06 §5: 44px minimum touch targets. The PMS workspaces (ops, MC, admin)
+ * are dense tables and pill filters sized for a mouse; on a touch screen —
+ * the on-site host's phone — those controls must still be 44px tall. Scoped
+ * to coarse pointers so desktop density is unchanged, and to padded links
+ * (button-styled) so inline text links are left alone.
+ */
+@media (pointer: coarse) {
+  .pms-touch :is(button, select, summary, input[type='submit'], input[type='button']) {
+    min-height: 44px;
+  }
+  .pms-touch a[class*='px-'] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Stitch / Andaman Sanctuary surface language.
+ * These are compositional primitives only: domain components keep ownership
+ * of data, actions, RBAC and state. The classes let public, portal and ops
+ * surfaces share one visual grammar without duplicating bespoke CSS.
+ */
+@layer components {
+  .stitch-workspace {
+    @apply min-h-screen bg-surface-mint text-text-ink;
+  }
+
+  .stitch-page {
+    @apply mx-auto w-full max-w-7xl px-20 py-32 md:px-32 md:py-40;
+  }
+
+  .stitch-hero {
+    @apply rounded-lg border border-border-line bg-gradient-to-br from-surface-paper via-surface-ivory to-surface-mint p-24 shadow-card md:p-32;
+  }
+
+  .stitch-hero-dark {
+    @apply rounded-lg border border-brand-andaman/30 bg-brand-deep p-24 text-white shadow-float md:p-32;
+  }
+
+  .stitch-panel {
+    @apply rounded-lg border border-border-line bg-surface-paper shadow-card;
+  }
+
+  .stitch-panel-soft {
+    @apply rounded-lg border border-border-line bg-surface-ivory/80;
+  }
+
+  .stitch-kicker {
+    @apply text-kicker font-semibold uppercase tracking-[0.16em] text-brand-andaman;
+  }
+
+  .stitch-segmented {
+    @apply inline-flex items-center gap-4 rounded-md border border-border-line bg-surface-sand p-4;
+  }
+
+  .stitch-control {
+    @apply h-48 rounded-md border border-border-line bg-surface-paper px-12 text-body text-text-ink shadow-card outline-none transition focus:border-brand-andaman;
+  }
+
+  .stitch-list-row {
+    @apply rounded-md border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
   }
 }

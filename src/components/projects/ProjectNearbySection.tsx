@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 type NearbyLabels = {
   kicker: string;
   title: string;
@@ -26,7 +27,7 @@ function human(value: string) {
 }
 
 function displayDistance(meters: number) {
-  if (meters < 1000) return Math.max(50, Math.round(meters / 50) * 50).toLocaleString() + ' m';
+  if (meters < 1000) return Math.max(50, Math.round(meters / 50) * 50).toLocaleString(UI_LOCALE) + ' m';
   const kilometres = meters / 1000;
   return (kilometres < 10 ? kilometres.toFixed(1) : Math.round(kilometres).toString()) + ' km';
 }
@@ -43,8 +44,8 @@ export default function ProjectNearbySection({
   const visible = (featured.length ? featured : places).slice(0, 8);
 
   return (
-    <section id="nearby" className="bg-surface-paper px-24 py-48 md:py-64">
-      <div className="mx-auto max-w-6xl">
+    <section id="nearby" className="px-20 py-48 md:px-32 md:py-64">
+      <div className="mx-auto max-w-content">
         <p className="text-kicker font-semibold uppercase text-brand-andaman">{labels.kicker}</p>
         <h2 className="mt-8 font-display text-display-xl font-semibold text-text-ink">
           {labels.title}
@@ -53,8 +54,8 @@ export default function ProjectNearbySection({
 
         <div className="mt-24 grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
           {visible.map((place) => (
-            <article key={place.id} className="rounded-xl border border-border-line bg-surface-ivory p-20">
-              <p className="text-micro uppercase text-brand-andaman">{human(place.categoryKey)}</p>
+            <article key={place.id} className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
+              <p className="text-kicker uppercase text-brand-andaman">{human(place.categoryKey)}</p>
               <h3 className="mt-4 font-display text-heading-3 font-semibold text-text-ink">
                 {place.name}
               </h3>
@@ -64,21 +65,21 @@ export default function ProjectNearbySection({
                 </p>
               ) : null}
               {place.address ? (
-                <p className="mt-8 text-micro text-text-secondary">{place.address}</p>
+                <p className="mt-8 text-small text-text-secondary">{place.address}</p>
               ) : null}
-              <div className="mt-12 flex flex-wrap gap-8 text-micro text-text-secondary">
+              <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                 {place.distanceMeters !== null ? (
-                  <span className="rounded-full bg-surface-paper px-8 py-4">
+                  <span className="rounded-full bg-surface-sand px-12 py-4">
                     {labels.distance.replace('{distance}', displayDistance(place.distanceMeters))}
                   </span>
                 ) : null}
                 {place.walkingMinutes !== null ? (
-                  <span className="rounded-full bg-surface-paper px-8 py-4">
+                  <span className="rounded-full bg-surface-sand px-12 py-4">
                     {labels.walk.replace('{minutes}', String(place.walkingMinutes))}
                   </span>
                 ) : null}
                 {place.drivingMinutes !== null ? (
-                  <span className="rounded-full bg-surface-paper px-8 py-4">
+                  <span className="rounded-full bg-surface-sand px-12 py-4">
                     {labels.drive.replace('{minutes}', String(place.drivingMinutes))}
                   </span>
                 ) : null}

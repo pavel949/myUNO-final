@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import type { PrismaClient } from '@prisma/client';
 import { createNotification } from '@/modules/comms';
 import { sendEmail } from '@/modules/auth';
@@ -34,7 +35,7 @@ export async function notifyBookingCancelled(
       unit_name: booking.unit?.name || '',
       start_date: booking.startDate.toISOString().slice(0, 10),
       end_date: booking.endDate.toISOString().slice(0, 10),
-      refund_thb: refundBaht.toLocaleString(),
+      refund_thb: refundBaht.toLocaleString(UI_LOCALE),
       trips_url: `${baseUrl}/trips/${booking.id}`,
     };
 

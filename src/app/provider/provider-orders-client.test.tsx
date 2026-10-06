@@ -8,6 +8,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import ProviderOrdersClient from './provider-orders-client';
+import { LocaleProvider } from '@/components/LocaleProvider';
 
 // Q47 regression guard: order.totalThb arrives as satang (THB × 100)
 // straight from serializeOrder — the provider's order queue must show
@@ -45,6 +46,7 @@ describe('ProviderOrdersClient money display', () => {
   });
   it('shows Phuket appointment time and puts requests before fulfilled history', () => {
     render(
+      <LocaleProvider locale="en">
       <ProviderOrdersClient
         initialOrders={[
           {
@@ -67,8 +69,10 @@ describe('ProviderOrdersClient money display', () => {
           'provider.orders.refresh': 'Refresh orders',
         }}
       />
+      </LocaleProvider>
     );
-    expect(screen.getAllByText(/01 Sept 2026, 17:00 ICT/)).toHaveLength(2);
+    // Rendered in the visitor's UI locale and Phuket time (10:00 UTC = 17:00 ICT).
+    expect(screen.getAllByText(/1 Sept 2026, 17:00 ICT/)).toHaveLength(2);
     const request = screen.getByText('New request');
     const history = screen.getByText('Earlier service');
     expect(request.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
@@ -84,11 +86,20 @@ export interface SortOption {
   label: string;
 }
 
+/** "10 нояб." / "Nov 10" — never the raw ISO date. Fixed noon avoids timezone day-shift. */
+function formatStayDate(value: string, locale: string): string {
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+}
+
 export default function SearchResults({
+  locale = 'en',
   labels,
   sortOptions,
   typeOptions,
 }: {
+  locale?: string;
   labels: SearchResultsLabels;
   sortOptions: SortOption[];
   typeOptions: { key: string; label: string }[];
@@ -330,8 +341,8 @@ export default function SearchResults({
           <div className="flex flex-wrap items-center justify-between gap-16 mb-24">
             <p className="text-body text-text-secondary">
               {fill(labels.resultsSummary, {
-                from: startDate as string,
-                to: endDate as string,
+                from: formatStayDate(startDate as string, locale),
+                to: formatStayDate(endDate as string, locale),
                 guests: Number(adults) + Number(children),
               })}
             </p>
@@ -389,7 +400,7 @@ export default function SearchResults({
                       else next.delete('minPrice');
                     })
                   }
-                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                  className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
               <label className="text-small text-text-stone">
@@ -404,7 +415,7 @@ export default function SearchResults({
                       else next.delete('maxPrice');
                     })
                   }
-                  className="mt-4 block h-40 w-32 rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
+                  className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
               {(bedrooms || unitTypes || minPrice || maxPrice) && (
@@ -430,7 +441,7 @@ export default function SearchResults({
         {loading && (
           <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+              <div key={index} className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
                 <div className="aspect-video animate-pulse bg-border-line/60" />
                 <div className="space-y-12 p-16">
                   <div className="h-16 w-[42%] animate-pulse rounded-full bg-border-line/70" />
@@ -443,7 +454,7 @@ export default function SearchResults({
         )}
 
         {error && (
-          <div className="bg-state-error/10 border border-state-error rounded-xl p-16 mb-24">
+          <div className="bg-state-error/10 border border-state-error rounded-md p-16 mb-24">
             <p className="text-body text-state-error">{error}</p>
           </div>
         )}
@@ -457,7 +468,7 @@ export default function SearchResults({
               {categories.map((category) => (
                 <div
                   key={category.inventory_category_id}
-                  className="bg-surface-paper border border-border-line rounded-xl p-16"
+                  className="bg-surface-paper border border-border-line rounded-md p-16"
                 >
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {category.label}
@@ -467,7 +478,7 @@ export default function SearchResults({
                   </p>
                   <p className="font-display text-title font-semibold text-brand-andaman mb-12 tabular-nums">
                     {fill(labels.categoryFrom, {
-                      price: Math.round(category.from_nightly_thb / 100).toLocaleString(),
+                      price: Math.round(category.from_nightly_thb / 100).toLocaleString(UI_LOCALE),
                     })}
                   </p>
                   <button
@@ -505,7 +516,7 @@ export default function SearchResults({
               </div>
 
               {units.length === 0 ? (
-                <div className="rounded-xl border border-border-line bg-surface-paper p-32 text-center">
+                <div className="rounded-md border border-border-line bg-surface-paper p-32 text-center">
                   <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
                   <p className="text-small text-text-secondary">{labels.emptyHint}</p>
                 </div>
@@ -530,7 +541,7 @@ export default function SearchResults({
                         className={
                           selectedProjectId && selectedProjectId === unit.project?.id
                             ? 'overflow-hidden rounded-lg border-2 border-brand-sun bg-surface-paper shadow-card'
-                            : 'overflow-hidden rounded-xl border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
+                            : 'overflow-hidden rounded-md border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
                         }
                       >
                         {unit.coverUrl ? (

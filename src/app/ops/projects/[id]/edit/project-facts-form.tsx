@@ -8,7 +8,7 @@ export default function ProjectFactsForm({ project }: { project: Project }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const field = 'mt-4 block w-full rounded-md border border-border-line bg-surface-paper px-12 py-12';
-  return <form className="mt-24 grid gap-16 rounded-lg border border-border-line bg-surface-paper p-24 md:grid-cols-2" onSubmit={async (event) => {
+  return <form className="mt-24 grid gap-16 stitch-panel p-24 md:grid-cols-2" onSubmit={async (event) => {
     event.preventDefault(); setBusy(true); setMessage('');
     try {
       const data = new FormData(event.currentTarget);

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatThb } from '@/components/viz';
+import { LocalDate } from '@/components/LocalDate';
 
 interface LedgerEntry {
   id: string;
@@ -65,7 +66,7 @@ export default function LedgerAdminClient({
         <select
           value={projectId}
           onChange={(e) => handleProjectChange(e.target.value)}
-          className="px-12 py-8 border border-border-line rounded-lg bg-surface-paper text-text-ink"
+          className="px-12 py-8 border border-border-line rounded-lg bg-surface-paper shadow-card text-text-ink"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
@@ -74,15 +75,15 @@ export default function LedgerAdminClient({
       </div>
 
       {Object.keys(totals).length > 0 && (
-        <div className="mb-24 p-16 bg-surface-paper border border-border-line rounded-lg">
+        <div className="mb-24 p-16 bg-surface-paper border border-border-line rounded-lg shadow-card">
           <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
             {labels['admin.ledger.totals']}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
             {Object.entries(totals).map(([type, amount]) => (
               <div key={type}>
-                <p className="text-small text-text-secondary mb-4">{type.replace(/_/g, ' ')}</p>
-                <p className="text-heading-3 font-semibold text-text-ink">{formatThb(amount)}</p>
+                <p className="stitch-kicker mb-4">{type.replace(/_/g, ' ')}</p>
+                <p className="font-display text-heading-3 font-semibold text-text-ink font-tabular">{formatThb(amount)}</p>
               </div>
             ))}
           </div>
@@ -90,13 +91,13 @@ export default function LedgerAdminClient({
       )}
 
       {entries.length === 0 ? (
-        <div className="p-24 bg-surface-paper border border-border-line rounded-lg text-center">
+        <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
           <p className="text-body text-text-secondary">{labels['admin.ledger.empty']}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-small">
-            <thead className="bg-surface-paper">
+            <thead className="bg-surface-sand">
               <tr className="text-left text-text-secondary border-b border-border-line">
                 <th className="px-12 py-12 font-semibold">{labels['admin.ledger.date']}</th>
                 <th className="px-12 py-12 font-semibold">{labels['admin.ledger.type']}</th>
@@ -110,14 +111,14 @@ export default function LedgerAdminClient({
             <tbody>
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-b border-border-line hover:bg-surface-paper">
-                  <td className="px-12 py-8">{new Date(entry.occurredOn).toLocaleDateString()}</td>
+                  <td className="px-12 py-8"><LocalDate value={entry.occurredOn} /></td>
                   <td className="px-12 py-8">
-                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded text-small font-semibold">
+                    <span className="px-8 py-4 bg-brand-andaman/10 text-brand-andaman rounded-sm text-small font-semibold">
                       {entry.entryType.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="px-12 py-8">{entry.unitName}</td>
-                  <td className="px-12 py-8 text-right font-mono">{formatThb(entry.amountThb)}</td>
+                  <td className="px-12 py-8 text-right font-tabular">{formatThb(entry.amountThb)}</td>
                   <td className="px-12 py-8 text-text-secondary truncate max-w-xs">{entry.description}</td>
                   <td className="px-12 py-8 text-text-secondary text-small">{entry.createdBy}</td>
                   <td className="px-12 py-8">

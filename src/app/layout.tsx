@@ -5,12 +5,15 @@ import type { Metadata } from 'next';
 import '@fontsource-variable/outfit/wght.css';
 import '@fontsource-variable/manrope/wght.css';
 import '@fontsource-variable/noto-sans-thai/wght.css';
+import '@fontsource-variable/source-serif-4/wght.css';
 import './globals.css';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { siteUrl } from '@/lib/seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileTabBar } from '@/components/MobileTabBar';
 import { availableSurfaces, type Landing } from '@/modules/core';
 import { getActiveStayId } from '@/app/actions/getActiveStay';
 import type { RoleType } from '@prisma/client';
@@ -134,7 +137,7 @@ export default async function RootLayout({
     'nav.footer.help': 'Help Center',
     'nav.footer.global': 'Global desks',
     'nav.footer.ombudsman': 'Ombudsman',
-    'nav.footer.legal_index': 'Legal',
+    'nav.footer.legal_all': 'All legal documents',
     'nav.language': 'Language',
     'nav.footer.audience_column': 'Property',
     'nav.footer.owners': 'Own',
@@ -155,6 +158,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
+        <LocaleProvider locale={locale}>
         <Navbar
           user={
             user
@@ -216,7 +220,18 @@ export default async function RootLayout({
           }}
         />
 
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 pb-56 md:pb-0">{children}</div>
+
+        <MobileTabBar
+          labels={{
+            residences: navLabels['nav.projects'],
+            explore: navLabels['nav.explore'],
+            saved: navLabels['nav.saved'],
+            concierge: navLabels['nav.services'],
+            profile: navLabels['nav.my_uno'],
+          }}
+          profileHref={user ? '/app' : '/login'}
+        />
 
         <Footer
           locale={locale}
@@ -250,7 +265,7 @@ export default async function RootLayout({
             legalColumn: footerLabels['nav.footer.legal_column'],
             terms: footerLabels['nav.footer.terms'],
             privacy: footerLabels['nav.footer.privacy'],
-            legalIndex: footerLabels['nav.footer.legal_index'],
+            legalIndex: footerLabels['nav.footer.legal_all'],
             language: navLabels['nav.language'],
             companyLine: footerLabels['nav.footer.company_line'],
             copyright: footerLabels['nav.footer.copyright'],
@@ -262,6 +277,7 @@ export default async function RootLayout({
             zh: navLabels['nav.locale.zh'],
           }}
         />
+        </LocaleProvider>
       </body>
     </html>
   );

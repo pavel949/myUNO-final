@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -24,7 +26,7 @@ interface Entry {
 }
 
 /** Satang in, baht on screen — the ledger stores integers to avoid float drift. */
-const baht = (satang: number) => (satang / 100).toLocaleString();
+const baht = (satang: number) => (satang / 100).toLocaleString(UI_LOCALE);
 
 export default function RecordCostClient({
   units,
@@ -91,7 +93,7 @@ export default function RecordCostClient({
   };
 
   return (
-    <div className={embedded ? undefined : 'min-h-screen bg-surface-ivory p-24 md:p-32'}>
+    <div className={embedded ? undefined : 'stitch-workspace p-24 md:p-32'}>
       <div className={embedded ? undefined : 'max-w-3xl mx-auto'}>
         {!embedded ? (
           <>
@@ -102,7 +104,7 @@ export default function RecordCostClient({
           </>
         ) : null}
 
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <section className="stitch-panel p-24 mb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
             <Select
               label={labels['ops.costs.unit']}
@@ -170,7 +172,7 @@ export default function RecordCostClient({
           </div>
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+        <section className="stitch-panel p-24">
           <h2 className="font-display text-title font-semibold text-text-ink mb-16">
             {labels['ops.costs.recent']}
           </h2>

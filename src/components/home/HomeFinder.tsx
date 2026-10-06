@@ -120,7 +120,7 @@ export function HomeFinder({
     <form
       onSubmit={submit}
       aria-label={labels.aria}
-      className="rounded-2xl border border-border-line bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
+      className="rounded-lg border border-border-line bg-surface-paper p-12 text-text-ink shadow-float md:p-16"
     >
       <div className="mb-12 grid grid-cols-3 gap-8" role="group" aria-label={labels.aria}>
         {HOME_INTENTS.map((mode) => (
@@ -144,13 +144,13 @@ export function HomeFinder({
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:items-end">
+      <div className="grid grid-cols-2 gap-8 lg:grid-cols-5 lg:items-end">
         <PlaceCombobox
           options={places}
           value={place}
           onChange={setPlace}
           labels={labels.place}
-          className={intent === 'stay' ? 'col-span-2 lg:col-span-1' : 'col-span-2 lg:col-span-4'}
+          className={intent === 'stay' ? 'col-span-2 lg:col-span-1' : 'col-span-2 lg:col-span-5'}
         />
 
         {intent === 'stay' ? (
@@ -225,7 +225,7 @@ export function HomeFinder({
           </>
         ) : null}
 
-        <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8 lg:col-span-4">
+        <details className="col-span-2 rounded-lg border border-border-line bg-surface-ivory px-12 py-8 lg:col-span-5">
           <summary className="min-h-32 cursor-pointer text-small font-semibold text-brand-andaman focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
             {labels.filters.more}
           </summary>
@@ -280,7 +280,7 @@ export function HomeFinder({
 
         <button
           type="submit"
-          className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman lg:col-span-4"
+          className="col-span-2 h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white transition-colors duration-micro hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman lg:col-span-5"
         >
           {labels.cta[intent]} →
         </button>

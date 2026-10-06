@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
 
 interface BookingRequestInboxDetailsProps {
@@ -11,7 +13,7 @@ interface BookingRequestInboxDetailsProps {
 
 function formatAmount(amountThb: number): string {
   const prefix = amountThb < 0 ? '-' : '';
-  return `${prefix}฿${Math.abs(amountThb).toLocaleString()}`;
+  return `${prefix}฿${Math.abs(amountThb).toLocaleString(UI_LOCALE)}`;
 }
 
 export default function BookingRequestInboxDetails({

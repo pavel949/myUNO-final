@@ -136,7 +136,7 @@ export default function ArrivalPassportCaptureModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="bg-surface-paper border border-border-line rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-24">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-float max-w-2xl w-full max-h-[90vh] overflow-y-auto p-24">
         <div className="flex items-start justify-between gap-16 mb-16">
           <div>
             <h2 className="text-heading-2 font-bold text-text-ink">{title}</h2>

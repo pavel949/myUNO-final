@@ -34,7 +34,7 @@ export default async function TripsPage() {
   });
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-surface-ivory p-8"><p>{labels['booking.trips.loading']}</p></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-surface-mint p-8"><p>{labels['booking.trips.loading']}</p></div>}>
       <TripsList labels={labels} />
     </Suspense>
   );

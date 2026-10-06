@@ -20,6 +20,7 @@ import type { OwnerTrends } from '@/app/actions/getOwnerDashboard';
 import type { OwnerAlert, OwnerComplianceStatus } from '@/modules/projects';
 import type { OwnerStatement } from '@prisma/client';
 import { scopeOwnerPortfolio } from './portfolio-scope';
+import { formatDate as formatDateIn } from '@/lib/date';
 
 function fill(template: string, params?: Record<string, string>): string {
   if (!params) return template;
@@ -233,13 +234,13 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
   );
 
   return (
-    <div className="min-h-screen bg-surface-ivory">
-      <div className="max-w-6xl mx-auto px-24 py-40">
-        <div className="mb-40">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+    <div className="stitch-workspace">
+      <div className="mx-auto max-w-6xl px-20 py-32 md:px-32 md:py-40">
+        <div className="stitch-hero-dark mb-40">
+          <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">
             {labels['owner.dashboard.title']}
           </h1>
-          <p className="text-body text-text-stone">
+          <p className="text-body text-white/70">
             {shape.isPortfolio
               ? fill(labels['owner.dashboard.portfolio_subtitle'] ?? '', {
                   units: String(shape.unitCount),
@@ -309,7 +310,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                       <p className="text-body text-text-secondary">
                         {resolveLabel(alert.descriptionKey, alert.descriptionParams)}
                       </p>
-                      <p className="text-sm text-text-secondary mt-4">{alert.unitName}</p>
+                      <p className="text-small text-text-secondary mt-4">{alert.unitName}</p>
                     </div>
                     {alert.actionUrl && (
                       <Link href={alert.actionUrl}>
@@ -363,7 +364,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             {labels['owner.trends.title']}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <div className="stitch-panel p-24">
               <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.revenue']}
               </h3>
@@ -381,7 +382,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                 {...chartLabels}
               />
             </div>
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <div className="stitch-panel p-24">
               <h3 className="font-display text-title font-semibold text-text-ink mb-16">
                 {labels['owner.trends.occupancy']}
               </h3>
@@ -405,7 +406,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {/* Compliance Summary (D2) */}
         {visibleCompliance.length > 0 && (
           <div className="mb-40">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+            <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
               {labels['owner.compliance.title']}
             </h2>
             <p className="text-body text-text-secondary mb-16">
@@ -415,9 +416,9 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {visibleCompliance.map((status) => (
                 <div
                   key={status.unitId}
-                  className="bg-surface-paper border border-border-line rounded-md p-24"
+                  className="stitch-panel p-24"
                 >
-                  <h3 className="text-heading-3 font-semibold text-text-ink mb-16">
+                  <h3 className="font-display text-heading-3 font-semibold text-text-ink mb-16">
                     {status.unitName}
                   </h3>
                   <div className="space-y-12">
@@ -472,7 +473,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
         {visibleStatements.length > 0 && (
           <div className="mb-40">
             <div className="flex items-center justify-between gap-16 mb-16">
-              <h2 className="text-heading-2 font-semibold text-text-ink">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink">
                 {labels['owner.statement.title']}
               </h2>
               <Link href="/owner/statements" className="text-small font-semibold text-brand-andaman hover:underline">
@@ -483,32 +484,22 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {visibleStatements.map((statement) => (
                 <div
                   key={statement.id}
-                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
+                  className="stitch-panel p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12">
                     <div className="flex-1">
                       <h3 className="text-body font-semibold text-text-ink mb-4">
-                        {labels['owner.statement.period']}: {new Date(statement.periodStart).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                        })} – {new Date(statement.periodEnd).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                        })}
+                        {labels['owner.statement.period']}: {formatDateIn(statement.periodStart, locale, { year: 'numeric', month: 'short' })} – {formatDateIn(statement.periodEnd, locale, { year: 'numeric', month: 'short' })}
                       </h3>
-                      <p className="text-sm text-text-secondary mb-12">
-                        {new Date(statement.publishedAt || statement.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                      <p className="text-small text-text-secondary mb-12">
+                        {formatDateIn(statement.publishedAt || statement.createdAt, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                       <div className="space-y-8">
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.noi']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             {/* OwnerStatement stores every amount in satang like the rest of
                                 the platform (CLAUDE.md) — MoneyAmount's contract is satang-in,
                                 so the raw Prisma field goes straight in, no manual /100 (Q47). */}
@@ -516,10 +507,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-text-secondary">
+                          <span className="text-small text-text-secondary">
                             {labels['owner.statement.your_share']}
                           </span>
-                          <span className="text-sm font-medium text-text-ink">
+                          <span className="text-small font-medium text-text-ink">
                             <MoneyAmount satang={statement.ownerShareTh || 0} />
                           </span>
                         </div>
@@ -550,7 +541,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
           <div className="space-y-32">
             {/* Single Unit: Bookings */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.bookings']}
               </h2>
               <BookingsList
@@ -565,7 +556,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Single Unit: Latest Statement */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.statement']}
               </h2>
               <LatestStatementCard statementId={currentUnit?.latestStatementId || null} />
@@ -573,7 +564,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {/* Single Unit: Open Tickets */}
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
               <OpenTicketsList
@@ -598,7 +589,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
 
             {currentUnit ? (
               <div>
-                <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+                <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                   {labels['owner.actions.title']}
                 </h2>
                 <OwnerQuickActions unit={currentUnit} />
@@ -636,10 +627,10 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
               {filteredUnits.map((unit) => (
                 <div
                   key={unit.id}
-                  className="bg-surface-paper border border-border-line rounded-md p-24 hover:shadow-card transition-shadow"
+                  className="stitch-panel p-24 hover:shadow-card transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-12 mb-16">
-                    <h3 className="text-heading-3 font-semibold text-text-ink">
+                    <h3 className="font-display text-heading-3 font-semibold text-text-ink">
                       <Link
                         href={`/owner/units/${unit.id}`}
                         className="hover:text-brand-andaman hover:underline"
@@ -708,7 +699,7 @@ export const OwnerDashboardClient: React.FC<OwnerDashboardClientProps> = ({
             </div>
 
             <div>
-              <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
+              <h2 className="font-display text-heading-2 font-semibold text-text-ink mb-16">
                 {labels['owner.sections.tickets']}
               </h2>
               <OpenTicketsList

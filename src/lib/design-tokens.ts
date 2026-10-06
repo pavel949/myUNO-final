@@ -16,23 +16,25 @@
 
 export const COLOR = {
   brand: {
-    andaman: '#0E4F4B',
-    deep: '#0A3733',
-    sun: '#D69A3A',
-    sunSoft: '#E7C079',
+    andaman: '#11382E',
+    deep: '#0B2C24',
+    sun: '#D19A5B',
+    sunSoft: '#E4BE8D',
   },
   surface: {
-    ivory: '#F5EFE4',
-    paper: '#FBF8F1',
+    sand: '#F4F0E8',
+    mint: '#EFFCF9',
+    ivory: '#FBF9F5',
+    paper: '#FFFFFF',
   },
   text: {
-    ink: '#16211F',
-    stone: '#7E8C88',
+    ink: '#1C2826',
+    stone: '#566360',
     stone2: '#A7B2AE',
   },
   border: {
-    line: '#E6DFD1',
-    line2: '#DAD1BF',
+    line: '#E5DFD3',
+    line2: '#D8D0C0',
   },
   onDark: {
     text: '#EAF2F0',
@@ -45,8 +47,8 @@ export const COLOR = {
     warningSoft: '#F6ECD8',
     error: '#AE4E38',
     errorSoft: '#F5E4DF',
-    info: '#0E4F4B',
-    infoSoft: '#E3ECEA',
+    info: '#11382E',
+    infoSoft: '#E9F1EE',
   },
 } as const;
 
@@ -92,6 +94,8 @@ export const tailwindColors = {
     ivory: COLOR.surface.ivory,
     paper: COLOR.surface.paper,
     background: COLOR.surface.ivory,
+    sand: COLOR.surface.sand,
+    mint: COLOR.surface.mint,
   },
   text: {
     ink: COLOR.text.ink,

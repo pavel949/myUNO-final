@@ -251,6 +251,19 @@ const API_DEBT = new Set([
   '/api/crm/opportunities/[id]/activities',
   '/api/crm/opportunities/[id]/stage',
   '/api/crm/activities/[id]',
+
+  // Called only by the admin bookings client, which nothing rendered: the
+  // admin bookings page redirects to /ops/stays (one booking workspace, not
+  // two lifecycles), so the client was deleted in the 2026-10 i18n sweep.
+  // Internal notes, owner claim links and manual completion are real
+  // capabilities Stay 360 (/ops/stays/[bookingId]) does not expose yet; the
+  // next step is to surface them there, not to resurrect the admin list.
+  // `/api/admin/bookings` (the paged list) is superseded by /ops/stays and
+  // can be deleted once no external caller is confirmed.
+  '/api/admin/bookings',
+  '/api/auth/claim/generate-link',
+  '/api/bookings/[id]/complete',
+  '/api/bookings/[id]/internal-note',
 ]);
 
 describe('every API route can be reached', () => {

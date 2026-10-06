@@ -98,8 +98,16 @@ describe('one calendar surface with mode-specific safe actions', () => {
     expect(screen.queryByRole('link', { name: /Stay operations/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc');
     fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
-    expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
-      .toContain('/mc/units/unit-a');
+    const propertyHref = screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href') || '';
+    expect(propertyHref).toContain('/mc/properties/unit-a');
+    expect(propertyHref).toContain('projectId=project-a');
+    expect(propertyHref).toContain('organizationId=org-a');
+    expect(propertyHref).toContain('origin=calendar');
+    expect(propertyHref).toContain('tab=calendar');
+    expect(propertyHref).toContain('date=2026-09-29');
+    expect(propertyHref).toContain('calendarStart=2026-09-29');
+    expect(propertyHref).toContain('days=7');
+    expect(propertyHref).toContain('categoryId=category-a');
     expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('mc=1');

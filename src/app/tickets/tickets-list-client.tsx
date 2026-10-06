@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { LocalDate } from '@/components/LocalDate';
 
 const STATUSES = [
   'open',
@@ -45,7 +46,7 @@ export default function TicketsListClient({
   );
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="mx-auto max-w-2xl">
         <div className="mb-24 flex flex-wrap items-end justify-between gap-16">
           <h1 className="font-display text-display-xl font-semibold text-brand-deep">
@@ -85,11 +86,11 @@ export default function TicketsListClient({
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-lg border border-border-line bg-surface-paper p-32 text-center">
+          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card p-32 text-center">
             <p className="text-body text-text-secondary">{labels['tickets.list.empty']}</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border-line bg-surface-paper">
+          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card">
             {visible.map((ticket) => (
               <div
                 key={ticket.id}
@@ -104,7 +105,7 @@ export default function TicketsListClient({
                   <p className="text-small text-text-secondary">
                     {ticket.place}
                     {ticket.place ? ' · ' : ''}
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    <LocalDate value={ticket.createdAt} />
                   </p>
                 </div>
                 <div className="flex items-center gap-12">

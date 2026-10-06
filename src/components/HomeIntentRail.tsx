@@ -82,7 +82,7 @@ export function HomeIntentRail({ items, labels }: HomeIntentRailProps) {
             <Link
               key={item.key}
               href={item.href}
-              className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-2xl border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card md:w-auto"
+              className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-lg border border-border-line bg-surface-paper transition-shadow duration-structural hover:shadow-card md:w-auto"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-brand-deep">
                 {item.imageSrc ? (
@@ -112,7 +112,7 @@ export function HomeIntentRail({ items, labels }: HomeIntentRailProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-border-line bg-surface-paper p-24 text-small text-text-secondary">
+        <div className="rounded-lg border border-border-line bg-surface-paper p-24 text-small text-text-secondary">
           {labels.empty}
         </div>
       )}

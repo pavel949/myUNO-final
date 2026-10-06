@@ -16,7 +16,7 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
     <h1 className="font-display text-display-xl font-semibold mb-8">Add a property</h1>
     <p className="text-body text-text-secondary mb-24">Create the property shell, then continue through inventory, ownership, compliance, pricing, content, channels, team and final review.</p>
     {error ? <p role="alert" className="p-12 mb-16 bg-state-error-soft text-state-error rounded-md">{error}</p> : null}
-    <form className="grid grid-cols-1 md:grid-cols-3 gap-16 bg-surface-paper border border-border-line rounded-lg p-24" onSubmit={async (event) => {
+    <form className="grid grid-cols-1 md:grid-cols-3 gap-16 bg-surface-paper border border-border-line rounded-lg shadow-card p-24" onSubmit={async (event) => {
       event.preventDefault(); const data = new FormData(event.currentTarget); const plusCode = String(data.get('plusCode') || '').trim();
       setBusy(true); setError(null);
       try {

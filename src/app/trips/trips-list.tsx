@@ -1,9 +1,12 @@
 'use client';
 
+
+import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SlaCountdown } from '@/components/SlaCountdown';
+import { LocalDate } from '@/components/LocalDate';
 
 interface Booking {
   id: string;
@@ -83,7 +86,7 @@ export default function TripsList({ labels }: TripsListProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
+      <div className="min-h-screen bg-surface-mint p-24 md:p-32">
         <div className="text-center">
           <p className="text-body text-text-secondary">{labels['booking.trips.loading']}</p>
         </div>
@@ -92,10 +95,10 @@ export default function TripsList({ labels }: TripsListProps) {
   }
 
   return (
-    <div className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <div className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="max-w-4xl mx-auto">
         <div className="mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink">
+          <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg">
             {labels['booking.trips.title']}
           </h1>
           <p className="text-body text-text-secondary">
@@ -114,7 +117,7 @@ export default function TripsList({ labels }: TripsListProps) {
             {labels['booking.trips.retry']}
           </a>
         ) : trips.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center">
+          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
             <p className="text-body text-text-secondary mb-16">{labels['booking.trips.empty_title']}</p>
             <Link
               href="/search"
@@ -129,7 +132,7 @@ export default function TripsList({ labels }: TripsListProps) {
               <Link
                 key={trip.id}
                 href={`/trips/${trip.id}`}
-                className="block bg-surface-paper border border-border-line rounded-lg p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
+                className="block bg-surface-paper border border-border-line rounded-lg shadow-card p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
               >
                 <div className="flex items-start justify-between mb-16">
                   <div>
@@ -154,13 +157,13 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_in']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.startDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.startDate} />
                     </p>
                   </div>
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.check_out']}</p>
                     <p className="font-semibold text-text-ink">
-                      {new Date(trip.endDate).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                      <LocalDate value={trip.endDate} />
                     </p>
                   </div>
                 </div>
@@ -169,7 +172,7 @@ export default function TripsList({ labels }: TripsListProps) {
                   <div>
                     <p className="text-small text-text-secondary">{labels['booking.trips.total']}</p>
                     <p className="font-display text-title font-semibold text-brand-andaman tabular-nums">
-                      ฿{trip.totalThb?.toLocaleString()}
+                      ฿{trip.totalThb?.toLocaleString(UI_LOCALE)}
                     </p>
                   </div>
 

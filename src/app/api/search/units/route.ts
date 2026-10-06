@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { t, type Locale } from '@/modules/content';
 import { LOCALES, DEFAULT_LOCALE } from '@/modules/content';
@@ -14,6 +14,7 @@ import {
   boundsWhere,
 } from '@/modules/browse';
 import { listAreas, collectDescendantIds } from '@/modules/projects';
+import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
 import { getDestination } from '@/modules/destinations';
 import {
   assessGalleryReadiness,
@@ -161,17 +162,26 @@ export async function GET(req: NextRequest) {
           ? { projectId: effectiveProjectId }
           : {};
 
-    const projectFilter = {
-      status: 'live' as const,
+    const [sourceExcludedUnitIds, managedImported] = await Promise.all([
+      allExcludedSourceControlledUnitIds(prisma),
+      managedImportedInventoryIds(prisma),
+    ]);
+    const projectFilter: any = {
+      ...(managedImported.projectIds.length
+        ? {
+            OR: [
+              { status: 'live' },
+              { status: 'draft', id: { in: managedImported.projectIds } },
+            ],
+          }
+        : { status: 'live' }),
       ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
     };
 
-    // Source-controlled units must be absent from *all* public search modes,
-    // including undated browsing and grouped category capacity. Exclusion is
-    // applied before pagination, counts and prices, never as a cosmetic filter.
-    const sourceExcludedUnitIds = await allExcludedSourceControlledUnitIds(prisma);
+    // Source-controlled units must be absent from *all* public search modes
+    // until authority is cut over. Imported managed draft rows are eligible
+    // only for the same downstream category/offering/media/pricing gates.
     const where: any = {
-      status: 'live',
       ...(sourceExcludedUnitIds.length > 0 && { id: { notIn: sourceExcludedUnitIds } }),
       assetStatus: { not: 'suspended' },
       inventoryCategory: { status: 'live' },
@@ -179,12 +189,22 @@ export async function GET(req: NextRequest) {
       ...projectScope,
       // A sale-only or lease-only physical unit is not a guest stay. The
       // legacy untyped portfolio remains readable during staged migration.
-      AND: [{ OR: [
-        { project: { projectType: null } },
-        { commercialOfferings: { some: {
-          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
-        } } },
-      ] }],
+      AND: [
+        {
+          OR: [
+            { status: 'live' },
+            ...(managedImported.unitIds.length
+              ? [{ status: 'draft', id: { in: managedImported.unitIds } }]
+              : []),
+          ],
+        },
+        { OR: [
+          { project: { projectType: null } },
+          { commercialOfferings: { some: {
+            offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+          } } },
+        ] },
+      ],
       maxGuests: { gte: totalGuests },
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
@@ -300,18 +320,11 @@ export async function GET(req: NextRequest) {
         : {};
     where.id = { ...existingIdFilter, in: mediaEligibleUnitIds };
 
-    // Commercially unapproved imported inventory is an unavailable search
-    // candidate, not a reason to fail the whole public discovery request.
-    // Unexpected calculator/database failures must still surface as errors.
-    const isUnavailablePriceError = (error: unknown) =>
-      error instanceof Error && [
-        'below minimum of',
-        'source tariff has not been validated',
-        'Validated monthly tariff is required',
-        'Source booking policy requires approval',
-        'Arrival tariff identity missing',
-        'No active short-stay offering',
-      ].some(reason => error.message.includes(reason));
+    // A unit that cannot be sold for this stay (minimum nights, dates outside
+    // the published season, party size, pets, an offering not yet approved) is
+    // not a search result — it is never a reason to fail the whole discovery
+    // request. Unexpected calculator/database failures still surface as errors.
+    const isUnavailablePriceError = (error: unknown) => error instanceof StayUnquotableError;
 
     if (groupBy === 'category') {
       const categoryUnits = await prisma.unit.findMany({

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Button } from '@/components';
+import { formatDate as formatDateIn } from '@/lib/date';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface LatestStatementCardProps {
   statementId: string | null;
@@ -9,23 +11,20 @@ interface LatestStatementCardProps {
   onViewStatement?: (statementId: string) => void;
 }
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-};
-
 export const LatestStatementCard = React.forwardRef<HTMLDivElement, LatestStatementCardProps>(
   ({ statementId, createdAt, onViewStatement }, ref) => {
+    const locale = useLocale();
+    const formatDate = (dateStr: string): string => formatDateIn(dateStr, locale, 'monthYear');
     if (!statementId) {
       return (
-        <div ref={ref} className="border border-border-line rounded-md p-24 bg-surface-paper-soft">
+        <div ref={ref} className="stitch-panel p-24 -soft">
           <p className="text-body text-text-secondary">No statement available yet</p>
         </div>
       );
     }
 
     return (
-      <div ref={ref} className="border border-border-line rounded-md p-24 bg-surface-paper hover:bg-surface-paper-soft transition-colors">
+      <div ref={ref} className="stitch-panel p-24 hover:bg-surface-paper-soft transition-colors">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-body font-medium text-text-ink">Latest Statement</p>

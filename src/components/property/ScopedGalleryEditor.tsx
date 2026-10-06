@@ -232,19 +232,19 @@ export default function ScopedGalleryEditor({
               {cover === item.mediaId ? <span className="text-small font-semibold text-brand-andaman">{labels['admin.gallery.cover']}</span> : null}
             </div>
             <div className="flex flex-wrap gap-8">
-              <button type="button" className="rounded border p-8 text-small" disabled={busy || cover === item.mediaId}
+              <button type="button" className="rounded-sm border p-8 text-small" disabled={busy || cover === item.mediaId}
                 onClick={() => void perform(() => persistOrder(items, item.mediaId))}>{labels['admin.gallery.set_cover']}</button>
-              <button type="button" className="rounded border p-8 text-small" disabled={busy || index === 0}
+              <button type="button" className="rounded-sm border p-8 text-small" disabled={busy || index === 0}
                 aria-label={`Move photo ${index + 1} left`} onClick={() => void perform(() => {
                   const next = [...items]; [next[index - 1], next[index]] = [next[index], next[index - 1]];
                   return persistOrder(next);
                 })}>←</button>
-              <button type="button" className="rounded border p-8 text-small" disabled={busy || index === items.length - 1}
+              <button type="button" className="rounded-sm border p-8 text-small" disabled={busy || index === items.length - 1}
                 aria-label={`Move photo ${index + 1} right`} onClick={() => void perform(() => {
                   const next = [...items]; [next[index + 1], next[index]] = [next[index], next[index + 1]];
                   return persistOrder(next);
                 })}>→</button>
-              <button type="button" className="rounded border border-state-error text-state-error p-8 text-small"
+              <button type="button" className="rounded-sm border border-state-error text-state-error p-8 text-small"
                 disabled={busy} onClick={() => void perform(() => write('DELETE', null, item.mediaId))}>
                 {labels['admin.gallery.remove']}
               </button>

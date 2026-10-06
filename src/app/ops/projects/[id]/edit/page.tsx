@@ -19,7 +19,7 @@ export default async function EditProjectFactsPage({ params }: { params: { id: s
     projectType: true, totalUnits: true, facilities: true, status: true,
   } });
   if (!project) notFound();
-  return <main className="min-h-screen bg-surface-ivory px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">
+  return <main className="stitch-workspace px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">
     <Link href="/mc/portfolio" className="text-brand-andaman">← Portfolio calendar</Link>
     <h1 className="mt-12 font-display text-display-xl text-text-ink">Edit {project.name}</h1><p className="mt-8 text-text-secondary">Shared complex / resort record · {project.status}</p>
     <ProjectFactsForm project={project}/><ManagedGallery scope="project" id={project.id}/>

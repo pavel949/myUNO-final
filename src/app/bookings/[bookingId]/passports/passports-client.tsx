@@ -77,7 +77,7 @@ export default function PassportsClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
+    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
       <div className="max-w-2xl mx-auto">
         <p className="mb-8">
           <Link
@@ -87,7 +87,7 @@ export default function PassportsClient({
             {labels['checkin.passports.back']}
           </Link>
         </p>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-12">
+        <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg mb-12">
           {labels['checkin.passports.title']}
         </h1>
         <p className="text-body text-text-secondary mb-24">
@@ -105,7 +105,7 @@ export default function PassportsClient({
           </div>
         )}
 
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['checkin.passports.list_title']}
           </h2>
@@ -133,7 +133,7 @@ export default function PassportsClient({
           )}
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-lg p-24">
+        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-16">
             {labels['checkin.passports.add_title']}
           </h2>

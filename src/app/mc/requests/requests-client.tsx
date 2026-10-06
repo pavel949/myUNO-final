@@ -1,11 +1,14 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import Link from 'next/link';
 import BookingRequestRespondActions, {
   type DeclineReasonOption,
 } from '@/components/booking/BookingRequestRespondActions';
 import BookingRequestInboxDetails from '@/components/booking/BookingRequestInboxDetails';
 import type { BookingRequestBreakdownLine } from '@/modules/booking';
+import { LocalDate } from '@/components/LocalDate';
 
 interface McBookingRequestRow {
   id: string;
@@ -27,10 +30,14 @@ export default function McRequestsClient({
   requests,
   declineReasons,
   labels,
+  projectId,
+  organizationId,
 }: {
   requests: McBookingRequestRow[];
   declineReasons: DeclineReasonOption[];
   labels: Record<string, string>;
+  projectId: string;
+  organizationId: string;
 }) {
   const respondLabels = {
     approve: labels['mc.requests.approve'],
@@ -57,7 +64,7 @@ export default function McRequestsClient({
                 <span className="text-text-secondary font-normal">
                   {' · '}
                   <Link
-                    href={`/mc/units/${request.unitId}`}
+                    href={`/mc/properties/${encodeURIComponent(request.unitId)}?${new URLSearchParams({ projectId, organizationId, origin: 'requests', tab: 'reservations', date: request.startDate.slice(0, 10), bookingId: request.id }).toString()}`}
                     className="text-brand-andaman hover:underline"
                   >
                     {request.unitName}
@@ -65,14 +72,14 @@ export default function McRequestsClient({
                 </span>
               </p>
               <p className="text-small text-text-secondary mt-4">
-                {new Date(request.startDate).toLocaleDateString()} —{' '}
-                {new Date(request.endDate).toLocaleDateString()} · {party}{' '}
+                <LocalDate value={request.startDate} /> —{' '}
+                <LocalDate value={request.endDate} /> · {party}{' '}
                 {labels['mc.requests.guests']}
               </p>
               {request.requestExpiresAt ? (
                 <p className="text-small text-state-warning mt-4">
                   {labels['mc.requests.expires']}:{' '}
-                  {new Date(request.requestExpiresAt).toLocaleString()}
+                  {new Date(request.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                 </p>
               ) : null}
               <BookingRequestInboxDetails

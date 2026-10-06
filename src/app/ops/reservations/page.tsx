@@ -1,10 +1,13 @@
+import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import type { BookingStatus } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
+import { formatDate } from '@/lib/date';
 import {
   getOperatingSpaceMembership,
   getOperatingSpaceUnitIds,
@@ -120,7 +123,9 @@ export default async function ReservationDesk({
     }),
   ]);
 
+  const locale=getRequestLocale();
   const labels=await getLabels({
+    ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'reservations.back':'← Operating space',
     'reservations.kicker':'RESERVATION DESK',
     'reservations.title':'Reservations',
@@ -165,12 +170,12 @@ export default async function ReservationDesk({
     spaceId,...(value?{status:value}:{}),
   }).toString();
 
-  return <main className="min-h-screen bg-surface-ivory p-16 md:p-32">
+  return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-7xl space-y-20">
       <header>
         <Link href={'/ops/spaces/'+encodeURIComponent(spaceId)}
           className="text-small font-semibold text-brand-andaman">{labels['reservations.back']}</Link>
-        <p className="mt-16 text-kicker font-bold tracking-widest text-brand-andaman">{labels['reservations.kicker']}</p>
+        <p className="mt-16 stitch-kicker">{labels['reservations.kicker']}</p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['reservations.title']}</h1>
         <p className="mt-8 text-body text-text-secondary">{labels['reservations.subtitle']}</p>
       </header>
@@ -180,10 +185,10 @@ export default async function ReservationDesk({
           [labels['reservations.total'],bookings.length],
           [labels['reservations.arrivals'],arrivals],
           [labels['reservations.requests'],requests],
-          [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString()],
-        ].map(([label,value])=><div key={String(label)} className="rounded-xl border border-border-line bg-surface-paper p-16">
+          [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString(UI_LOCALE)],
+        ].map(([label,value])=><div key={String(label)} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
-          <p className="mt-4 font-display text-heading-2 font-bold">{value}</p>
+          <p className="mt-4 font-display text-heading-2 font-bold font-tabular">{value}</p>
         </div>)}
       </section>
 
@@ -194,11 +199,11 @@ export default async function ReservationDesk({
         <Link href={statusHref('')} className="rounded-full border border-border-line bg-surface-paper px-12 py-8 text-small">{labels['reservations.all']}</Link>
         {allowedStatuses.map(value=><Link key={value} href={statusHref(value)}
           className={'rounded-full border px-12 py-8 text-small '+(status===value?'border-brand-andaman text-brand-andaman':'border-border-line bg-surface-paper')}>
-          {value.replace(/_/g,' ')}
+          {enumLabel(labels,'bookingStatus',value)}
         </Link>)}
       </nav>
 
-      <section className="overflow-hidden rounded-xl border border-border-line bg-surface-paper">
+      <section className="overflow-hidden stitch-panel">
         {bookings.map(booking=>{
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
           return <article key={booking.id} className="grid gap-12 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
@@ -206,8 +211,8 @@ export default async function ReservationDesk({
               <p className="font-semibold text-text-ink">{booking.unit.project.name} · {booking.unit.name}</p>
               <p className="text-small text-text-secondary">{booking.guestIdentity.firstName} {booking.guestIdentity.lastName}</p>
             </div>
-            <div><p className="text-small text-text-secondary">{booking.status.replace(/_/g,' ')}</p><p>{booking.channel}</p></div>
-            <div><p>{booking.startDate.toISOString().slice(0,10)}</p><p className="text-small text-text-secondary">→ {booking.endDate.toISOString().slice(0,10)}</p></div>
+            <div><p className="text-small text-text-secondary">{enumLabel(labels,'bookingStatus',booking.status)}</p><p>{enumLabel(labels,'bookingChannel',booking.channel)}</p></div>
+            <div><p>{formatDate(booking.startDate,locale)}</p><p className="text-small text-text-secondary">→ {formatDate(booking.endDate,locale)}</p></div>
             <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p></div>
             <div><Link href={'/ops/stays/'+encodeURIComponent(booking.id)} className="text-small font-semibold text-brand-andaman">{labels['reservations.open']}</Link></div>
           </article>;
@@ -217,10 +222,10 @@ export default async function ReservationDesk({
       <section>
         <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['reservations.groups']}</h2>
         <div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">
-          {groups.map(group=><article key={group.id} className="rounded-xl border border-border-line bg-surface-paper p-16">
+          {groups.map(group=><article key={group.id} className="stitch-panel p-16">
             <p className="font-display text-heading-3 font-semibold">{group.title||group.id.slice(0,8)}</p>
             <p className="mt-4 text-small text-text-secondary">{group.guest.firstName} {group.guest.lastName}</p>
-            <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString())}</p>
+            <p className="mt-12 text-small text-text-secondary">{labels['reservations.group_summary'].replace('{count}',String(group.bookings.length)).replace('{amount}',Math.round(group.bookings.reduce((sum,b)=>sum+b.totalThb,0)/100).toLocaleString(UI_LOCALE))}</p>
             <div className="mt-8 flex flex-wrap gap-4">{group.bookings.map(b=><span key={b.id} className="rounded-full bg-surface-ivory px-8 py-4 text-small">{b.unit.project.name} · {b.unit.name}</span>)}</div>
           </article>)}
         </div>

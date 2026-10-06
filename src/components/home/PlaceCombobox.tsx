@@ -114,7 +114,7 @@ export function PlaceCombobox({
           id={listId}
           role="listbox"
           aria-label={labels.label}
-          className="absolute left-0 right-0 top-full z-30 mt-4 max-h-[320px] overflow-y-auto rounded-xl border border-border-line bg-surface-paper p-8 shadow-float"
+          className="absolute left-0 right-0 top-full z-30 mt-4 max-h-[320px] overflow-y-auto rounded-md border border-border-line bg-surface-paper p-8 shadow-float"
         >
           {matches.length === 0 ? (
             <li role="presentation" className="px-12 py-12 text-small text-text-secondary">

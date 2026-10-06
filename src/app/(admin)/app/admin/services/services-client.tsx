@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface AdminService {
   id: string;
@@ -59,14 +60,14 @@ export default function ServicesAdminClient({
 
   if (services.length === 0) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-32">
+      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32">
         <p className="text-body text-text-secondary">{labels['admin.services.empty']}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
       {error && (
         <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
           <p className="text-body text-state-error">{error}</p>
@@ -83,7 +84,7 @@ export default function ServicesAdminClient({
               <span className="text-text-secondary font-normal"> · {service.providerName}</span>
             </p>
             <p className="text-small text-text-secondary">
-              {new Date(service.createdAt).toLocaleDateString()}
+              <LocalDate value={service.createdAt} />
             </p>
           </div>
           <span

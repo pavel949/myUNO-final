@@ -15,7 +15,7 @@ export default function ManagerUnitForm({ projects }: { projects: Project[] }) {
   const project = projects.find((item) => item.id === projectId);
   const category = project?.categories.find((item) => item.id === categoryId);
   const field = 'mt-4 block w-full rounded-md border border-border-line bg-surface-paper px-12 py-12 text-text-ink';
-  return <form className="mt-24 grid gap-16 rounded-lg border border-border-line bg-surface-paper p-24 md:grid-cols-2" onSubmit={async (event) => {
+  return <form className="mt-24 grid gap-16 stitch-panel p-24 md:grid-cols-2" onSubmit={async (event) => {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const data = new FormData(event.currentTarget);

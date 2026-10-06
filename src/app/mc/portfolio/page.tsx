@@ -4,9 +4,13 @@ import { getMCProjectScopes, getStaffProjectIds } from '@/app/libs/projectScope'
 
 export const dynamic = 'force-dynamic';
 
-type PageProps = { searchParams?: { month?: string; projectId?: string } };
+type PageProps = { searchParams?: { month?: string; projectId?: string; organizationId?: string } };
 
-export default async function ManagedPortfolioCalendarPage({ searchParams }: PageProps) {
+/**
+ * Compatibility route. For management-company users, Portfolio now opens the
+ * managed-property section of PMS Today. Staff/admin retain the calendar route.
+ */
+export default async function ManagedPortfolioCompatibilityPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/mc/portfolio');
 
@@ -14,22 +18,33 @@ export default async function ManagedPortfolioCalendarPage({ searchParams }: Pag
   const staffProjectIds = getStaffProjectIds(user);
   if (!scopes.length && !staffProjectIds.length && !user.isAdmin) redirect('/');
 
-  const query = new URLSearchParams();
   const requestedProjectId =
     typeof searchParams?.projectId === 'string' ? searchParams.projectId : '';
+  const requestedOrganizationId =
+    typeof searchParams?.organizationId === 'string' ? searchParams.organizationId : '';
 
   if (scopes.length) {
-    query.set('mc', '1');
-    if (requestedProjectId && scopes.some((scope) => scope.projectId === requestedProjectId)) {
-      query.set('projectId', requestedProjectId);
-    }
-  } else if (
+    const activeScope =
+      scopes.find((scope) =>
+        scope.projectId === requestedProjectId &&
+        (!requestedOrganizationId || scope.organizationId === requestedOrganizationId)
+      ) ??
+      (requestedProjectId ? scopes.find((scope) => scope.projectId === requestedProjectId) : null) ??
+      scopes[0];
+    const query = new URLSearchParams({
+      projectId: activeScope.projectId,
+      organizationId: activeScope.organizationId,
+    });
+    redirect('/mc?' + query.toString() + '#managed-properties');
+  }
+
+  const query = new URLSearchParams();
+  if (
     requestedProjectId &&
     (user.isAdmin || staffProjectIds.includes(requestedProjectId))
   ) {
     query.set('projectId', requestedProjectId);
   }
-
   const month = typeof searchParams?.month === 'string' ? searchParams.month : '';
   if (/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) query.set('start', month + '-01');
   query.set('days', '30');

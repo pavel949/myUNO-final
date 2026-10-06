@@ -283,7 +283,7 @@ export default async function LandingPage({
     ),
   ];
 
-  const featuredProjects = projects.slice(0, 5);
+  const featuredProjects = projects.slice(0, 8);
   const serviceGroups = groupServicesBySituation(services, 2);
   const intents = ['stay', 'monthly', 'buy'] as const;
   const perIntent = <T,>(build: (intent: (typeof intents)[number]) => T) =>
@@ -301,7 +301,7 @@ export default async function LandingPage({
   const linkMore = 'shrink-0 text-body font-semibold text-brand-andaman hover:underline';
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="min-h-screen bg-surface-mint">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
@@ -460,14 +460,14 @@ export default async function LandingPage({
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-border-line bg-surface-ivory p-32 text-text-secondary">
+              <div className="rounded-lg border border-border-line bg-surface-ivory p-32 text-text-secondary">
                 {labels['landing.hp.complexes.empty']}
               </div>
             )}
           </div>
         </section>
 
-        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="offers-heading">
+        <section className="bg-surface-mint py-56 md:py-96" aria-labelledby="offers-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
             <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.offers.kicker']}</p>
             <HomeOffersRail
@@ -531,7 +531,7 @@ export default async function LandingPage({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border-line p-32 text-text-secondary">
+            <div className="rounded-lg border border-border-line p-32 text-text-secondary">
               {labels['landing.hp.services.empty']}
             </div>
           )}
@@ -539,7 +539,7 @@ export default async function LandingPage({
       </section>
 
       {areas.length ? (
-        <section className="bg-surface-ivory py-56 md:py-96" aria-labelledby="areas-heading">
+        <section className="bg-surface-mint py-56 md:py-96" aria-labelledby="areas-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
             <div className={sectionHead}>
               <div className="max-w-2xl">
@@ -561,7 +561,7 @@ export default async function LandingPage({
                   <Link
                     key={area.id}
                     href={`/areas/${area.slug}`}
-                    className="group relative isolate min-h-[320px] overflow-hidden rounded-2xl bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
+                    className="group relative isolate min-h-[320px] overflow-hidden rounded-lg bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
                   >
                     <Image
                       src={media.src}
@@ -611,7 +611,7 @@ export default async function LandingPage({
                   source: 'homepage_owners',
                   intent: goal.key,
                 }}
-                className={`group flex min-h-[240px] flex-col justify-between rounded-2xl p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
+                className={`group flex min-h-[240px] flex-col justify-between rounded-lg p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
                   index === 3
                     ? 'bg-brand-andaman text-surface-ivory'
                     : 'border border-border-line bg-surface-ivory text-text-ink'

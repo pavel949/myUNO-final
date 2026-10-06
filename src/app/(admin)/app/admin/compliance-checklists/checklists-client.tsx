@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { LocalDate } from '@/components/LocalDate';
 
 interface ChecklistRow {
   id: string;
@@ -173,7 +174,7 @@ export default function ComplianceChecklistsClient({
         </div>
       )}
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.checklists.create_template']}
         </h2>
@@ -201,7 +202,7 @@ export default function ComplianceChecklistsClient({
         </div>
       </section>
 
-      <section className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+      <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
           {labels['admin.checklists.schedule_title']}
         </h2>
@@ -266,7 +267,7 @@ export default function ComplianceChecklistsClient({
                     {row.templateName} · {row.templateFrequency}
                   </td>
                   <td className="p-12 text-text-secondary">
-                    {new Date(row.dueDate).toLocaleDateString()}
+                    <LocalDate value={row.dueDate} />
                   </td>
                   <td className="p-12 text-text-secondary">
                     {row.passed === null

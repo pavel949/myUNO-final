@@ -1,9 +1,11 @@
+
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
 import { getLabels } from '@/lib/i18n';
+import { LocalDate } from '@/components/LocalDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +85,7 @@ export default async function MessagesInboxPage() {
                       )}
                       {thread.lastMessageAt && (
                         <span className="text-small text-text-stone">
-                          {new Date(thread.lastMessageAt).toLocaleDateString()}
+                          <LocalDate value={thread.lastMessageAt} />
                         </span>
                       )}
                     </div>

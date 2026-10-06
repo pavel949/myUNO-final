@@ -1,5 +1,7 @@
 'use client';
 
+
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 type Reservation = {
@@ -91,7 +93,7 @@ export default function AmenityBookingClient({
   }
 
   return <div className="grid gap-24 lg:grid-cols-[1fr_360px]">
-    <form onSubmit={submit} className="rounded-xl border border-border-line bg-surface-paper p-20">
+    <form onSubmit={submit} className="rounded-md border border-border-line bg-surface-paper p-20">
       <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['amenity_booking.new']}</h2>
       <p className="mt-8 text-small text-text-secondary">
         {labels['amenity_booking.policy']
@@ -119,11 +121,11 @@ export default function AmenityBookingClient({
       <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">{busy ? labels['amenity_booking.saving'] : labels['amenity_booking.submit']}</button>
     </form>
 
-    <aside className="rounded-xl border border-border-line bg-surface-paper p-20">
+    <aside className="rounded-md border border-border-line bg-surface-paper p-20">
       <h2 className="font-semibold text-text-ink">{labels['amenity_booking.upcoming']}</h2>
       <div className="mt-12 space-y-12">
         {reservations.map(row => <article key={row.id} className="rounded-lg bg-surface-ivory p-12">
-          <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString()}</p>
+          <p className="font-semibold text-text-ink">{new Date(row.startAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}</p>
           <p className="mt-8 text-small text-text-secondary">{labels['amenity_booking.party_count'].replace('{count}', String(row.partySize))} · {row.status}</p>
           <button type="button" disabled={busy} onClick={()=>cancel(row.id)} className="mt-8 text-small font-semibold text-state-error">{labels['amenity_booking.cancel']}</button>
         </article>)}

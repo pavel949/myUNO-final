@@ -6,7 +6,7 @@ import { AdminNavLinks, NavSection } from './AdminNavLinks';
 
 export const dynamic = 'force-dynamic';
 
-/** S14 admin shell: deep sidebar, grouped into 4 named sections (doc 06 §S14, board 03). */
+/** Stitch-aligned admin shell: compact rail, progressive disclosure, canonical routes unchanged. */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -127,27 +127,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-surface-ivory">
-      <aside className="sticky top-0 z-30 shrink-0 bg-brand-deep text-on-dark-text p-16 md:static md:w-56 md:min-h-screen" style={{ minWidth: '220px' }}>
-        <p className="font-display text-subtitle font-bold mb-12 md:mb-20">{labels['admin.nav.title']}</p>
-        <details className="md:hidden">
-          <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-12 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
-            {labels['admin.nav.mobile_menu']}
-          </summary>
-          <div className="mt-12 max-h-[65vh] overflow-y-auto overscroll-contain pb-12">
+    <div className="pms-touch stitch-workspace flex min-h-screen flex-col md:flex-row">
+      <aside className="sticky top-0 z-30 shrink-0 border-r border-white/10 bg-brand-deep text-on-dark-text shadow-float md:h-screen md:w-[256px]">
+        <div className="flex h-full flex-col p-12 md:p-16">
+          <p className="mb-12 font-display text-subtitle font-bold md:mb-16">{labels['admin.nav.title']}</p>
+          <details className="md:hidden">
+            <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-12 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
+              {labels['admin.nav.mobile_menu']}
+            </summary>
+            <div className="mt-12 max-h-[65vh] overflow-y-auto overscroll-contain pb-12">
+              <AdminNavLinks sections={sections} />
+            </div>
+          </details>
+          <div className="hidden min-h-0 flex-1 overflow-y-auto overscroll-contain pr-4 md:block">
             <AdminNavLinks sections={sections} />
           </div>
-        </details>
-        <div className="hidden md:block">
-          <AdminNavLinks sections={sections} />
+          <p className="mt-12 hidden shrink-0 border-t border-white/10 pt-12 md:block">
+            <Link href="/" className="text-small text-on-dark-muted hover:text-on-dark-text hover:underline">
+              {labels['admin.nav.back_to_site']}
+            </Link>
+          </p>
         </div>
-        <p className="hidden md:block mt-24">
-          <Link href="/" className="text-small text-on-dark-muted hover:underline">
-            {labels['admin.nav.back_to_site']}
-          </Link>
-        </p>
       </aside>
-      <div className="flex-1 p-24">{children}</div>
+      <div className="min-w-0 flex-1 bg-surface-mint p-20 md:p-32">{children}</div>
     </div>
   );
 }

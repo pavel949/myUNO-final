@@ -1,3 +1,4 @@
+import { UI_LOCALE } from '@/lib/format';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
         createdAt: payout.createdAt.toISOString(),
       },
       remittanceDetails: remittance,
-      message: `Provider payout recorded for ${provider.name}: ฿${(payout.amountThb / 100).toLocaleString()}`,
+      message: `Provider payout recorded for ${provider.name}: ฿${(payout.amountThb / 100).toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
     return handleError(error)

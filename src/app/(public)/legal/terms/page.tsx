@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { StitchMain, PublicHero, Panel } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 import { LegalEntityBlock } from '@/components';
@@ -43,21 +44,15 @@ export default async function TermsPage() {
   const labels = await getLabels(LEGAL_LABELS);
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-display-xl font-semibold">{labels['legal.terms.title']}</h1>
-        </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-24 py-40 flex flex-col gap-32">
+    <StitchMain narrow>
+      <PublicHero dark title={labels['legal.terms.title']} />
+      <Panel>
         {/* The substantive terms are counsel's to write, not ours to invent
             (docs/open_questions.md Q16 follow-up). What we can state today is
             exactly who the counterparty is. */}
-        <p className="text-body text-text-secondary">{labels['legal.terms.pending']}</p>
-
+        <p className="mb-20 text-body text-text-secondary">{labels['legal.terms.pending']}</p>
         <LegalEntityBlock labels={labels} />
-      </div>
-    </main>
+      </Panel>
+    </StitchMain>
   );
 }

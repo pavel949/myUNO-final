@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { StitchMain, PublicHero, Panel, LinkButton } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 
@@ -105,45 +105,20 @@ export default async function AboutPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-display text-display-xl font-semibold mb-24">{labels['about.title']}</h1>
-          <p className="text-body text-surface-ivory/90">{labels['about.intro']}</p>
+    <StitchMain narrow>
+      <PublicHero dark title={labels['about.title']} body={labels['about.intro']} />
+      {sections.map((section) => (
+        <Panel key={section.key} title={section.title}>
+          <p className="text-body text-text-secondary">{section.body}</p>
+        </Panel>
+      ))}
+      <Panel soft className="text-center">
+        <h2 className="font-display text-heading-2 font-semibold text-text-ink">{labels['about.cta_title']}</h2>
+        <div className="mt-20 flex flex-col justify-center gap-12 sm:flex-row">
+          <LinkButton href="/register">{labels['about.cta_book']}</LinkButton>
+          <LinkButton href="/owners" variant="secondary">{labels['about.cta_owner']}</LinkButton>
         </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-24 py-40 flex flex-col gap-24">
-        {sections.map((section) => (
-          <section
-            key={section.key}
-            className="bg-surface-paper border border-border-line rounded-md p-32"
-          >
-            <h2 className="text-heading-3 font-bold text-text-ink mb-12">{section.title}</h2>
-            <p className="text-body text-text-secondary">{section.body}</p>
-          </section>
-        ))}
-      </div>
-
-      <section className="bg-surface-paper py-40 px-24 border-t border-border-line">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-heading-2 font-bold text-text-ink mb-24">{labels['about.cta_title']}</h3>
-          <div className="flex flex-col sm:flex-row gap-16 justify-center">
-            <Link
-              href="/register"
-              className="px-32 py-16 bg-brand-andaman text-surface-ivory rounded-md hover:bg-brand-andaman-dark transition-colors font-semibold"
-            >
-              {labels['about.cta_book']}
-            </Link>
-            <Link
-              href="/owners"
-              className="px-32 py-16 border-2 border-brand-andaman text-brand-andaman rounded-md hover:bg-brand-andaman/10 transition-colors font-semibold"
-            >
-              {labels['about.cta_owner']}
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
+      </Panel>
+    </StitchMain>
   );
 }

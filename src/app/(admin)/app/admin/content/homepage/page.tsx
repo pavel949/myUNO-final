@@ -47,7 +47,7 @@ export default async function HomepagePlacementPage() {
     <div className="mb-24 flex flex-wrap items-start justify-between gap-16">
       <div>
         <Link href="/app/admin/content" className="text-small font-semibold text-brand-andaman hover:underline">← Content</Link>
-        <p className="mt-12 text-kicker uppercase text-brand-andaman">Homepage</p>
+        <p className="stitch-kicker mt-12">Homepage</p>
         <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">Editorial placements</h1>
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
           Curate the visible order by destination and locale. This surface never overrides canonical price, availability, media readiness or operating authority.

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
+import { AudienceLanding } from '@/components/premium/AudienceLanding';
 import { getLabels } from '@/lib/i18n';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { track } from '@/modules/analytics';
@@ -42,38 +42,15 @@ export default async function DevelopersPage() {
   const points = ([1, 2, 3] as const).map((n) => labels[`audience.developers.point${n}`]);
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-display text-display-xl font-semibold mb-24">
-            {labels['audience.developers.hero_title']}
-          </h1>
-          <p className="text-body text-surface-ivory/90 mb-32">
-            {labels['audience.developers.hero_lede']}
-          </p>
-          <Link
-            href="#lead-form"
-            className="inline-flex items-center justify-center bg-surface-ivory text-brand-andaman px-32 py-16 rounded-lg font-semibold hover:bg-opacity-90"
-          >
-            {labels['audience.developers.cta']} →
-          </Link>
-        </div>
-      </section>
-
-      <section className="max-w-4xl mx-auto py-64 px-24">
-        <ul className="space-y-24 text-body">
-          {points.map((point) => (
-            <li key={point} className="flex gap-20">
-              <span className="text-brand-andaman font-bold">✓</span>
-              <span>{point}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
+    <AudienceLanding
+      title={labels['audience.developers.hero_title']}
+      subtitle={labels['audience.developers.hero_lede']}
+      cta={{ href: '#lead-form', label: labels['audience.developers.cta'] }}
+      values={points}
+    >
       <div id="lead-form">
         <LeadFormSection audience="developers" />
       </div>
-    </main>
+    </AudienceLanding>
   );
 }

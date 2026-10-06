@@ -468,7 +468,7 @@ export default function SearchResults({
               {categories.map((category) => (
                 <div
                   key={category.inventory_category_id}
-                  className="bg-surface-paper border border-border-line rounded-md p-16"
+                  className="stitch-panel p-16"
                 >
                   <h3 className="text-subtitle font-semibold text-text-ink mb-8">
                     {category.label}
@@ -516,7 +516,7 @@ export default function SearchResults({
               </div>
 
               {units.length === 0 ? (
-                <div className="rounded-md border border-border-line bg-surface-paper p-32 text-center">
+                <div className="stitch-panel p-32 text-center">
                   <p className="mb-8 text-body text-text-ink">{labels.empty}</p>
                   <p className="text-small text-text-secondary">{labels.emptyHint}</p>
                 </div>

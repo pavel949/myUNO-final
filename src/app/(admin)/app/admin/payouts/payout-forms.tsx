@@ -149,7 +149,7 @@ export default function PayoutForms({
   );
 
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+    <div className="stitch-panel p-24 mb-24">
       <h2 className="text-heading-3 font-bold text-text-ink mb-16">
         {labels['admin.payouts.record_title']}
       </h2>

@@ -171,17 +171,17 @@ export default function HomepagePlacementClient({
     </aside>
 
     <div className="space-y-20">
-      {message ? <p role="status" className="rounded-md border border-border-line bg-surface-paper p-12 text-small">{message}</p> : null}
-      <section className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
-        <p className="text-kicker uppercase text-brand-andaman">New placement</p>
+      {message ? <p role="status" className="stitch-panel p-12 text-small">{message}</p> : null}
+      <section className="stitch-panel p-20">
+        <p className="stitch-kicker">New placement</p>
         <form onSubmit={createPlacement} className="mt-16">{editorFields(null)}
           <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">Add placement</button>
         </form>
       </section>
 
-      {selected ? <section className="rounded-lg border border-border-line bg-surface-paper p-20 shadow-card">
+      {selected ? <section className="stitch-panel p-20">
         <div className="flex flex-wrap items-start justify-between gap-12">
-          <div><p className="text-kicker uppercase text-brand-andaman">Selected placement</p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
+          <div><p className="stitch-kicker">Selected placement</p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
           <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-12 font-semibold text-state-error disabled:opacity-50">Delete</button>
         </div>
         <form key={selected.id} onSubmit={savePlacement} className="mt-16">{editorFields(selected)}

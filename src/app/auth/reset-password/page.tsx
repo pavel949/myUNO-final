@@ -24,8 +24,8 @@ export default async function ResetPasswordPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory flex items-start justify-center px-24 py-64">
-      <div className="w-full max-w-md bg-surface-paper border border-border-line rounded-lg p-32">
+    <main className="stitch-workspace flex items-start justify-center px-24 py-64">
+      <div className="stitch-panel w-full max-w-md p-32">
         <Suspense>
           <ResetPasswordForm
             labels={{

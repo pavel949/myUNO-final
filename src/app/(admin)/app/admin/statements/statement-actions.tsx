@@ -145,7 +145,7 @@ export default function StatementActions({
     <div className="flex flex-col gap-24">
       <form
         onSubmit={generate}
-        className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-12"
+        className="stitch-panel p-24 flex flex-col gap-12"
       >
         <div>
           <h2 className="text-heading-3 font-bold text-text-ink mb-4">

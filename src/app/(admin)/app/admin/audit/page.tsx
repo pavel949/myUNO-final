@@ -239,7 +239,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
       </div>
 
       {result.entries.length === 0 ? (
-        <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
+        <div className="stitch-panel p-24 text-center">
           <p className="text-body text-text-secondary">
             {filtered ? labels['admin.audit.empty'] : labels['admin.audit.empty_all']}
           </p>

@@ -154,7 +154,7 @@ export default function AdminTicketsClient({
       </div>
 
       {tickets.length === 0 ? (
-        <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
+        <div className="stitch-panel p-32 text-center">
           <p className="text-body text-text-secondary">{labels['admin.tickets.empty']}</p>
         </div>
       ) : (

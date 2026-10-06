@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { StitchMain, PublicHero, Panel } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 import { LegalEntityBlock } from '@/components';
@@ -191,25 +192,19 @@ export default async function PrivacyPage() {
   );
 
   const section = (title: string, children: React.ReactNode) => (
-    <section>
-      <h2 className="text-heading-3 font-bold text-text-ink mb-16">{title}</h2>
-      {children}
-    </section>
+    <Panel title={title}>{children}</Panel>
   );
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-display-xl font-semibold">{labels['legal.privacy.title']}</h1>
-          <p className="text-body mt-8 opacity-90">
-            {`${labels['legal.privacy.updated_label']}: ${labels['legal.privacy.updated']}`}
-          </p>
-        </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-24 py-40 flex flex-col gap-32">
+    <StitchMain narrow>
+      <PublicHero
+        dark
+        title={labels['legal.privacy.title']}
+        body={`${labels['legal.privacy.updated_label']}: ${labels['legal.privacy.updated']}`}
+      />
+      <Panel>
         <p className="text-body text-text-secondary">{labels['legal.privacy.intro']}</p>
+      </Panel>
 
         {section(
           labels['legal.privacy.controller_title'],
@@ -268,7 +263,6 @@ export default async function PrivacyPage() {
           labels['legal.privacy.changes_title'],
           <p className="text-body text-text-secondary">{labels['legal.privacy.changes_body']}</p>
         )}
-      </div>
-    </main>
+    </StitchMain>
   );
 }

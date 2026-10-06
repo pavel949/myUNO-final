@@ -45,16 +45,17 @@ export default async function AmenityDetailPage({
     'project_amenity.included': 'Included',
   });
 
-  return <main className="min-h-screen bg-surface-ivory">
-    <header className="border-b border-border-line bg-surface-paper px-24 py-24">
-      <div className="mx-auto max-w-5xl">
+  return <main className="stitch-workspace">
+    <div className="stitch-page max-w-5xl space-y-24">
+    <header className="stitch-hero">
+      <div>
         <Link href={`/projects/${project.slug}/amenities`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['project_amenity.back']}</Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{amenity.name}</h1>
         {amenity.shortDescription ? <p className="mt-8 text-body text-text-secondary">{amenity.shortDescription}</p> : null}
       </div>
     </header>
 
-    <div className="mx-auto max-w-5xl px-24 py-32">
+    <div className="stitch-panel p-20 md:p-24">
       {amenity.galleryUrls.length ? (
         <div className="grid gap-8 sm:grid-cols-2">
           {amenity.galleryUrls.map((src, i) => <Image key={src} src={src} alt={`${amenity.name} photo ${i+1}`} width={900} height={540} className="aspect-video w-full rounded-lg object-cover" />)}
@@ -68,7 +69,7 @@ export default async function AmenityDetailPage({
           {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.terms']}</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
           {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
         </article>
-        <aside className="rounded-md border border-border-line bg-surface-paper p-20">
+        <aside className="stitch-panel-soft p-20">
           <dl className="space-y-12 text-small">
             {amenity.locationLabel ? <div><dt className="text-text-secondary">{labels['project_amenity.location']}</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
             <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>
@@ -82,18 +83,19 @@ export default async function AmenityDetailPage({
             ['time_slot','request','reception'].includes(amenity.bookingMode) ? (
               <Link
                 href={`/projects/${project.slug}/amenities/${amenity.slug}/book${searchParams?.bookingId ? `?bookingId=${encodeURIComponent(searchParams.bookingId)}` : ''}`}
-                className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white"
+                className="mt-20 inline-flex min-h-48 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-surface-ivory hover:bg-brand-deep"
               >
                 {labels['project_amenity.book']}
               </Link>
             ) : amenity.bookingUrl ? (
-              <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-44 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-white">
+              <a href={amenity.bookingUrl} className="mt-20 inline-flex min-h-48 w-full items-center justify-center rounded-lg bg-brand-andaman px-16 font-semibold text-surface-ivory hover:bg-brand-deep">
                 {labels['project_amenity.book']}
               </a>
             ) : null
           ) : null}
         </aside>
       </div>
+    </div>
     </div>
   </main>;
 }

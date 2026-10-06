@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { StitchMain, PublicHero } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
@@ -123,27 +124,14 @@ export default async function HelpPage() {
   ] as const;
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-brand-deep px-20 py-56 text-surface-ivory md:px-32 md:py-80">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">
-            {labels['help.kicker']}
-          </p>
-          <h1 className="mt-8 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.02em]">
-            {labels['help.title']}
-          </h1>
-          <p className="mt-16 max-w-3xl text-body text-surface-ivory/72">
-            {labels['help.body']}
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-20 py-48 md:px-32 md:py-64">
-        <div className="grid gap-20 lg:grid-cols-2">
+    <StitchMain>
+      <PublicHero dark kicker={labels['help.kicker']} title={labels['help.title']} body={labels['help.body']} />
+      <div className="grid gap-20 lg:grid-cols-2">
+        <div className="contents">
           {sections.map((section) => (
             <article
               key={section.title}
-              className="rounded-md border border-border-line bg-surface-paper p-24"
+              className="stitch-panel p-24"
             >
               <h2 className="font-display text-title font-semibold text-text-ink">
                 {section.title}
@@ -177,7 +165,7 @@ export default async function HelpPage() {
             </article>
           ))}
         </div>
-      </section>
-    </main>
+      </div>
+    </StitchMain>
   );
 }

@@ -98,10 +98,10 @@ export default async function MyUnoPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="border-b border-border-line bg-surface-paper">
         <div className="mx-auto max-w-7xl px-20 py-48 md:px-32 md:py-64">
-          <p className="text-kicker font-semibold uppercase tracking-[0.18em] text-brand-andaman">
+          <p className="stitch-kicker">
             {labels['myuno.kicker']}
           </p>
           <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold text-text-ink">
@@ -124,7 +124,7 @@ export default async function MyUnoPage() {
                 <Link
                   key={surface.path}
                   href={surface.path}
-                  className="group rounded-lg border border-border-line bg-surface-paper p-20 transition hover:border-brand-andaman/40 hover:shadow-card"
+                  className="stitch-panel group p-20 transition hover:border-brand-andaman/40 hover:shadow-card"
                 >
                   <p className="font-display text-title font-semibold text-text-ink">
                     {labels[reasonLabelKey[surface.reason]]}
@@ -144,7 +144,7 @@ export default async function MyUnoPage() {
           </h2>
           <div className="mt-20 grid gap-12 md:grid-cols-2 lg:grid-cols-4">
             {personal.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-lg border border-border-line bg-surface-paper p-20">
+              <Link key={item.href} href={item.href} className="stitch-panel p-20">
                 <h3 className="font-display text-title font-semibold text-text-ink">{item.title}</h3>
                 <p className="mt-8 text-small leading-relaxed text-text-secondary">{item.body}</p>
               </Link>
@@ -158,11 +158,11 @@ export default async function MyUnoPage() {
               {labels['myuno.property.title']}
             </h2>
             <div className="mt-20 grid gap-12 md:grid-cols-2">
-              <Link href="/owner" className="rounded-lg border border-border-line bg-surface-paper p-24">
+              <Link href="/owner" className="stitch-panel p-24">
                 <h3 className="font-display text-title font-semibold text-text-ink">{labels['myuno.property.homes']}</h3>
                 <p className="mt-8 text-body text-text-secondary">{labels['myuno.property.homes_body']}</p>
               </Link>
-              <Link href="/property/listings" className="rounded-lg border border-border-line bg-surface-paper p-24">
+              <Link href="/property/listings" className="stitch-panel p-24">
                 <h3 className="font-display text-title font-semibold text-text-ink">{labels['myuno.property.listings']}</h3>
                 <p className="mt-8 text-body text-text-secondary">{labels['myuno.property.listings_body']}</p>
               </Link>

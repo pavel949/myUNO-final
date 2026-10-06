@@ -302,7 +302,7 @@ export default function FounderGovernanceClient({
               <p className="font-semibold text-text-ink">{admin.firstName} {admin.lastName}</p>
               <p className="text-small text-text-secondary">{admin.email ?? '—'}</p>
               <p className="mt-6 text-kicker font-semibold uppercase tracking-wider text-brand-andaman">
-                Founder / Super Admin · Root
+                {labels['admin.governance.root_badge']}
               </p>
             </div>
           ))}
@@ -328,7 +328,7 @@ export default function FounderGovernanceClient({
                 <p className="font-semibold text-text-ink">{space.name}</p>
                 <p className="mt-2 text-small text-text-secondary">{space.organization.name}</p>
                 <p className="mt-6 text-kicker uppercase tracking-wider text-text-secondary">
-                  {space.units.length} homes · {space.members.filter((member) => member.active).length} people
+                  {space.units.length} {labels['admin.governance.metrics_homes']} · {space.members.filter((member) => member.active).length} {labels['admin.governance.metrics_people']}
                 </p>
               </button>
             ))}
@@ -365,7 +365,7 @@ export default function FounderGovernanceClient({
                 onClick={createSpace}
                 className="w-full rounded-md bg-brand-deep px-12 py-10 text-small font-semibold text-white disabled:opacity-50"
               >
-                Create operating space
+                {labels['admin.governance.create_action']}
               </button>
             </div>
           </div>
@@ -382,14 +382,14 @@ export default function FounderGovernanceClient({
                     {selectedSpace.organization.name} · {selectedSpace.timezone}
                   </p>
                   <p className="mt-4 text-small text-text-secondary">
-                    {selectedProjectNames.length ? selectedProjectNames.join(' · ') : 'No managed inventory yet'}
+                    {selectedProjectNames.length ? selectedProjectNames.join(' · ') : labels['admin.governance.no_inventory']}
                   </p>
                 </div>
                 <Link
                   href={'/ops/spaces/' + encodeURIComponent(selectedSpace.id)}
                   className="text-small font-semibold text-brand-andaman"
                 >
-                  Open operating workspace →
+                  {labels['admin.governance.open_workspace']} →
                 </Link>
               </div>
             </section>
@@ -399,7 +399,7 @@ export default function FounderGovernanceClient({
                 <div>
                   <h2 className="font-display text-title font-semibold text-text-ink">{labels['admin.governance.scope_title']}</h2>
                   <p className="mt-4 text-small text-text-secondary">
-                    Select the exact homes this leadership team is allowed to operate.
+                    {labels['admin.governance.scope_hint']}
                   </p>
                 </div>
                 <button
@@ -408,7 +408,7 @@ export default function FounderGovernanceClient({
                   onClick={saveScope}
                   className="rounded-md bg-brand-andaman px-14 py-10 text-small font-semibold text-white disabled:opacity-50"
                 >
-                  Save scope
+                  {labels['admin.governance.scope_save']}
                 </button>
               </div>
               <div className="mt-16 space-y-16">
@@ -429,7 +429,7 @@ export default function FounderGovernanceClient({
                           );
                         }}
                       >
-                        Toggle project
+                        {labels['admin.governance.toggle_project']}
                       </button>
                     </div>
                     <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -456,12 +456,12 @@ export default function FounderGovernanceClient({
             <section className="stitch-panel p-20">
               <h2 className="font-display text-title font-semibold text-text-ink">{labels['admin.governance.people_title']}</h2>
               <p className="mt-4 text-small text-text-secondary">
-                Manager titles are presets over canonical capabilities; access is still enforced by project and operating-space scope.
+                {labels['admin.governance.people_hint']}
               </p>
 
               <div className="mt-16 grid gap-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div>
-                  <h3 className="text-small font-semibold uppercase tracking-wider text-text-secondary">Current leadership & team</h3>
+                  <h3 className="text-small font-semibold uppercase tracking-wider text-text-secondary">{labels['admin.governance.current_team']}</h3>
                   <div className="mt-8 space-y-8">
                     {selectedSpace.members.filter((member) => member.active).map((member) => (
                       <button
@@ -485,19 +485,19 @@ export default function FounderGovernanceClient({
                           </span>
                         </div>
                         <p className="mt-8 text-small text-text-secondary">
-                          {member.capabilities.length} capabilities
+                          {member.capabilities.length} {labels['admin.governance.capabilities_suffix']}
                         </p>
                       </button>
                     ))}
                     {!selectedSpace.members.some((member) => member.active) ? (
                       <p className="rounded-md border border-dashed border-border-line p-12 text-small text-text-secondary">
-                        No delegated managers yet.
+                        {labels['admin.governance.no_managers']}
                       </p>
                     ) : null}
                   </div>
 
                   <div className="mt-16 border-t border-border-line pt-16">
-                    <h3 className="text-small font-semibold uppercase tracking-wider text-text-secondary">Add / find person</h3>
+                    <h3 className="text-small font-semibold uppercase tracking-wider text-text-secondary">{labels['admin.governance.add_person']}</h3>
                     <div className="mt-8 flex gap-8">
                       <input
                         value={searchQuery}
@@ -525,7 +525,7 @@ export default function FounderGovernanceClient({
                         >
                           <span className="font-semibold text-text-ink">{person.firstName} {person.lastName}</span>
                           <span className="ml-6 text-small text-text-secondary">{person.email ?? '—'}</span>
-                          {person.isAdmin ? <span className="ml-6 text-kicker text-brand-andaman">ROOT ADMIN</span> : null}
+                          {person.isAdmin ? <span className="ml-6 text-kicker text-brand-andaman">{labels['admin.governance.root_badge_short']}</span> : null}
                         </button>
                       ))}
                     </div>
@@ -542,11 +542,11 @@ export default function FounderGovernanceClient({
 
                       {selectedPerson.isAdmin ? (
                         <div className="mt-16 rounded-md border border-brand-sun/40 bg-white p-12 text-small text-text-secondary">
-                          This identity is already Founder / Super Admin. Root access is platform-wide; delegated operating-space settings do not restrict it.
+                          {labels['admin.governance.root_identity_hint']}
                         </div>
                       ) : (
                         <>
-                          <label className="mt-16 block text-small font-semibold text-text-secondary">Responsibility preset</label>
+                          <label className="mt-16 block text-small font-semibold text-text-secondary">{labels['admin.governance.preset_label']}</label>
                           <select
                             value={preset}
                             onChange={(event) => applyPreset(event.target.value)}
@@ -577,7 +577,7 @@ export default function FounderGovernanceClient({
                               onClick={() => saveMember(true)}
                               className="rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50"
                             >
-                              {activeMember ? 'Update access' : 'Assign to operating space'}
+                              {activeMember ? labels['admin.governance.update_access'] : labels['admin.governance.assign_access']}
                             </button>
                             {activeMember?.active ? (
                               <button
@@ -586,7 +586,7 @@ export default function FounderGovernanceClient({
                                 onClick={() => saveMember(false)}
                                 className="rounded-md border border-state-error px-16 py-10 text-small font-semibold text-state-error disabled:opacity-50"
                               >
-                                Revoke operating access
+                                {labels['admin.governance.revoke_access']}
                               </button>
                             ) : null}
                           </div>
@@ -595,7 +595,7 @@ export default function FounderGovernanceClient({
                     </>
                   ) : (
                     <p className="text-small text-text-secondary">
-                      Select an existing team member or search for a myUNO user to configure delegated access.
+                      {labels['admin.governance.select_person_hint']}
                     </p>
                   )}
                 </div>
@@ -604,7 +604,7 @@ export default function FounderGovernanceClient({
           </div>
         ) : (
           <div className="stitch-panel p-24 text-body text-text-secondary">
-            Create the first operating space to delegate portfolio or resort management.
+            {labels['admin.governance.empty_space']}
           </div>
         )}
       </section>

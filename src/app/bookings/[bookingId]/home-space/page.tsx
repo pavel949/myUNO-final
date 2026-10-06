@@ -44,6 +44,7 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'home.amenities.included': 'Included',
     'home.amenities.free': 'Free',
     'home.amenities.booking_required': 'Booking required',
+    'common.sample_photo': 'Sample photo · to be replaced',
     'home.stay.kicker': 'Your stay',
     'home.stay.nights_count': '{count} nights',
     'home.stay.tm30_filed': 'TM30 filed',

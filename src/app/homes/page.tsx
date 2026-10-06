@@ -1,4 +1,6 @@
 import { UI_LOCALE } from '@/lib/format';
+import { homePresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
@@ -46,6 +48,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
       }
     ).catch(() => []),
     getLabels({
+      'common.sample_photo': 'Sample photo · to be replaced',
       'homes.kicker': 'myUNO · REAL ESTATE',
       'homes.inquiry.buy': `I am looking to purchase a property in ${destination.name}.`,
       'homes.inquiry.rent': `I am looking for a long-term rental in ${destination.name}.`,
@@ -244,9 +247,11 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
                 className="group overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
-                {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
-                  className="h-full min-h-[220px] w-full object-cover" /> :
-                  <div className="min-h-[220px] bg-surface-ivory"/>}
+                {(() => { const image = homePresentationImage(home.id, home.imageUrl, home.unitType); return <div className="relative">
+                  <Image src={image.src} alt={image.illustrative ? '' : home.name} width={760} height={500}
+                    className="h-full min-h-[220px] w-full object-cover" />
+                  {image.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
+                </div>; })()}
                 <div className="flex min-w-0 flex-col justify-between p-20">
                   <div>
                     <p className="text-small font-semibold text-brand-andaman">{home.project.name}</p>

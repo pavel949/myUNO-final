@@ -1,6 +1,8 @@
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
+import { servicePresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 import type { PublicMarketplaceService } from '@/modules/services';
 
 type Labels = Record<string, string>;
@@ -71,17 +73,21 @@ export default function ProjectServiceMarketplace({
               href={`/services/${service.id}?${serviceParams()}`}
               className="overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
             >
-              {service.coverUrl ? (
-                <Image
-                  src={service.coverUrl}
-                  alt={service.title}
-                  width={640}
-                  height={480}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              ) : (
-                <div className="aspect-[4/3] bg-surface-paper" />
-              )}
+              {(() => {
+                const image = servicePresentationImage(service.id, service.coverUrl, service.categoryKey);
+                return (
+                  <div className="relative">
+                    <Image
+                      src={image.src}
+                      alt={service.title}
+                      width={640}
+                      height={480}
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                    {image.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
+                  </div>
+                );
+              })()}
               <div className="p-16">
                 <p className="text-small text-brand-andaman">
                   {labels[`services.category.${service.categoryKey}`] || service.categoryKey.replace(/_/g, ' ')}

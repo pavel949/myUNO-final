@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Button } from './Button';
+import { SamplePhotoBadge } from './SamplePhotoBadge';
 
 /**
  * Unit photography: a mosaic on desktop, a swipeable carousel on mobile.
@@ -23,6 +24,7 @@ export function UnitPhotoMosaic({
   alt,
   showAllLabel,
   emptyLabel,
+  sampleLabel,
 }: {
   images: string[];
   alt: string;
@@ -30,6 +32,8 @@ export function UnitPhotoMosaic({
   /** Shown when the home has no published photos yet (doc 06: every
    *  component ships its empty state, never a blank block). */
   emptyLabel?: string;
+  /** Set when the images are labelled samples, not this home's photos. */
+  sampleLabel?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -73,6 +77,7 @@ export function UnitPhotoMosaic({
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-8">
         <div className="col-span-2 row-span-2 relative aspect-[4/3] overflow-hidden rounded-l-lg">
           <Image src={cover} alt={alt} fill className="object-cover" priority />
+          {sampleLabel ? <SamplePhotoBadge label={sampleLabel} /> : null}
         </div>
         {thumbs.map((src, index) => (
           <div
@@ -107,6 +112,7 @@ export function UnitPhotoMosaic({
                 className="object-cover"
                 priority={index === 0}
               />
+              {sampleLabel ? <SamplePhotoBadge label={sampleLabel} /> : null}
             </div>
           ))}
         </div>

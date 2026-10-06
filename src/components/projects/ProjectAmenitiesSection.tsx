@@ -1,6 +1,8 @@
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
+import { amenityPresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 
 export type PublicProjectAmenity = {
   id: string;
@@ -60,6 +62,7 @@ export default function ProjectAmenitiesSection({
     included: string;
     free: string;
     bookingRequired: string;
+    samplePhoto: string;
   };
   bookingId?: string | null;
 }) {
@@ -89,17 +92,21 @@ export default function ProjectAmenitiesSection({
             href={detailHrefFor ? detailHrefFor(amenity) : `/projects/${projectSlug}/amenities/${amenity.slug}${bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : ''}`}
             className="overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
           >
-            {amenity.coverUrl ? (
-              <Image
-                src={amenity.coverUrl}
-                alt={amenity.name}
-                width={640}
-                height={480}
-                className="aspect-[4/3] w-full object-cover"
-              />
-            ) : (
-              <div className="aspect-[4/3] bg-surface-sand" />
-            )}
+            {(() => {
+              const image = amenityPresentationImage(amenity.coverUrl, amenity.categoryKey, amenity.name);
+              return (
+                <div className="relative">
+                  <Image
+                    src={image.src}
+                    alt={amenity.name}
+                    width={640}
+                    height={480}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                  {image.illustrative ? <SamplePhotoBadge label={labels.samplePhoto} /> : null}
+                </div>
+              );
+            })()}
             <div className="p-16">
               {amenity.categoryKey ? (
                 <p className="text-kicker uppercase text-brand-andaman">{human(amenity.categoryKey)}</p>

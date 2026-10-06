@@ -13,6 +13,7 @@ export default async function SearchPage() {
   );
 
   const labels = await getLabels({
+    'common.sample_photo': 'Sample photo · to be replaced',
     'search.filters.bedrooms': 'Bedrooms',
     'search.title': 'Find your stay',
     'search.results_summary': '{from} to {to} · {guests} guests',
@@ -66,6 +67,7 @@ export default async function SearchPage() {
         locale={locale}
         labels={{
           title: labels['search.title'],
+          samplePhoto: labels['common.sample_photo'],
           resultsSummary: labels['search.results_summary'],
           prompt: labels['search.prompt'],
           loading: labels['search.loading'],

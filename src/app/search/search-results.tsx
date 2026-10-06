@@ -2,6 +2,8 @@
 
 
 import { UI_LOCALE } from '@/lib/format';
+import { homePresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
@@ -16,6 +18,7 @@ const PAGE_SIZE = 24;
 interface Unit {
   id: string;
   name: string;
+  unitType?: string | null;
   baseNightlyThb: number;
   description?: string;
   projectId?: string;
@@ -36,6 +39,7 @@ interface CategoryCard {
 
 export interface SearchResultsLabels {
   title: string;
+  samplePhoto: string;
   resultsSummary: string;
   prompt: string;
   loading: string;
@@ -544,17 +548,21 @@ export default function SearchResults({
                             : 'overflow-hidden rounded-md border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
                         }
                       >
-                        {unit.coverUrl ? (
-                          <Image
-                            src={unit.coverUrl}
-                            alt={unit.name}
-                            width={640}
-                            height={360}
-                            className="aspect-[4/3] w-full object-cover transition-transform duration-structural group-hover:scale-[1.02]"
-                          />
-                        ) : (
-                          <div className="aspect-[4/3] bg-gradient-to-br from-surface-paper to-border-line" />
-                        )}
+                        {(() => {
+                          const image = homePresentationImage(unit.id, unit.coverUrl, unit.unitType);
+                          return (
+                            <div className="relative">
+                              <Image
+                                src={image.src}
+                                alt={image.illustrative ? '' : unit.name}
+                                width={640}
+                                height={360}
+                                className="aspect-[4/3] w-full object-cover transition-transform duration-structural group-hover:scale-[1.02]"
+                              />
+                              {image.illustrative ? <SamplePhotoBadge label={labels.samplePhoto} /> : null}
+                            </div>
+                          );
+                        })()}
                         <div className="p-16">
                           {unit.project?.name ? (
                             <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>

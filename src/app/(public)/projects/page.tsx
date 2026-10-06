@@ -30,7 +30,7 @@ export default async function ProjectsHubPage() {
     'projects.hub.units_live': '{count} homes',
     'projects.hub.from_price': 'from ฿{price} / night',
     'projects.hub.view': 'Explore the residence',
-    'projects.hub.no_photo': 'Illustrative image',
+    'projects.hub.no_photo': 'Sample photo · to be replaced',
     'projects.hub.responsibility_project': 'Operations managed by {org}',
     'projects.hub.responsibility_selected': 'Selected homes managed by {org}',
     'projects.hub.empty': 'Residences are being prepared for launch.',

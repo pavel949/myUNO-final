@@ -33,7 +33,7 @@ export default async function ServicesPage() {
 
   const labels = await getLabels({
     'services.browse.title': 'Services',
-    'landing.services.no_photo': 'Illustrative image',
+    'landing.services.no_photo': 'Sample photo · to be replaced',
     'services.browse.subtitle':
       'Cleaning, repairs, deliveries — every provider vetted, every order on the record.',
     'services.browse.categories_title': 'What do you need?',

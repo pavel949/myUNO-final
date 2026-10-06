@@ -39,9 +39,9 @@ export const PROJECT_RESTYLE_KEYS = [
     key: 'projects.hub.no_photo',
     namespace: 'projects',
     description: 'Projects hub: illustrative image badge',
-    en: 'Illustrative image',
-    ru: 'Иллюстрация',
-    th: 'ภาพประกอบ',
+    en: 'Sample photo · to be replaced',
+    ru: 'Пример фото · будет заменено',
+    th: 'ภาพตัวอย่าง · จะเปลี่ยนเป็นภาพจริง',
     status: 'needs_review' as const,
   },
   {

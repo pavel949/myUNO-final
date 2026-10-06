@@ -33,7 +33,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 
 | Namespace | Covers |
 |---|---|
-| `common.*` | Shared vocabulary: actions (`common.action.save/cancel/confirm/back`), statuses (`common.status.booking.confirmed` …every enum label from doc 02), roles, dates ("night(s)"), empty/loading/error state texts (`common.state.empty/error/loading.*`). |
+| `common.*` | Shared vocabulary: actions (`common.action.save/cancel/confirm/back`), statuses (`common.status.booking.confirmed` …every enum label from doc 02), roles, dates ("night(s)"), empty/loading/error state texts (`common.state.empty/error/loading.*`). `common.sample_photo` is the badge on stand-in photography ("Sample photo · to be replaced", founder ruling 2026-10-06) — shown wherever a home, project, amenity or service has no real photo yet. |
 | `nav.*` | Navigation: menu items, the project switcher, portfolio, footer links. |
 | `landing.*` | The master landing page sections (doc 08 §2). |
 | `audience.*` | The audience pages: `audience.owners.*`, `audience.guests.*`, `audience.developers.*`, `audience.buyers.*`, `audience.mc.*`, `audience.providers.*`. |
@@ -52,6 +52,7 @@ Builders create keys **only inside these namespaces** (new namespaces = an entry
 | `tickets.*` | Raise-ticket form, status labels, SLA texts, resolution view. |
 | `messages.*` | Inbox, thread UI, read receipts, system-message templates (`messages.system.booking_confirmed` …). |
 | `announcements.*` | Composer + display chrome (posted-as labels, audience names). |
+| `property_onboard.*` | The self-service property onboarding wizard (`/property/onboard`): steps, field labels, image types, validation and submission messages. Admin-facing, so no zh drafts. |
 | `owner.*` | Owner surfaces: portfolio, unit dashboard, statements (`owner.statement.*` line labels), owner-stay booking, payout history. |
 | `provider.*` | Provider portal: onboarding, order queue, remittance reports. |
 | `mc.*` | Management-company portal surfaces. |

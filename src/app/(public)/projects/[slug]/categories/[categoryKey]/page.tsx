@@ -1,4 +1,6 @@
 import { UI_LOCALE } from '@/lib/format';
+import { homePresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -48,6 +50,7 @@ export default async function ProjectCategoryPage({
     'project_category.view_unit': 'View exact home →',
     'project_category.inquiry_unit': 'Ask about this home →',
     'project_category.pending': 'Exact photos or online booking terms are still being completed.',
+    'common.sample_photo': 'Sample photo · to be replaced',
     'project_category.gallery': 'Category gallery',
     'project_category.representative_media': 'Representative category photos',
   });
@@ -102,7 +105,10 @@ export default async function ProjectCategoryPage({
             : `/projects/${project.slug}#lead-form`}
           className="stitch-panel-soft overflow-hidden transition hover:border-brand-andaman hover:shadow-card"
         >
-          {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-muted px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
+          {(() => { const image = homePresentationImage(unit.id, unit.coverUrl, category.name); return <div className="relative">
+            <Image src={image.src} alt={image.illustrative ? '' : unit.name} width={640} height={360} className="aspect-video w-full object-cover"/>
+            {image.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
+          </div>; })()}
           <div className="p-16">
             <p className="text-small text-brand-andaman">{category.name}</p>
             {unit.photoScope === 'room_type' ? (

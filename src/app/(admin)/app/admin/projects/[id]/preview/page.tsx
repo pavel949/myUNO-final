@@ -58,6 +58,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     'project_page.amenities.included': 'Included',
     'project_page.amenities.free': 'Free',
     'project_page.amenities.booking_required': 'Booking required',
+    'common.sample_photo': 'Sample photo · to be replaced',
     'project_page.nearby.kicker': 'Around the project',
     'project_page.nearby.title': 'What is nearby',
     'project_page.nearby.body': 'Useful places around the residence, with distance and travel estimates where available.',
@@ -154,6 +155,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
         included: labels['project_page.amenities.included'],
         free: labels['project_page.amenities.free'],
         bookingRequired: labels['project_page.amenities.booking_required'],
+        samplePhoto: labels['common.sample_photo'],
       }}
     />
     <ProjectNearbySection

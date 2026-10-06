@@ -9,12 +9,14 @@ import { Counter } from '@/components/Counter';
 import { MoneyAmount } from '@/components/MoneyAmount';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { homePresentationGallery } from '@/lib/presentation-media';
 import { LeadForm, type LeadFormLabels } from '@/components/LeadForm';
 
 interface Unit {
   id: string;
   name: string;
   marketingTitle?: string | null;
+  unitType?: string | null;
   images?: string[];
   amenityKeys?: string[];
   description?: string | null;
@@ -64,6 +66,7 @@ export interface UnitDetailLabels {
   onMyUno: string;
   showAllPhotos: string;
   photosPending: string;
+  samplePhoto: string;
   representativeMedia: string;
   guestsCount: string;
   bedroomsCount: string;
@@ -242,6 +245,10 @@ export default function UnitDetailClient({
     router.push(`/book/review?${next.toString()}`);
   };
 
+  // No real photos yet: labelled sample photos instead of an empty frame
+  // (founder ruling 2026-10-06). Real photos always win.
+  const gallery = homePresentationGallery(unit?.id ?? unitId, unit?.images ?? [], unit?.unitType);
+
   // A source tariff that cancels by arrival season binds the booking to that
   // season's ladder (ruling 2026-10-06), so the dated quote wins over the
   // property-wide default fetched before dates were known.
@@ -287,10 +294,11 @@ export default function UnitDetailClient({
         <div className="grid grid-cols-1 gap-32 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-48">
           <div className="lg:col-span-2">
             <UnitPhotoMosaic
-              images={unit.images ?? []}
+              images={gallery.images}
               alt={unit.name}
-              showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
+              showAllLabel={fill(labels.showAllPhotos, { count: gallery.images.length })}
               emptyLabel={labels.photosPending}
+              sampleLabel={gallery.illustrative ? labels.samplePhoto : undefined}
             />
             {unit.photoScope === 'room_type' ? (
               <p className="mt-8 text-small text-text-secondary">

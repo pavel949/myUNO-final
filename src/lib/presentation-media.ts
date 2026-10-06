@@ -61,3 +61,73 @@ export function servicePresentationImage(
   if (byCategory) return { src: byCategory, illustrative: true };
   return { src: SERVICE_FALLBACKS[stableIndex(serviceId, SERVICE_FALLBACKS.length)], illustrative: true };
 }
+
+/**
+ * Sample photography for homes (villas, condos) that have no real photos yet
+ * — founder ruling 2026-10-06: show labelled sample photos instead of an empty
+ * frame, always marked "Sample photo · to be replaced" in the UI. Picked from
+ * the Unsplash Lite dataset by caption (quoted). Unsplash License. Real unit
+ * or category media always wins; nothing here describes the actual home.
+ */
+const HOME_SAMPLES = {
+  villa: [
+    UNSPLASH('photo-1553337483-78c19e504060'), // "aerial view of gazebos pool villa"
+    UNSPLASH('photo-1580213845003-ace9a84fee11'), // "aerial view of swimming pool surrounded by trees"
+    UNSPLASH('photo-1744042829912-eae1e0e7dc73'), // "woman wakes up in a bright bedroom"
+    UNSPLASH('photo-1555698152-c637efae776f'), // "top-angle photography of outdoor swimming pool"
+    UNSPLASH('photo-1582805322574-e6ba46b158d5'), // "hydrangeas flowers in the living room"
+    UNSPLASH('photo-1452772783921-a4e5de72b718'), // "tropical sand beach"
+  ],
+  condo: [
+    UNSPLASH('photo-1572331165267-854da2b10ccc'), // "rooftop swimming pool"
+    UNSPLASH('photo-1542915397-17ac00eb52e4'), // "white high-rise building"
+    UNSPLASH('photo-1744042829912-eae1e0e7dc73'), // "woman wakes up in a bright bedroom"
+    UNSPLASH('photo-1491835236783-61f0a09f4e15'), // "swimming pool with sun lounge chairs nearby blue sea"
+    UNSPLASH('photo-1582805322574-e6ba46b158d5'), // "hydrangeas flowers in the living room"
+    UNSPLASH('photo-1452772783921-a4e5de72b718'), // "tropical sand beach"
+  ],
+} as const;
+
+/**
+ * Amenity stand-ins chosen by keyword in the amenity's category or name, from
+ * the same verified Unsplash set. Always shown with the sample-photo badge.
+ */
+const AMENITY_SAMPLES: Array<[RegExp, string]> = [
+  [/pool|swim|jacuzzi/i, UNSPLASH('photo-1555698152-c637efae776f')],
+  [/spa|massage|wellness|sauna/i, UNSPLASH('photo-1559548290-d6b0cb6c9050')],
+  [/restaurant|dining|cafe|bar|kitchen|food|breakfast/i, UNSPLASH('photo-1565696080740-4a8dd740db36')],
+  [/beach|sea|shore/i, UNSPLASH('photo-1452772783921-a4e5de72b718')],
+  [/boat|tour|excursion|marina/i, UNSPLASH('photo-1437719417032-8595fd9e9dc6')],
+];
+
+export function amenityPresentationImage(
+  coverUrl: string | null | undefined, categoryKey?: string | null, name?: string | null,
+): { src: string; illustrative: boolean } {
+  if (coverUrl) return { src: coverUrl, illustrative: false };
+  const haystack = `${categoryKey ?? ''} ${name ?? ''}`;
+  const match = AMENITY_SAMPLES.find(([pattern]) => pattern.test(haystack));
+  return { src: match ? match[1] : UNSPLASH('photo-1580213845003-ace9a84fee11'), illustrative: true };
+}
+
+type HomeKind = keyof typeof HOME_SAMPLES;
+const homeKind = (kind?: string | null): HomeKind =>
+  kind && /condo|apartment|studio|penthouse|loft/i.test(kind) ? 'condo' : 'villa';
+
+/** One cover image for a home card: the real cover, or a labelled sample. */
+export function homePresentationImage(
+  id: string, coverUrl: string | null | undefined, kind?: string | null,
+): { src: string; illustrative: boolean } {
+  if (coverUrl) return { src: coverUrl, illustrative: false };
+  const pool = HOME_SAMPLES[homeKind(kind)];
+  return { src: pool[stableIndex(id, pool.length)], illustrative: true };
+}
+
+/** A gallery for a home page: the real photos, or a labelled sample set. */
+export function homePresentationGallery(
+  id: string, images: string[], kind?: string | null,
+): { images: string[]; illustrative: boolean } {
+  if (images.length) return { images, illustrative: false };
+  const pool = HOME_SAMPLES[homeKind(kind)];
+  const start = stableIndex(id, pool.length);
+  return { images: [...pool.slice(start), ...pool.slice(0, start)].slice(0, 5), illustrative: true };
+}

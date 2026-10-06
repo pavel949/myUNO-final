@@ -26,7 +26,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
       'area.empty_body': 'The area remains visible for navigation, but its projects are not currently public.',
       'landing.collection.homes': '{count} homes',
       'landing.collection.from_price': 'From ฿{price} / night',
-      'landing.collection.no_photo': 'Illustrative image',
+      'landing.collection.no_photo': 'Sample photo · to be replaced',
       'landing.collection.view': 'Explore',
     }),
     listPublicProjects(),

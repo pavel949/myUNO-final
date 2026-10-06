@@ -1,6 +1,7 @@
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { homePresentationGallery } from '@/lib/presentation-media';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
@@ -57,6 +58,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
     'homes.detail.rent': 'Long-term rental enquiry',
     'homes.detail.legal': 'Listing authority has been reviewed for this commercial mode. Legal title, contract and transaction details must be confirmed during due diligence.',
     'homes.detail.show_all_photos': 'Show all {count} photos',
+    'common.sample_photo': 'Sample photo · to be replaced',
     'homes.detail.monthly_rent': 'Monthly rent',
     'homes.detail.minimum_term': 'Minimum lease',
     'homes.detail.maximum_term': 'Maximum lease',
@@ -88,6 +90,8 @@ export default async function CommercialHomePage({ params, searchParams }: {
     const value = searchParams?.[key];
     if (value) backParams.set(key, value);
   }
+  // No real photos yet: labelled sample photos (founder ruling 2026-10-06).
+  const gallery = homePresentationGallery(home.id, home.images, home.unitType);
   return <main className="stitch-workspace">
     <div className="mx-auto max-w-5xl px-20 py-32 md:px-32">
       <Link href={'/homes?'+backParams.toString()} className="text-small font-semibold text-brand-andaman">← {labels['homes.detail.back']}</Link>
@@ -95,9 +99,10 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{home.name}</h1>
       <div className="mt-24">
         <UnitPhotoMosaic
-          images={home.images}
+          images={gallery.images}
           alt={home.name}
-          showAllLabel={labels['homes.detail.show_all_photos'].replace('{count}', String(home.images.length))}
+          showAllLabel={labels['homes.detail.show_all_photos'].replace('{count}', String(gallery.images.length))}
+          sampleLabel={gallery.illustrative ? labels['common.sample_photo'] : undefined}
         />
       </div>
       <div className="mt-24 grid gap-24 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">

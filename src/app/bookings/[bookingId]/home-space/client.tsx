@@ -346,6 +346,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
                 included: labels['home.amenities.included'],
                 free: labels['home.amenities.free'],
                 bookingRequired: labels['home.amenities.booking_required'],
+        samplePhoto: labels['common.sample_photo'],
               }}
             />
 

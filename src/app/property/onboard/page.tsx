@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import PropertySubmissionWizard from './wizard';
+import { WIZARD_COPY } from './wizard.copy';
+import { getLabels } from '@/lib/i18n';
+import { LabelsProvider } from '@/components/LabelsProvider';
 
 export const dynamic = 'force-dynamic';
 export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string; submissionId?: string } }) {
@@ -29,7 +32,8 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
   const initialOperatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(searchParams?.operatingModel || '')
     ? searchParams?.operatingModel
     : undefined;
-  return <PropertySubmissionWizard
+  const labels = await getLabels(WIZARD_COPY);
+  return <LabelsProvider labels={labels}><PropertySubmissionWizard
     projects={projects}
     areas={areas}
     initialSubmissionId={searchParams?.submissionId}
@@ -37,5 +41,5 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     initialOffers={initialOffers}
     initialKind={initialKind}
     initialOperatingModel={initialOperatingModel}
-  />;
+  /></LabelsProvider>;
 }

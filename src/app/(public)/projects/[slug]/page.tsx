@@ -22,6 +22,8 @@ import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { LocalDate } from '@/components/LocalDate';
 import { getDestination } from '@/modules/destinations';
+import { homePresentationGallery, homePresentationImage, projectPresentationImage } from '@/lib/presentation-media';
+import { SamplePhotoBadge } from '@/components/SamplePhotoBadge';
 
 const HERO_IMAGE_SIZES = '(max-width: 1080px) 100vw, 1080px';
 
@@ -105,6 +107,7 @@ export default async function ProjectLandingPage({
 
   const labels = await getLabels({
     'project_page.availability.title': 'Check availability',
+    'common.sample_photo': 'Sample photo · to be replaced',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
     'project_page.styles.generic_title': 'Property styles',
@@ -311,6 +314,10 @@ export default async function ProjectLandingPage({
   };
 
   const projectInquiryAudience: 'renters' = 'renters';
+  // Real media always wins; otherwise labelled sample photos (founder ruling 2026-10-06).
+  const heroImage = projectPresentationImage(project.id, project.coverUrl);
+  const gallery = homePresentationGallery(project.id, project.galleryUrls, project.projectType);
+
   const portalNavItems = [
     ...(bookableStayCount > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
     ...(project.units.length > 0 || buyHomeCount > 0 || rentHomeCount > 0 ? [{ href: '#homes', label: labels['project_page.nav.homes'] }] : []),
@@ -331,17 +338,16 @@ export default async function ProjectLandingPage({
       {/* Hero */}
       <section className="mx-auto max-w-content px-20 pt-24 md:px-32 md:pt-40">
         <div className="relative isolate overflow-hidden rounded-lg bg-brand-deep shadow-float">
-          {project.coverUrl ? (
-            <Image
-              src={project.coverUrl}
-              alt={project.name}
-              fill
-              priority
-              sizes={HERO_IMAGE_SIZES}
-              className="absolute inset-0 -z-10 object-cover"
-            />
-          ) : null}
+          <Image
+            src={heroImage.src}
+            alt={project.name}
+            fill
+            priority
+            sizes={HERO_IMAGE_SIZES}
+            className="absolute inset-0 -z-10 object-cover"
+          />
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+          {heroImage.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
           <div className="flex min-h-[320px] flex-col justify-end p-24 text-white md:min-h-[440px] md:p-40">
             <div className="flex flex-wrap gap-8">
               {areaLabel ? (
@@ -359,11 +365,12 @@ export default async function ProjectLandingPage({
       </section>
 
       {/* Project-level editorial gallery. Unit galleries remain separate. */}
-      {project.galleryUrls.length > 0 ? (
+      {gallery.images.length > 0 ? (
         <section className="mx-auto max-w-content px-20 py-24 md:px-32 md:py-40" aria-label={project.name}>
           <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-lg bg-surface-sand p-8 shadow-card md:grid-cols-4 md:gap-12">
-            {project.galleryUrls.slice(0, 5).map((url, index) => (
+            {gallery.images.slice(0, 5).map((url, index) => (
               <div key={url + index} className={`relative overflow-hidden rounded-md bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
+                {gallery.illustrative && index === 0 ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
                 <Image src={url} alt={`${project.name} — photo ${index + 1}`} fill sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'} className="object-cover" />
               </div>
             ))}
@@ -473,12 +480,18 @@ export default async function ProjectLandingPage({
                 href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}`}
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
               >
-                {category.coverUrl ? (
-                  <Image src={category.coverUrl}
-                    alt={categoryLabels[category.key] || category.key}
-                    width={640} height={480}
-                    className="mb-16 aspect-[4/3] w-full rounded-md object-cover" />
-                ) : null}
+                {(() => {
+                  const image = homePresentationImage(category.key, category.coverUrl, project.projectType);
+                  return (
+                    <div className="relative mb-16">
+                      <Image src={image.src}
+                        alt={categoryLabels[category.key] || category.key}
+                        width={640} height={480}
+                        className="aspect-[4/3] w-full rounded-md object-cover" />
+                      {image.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
+                    </div>
+                  );
+                })()}
                 <h3 className="mb-8 font-display text-heading-3 font-semibold text-text-ink">
                   {category.name}
                 </h3>
@@ -572,19 +585,21 @@ export default async function ProjectLandingPage({
                   : '#lead-form'}
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
-                {unit.coverUrl ? (
-                  <Image
-                    src={unit.coverUrl}
-                    alt={unit.name}
-                    width={640}
-                    height={480}
-                    className="aspect-[4/3] w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-[4/3] items-center justify-center bg-surface-sand px-16 text-center text-small text-text-secondary">
-                    {labels['project_page.units.details_pending']}
-                  </div>
-                )}
+                {(() => {
+                  const image = homePresentationImage(unit.id, unit.coverUrl, unit.unitType);
+                  return (
+                    <div className="relative">
+                      <Image
+                        src={image.src}
+                        alt={unit.name}
+                        width={640}
+                        height={480}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                      {image.illustrative ? <SamplePhotoBadge label={labels['common.sample_photo']} /> : null}
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-1 flex-col p-20">
                   {unit.photoScope === 'room_type' ? (
                     <p className="mb-8 text-small font-medium text-brand-andaman">
@@ -689,6 +704,7 @@ export default async function ProjectLandingPage({
           included: labels['project_page.amenities.included'],
           free: labels['project_page.amenities.free'],
           bookingRequired: labels['project_page.amenities.booking_required'],
+        samplePhoto: labels['common.sample_photo'],
         }}
         bookingId={activeStay?.id}
       />

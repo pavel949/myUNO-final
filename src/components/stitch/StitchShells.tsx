@@ -57,7 +57,7 @@ export function StitchWorkspaceShell({
           <p className="mt-4 font-display text-subtitle font-bold">{title}</p>
 
           <details className="mt-12 md:hidden">
-            <summary className="cursor-pointer rounded-md border border-white/15 px-12 py-10 text-small font-semibold">
+            <summary className="cursor-pointer rounded-md border border-white/15 px-12 py-12 text-small font-semibold">
               {title}
             </summary>
             <div className="mt-8 max-h-[60vh] overflow-y-auto">{nav}</div>

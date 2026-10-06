@@ -25,9 +25,10 @@ export function StitchWorkspaceShell({
   const nav = (
     <nav className="space-y-4" aria-label={title}>
       {items.map((item) => {
+        const depth = item.href.split('/').filter(Boolean).length;
         const active =
           pathname === item.href ||
-          (item.href !== '/' && pathname.startsWith(item.href + '/'));
+          (depth > 1 && pathname.startsWith(item.href + '/'));
         return (
           <Link
             key={item.href}

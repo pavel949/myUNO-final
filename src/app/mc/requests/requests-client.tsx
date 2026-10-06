@@ -30,10 +30,14 @@ export default function McRequestsClient({
   requests,
   declineReasons,
   labels,
+  projectId,
+  organizationId,
 }: {
   requests: McBookingRequestRow[];
   declineReasons: DeclineReasonOption[];
   labels: Record<string, string>;
+  projectId: string;
+  organizationId: string;
 }) {
   const respondLabels = {
     approve: labels['mc.requests.approve'],
@@ -60,7 +64,7 @@ export default function McRequestsClient({
                 <span className="text-text-secondary font-normal">
                   {' · '}
                   <Link
-                    href={`/mc/properties/${request.unitId}`}
+                    href={`/mc/properties/${encodeURIComponent(request.unitId)}?${new URLSearchParams({ projectId, organizationId, origin: 'requests', tab: 'reservations', date: request.startDate.slice(0, 10), bookingId: request.id }).toString()}`}
                     className="text-brand-andaman hover:underline"
                   >
                     {request.unitName}

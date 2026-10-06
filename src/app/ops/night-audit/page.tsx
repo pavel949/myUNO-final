@@ -172,7 +172,7 @@ export default async function DailyReconciliationPage({
               <h2 className="font-display text-heading-2 font-semibold">{labels['staff.close.ledger']}</h2>
               <div className="mt-8 flex flex-wrap gap-8">
                 {Array.from(ledgerByType.entries()).map(([type, summary]) => (
-                  <span key={type} className="rounded-full bg-surface-ivory px-10 py-4 text-small">
+                  <span key={type} className="rounded-full bg-surface-ivory px-12 py-4 text-small">
                     {type.replace(/_/g,' ')} · {summary.count} · {money(summary.amount)}
                   </span>
                 ))}

@@ -29,8 +29,8 @@ export default async function LoginPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory flex items-center justify-center px-16 py-32 sm:px-24 sm:py-48">
-      <div className="w-full max-w-xl bg-surface-paper border border-border-line rounded-lg shadow-card p-24 sm:p-32">
+    <main className="stitch-workspace flex min-h-screen items-center justify-center px-16 py-32 sm:px-24 sm:py-48">
+      <div className="stitch-panel w-full max-w-xl p-24 sm:p-32">
         <h1 className="font-display text-display font-semibold text-text-ink mb-12">
           {labels['auth.login.title']}
         </h1>

@@ -124,6 +124,8 @@ export default async function FounderGovernancePage() {
       'admin.governance.revoke_access': 'Revoke operating access',
       'admin.governance.select_person_hint': 'Select an existing team member or search for a myUNO user to configure delegated access.',
       'admin.governance.empty_space': 'Create the first operating space to delegate portfolio or resort management.',
+      'admin.governance.organization_required': 'Create or activate a management organization before creating an operating space.',
+      'admin.governance.organization_link': 'Manage organizations',
     }),
   ]);
 

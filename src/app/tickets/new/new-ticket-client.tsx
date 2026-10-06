@@ -61,7 +61,7 @@ export default function NewTicketClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="max-w-xl mx-auto">
         <p className="mb-8">
           <Link href="/tickets" className="text-brand-andaman font-semibold hover:underline">
@@ -73,7 +73,7 @@ export default function NewTicketClient({
         </h1>
 
         {!projectId ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+          <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary">
               {labels['tickets.new.missing_context']}
             </p>
@@ -81,7 +81,7 @@ export default function NewTicketClient({
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-16"
+            className="stitch-panel p-24 flex flex-col gap-16"
           >
             <div className="flex flex-col gap-8">
               <p className="text-small text-text-stone">{labels['tickets.new.category']}</p>

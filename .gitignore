@@ -18,4 +18,5 @@ Thumbs.db
 .idea/
 *.local
 tsconfig.tsbuildinfo
-.claude/
+.claude/settings.local.json
+.claude/worktrees/

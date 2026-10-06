@@ -41,6 +41,9 @@ jobs:
       - name: Test platform inventory discovery
         run: npm run audit:inventory:test
 
+      - name: Test Claude Code guard hook
+        run: npm run agents:guard:test
+
       - name: Generate current platform inventory
         run: npm run audit:inventory -- --out /tmp/myuno-platform-inventory.json
 

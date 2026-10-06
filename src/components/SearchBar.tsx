@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './Button';
+import { StayDatePicker } from './StayDatePicker';
+import { useLocale } from './LocaleProvider';
 
 export interface SearchBarLabels {
   checkIn: string;
@@ -10,6 +12,10 @@ export interface SearchBarLabels {
   adults: string;
   children: string;
   submit: string;
+  previous?: string;
+  next?: string;
+  close?: string;
+  clear?: string;
 }
 
 interface SearchBarProps {
@@ -25,6 +31,13 @@ interface SearchBarProps {
   stayMode?: string;
 }
 
+const PICKER_FALLBACKS: Record<string, { previous: string; next: string; close: string; clear: string }> = {
+  ru: { previous: 'Назад', next: 'Вперёд', close: 'Закрыть', clear: 'Очистить' },
+  th: { previous: 'ก่อนหน้า', next: 'ถัดไป', close: 'ปิด', clear: 'ล้าง' },
+  zh: { previous: '上个月', next: '下个月', close: '关闭', clear: '清除' },
+  en: { previous: 'Previous', next: 'Next', close: 'Close', clear: 'Clear' },
+};
+
 export function SearchBar({
   labels,
   initialStartDate = '',
@@ -36,20 +49,21 @@ export function SearchBar({
   stayMode,
 }: SearchBarProps) {
   const router = useRouter();
+  const locale = useLocale();
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
   const [todayISO, setTodayISO] = useState('');
 
-  // Set today's date only on client to avoid hydration mismatch
+  // Set today's date only on client to avoid hydration mismatch.
   useEffect(() => {
     setTodayISO(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }));
   }, []);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate || endDate <= startDate) return;
     const params = new URLSearchParams({
       startDate,
       endDate,
@@ -63,42 +77,35 @@ export function SearchBar({
   };
 
   const fieldClass =
-    'h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink ' +
+    'h-48 px-12 rounded-lg bg-surface-ivory border border-border-line text-text-ink ' +
     'focus:border-brand-andaman focus:ring-2 focus:ring-brand-andaman focus:outline-none w-full';
+
+  const language = locale.toLowerCase().split('-')[0];
+  const fallback = PICKER_FALLBACKS[language] || PICKER_FALLBACKS.en;
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-surface-paper rounded-lg p-16 shadow-float grid grid-cols-2 md:grid-cols-5 gap-12 items-end text-left"
+      className="grid grid-cols-2 items-end gap-12 rounded-lg border border-border-line bg-surface-paper p-16 text-left shadow-float md:grid-cols-5"
     >
-      <div className="flex flex-col gap-4">
-        <label htmlFor="search-start" className="text-small text-text-secondary">
-          {labels.checkIn}
-        </label>
-        <input
-          id="search-start"
-          type="date"
-          required
-          min={todayISO}
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className={fieldClass}
-        />
-      </div>
-      <div className="flex flex-col gap-4">
-        <label htmlFor="search-end" className="text-small text-text-secondary">
-          {labels.checkOut}
-        </label>
-        <input
-          id="search-end"
-          type="date"
-          required
-          min={startDate || todayISO}
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className={fieldClass}
-        />
-      </div>
+      <StayDatePicker
+        start={startDate}
+        end={endDate}
+        min={todayISO}
+        locale={locale}
+        labels={{
+          checkIn: labels.checkIn,
+          checkOut: labels.checkOut,
+          previous: labels.previous || fallback.previous,
+          next: labels.next || fallback.next,
+          close: labels.close || fallback.close,
+          clear: labels.clear || fallback.clear,
+        }}
+        onChange={(start, end) => {
+          setStartDate(start);
+          setEndDate(end);
+        }}
+      />
       <div className="flex flex-col gap-4">
         <label htmlFor="search-adults" className="text-small text-text-secondary">
           {labels.adults}

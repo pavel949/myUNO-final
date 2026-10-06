@@ -19,8 +19,8 @@
       "schedule": "0 19 * * *"
     },
     {
-      "path": "/api/cron/import-managed-yandex-media?run=all",
-      "schedule": "0 0 * * *"
+      "path": "/api/cron/import-managed-yandex-media",
+      "schedule": "0 8 * * *"
     }
   ]
 }

@@ -469,7 +469,7 @@ async function buildPublicCategories(
   // the catalogue from legacy config: admin onboarding, search and booking all
   // point at these same rows.
   const categories = await prisma.inventoryCategory.findMany({
-    where: { projectId, status: 'live' },
+    where: { projectId },
     orderBy: { createdAt: 'asc' },
     select: {
       id: true,
@@ -492,7 +492,6 @@ async function buildPublicCategories(
         coverMediaId: category.coverMediaId,
         links: category.galleryMedia,
       });
-      if (!categoryMedia.ready) return [];
       const units = liveUnits.filter(
         (unit) => (unit.inventoryCategory?.categoryKey ?? unit.categoryKey) === category.categoryKey
       );
@@ -506,8 +505,8 @@ async function buildPublicCategories(
         unitCount: units.length,
         fromNightlyThb: category.baseNightlyThb > 0 ? category.baseNightlyThb : null,
         monthlyFromThb: null,
-        coverUrl: categoryMedia.coverUrl,
-        galleryUrls: categoryMedia.urls,
+        coverUrl: categoryMedia.ready ? categoryMedia.coverUrl : null,
+        galleryUrls: categoryMedia.ready ? categoryMedia.urls : [],
       }];
     })
     .filter((category) => category.unitCount > 0);

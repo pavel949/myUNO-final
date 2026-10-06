@@ -256,10 +256,13 @@ export async function GET(
       grossAreaSqm: unit.grossAreaSqm === null ? null : Number(unit.grossAreaSqm),
       outdoorAreaSqm: unit.outdoorAreaSqm === null ? null : Number(unit.outdoorAreaSqm),
       plotAreaSqm: unit.plotAreaSqm === null ? null : Number(unit.plotAreaSqm),
-      viewLabels: unit.views.map(view => copy[`catalog.views.${view}.label`] || view.replace(/_/g, ' ')),
+      viewLabels: unit.views
+        .map(view => copy[`catalog.views.${view}.label`])
+        .filter((label): label is string => Boolean(label)),
       featureLabels: unit.unitFeatures
         .filter(feature => /^[a-z0-9_]+$/.test(feature))
-        .map(feature => copy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' ')),
+        .map(feature => copy[`catalog.unit_features.${feature}.label`])
+        .filter((label): label is string => Boolean(label)),
       inventoryCategory: inventoryCategory
         ? {
             id: inventoryCategory.id,

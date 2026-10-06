@@ -82,7 +82,7 @@ export default function PayoutsTable({
       {payouts.length === 0 ? (
         <p className="text-body text-text-secondary">{labels['admin.payouts.empty']}</p>
       ) : (
-        <div className="overflow-x-auto bg-surface-paper border border-border-line rounded-lg shadow-card">
+        <div className="overflow-x-auto stitch-panel">
           <table className="w-full text-small">
             <thead>
               <tr className="border-b border-border-line">

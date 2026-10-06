@@ -25,8 +25,8 @@ export default async function SavedPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-surface-mint p-32">
-        <div className="max-w-3xl mx-auto text-center bg-surface-paper border border-border-line rounded-lg shadow-card p-32">
+      <div className="stitch-workspace p-20 md:p-32">
+        <div className="max-w-3xl mx-auto text-center stitch-panel p-32">
           <h1 className="font-display text-display font-semibold text-text-ink mb-16">
             {labels['saved.title']}
           </h1>
@@ -47,7 +47,7 @@ export default async function SavedPage() {
   const savedEntries = await listSavedUnits(prisma, user.identityId);
 
   return (
-    <div className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <div className="stitch-workspace p-20 md:p-32">
       <div className="max-w-6xl mx-auto">
         <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg mb-24">
           {labels['saved.title']}

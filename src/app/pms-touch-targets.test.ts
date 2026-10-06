@@ -12,9 +12,12 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('PMS touch targets', () => {
   it('marks every PMS workspace as a touch-target scope', () => {
-    for (const layout of ['src/app/ops/layout.tsx', 'src/app/mc/layout.tsx', 'src/app/(admin)/app/admin/layout.tsx']) {
-      expect(read(layout), layout).toContain('pms-touch');
+    const shared = read('src/components/stitch/StitchShells.tsx');
+    expect(shared).toContain('pms-touch');
+    for (const layout of ['src/app/ops/layout.tsx', 'src/app/mc/layout.tsx']) {
+      expect(read(layout), layout).toContain('StitchWorkspaceShell');
     }
+    expect(read('src/app/(admin)/app/admin/layout.tsx')).toContain('pms-touch');
   });
 
   it('gives controls in that scope a 44px minimum height on touch screens', () => {

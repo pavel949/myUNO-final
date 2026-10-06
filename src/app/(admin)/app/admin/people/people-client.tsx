@@ -54,7 +54,7 @@ export default function PeopleAdminClient({
   const search = useCallback(async () => {
     setSearching(true);
     setError(null);
-    const res = await fetch(`/api/admin/people/search?query=${encodeURIComponent(query)}`).catch(() => null);
+    const res = await fetch(`/api/admin/people/search?q=${encodeURIComponent(query)}`).catch(() => null);
     const body = await res?.json().catch(() => null);
     setPeople(res?.ok ? body?.identities ?? [] : []);
     if (!res?.ok) setError(body?.error ?? labels['admin.people.error']);

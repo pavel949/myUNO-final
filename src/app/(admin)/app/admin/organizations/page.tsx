@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import AdminOrganizationsClient from './organizations-client';
@@ -70,12 +71,7 @@ export default async function AdminOrganizationsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.organizations.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.organizations.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.organizations.title']} subtitle={labels['admin.organizations.subtitle']} />
 
       {developers.length > 0 ? (
         <section className="stitch-panel p-24 mb-24">

@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text -- operational diagnostic labels; localization is handled in a separate content pass */
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 
@@ -82,7 +83,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
       <header className="rounded-md border border-border-line bg-surface-paper p-24">
         <Link href="/app/admin/bookings" className="text-small text-brand-andaman underline">← All bookings</Link>
         <p className="text-kicker uppercase text-brand-andaman mt-16 mb-4">Canonical booking journey</p>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink">{booking.unit.name}</h1>
+        <PageHeading title={booking.unit.name} />
         <p className="text-text-secondary mt-4">{booking.project.name} · {booking.startDate.toISOString().slice(0, 10)} — {booking.endDate.toISOString().slice(0, 10)}</p>
         <p className="text-small text-text-secondary mt-8">Booking {booking.id} · {booking.status.replace(/_/g, ' ')}</p>
         <div className="flex flex-wrap gap-12 mt-16">

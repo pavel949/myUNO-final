@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import ContentAdminClient from './content-client';
@@ -45,9 +46,7 @@ export default async function AdminContentPage({
   return (
     <div>
       <div className="mb-24 flex flex-wrap items-center justify-between gap-12">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink">
-          {labels['admin.content.title']}
-        </h1>
+        <PageHeading title={labels['admin.content.title']} />
         <Link href="/app/admin/content/homepage" className="rounded-lg border border-border-line px-16 py-12 font-semibold text-brand-andaman">
           {labels['admin.content.homepage_placements']}
         </Link>

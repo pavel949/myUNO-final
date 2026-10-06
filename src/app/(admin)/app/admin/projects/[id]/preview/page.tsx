@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
@@ -113,7 +114,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
     <header className="border-b border-border-line bg-surface-paper px-24 py-16">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-12">
         <div><p className="text-kicker text-brand-andaman">{labels['admin.project_preview.private']}</p>
-          <h1 className="font-display text-heading-2 font-semibold text-text-ink">{project.name}</h1></div>
+          <PageHeading title={project.name} /></div>
         <div className="flex gap-12">
           <Link href={`/app/admin/projects/${project.id}`} className="font-semibold text-brand-andaman underline">{labels['admin.project_preview.project360']}</Link>
           <Link href={`/app/admin/properties/${project.id}/onboarding?gallery=project:${project.id}#step-7`} className="font-semibold text-brand-andaman underline">{labels['admin.project_preview.edit_media']}</Link>

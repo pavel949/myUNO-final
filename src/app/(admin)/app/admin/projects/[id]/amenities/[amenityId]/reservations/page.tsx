@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProjectAmenityOpsActor } from '@/app/libs/projectExperienceGuard';
@@ -46,7 +47,7 @@ export default async function AmenityReservationsPage({ params }: { params: { id
     <ProjectWorkspaceNav projectId={amenity.project.id} active={'experience'} contentOnly={!actor.isAdmin} />
     <Link href={`/app/admin/projects/${amenity.project.id}/experience`} className="text-small font-semibold text-brand-andaman underline">← Project Experience</Link>
     <p className="mt-12 text-kicker uppercase text-brand-andaman">Amenity reservations</p>
-    <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{amenity.name}</h1>
+    <PageHeading title={amenity.name} />
     <p className="mt-8 mb-24 text-body text-text-secondary">{amenity.project.name} · upcoming and historical requests from guests/residents.</p>
     <AmenityReservationsClient reservations={reservations} />
   </main>;

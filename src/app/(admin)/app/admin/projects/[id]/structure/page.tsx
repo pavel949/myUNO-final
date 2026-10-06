@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import StructureEditor from '@/components/property/StructureEditor';
@@ -21,11 +22,9 @@ export default async function ProjectStructurePage({params}:{params:{id:string}}
     'property.structure.description':'Build the real phase / building / wing / floor tree. Rates and room types remain independent.',
   });
   const labels = {back:translated['property.structure.back'],title:translated['property.structure.title'],description:translated['property.structure.description']};
-  return <main className="mx-auto max-w-5xl space-y-24 px-16 py-32">
+  return <div className="max-w-5xl space-y-24">
     <Link href={'/app/admin/properties/'+project.id+'/onboarding'} className="text-small font-semibold text-brand-andaman">{labels.back}</Link>
-    <header><h1 className="font-display text-heading-1 font-semibold text-text-ink">{project.name} · {labels.title}</h1>
-      <p className="text-body text-text-secondary">{labels.description}</p>
-    </header>
-    <StructureEditor projectId={project.id} initialNodes={project.structureNodes}/>
-  </main>;
+    <PageHeading kicker={project.name} title={labels.title} subtitle={labels.description} />
+    <Panel><StructureEditor projectId={project.id} initialNodes={project.structureNodes}/></Panel>
+  </div>;
 }

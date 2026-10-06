@@ -1,4 +1,5 @@
 import { getLabels } from '@/lib/i18n';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getPipeline } from '@/modules/crm';
 import CrmPipelineClient from './pipeline-client';
@@ -82,10 +83,7 @@ export default async function CrmPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.crm.title']}
-      </h1>
-      <p className="text-body text-text-stone mb-24">{labels['admin.crm.subtitle']}</p>
+      <PageHeading title={labels['admin.crm.title']} subtitle={labels['admin.crm.subtitle']} />
       <CrmDashboardPanel labels={labels} />
       <CrmLifecyclePanel labels={labels} />
       <CrmPipelineClient

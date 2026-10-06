@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -26,17 +27,15 @@ export default async function OpportunityDealPage({params}:{params:{id:string}})
     'admin.deal.title':'Commercial agreement',
     'admin.deal.no_unit':'Select a physical unit in CRM before drafting an agreement.',
   });
-  return <main className="mx-auto max-w-5xl space-y-24 px-16 py-32">
+  return <div className="max-w-5xl space-y-24">
     <Link href={'/app/admin/crm/opportunities/'+opportunity.id} className="text-small font-semibold text-brand-andaman">{labels['admin.deal.back']} ←</Link>
-    <header>
-      <h1 className="font-display text-heading-1 font-semibold text-text-ink">{opportunity.title} · {labels['admin.deal.title']}</h1>
-    </header>
-    <PropertyDealClient
+    <PageHeading kicker={opportunity.title} title={labels['admin.deal.title']} />
+    <Panel><PropertyDealClient
       opportunityId={opportunity.id} opportunityType={opportunity.type}
       opportunityStage={opportunity.stage} unitId={opportunity.unitId}
       unitName={opportunity.unit.name}
       offers={opportunity.unit.commercialOfferings}
       initialDeal={propertyDealJson(opportunity.propertyDeal) as any}
-    />
-  </main>;
+    /></Panel>
+  </div>;
 }

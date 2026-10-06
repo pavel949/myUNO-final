@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import {
@@ -131,10 +132,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.audit.title']}</h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.audit.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.audit.title']} subtitle={labels['admin.audit.subtitle']} />
 
       <form method="get" className="mb-16 flex flex-wrap gap-12 items-end">
         {searchParams.actor ? (

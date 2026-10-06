@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import { notFound, redirect } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
@@ -56,7 +57,7 @@ export default async function ProjectMediaPage({
     <ProjectWorkspaceNav projectId={project.id} active={'media'} contentOnly={!actor.isAdmin} />
     <div className="mb-24">
       <p className="text-kicker uppercase text-brand-andaman">Project Media</p>
-      <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>
+      <PageHeading title={project.name} />
       <p className="mt-8 max-w-3xl text-body text-text-secondary">One workspace for project, category and exact-unit galleries. Amenity-specific photos are managed inside Experience so their context is never lost.</p>
     </div>
     <ScopedGalleryEditor

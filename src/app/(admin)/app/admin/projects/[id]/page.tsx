@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
@@ -81,9 +82,7 @@ export default async function Project360Page({ params }: { params: { id: string 
       <Link href="/app/admin/projects" className="text-small text-text-secondary hover:underline">
         ← {labels['admin.project360.back']}
       </Link>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
-        {data.project.name}
-      </h1>
+      <PageHeading title={data.project.name} />
       <ProjectWorkspaceNav projectId={data.project.id} active={'overview'} />
       <Project360Client
         project={{

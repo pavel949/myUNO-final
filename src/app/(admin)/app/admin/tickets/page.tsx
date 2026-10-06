@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { getAdminTicketBoard, type AdminTicketBoardFilter } from '@/modules/comms';
 import AdminTicketsClient from './tickets-client';
@@ -90,10 +91,7 @@ export default async function AdminTicketsPage({
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.tickets.title']}</h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.tickets.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.tickets.title']} subtitle={labels['admin.tickets.subtitle']} />
 
       <AdminTicketsClient
         tickets={tickets.map((ticket) => ({

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import AdminProspectingClient from './prospecting-client';
 
@@ -49,12 +50,7 @@ export default async function AdminProspectingPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.prospecting.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.prospecting.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.prospecting.title']} subtitle={labels['admin.prospecting.subtitle']} />
       <AdminProspectingClient
         labels={labels}
         contacts={contacts.map((c) => ({

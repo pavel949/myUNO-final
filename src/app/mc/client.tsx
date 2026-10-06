@@ -874,7 +874,7 @@ export function MCDashboardClient({
                     {units.map((unit) => (
                       <Link
                         key={unit.id}
-                        href={`/mc/properties/${encodeURIComponent(unit.id)}`}
+                        href={`/mc/properties/${encodeURIComponent(unit.id)}?projectId=${encodeURIComponent(activeContext?.projectId || unit.projectId)}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}&origin=dashboard`}
                         className="rounded-lg border border-border-line bg-surface-ivory p-16 transition hover:border-brand-andaman hover:shadow-card"
                       >
                         <p className="font-display text-heading-3 font-semibold text-text-ink">{unit.name}</p>

@@ -111,6 +111,30 @@ describe('premium design-system surface parity', () => {
     expect(mc).not.toContain("activeTab === 'calendar'");
   });
 
+  it('keeps Property Workspace navigation scoped across PMS entry points', () => {
+    const dashboard = source('src/app/mc/client.tsx');
+    const workspace = source('src/app/mc/properties/[unitId]/page.tsx');
+    const requests = source('src/app/mc/requests/requests-client.tsx');
+    const portfolio = source('src/app/mc/portfolio/page.tsx');
+    const legacy = source('src/app/mc/units/[unitId]/page.tsx');
+    const editor = source('src/app/ops/units/[unitId]/edit/page.tsx');
+
+    expect(dashboard).toContain('organizationId=');
+    expect(dashboard).toContain('origin=dashboard');
+    expect(requests).toContain("origin: 'requests'");
+    expect(requests).toContain("tab: 'reservations'");
+    expect(workspace).toContain('activeOrganizationId');
+    expect(workspace).toContain("origin === 'calendar'");
+    expect(workspace).toContain("origin === 'requests'");
+    expect(workspace).toContain("query.set('organizationId', activeOrganizationId)");
+    expect(workspace).toContain("query.set('start', focusDate || calendarStart)");
+    expect(workspace).toContain("bookingId===b.id");
+    expect(portfolio).toContain('requestedOrganizationId');
+    expect(legacy).toContain("origin: 'legacy'");
+    expect(legacy).toContain('/mc/properties/');
+    expect(editor).toContain('safeMcReturnTo');
+  });
+
   it('keeps list and map search on one canonical search contract', () => {
     const results = source('src/app/search/search-results.tsx');
     const route = source('src/app/api/search/units/route.ts');

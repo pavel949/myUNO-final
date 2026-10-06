@@ -77,6 +77,9 @@ describe('Stitch system-wide surface coverage', () => {
       'src/components/ops/UnifiedStayCalendar.tsx',
       'src/app/ops/stays/page.tsx',
       'src/app/ops/stays/[bookingId]/page.tsx',
+      'src/app/ops/stays/[bookingId]/check-in/page.tsx',
+      'src/app/ops/stays/[bookingId]/check-in/check-in-wizard.tsx',
+      'src/app/ops/night-audit/page.tsx',
       'src/app/ops/housekeeping/page.tsx',
       'src/app/ops/maintenance/page.tsx',
       'src/app/mc/client.tsx',
@@ -106,5 +109,22 @@ describe('Stitch system-wide surface coverage', () => {
     expect(premium).toContain('RecordPageHeader');
     expect(premium).toContain('ProcessStepper');
     expect(premium).toContain('CtaBar');
+  });
+
+  it('keeps PMS gaps on canonical writers rather than duplicate engines', () => {
+    const checkin = source('src/app/ops/stays/[bookingId]/check-in/check-in-wizard.tsx');
+    const actions = source('src/components/ops/StayActions.tsx');
+    const close = source('src/app/ops/night-audit/page.tsx');
+    const stay = source('src/app/ops/stays/[bookingId]/page.tsx');
+    const passports = source('src/app/bookings/[bookingId]/passports/passports-client.tsx');
+
+    expect(checkin).toContain("/api/bookings/'+encodeURIComponent(bookingId)+'/checkin");
+    expect(actions).toContain("/check-in");
+    expect(close).toContain('prisma.ledgerEntry.findMany');
+    expect(close).toContain('/admin/finance/reconciliation');
+    expect(stay).toContain('serviceOrders');
+    expect(stay).toContain('depositPreauth');
+    expect(stay).toContain('conditionReports');
+    expect(passports).not.toContain('type="date"');
   });
 });

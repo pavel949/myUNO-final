@@ -210,7 +210,7 @@ export default function FounderGovernanceClient({
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/operating-spaces/' + encodeURIComponent(selectedSpace.id) + '/scope', {
+      const response = await fetch(`/api/admin/operating-spaces/${encodeURIComponent(selectedSpace.id)}/scope`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ unitIds: scopeDraft }),
@@ -230,7 +230,7 @@ export default function FounderGovernanceClient({
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/operating-spaces/' + encodeURIComponent(selectedSpace.id) + '/members', {
+      const response = await fetch(`/api/admin/operating-spaces/${encodeURIComponent(selectedSpace.id)}/members`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -275,13 +275,13 @@ export default function FounderGovernanceClient({
           {labels['admin.governance.subtitle']}
         </p>
         <div className="mt-20 flex flex-wrap gap-8">
-          <Link href="/app/admin/people" className="rounded-md bg-white px-14 py-10 text-small font-semibold text-brand-deep">
+          <Link href="/app/admin/people" className="rounded-md bg-white px-16 py-12 text-small font-semibold text-brand-deep">
             {labels['admin.governance.people_link']} →
           </Link>
-          <Link href="/app/admin/projects" className="rounded-md border border-white/20 px-14 py-10 text-small font-semibold text-white">
+          <Link href="/app/admin/projects" className="rounded-md border border-white/20 px-16 py-12 text-small font-semibold text-white">
             {labels['admin.governance.projects_link']} →
           </Link>
-          <Link href="/app/admin/audit" className="rounded-md border border-white/20 px-14 py-10 text-small font-semibold text-white">
+          <Link href="/app/admin/audit" className="rounded-md border border-white/20 px-16 py-12 text-small font-semibold text-white">
             {labels['admin.governance.audit_link']} →
           </Link>
         </div>
@@ -301,7 +301,7 @@ export default function FounderGovernanceClient({
             <div key={admin.id} className="rounded-md border border-brand-sun/40 bg-surface-ivory p-12">
               <p className="font-semibold text-text-ink">{admin.firstName} {admin.lastName}</p>
               <p className="text-small text-text-secondary">{admin.email ?? '—'}</p>
-              <p className="mt-6 text-kicker font-semibold uppercase tracking-wider text-brand-andaman">
+              <p className="mt-8 text-kicker font-semibold uppercase tracking-wider text-brand-andaman">
                 {labels['admin.governance.root_badge']}
               </p>
             </div>
@@ -327,7 +327,7 @@ export default function FounderGovernanceClient({
               >
                 <p className="font-semibold text-text-ink">{space.name}</p>
                 <p className="mt-2 text-small text-text-secondary">{space.organization.name}</p>
-                <p className="mt-6 text-kicker uppercase tracking-wider text-text-secondary">
+                <p className="mt-8 text-kicker uppercase tracking-wider text-text-secondary">
                   {space.units.length} {labels['admin.governance.metrics_homes']} · {space.members.filter((member) => member.active).length} {labels['admin.governance.metrics_people']}
                 </p>
               </button>
@@ -342,18 +342,18 @@ export default function FounderGovernanceClient({
                 value={createForm.name}
                 onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
                 placeholder="Portfolio / resort name"
-                className="h-40 w-full rounded-sm border border-border-line px-10"
+                className="h-40 w-full rounded-sm border border-border-line px-12"
               />
               <input
                 value={createForm.key}
                 onChange={(event) => setCreateForm({ ...createForm, key: event.target.value })}
                 placeholder="stable-key"
-                className="h-40 w-full rounded-sm border border-border-line px-10 font-mono text-small"
+                className="h-40 w-full rounded-sm border border-border-line px-12 font-mono text-small"
               />
               <select
                 value={createForm.organizationId}
                 onChange={(event) => setCreateForm({ ...createForm, organizationId: event.target.value })}
-                className="h-40 w-full rounded-sm border border-border-line px-10"
+                className="h-40 w-full rounded-sm border border-border-line px-12"
               >
                 {organizations.map((organization) => (
                   <option key={organization.id} value={organization.id}>{organization.name}</option>
@@ -363,7 +363,7 @@ export default function FounderGovernanceClient({
                 type="button"
                 disabled={busy || !createForm.name.trim() || !createForm.key.trim() || !createForm.organizationId}
                 onClick={createSpace}
-                className="w-full rounded-md bg-brand-deep px-12 py-10 text-small font-semibold text-white disabled:opacity-50"
+                className="w-full rounded-md bg-brand-deep px-12 py-12 text-small font-semibold text-white disabled:opacity-50"
               >
                 {labels['admin.governance.create_action']}
               </button>
@@ -406,7 +406,7 @@ export default function FounderGovernanceClient({
                   type="button"
                   disabled={busy}
                   onClick={saveScope}
-                  className="rounded-md bg-brand-andaman px-14 py-10 text-small font-semibold text-white disabled:opacity-50"
+                  className="rounded-md bg-brand-andaman px-16 py-12 text-small font-semibold text-white disabled:opacity-50"
                 >
                   {labels['admin.governance.scope_save']}
                 </button>
@@ -432,9 +432,9 @@ export default function FounderGovernanceClient({
                         {labels['admin.governance.toggle_project']}
                       </button>
                     </div>
-                    <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                       {project.units.map((unit) => (
-                        <label key={unit.id} className="flex items-center gap-8 rounded-md border border-border-line p-10 text-small">
+                        <label key={unit.id} className="flex items-center gap-8 rounded-md border border-border-line p-12 text-small">
                           <input
                             type="checkbox"
                             checked={scopeDraft.includes(unit.id)}
@@ -504,7 +504,7 @@ export default function FounderGovernanceClient({
                         onChange={(event) => setSearchQuery(event.target.value)}
                         onKeyDown={(event) => event.key === 'Enter' && searchPeople()}
                         placeholder="Name or email"
-                        className="h-40 min-w-0 flex-1 rounded-sm border border-border-line px-10"
+                        className="h-40 min-w-0 flex-1 rounded-sm border border-border-line px-12"
                       />
                       <button
                         type="button"
@@ -521,11 +521,11 @@ export default function FounderGovernanceClient({
                           key={person.id}
                           type="button"
                           onClick={() => choosePerson(person)}
-                          className="w-full rounded-md border border-border-line p-10 text-left hover:border-brand-andaman/50"
+                          className="w-full rounded-md border border-border-line p-12 text-left hover:border-brand-andaman/50"
                         >
                           <span className="font-semibold text-text-ink">{person.firstName} {person.lastName}</span>
-                          <span className="ml-6 text-small text-text-secondary">{person.email ?? '—'}</span>
-                          {person.isAdmin ? <span className="ml-6 text-kicker text-brand-andaman">{labels['admin.governance.root_badge_short']}</span> : null}
+                          <span className="ml-8 text-small text-text-secondary">{person.email ?? '—'}</span>
+                          {person.isAdmin ? <span className="ml-8 text-kicker text-brand-andaman">{labels['admin.governance.root_badge_short']}</span> : null}
                         </button>
                       ))}
                     </div>
@@ -550,7 +550,7 @@ export default function FounderGovernanceClient({
                           <select
                             value={preset}
                             onChange={(event) => applyPreset(event.target.value)}
-                            className="mt-6 h-44 w-full rounded-sm border border-border-line bg-white px-10"
+                            className="mt-8 h-44 w-full rounded-sm border border-border-line bg-white px-12"
                           >
                             {Object.entries(PRESET_LABELS).map(([value, label]) => (
                               <option key={value} value={value}>{label}</option>
@@ -559,7 +559,7 @@ export default function FounderGovernanceClient({
 
                           <div className="mt-16 grid gap-8 sm:grid-cols-2">
                             {CAPABILITIES.map((capability) => (
-                              <label key={capability} className="flex items-start gap-8 rounded-md border border-border-line bg-white p-10 text-small">
+                              <label key={capability} className="flex items-start gap-8 rounded-md border border-border-line bg-white p-12 text-small">
                                 <input
                                   type="checkbox"
                                   checked={capabilities.includes(capability)}
@@ -575,7 +575,7 @@ export default function FounderGovernanceClient({
                               type="button"
                               disabled={busy || capabilities.length === 0}
                               onClick={() => saveMember(true)}
-                              className="rounded-md bg-brand-deep px-16 py-10 text-small font-semibold text-white disabled:opacity-50"
+                              className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50"
                             >
                               {activeMember ? labels['admin.governance.update_access'] : labels['admin.governance.assign_access']}
                             </button>
@@ -584,7 +584,7 @@ export default function FounderGovernanceClient({
                                 type="button"
                                 disabled={busy}
                                 onClick={() => saveMember(false)}
-                                className="rounded-md border border-state-error px-16 py-10 text-small font-semibold text-state-error disabled:opacity-50"
+                                className="rounded-md border border-state-error px-16 py-12 text-small font-semibold text-state-error disabled:opacity-50"
                               >
                                 {labels['admin.governance.revoke_access']}
                               </button>

@@ -105,6 +105,8 @@ export default async function DailyReconciliationPage({
     'staff.close.no_ledger': 'No ledger movements recorded for this day.',
     'staff.close.no_tasks': 'No open work due for this day.',
     'staff.close.finance_board': 'Open financial reconciliation',
+    'staff.close.apply': 'Apply',
+    'staff.close.today': 'Today',
     'staff.close.back': 'Operations',
     'staff.close.read_only': 'This is a canonical read model. Corrections stay in the existing booking, ledger, refund and payout writers.',
   });
@@ -141,11 +143,11 @@ export default async function DailyReconciliationPage({
               {labels['staff.close.date']}
               <input name="date" type="text" inputMode="numeric" pattern="\\d{4}-\\d{2}-\\d{2}" defaultValue={day} placeholder="YYYY-MM-DD" className="stitch-control mt-4 w-full font-tabular" />
             </label>
-            <button type="submit" className="h-48 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">Apply</button>
+            <button type="submit" className="h-48 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{labels['staff.close.apply']}</button>
           </form>
           <div className="mt-12 flex gap-8">
             <Link href={queryFor({ date: shiftCalendarDay(day,-1) })} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">←</Link>
-            <Link href={queryFor({ date: bangkokCalendarDay() })} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">Today</Link>
+            <Link href={queryFor({ date: bangkokCalendarDay() })} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">{labels['staff.close.today']}</Link>
             <Link href={queryFor({ date: shiftCalendarDay(day,1) })} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">→</Link>
           </div>
         </section>

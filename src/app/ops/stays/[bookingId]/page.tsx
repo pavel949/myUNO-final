@@ -23,6 +23,13 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
         refunds:{select:{status:true,amountThb:true}}},orderBy:{createdAt:'desc'}},
       changes:{select:{id:true,changeType:true,createdAt:true,priceDeltaThb:true},
         orderBy:{createdAt:'desc'},take:10},
+      serviceOrders:{select:{id:true,status:true,total_thb:true,scheduled_start:true,
+        service:{select:{title:true}}},orderBy:{createdAt:'desc'}},
+      depositPreauth:{select:{amountThb:true,status:true,authorizedAt:true,voidedAt:true,capturedAt:true}},
+      depositClaims:{select:{id:true,claimedAmountThb:true,status:true,description:true,filedAt:true},
+        orderBy:{filedAt:'desc'}},
+      conditionReports:{select:{id:true,reportType:true,createdAt:true,notes:true,_count:{select:{media:true}}},
+        orderBy:{createdAt:'desc'}},
     },
   });
   if(!booking)notFound();
@@ -47,6 +54,14 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
     'staff.stay_360.refund':'Refund accrued',
     'staff.stay_360.payment_history':'Payment history',
     'staff.stay_360.change_history':'Change history',
+    'staff.stay_360.folio':'Guest folio',
+    'staff.stay_360.services':'Stay services',
+    'staff.stay_360.deposit':'Damage deposit',
+    'staff.stay_360.claims':'Deposit claims',
+    'staff.stay_360.condition':'Condition reports',
+    'staff.stay_360.no_services':'No stay-linked services.',
+    'staff.stay_360.no_claims':'No deposit claims.',
+    'staff.stay_360.no_condition':'No condition reports.',
     'staff.stay_360.no_payments':'No verified payments recorded.',
     'staff.stay_360.no_changes':'No booking changes recorded.',
     'staff.stay_360.request':'Approve request',
@@ -111,6 +126,40 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
           <ul className="mt-12 space-y-8">{booking.payments.map(p=><li key={p.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
             <span>{p.method} · {p.status} {p.receiptRef??''}</span><span>{amount(p.amountThb)}</span>
           </li>)}</ul>}
+      </section>}
+      {canSeeFinance && <section className="stitch-panel p-20">
+        <div className="flex flex-wrap items-center justify-between gap-8">
+          <div>
+            <p className="stitch-kicker">{labels['staff.stay_360.folio']}</p>
+            <h2 className="mt-4 text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.services']}</h2>
+          </div>
+          {booking.depositPreauth ? <span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold">
+            {labels['staff.stay_360.deposit']} · {booking.depositPreauth.status} · {amount(booking.depositPreauth.amountThb)}
+          </span> : null}
+        </div>
+        {booking.serviceOrders.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_services']}</p>:
+          <ul className="mt-12 space-y-8">{booking.serviceOrders.map(order=><li key={order.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
+            <span>{order.service.title} · {order.status} · {formatDate(order.scheduled_start,locale)}</span>
+            <span>{amount(order.total_thb)}</span>
+          </li>)}</ul>}
+        <div className="mt-20 grid gap-16 md:grid-cols-2">
+          <div>
+            <h3 className="font-semibold">{labels['staff.stay_360.claims']}</h3>
+            {booking.depositClaims.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_claims']}</p>:
+              <ul className="mt-8 space-y-8">{booking.depositClaims.map(claim=><li key={claim.id} className="rounded-md bg-surface-ivory p-12 text-small">
+                <div className="flex justify-between gap-8"><span className="font-semibold">{claim.status}</span><span>{amount(claim.claimedAmountThb)}</span></div>
+                <p className="mt-4 text-text-secondary">{claim.description}</p>
+              </li>)}</ul>}
+          </div>
+          <div>
+            <h3 className="font-semibold">{labels['staff.stay_360.condition']}</h3>
+            {booking.conditionReports.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_condition']}</p>:
+              <ul className="mt-8 space-y-8">{booking.conditionReports.map(report=><li key={report.id} className="rounded-md bg-surface-ivory p-12 text-small">
+                <div className="flex justify-between gap-8"><span className="font-semibold">{report.reportType.replace(/_/g,' ')}</span><span>{report._count.media} media</span></div>
+                <p className="mt-4 text-text-secondary">{formatDate(report.createdAt,locale)}{report.notes?' · '+report.notes:''}</p>
+              </li>)}</ul>}
+          </div>
+        </div>
       </section>}
       <section className="stitch-panel p-20">
         <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.change_history']}</h2>

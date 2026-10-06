@@ -266,7 +266,7 @@ export default function ServicesClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-mint px-20 py-32 md:px-32 md:py-48">
+    <main className="stitch-workspace px-20 py-32 md:px-32 md:py-48">
       <div className="mx-auto max-w-content">
         <h1 className="font-display text-display-hero font-semibold text-brand-andaman mb-8 md:text-display-hero-lg">
           {labels['services.browse.title']}
@@ -276,7 +276,7 @@ export default function ServicesClient({
         </p>
 
         {bookingId && stay && (stay.unitName || stay.projectName) && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
+          <div className="stitch-panel p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
             <p className="text-body text-text-ink">
               {fill(labels['services.browse.stay_banner'], {
                 unit: stay.unitName ?? '—',
@@ -293,7 +293,7 @@ export default function ServicesClient({
         )}
 
         {!bookingId && unitId && unitContext && (unitContext.unitName || unitContext.projectName) && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
+          <div className="stitch-panel p-16 mb-24 flex flex-wrap items-center justify-between gap-12">
             <p className="text-body text-text-ink">
               {fill(
                 orderContext === 'mc'
@@ -365,7 +365,7 @@ export default function ServicesClient({
         )}
 
         {visibleServices.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-32 text-center mb-32">
+          <div className="stitch-panel p-32 text-center mb-32">
             <p className="text-body text-text-secondary">
               {selectedCategory && services.length > 0
                 ? labels['services.browse.category_empty']
@@ -377,7 +377,7 @@ export default function ServicesClient({
             {visibleServices.map((service) => (
               <div
                 key={service.id}
-                className="flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
+                className="flex flex-col overflow-hidden stitch-panel transition-shadow hover:shadow-float"
               >
                 {(() => {
                   // Same rule as the homepage card: a real cover wins; otherwise a
@@ -506,13 +506,13 @@ export default function ServicesClient({
           {labels['services.my_orders.title']}
         </h2>
         {!loggedIn || orders.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary">
               {loggedIn ? labels['services.my_orders.empty'] : labels['services.browse.login_needed']}
             </p>
           </div>
         ) : (
-          <div className="bg-surface-paper border border-border-line rounded-lg">
+          <div className="stitch-panel">
             {orders.map((order) => (
               <div
                 key={order.id}

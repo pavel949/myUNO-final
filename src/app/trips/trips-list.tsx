@@ -86,7 +86,7 @@ export default function TripsList({ labels }: TripsListProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-mint p-24 md:p-32">
+      <div className="stitch-workspace p-20 md:p-32">
         <div className="text-center">
           <p className="text-body text-text-secondary">{labels['booking.trips.loading']}</p>
         </div>
@@ -95,7 +95,7 @@ export default function TripsList({ labels }: TripsListProps) {
   }
 
   return (
-    <div className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <div className="stitch-workspace p-20 md:p-32">
       <div className="max-w-4xl mx-auto">
         <div className="mb-24">
           <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg">
@@ -117,7 +117,7 @@ export default function TripsList({ labels }: TripsListProps) {
             {labels['booking.trips.retry']}
           </a>
         ) : trips.length === 0 ? (
-          <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-32 text-center">
+          <div className="stitch-panel p-32 text-center">
             <p className="text-body text-text-secondary mb-16">{labels['booking.trips.empty_title']}</p>
             <Link
               href="/search"
@@ -132,7 +132,7 @@ export default function TripsList({ labels }: TripsListProps) {
               <Link
                 key={trip.id}
                 href={`/trips/${trip.id}`}
-                className="block bg-surface-paper border border-border-line rounded-lg shadow-card p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
+                className="block stitch-panel p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
               >
                 <div className="flex items-start justify-between mb-16">
                   <div>

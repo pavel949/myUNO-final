@@ -77,7 +77,7 @@ export default function PassportsClient({
   };
 
   return (
-    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="max-w-2xl mx-auto">
         <p className="mb-8">
           <Link
@@ -105,7 +105,7 @@ export default function PassportsClient({
           </div>
         )}
 
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <section className="stitch-panel p-24 mb-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['checkin.passports.list_title']}
           </h2>
@@ -133,7 +133,7 @@ export default function PassportsClient({
           )}
         </section>
 
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+        <section className="stitch-panel p-24">
           <h2 className="text-heading-3 font-bold text-text-ink mb-16">
             {labels['checkin.passports.add_title']}
           </h2>
@@ -153,7 +153,10 @@ export default function PassportsClient({
               />
               <Input
                 label={labels['checkin.passports.dob']}
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder="YYYY-MM-DD"
+                pattern="\\d{4}-\\d{2}-\\d{2}"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
               />

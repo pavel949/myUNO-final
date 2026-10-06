@@ -3,11 +3,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const search = readFileSync(join(process.cwd(), 'src/app/search/search-results.tsx'), 'utf8');
+const searchLayout = readFileSync(join(process.cwd(), 'src/app/search/layout.tsx'), 'utf8');
 const trips = readFileSync(join(process.cwd(), 'src/app/trips/trips-list.tsx'), 'utf8');
+const tripsLayout = readFileSync(join(process.cwd(), 'src/app/trips/layout.tsx'), 'utf8');
 const checkout = readFileSync(
   join(process.cwd(), 'src/app/checkout/[sessionId]/checkout-client.tsx'),
   'utf8'
 );
+const checkoutLayout = readFileSync(join(process.cwd(), 'src/app/checkout/layout.tsx'), 'utf8');
 const reconciliation = readFileSync(
   join(process.cwd(), 'src/app/admin/finance/reconciliation/reconciliation-client.tsx'),
   'utf8'
@@ -56,12 +59,12 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
     );
   });
 
-  it('keeps search, trips, and checkout on ivory with display titles', () => {
-    expect(search).toContain('bg-surface-ivory');
+  it('keeps search, trips, and checkout inside the shared Stitch consumer surface with display titles', () => {
+    expect(searchLayout).toContain('StitchConsumerShell');
+    expect(tripsLayout).toContain('StitchConsumerShell');
+    expect(checkoutLayout).toContain('StitchConsumerShell');
     expect(search).toContain('text-display-xl');
-    expect(trips).toContain('bg-surface-ivory');
     expect(trips).toContain('text-display-xl');
-    expect(checkout).toContain('bg-surface-ivory');
     expect(checkout).toContain('text-display-xl');
   });
 

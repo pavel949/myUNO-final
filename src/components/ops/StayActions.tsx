@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function StayActions({
   id,status,balanceSatang,canRecordMoney,canManageReservations,canManageFrontDesk,labels,
@@ -56,10 +57,10 @@ export default function StayActions({
           {labels['staff.stay_360.cash']}
         </button>
       </div>}
-      {canCheckIn&&<button type="button" disabled={busy} onClick={()=>run('checkin')}
-        className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
+      {canCheckIn&&<Link href={'/ops/stays/'+encodeURIComponent(id)+'/check-in'}
+        className="rounded-md bg-brand-deep px-16 py-12 text-center text-small font-semibold text-white">
         {labels['staff.stay_360.check_in']}
-      </button>}
+      </Link>}
       {canCheckOut&&<button type="button" disabled={busy} onClick={()=>run('check-out')}
         className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
         {labels['staff.stay_360.check_out']}

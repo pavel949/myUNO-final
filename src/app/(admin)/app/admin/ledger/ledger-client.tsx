@@ -75,7 +75,7 @@ export default function LedgerAdminClient({
       </div>
 
       {Object.keys(totals).length > 0 && (
-        <div className="mb-24 p-16 bg-surface-paper border border-border-line rounded-lg shadow-card">
+        <div className="mb-24 p-16 stitch-panel">
           <h3 className="text-heading-3 font-semibold text-text-ink mb-12">
             {labels['admin.ledger.totals']}
           </h3>
@@ -91,7 +91,7 @@ export default function LedgerAdminClient({
       )}
 
       {entries.length === 0 ? (
-        <div className="p-24 bg-surface-paper border border-border-line rounded-lg shadow-card text-center">
+        <div className="p-24 stitch-panel text-center">
           <p className="text-body text-text-secondary">{labels['admin.ledger.empty']}</p>
         </div>
       ) : (

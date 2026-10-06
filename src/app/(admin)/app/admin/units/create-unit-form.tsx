@@ -51,7 +51,7 @@ export default function CreateUnitForm({
 
   return (
     <form
-      className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24"
+      className="stitch-panel p-24 mb-24"
       onSubmit={async (event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget as HTMLFormElement);

@@ -1,6 +1,33 @@
 import type { ReactNode } from 'react';
+import { getLabels } from '@/lib/i18n';
+import { StitchWorkspaceShell } from '@/components/stitch/StitchShells';
 
-/** Management-company workspace shell: marks the PMS touch-target scope (globals.css). */
-export default function McLayout({ children }: { children: ReactNode }) {
-  return <div className="pms-touch">{children}</div>;
+export default async function McLayout({ children }: { children: ReactNode }) {
+  const labels = await getLabels({
+    'mc.shell.eyebrow': 'myUNO PMS',
+    'mc.shell.title': 'Property Management',
+    'mc.shell.today': 'Today',
+    'mc.shell.calendar': 'Calendar',
+    'mc.shell.requests': 'Booking Requests',
+    'mc.shell.mobilization': 'Mobilization',
+    'mc.shell.tm30': 'TM30',
+    'mc.shell.costs': 'Costs',
+  });
+
+  return (
+    <StitchWorkspaceShell
+      eyebrow={labels['mc.shell.eyebrow']}
+      title={labels['mc.shell.title']}
+      items={[
+        { href: '/mc', label: labels['mc.shell.today'] },
+        { href: '/mc/calendar', label: labels['mc.shell.calendar'] },
+        { href: '/mc/requests', label: labels['mc.shell.requests'] },
+        { href: '/mc/mobilization', label: labels['mc.shell.mobilization'] },
+        { href: '/mc/tm30', label: labels['mc.shell.tm30'] },
+        { href: '/mc/costs', label: labels['mc.shell.costs'] },
+      ]}
+    >
+      {children}
+    </StitchWorkspaceShell>
+  );
 }

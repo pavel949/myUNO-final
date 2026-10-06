@@ -102,7 +102,7 @@ export default function OrderWizard({
   if (service.priceModel === 'quote') {
     const wa = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^\d]/g, '')}` : null;
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+      <div className="stitch-panel p-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
           {labels['services.wizard.quote_title']}
         </h2>
@@ -199,7 +199,7 @@ export default function OrderWizard({
   // button in a list): card now, or cash on fulfilment.
   if (placedOrderId) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+      <div className="stitch-panel p-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
           {labels['services.wizard.pay_title']}
         </h2>
@@ -224,7 +224,7 @@ export default function OrderWizard({
 
   // Step 1 — refine the order.
   return (
-    <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+    <div className="stitch-panel p-24">
       <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
         {labels['services.wizard.title']}
       </h2>

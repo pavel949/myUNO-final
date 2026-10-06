@@ -126,7 +126,7 @@ export default async function TicketDetailPage({
   };
 
   return (
-    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="max-w-3xl mx-auto">
         <p className="mb-12">
           <Link href="/tickets" className="text-brand-andaman font-semibold hover:underline">

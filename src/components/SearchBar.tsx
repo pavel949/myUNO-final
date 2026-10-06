@@ -54,7 +54,9 @@ export function SearchBar({
   const [endDate, setEndDate] = useState(initialEndDate);
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
-  const [todayISO, setTodayISO] = useState(() =>\n    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })\n  );
+  const [todayISO, setTodayISO] = useState(() =>
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+  );
 
   // Set today's date only on client to avoid hydration mismatch.
   useEffect(() => {

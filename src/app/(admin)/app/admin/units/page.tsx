@@ -68,7 +68,7 @@ export default async function AdminUnitsPage() {
   return (
     <div>
       <div className="mb-24">
-        <p className="text-kicker uppercase font-semibold text-brand-andaman">{labels['admin.units.eyebrow']}</p>
+        <p className="stitch-kicker">{labels['admin.units.eyebrow']}</p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mt-4">{labels['admin.units.title']}</h1>
         <p className="text-body text-text-secondary mt-8 max-w-3xl">{labels['admin.units.intro']}</p>
       </div>

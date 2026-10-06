@@ -78,7 +78,7 @@ export default async function AdminOrganizationsPage() {
       </p>
 
       {developers.length > 0 ? (
-        <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
+        <section className="stitch-panel p-24 mb-24">
           <div className="mb-16">
             <h2 className="text-heading-3 font-semibold text-text-ink">
               {labels['admin.organizations.developer360_title']}
@@ -92,7 +92,7 @@ export default async function AdminOrganizationsPage() {
               <Link
                 key={developer.id}
                 href={`/app/admin/developers/${developer.id}`}
-                className="block p-16 rounded-md bg-surface-ivory border border-border-line hover:border-brand-andaman transition-colors"
+                className="stitch-panel-soft block p-16 hover:border-brand-andaman transition-colors"
               >
                 <div className="flex items-start justify-between gap-8">
                   <div>

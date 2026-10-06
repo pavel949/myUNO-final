@@ -301,7 +301,7 @@ export default async function LandingPage({
   const linkMore = 'shrink-0 text-body font-semibold text-brand-andaman hover:underline';
 
   return (
-    <main className="min-h-screen bg-surface-mint">
+    <main className="stitch-workspace">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
@@ -421,7 +421,7 @@ export default async function LandingPage({
           <div className="mx-auto max-w-content px-20 md:px-32">
             <div className={sectionHead}>
               <div className="max-w-2xl">
-                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.complexes.kicker']}</p>
+                <p className="stitch-kicker">{labels['landing.hp.complexes.kicker']}</p>
                 <h2 id="complexes-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                   {labels['landing.hp.complexes.title']}
                 </h2>
@@ -460,7 +460,7 @@ export default async function LandingPage({
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-border-line bg-surface-ivory p-32 text-text-secondary">
+              <div className="stitch-panel-soft p-32 text-text-secondary">
                 {labels['landing.hp.complexes.empty']}
               </div>
             )}
@@ -469,7 +469,7 @@ export default async function LandingPage({
 
         <section className="bg-surface-mint py-56 md:py-96" aria-labelledby="offers-heading">
           <div className="mx-auto max-w-content px-20 md:px-32">
-            <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.offers.kicker']}</p>
+            <p className="stitch-kicker">{labels['landing.hp.offers.kicker']}</p>
             <HomeOffersRail
               items={offers}
               labels={{
@@ -495,7 +495,7 @@ export default async function LandingPage({
         <div className="mx-auto max-w-content px-20 md:px-32">
           <div className={sectionHead}>
             <div className="max-w-2xl">
-              <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.services.kicker']}</p>
+              <p className="stitch-kicker">{labels['landing.hp.services.kicker']}</p>
               <h2 id="services-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                 {labels['landing.hp.services.title']}
               </h2>
@@ -543,7 +543,7 @@ export default async function LandingPage({
           <div className="mx-auto max-w-content px-20 md:px-32">
             <div className={sectionHead}>
               <div className="max-w-2xl">
-                <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.areas.kicker']}</p>
+                <p className="stitch-kicker">{labels['landing.hp.areas.kicker']}</p>
                 <h2 id="areas-heading" className="mt-8 font-display text-display-xl font-semibold text-text-ink">
                   {labels['landing.hp.areas.title']}
                 </h2>
@@ -593,7 +593,7 @@ export default async function LandingPage({
 
       <section className="bg-surface-paper py-56 md:py-96" aria-labelledby="owners-heading">
         <div className="mx-auto max-w-content px-20 md:px-32">
-          <p className="text-kicker uppercase text-brand-andaman">{labels['landing.hp.owners.kicker']}</p>
+          <p className="stitch-kicker">{labels['landing.hp.owners.kicker']}</p>
           <h2 id="owners-heading" className="mt-8 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
             {labels['landing.hp.owners.title']}
           </h2>

@@ -75,16 +75,16 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
 
   it('does not invent announcement read-receipts or a ฿840,000 NOI cap', () => {
     expect(announcements).not.toContain('read by');
-    expect(announcements).toContain('text-display-xl');
+    expect(announcements).toMatch(/text-display-xl|PageHeading/);
     expect(onboarding).not.toContain('840000');
     expect(onboarding).not.toContain('30%');
     expect(onboarding).not.toContain('step 3 of 4');
   });
 
   it('sits integrations, claim, and reconciliation on tokens without gray leftovers', () => {
-    expect(integrations).toContain('text-display-xl');
+    expect(integrations).toMatch(/text-display-xl|PageHeading/);
     expect(claim).toContain('bg-surface-ivory');
-    expect(reconciliation).toContain('text-display-xl');
+    expect(reconciliation).toMatch(/text-display-xl|PageHeading/);
     expect(reconciliation).not.toContain('text-xsmall');
     expect(reconciliation).not.toContain('text-gray-');
     expect(composer).not.toContain('text-xsmall');

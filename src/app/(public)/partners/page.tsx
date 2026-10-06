@@ -68,10 +68,10 @@ export default async function PartnersPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <section className="border-b border-border-line bg-surface-paper px-20 py-56 md:px-32 md:py-80">
         <div className="mx-auto max-w-content">
-          <p className="text-kicker uppercase text-brand-andaman">
+          <p className="stitch-kicker">
             {labels['partners.kicker']}
           </p>
           <h1 className="mt-12 max-w-3xl font-display text-display-xl font-semibold text-text-ink">
@@ -89,7 +89,7 @@ export default async function PartnersPage() {
             <Link
               key={path.href}
               href={path.href}
-              className="group flex min-h-[260px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition hover:border-brand-andaman hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
+              className="stitch-panel group flex min-h-[260px] flex-col justify-between p-24 transition hover:border-brand-andaman hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-andaman"
             >
               <div>
                 <h2 className="font-display text-title font-semibold text-text-ink">

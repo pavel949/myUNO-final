@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { StitchMain, PageHeading, Panel } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
@@ -104,14 +105,9 @@ export default async function AnnouncementsPage({
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-          {labels['admin.announcements.title']}
-        </h1>
-        <p className="text-body text-text-secondary mb-24 max-w-3xl">
-          {labels['admin.announcements.subtitle']}
-        </p>
+    <StitchMain narrow>
+      <PageHeading title={labels['admin.announcements.title']} subtitle={labels['admin.announcements.subtitle']} />
+      <Panel>
 
         <AnnouncementsComposer
           projectId={projectId}
@@ -134,7 +130,7 @@ export default async function AnnouncementsPage({
           basePath="/announcements"
           audiences={ORG_AUDIENCES}
         />
-      </div>
-    </main>
+      </Panel>
+    </StitchMain>
   );
 }

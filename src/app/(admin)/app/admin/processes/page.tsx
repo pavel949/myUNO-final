@@ -45,8 +45,8 @@ export default async function ProcessesPage() {
   }), getProcessState(prisma)]);
   return (
     <main className="mx-auto max-w-7xl space-y-24 pb-40">
-      <header className="rounded-md border border-border-line bg-surface-paper p-24 md:p-32">
-        <p className="text-kicker uppercase tracking-wider text-brand-andaman font-semibold mb-8">{labels['admin.processes.kicker']}</p>
+      <header className="stitch-panel p-24 md:p-32">
+        <p className="stitch-kicker mb-8">{labels['admin.processes.kicker']}</p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.processes.title']}</h1>
         <p className="text-body text-text-secondary max-w-3xl">{labels['admin.processes.subtitle']}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-24">
@@ -55,7 +55,7 @@ export default async function ProcessesPage() {
           <Link href="/app/admin/ledger" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">{labels['admin.processes.finance']} <span aria-hidden="true">→</span></Link>
         </div>
       </header>
-      <section aria-label="One source of truth" className="rounded-lg border border-border-line bg-surface-paper p-16 md:p-24">
+      <section aria-label="One source of truth" className="stitch-panel p-16 md:p-24">
         <h2 className="font-display text-title font-semibold text-text-ink mb-12">{labels['admin.processes.model']}</h2>
         <div className="flex flex-wrap items-center gap-8 text-small">
           {['One property record', 'Commercial offers', 'Availability & rates', 'One booking record', 'Operations & ledger'].map((step, i) => (
@@ -75,7 +75,7 @@ export default async function ProcessesPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             {lane.items.map((process) => (
-              <article key={process.number} className="flex flex-col rounded-md border border-border-line bg-surface-paper p-20 md:p-24">
+              <article key={process.number} className="stitch-panel flex flex-col p-20 md:p-24">
                 <div className="flex items-start gap-12">
                   <span className="shrink-0 rounded-md bg-surface-ivory px-12 py-8 text-small font-semibold text-brand-andaman tabular-nums">{process.number}</span>
                   <div>
@@ -83,7 +83,7 @@ export default async function ProcessesPage() {
                     <p className="text-small text-text-secondary mt-4">{process.description}</p>
                   </div>
                 </div>
-                <div className="mt-16 rounded-md bg-surface-ivory border border-border-line p-12" aria-live="polite">
+                <div className="stitch-panel-soft mt-16 p-12" aria-live="polite">
                   <p className="text-small font-semibold text-text-ink">{state[process.number as keyof typeof state].summary}</p>
                   {state[process.number as keyof typeof state].attention && <p className="text-small text-state-warning mt-4">{labels['admin.processes.attention']} {state[process.number as keyof typeof state].attention}</p>}
                 </div>

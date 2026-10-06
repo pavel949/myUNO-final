@@ -52,9 +52,10 @@ export default async function ProjectCategoryPage({
     'project_category.representative_media': 'Representative category photos',
   });
 
-  return <main className="min-h-screen bg-surface-ivory">
-    <header className="border-b border-border-line bg-surface-paper px-24 py-32">
-      <div className="mx-auto max-w-6xl">
+  return <main className="stitch-workspace">
+    <div className="stitch-page space-y-24">
+    <header className="stitch-hero">
+      <div>
         <Link href={`/projects/${project.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">
           ← {labels['project_category.back']} · {project.name}
         </Link>
@@ -69,14 +70,14 @@ export default async function ProjectCategoryPage({
         {bookableUnits.length > 0 ? (
           <Link
             href={`/search?projectId=${encodeURIComponent(project.id)}&inventoryCategoryId=${encodeURIComponent(category.id)}`}
-            className="mt-20 inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 font-semibold text-white"
+            className="mt-20 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 font-semibold text-surface-ivory hover:bg-brand-deep"
           >
             {labels['project_category.search']}
           </Link>
         ) : (
           <Link
             href={`/projects/${project.slug}#lead-form`}
-            className="mt-20 inline-flex min-h-44 items-center rounded-lg bg-brand-andaman px-20 font-semibold text-white"
+            className="mt-20 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 font-semibold text-surface-ivory hover:bg-brand-deep"
           >
             {labels['project_category.inquiry_unit']}
           </Link>
@@ -84,14 +85,14 @@ export default async function ProjectCategoryPage({
       </div>
     </header>
 
-    {category.galleryUrls.length > 0 ? <section className="mx-auto max-w-6xl px-24 py-32">
+    {category.galleryUrls.length > 0 ? <section className="stitch-panel p-20 md:p-24">
       <h2 className="mb-16 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.gallery']}</h2>
       <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
         {category.galleryUrls.slice(0,8).map((src,index)=><Image key={src+index} src={src} alt={category.name} width={640} height={420} className={`w-full rounded-lg object-cover ${index===0?'col-span-2 row-span-2 aspect-[4/3]':'aspect-video'}`}/>)}
       </div>
     </section> : null}
 
-    <section className="mx-auto max-w-6xl px-24 py-40">
+    <section className="stitch-panel p-20 md:p-24">
       <h2 className="mb-20 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.units']}</h2>
       <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
         {units.map(unit => <Link
@@ -99,7 +100,7 @@ export default async function ProjectCategoryPage({
           href={unit.bookable
             ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
             : `/projects/${project.slug}#lead-form`}
-          className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card"
+          className="stitch-panel-soft overflow-hidden transition hover:border-brand-andaman hover:shadow-card"
         >
           {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-muted px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
           <div className="p-16">
@@ -151,5 +152,6 @@ export default async function ProjectCategoryPage({
         </Link>)}
       </div>
     </section>
+    </div>
   </main>;
 }

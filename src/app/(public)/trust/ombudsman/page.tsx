@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { StitchMain, PublicHero, Panel, LinkButton } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 
@@ -49,34 +49,19 @@ export default async function OmbudsmanPage() {
   const published = Boolean(credential) && !CREDENTIAL_PENDING.test(credential.trim());
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-display-xl font-semibold">{labels['trust.ombudsman.title']}</h1>
-        </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-24 py-40 flex flex-col gap-24">
+    <StitchMain narrow>
+      <PublicHero dark title={labels['trust.ombudsman.title']} />
+      <Panel>
         {published ? (
           <p className="text-body text-text-secondary">{credential}</p>
         ) : (
-          <>
-            <p className="text-body text-text-secondary">
-              {labels['trust.ombudsman.pending']}
-            </p>
-            <p className="text-body text-text-secondary">
-              {labels['trust.ombudsman.meanwhile']}
-            </p>
-          </>
+          <div className="space-y-12">
+            <p className="text-body text-text-secondary">{labels['trust.ombudsman.pending']}</p>
+            <p className="text-body text-text-secondary">{labels['trust.ombudsman.meanwhile']}</p>
+          </div>
         )}
-
-        <Link
-          href="/trust"
-          className="text-body font-semibold text-brand-andaman underline underline-offset-2"
-        >
-          ← {labels['trust.ombudsman.back']}
-        </Link>
-      </div>
-    </main>
+      </Panel>
+      <LinkButton href="/trust" variant="ghost">← {labels['trust.ombudsman.back']}</LinkButton>
+    </StitchMain>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { StitchMain, PublicHero, Panel, LinkButton } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 
@@ -42,32 +42,14 @@ export default async function TrustPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-gradient-to-br from-brand-andaman to-brand-andaman-dark text-surface-ivory py-64 px-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-display text-display-xl font-semibold mb-24">{labels['trust.title']}</h1>
-          <p className="text-body text-surface-ivory/90">{labels['trust.intro']}</p>
-        </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-24 py-40 flex flex-col gap-24">
-        {pillars.map((pillar) => (
-          <section
-            key={pillar.key}
-            className="bg-surface-paper border border-border-line rounded-md p-32"
-          >
-            <h2 className="text-heading-3 font-bold text-text-ink mb-12">{pillar.title}</h2>
-            <p className="text-body text-text-secondary">{pillar.body}</p>
-          </section>
-        ))}
-
-        <Link
-          href="/trust/ombudsman"
-          className="text-body font-semibold text-brand-andaman underline underline-offset-2"
-        >
-          {labels['trust.ombudsman_link']} →
-        </Link>
-      </div>
-    </main>
+    <StitchMain narrow>
+      <PublicHero dark title={labels['trust.title']} body={labels['trust.intro']} />
+      {pillars.map((pillar) => (
+        <Panel key={pillar.key} title={pillar.title}>
+          <p className="text-body text-text-secondary">{pillar.body}</p>
+        </Panel>
+      ))}
+      <LinkButton href="/trust/ombudsman" variant="ghost">{labels['trust.ombudsman_link']} →</LinkButton>
+    </StitchMain>
   );
 }

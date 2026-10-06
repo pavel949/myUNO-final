@@ -25,7 +25,7 @@ export default async function PropertySubmissionsPage() {
     {rows.length === 0 ? <p>No applications yet.</p> : <div className="space-y-16">{rows.map(row => {
       const data = row.requirements as Record<string, unknown>;
       const photos = Array.isArray(data.photos) ? data.photos.length : 0;
-      return <article key={row.id} className="rounded-md border border-border-line bg-surface-paper p-20">
+      return <article key={row.id} className="stitch-panel p-20">
         <div className="flex flex-wrap justify-between gap-12"><h2 className="font-semibold">{row.title}</h2><span className="text-small">{String(data.status || 'draft')}</span></div>
         <p className="mt-8 text-small text-text-secondary">{row.identity.firstName} {row.identity.lastName} · {row.identity.email}</p>
         <p className="mt-8">Residence: {row.project?.name || String(data.proposedProject || 'Not selected')}</p>

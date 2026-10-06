@@ -129,4 +129,26 @@ describe('Stitch system-wide surface coverage', () => {
     expect(stay).toContain('conditionReports');
     expect(passports).not.toContain('type="date"');
   });
+  it('keeps public landing, trust and legal pages on Stitch page compositions', () => {
+    for (const path of [
+      'src/app/(public)/guests/page.tsx',
+      'src/app/(public)/buyers/page.tsx',
+      'src/app/(public)/providers/page.tsx',
+      'src/app/(public)/management-companies/page.tsx',
+      'src/app/(public)/developers/page.tsx',
+      'src/app/(public)/about/page.tsx',
+      'src/app/(public)/trust/page.tsx',
+      'src/app/(public)/trust/ombudsman/page.tsx',
+      'src/app/(public)/help/page.tsx',
+      'src/app/(public)/legal/privacy/page.tsx',
+      'src/app/(public)/legal/terms/page.tsx',
+      'src/app/announcements/page.tsx',
+      'src/app/(public)/projects/[slug]/categories/[categoryKey]/page.tsx',
+      'src/app/(public)/projects/[slug]/amenities/page.tsx',
+      'src/app/(public)/projects/[slug]/amenities/[amenitySlug]/page.tsx',
+      'src/app/(public)/projects/[slug]/amenities/[amenitySlug]/book/page.tsx',
+    ]) {
+      expect(source(path)).toMatch(/AudienceLanding|StitchMain|stitch-workspace/);
+    }
+  });
 });

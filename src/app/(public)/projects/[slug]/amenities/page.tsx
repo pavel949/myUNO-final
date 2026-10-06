@@ -34,9 +34,10 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
     groups.set(key, [...(groups.get(key) || []), amenity]);
   }
 
-  return <main className="min-h-screen bg-surface-ivory">
-    <header className="border-b border-border-line bg-surface-paper px-24 py-32">
-      <div className="mx-auto max-w-6xl">
+  return <main className="stitch-workspace">
+    <div className="stitch-page space-y-24">
+    <header className="stitch-hero">
+      <div>
         <Link href={`/projects/${project.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['project_amenities.back']} · {project.name}</Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['project_amenities.title']}</h1>
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
@@ -45,13 +46,13 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
       </div>
     </header>
 
-    <div className="mx-auto max-w-6xl space-y-40 px-24 py-40">
+    <div className="space-y-24">
       {[...groups.entries()].map(([group, rows]) => (
         <section key={group}>
           <h2 className="mb-16 font-display text-heading-2 font-semibold text-text-ink">{human(group)}</h2>
           <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map(amenity => (
-              <Link key={amenity.id} href={`/projects/${project.slug}/amenities/${amenity.slug}`} className="overflow-hidden rounded-md border border-border-line bg-surface-paper transition hover:shadow-card">
+              <Link key={amenity.id} href={`/projects/${project.slug}/amenities/${amenity.slug}`} className="stitch-panel overflow-hidden transition hover:border-brand-andaman hover:shadow-float">
                 {amenity.coverUrl ? (
                   <Image src={amenity.coverUrl} alt={amenity.name} width={720} height={420} className="aspect-video w-full object-cover" />
                 ) : <div className="aspect-video bg-surface-muted" />}
@@ -70,6 +71,7 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
         </section>
       ))}
       {!amenities.length ? <p className="text-body text-text-secondary">{labels['project_amenities.empty']}</p> : null}
+    </div>
     </div>
   </main>;
 }

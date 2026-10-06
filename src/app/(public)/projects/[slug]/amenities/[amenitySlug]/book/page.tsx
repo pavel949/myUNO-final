@@ -50,11 +50,12 @@ export default async function AmenityBookingPage({
     ? data.amenity.reservationConfig as Record<string, number | boolean>
     : {};
 
-  return <main className="min-h-screen bg-surface-ivory px-24 py-32">
-    <div className="mx-auto max-w-5xl">
+  return <main className="stitch-workspace">
+    <div className="stitch-page max-w-5xl space-y-24">
       <Link href={`/projects/${data.project.slug}/amenities/${data.amenity.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">← {labels['amenity_booking.back']}</Link>
       <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{labels['amenity_booking.title'].replace('{amenity}', data.amenity.name)}</h1>
-      <p className="mt-8 mb-24 text-body text-text-secondary">{data.amenity.shortDescription}</p>
+      <p className="mt-8 text-body text-text-secondary">{data.amenity.shortDescription}</p>
+      <div className="stitch-panel p-20 md:p-24">
       <AmenityBookingClient
         amenityId={data.amenity.id}
         bookingId={searchParams?.bookingId}
@@ -62,6 +63,7 @@ export default async function AmenityBookingPage({
         capacity={data.amenity.capacity}
         labels={labels}
       />
+      </div>
     </div>
   </main>;
 }

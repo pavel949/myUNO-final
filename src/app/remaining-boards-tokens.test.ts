@@ -83,7 +83,7 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
 
   it('sits integrations, claim, and reconciliation on tokens without gray leftovers', () => {
     expect(integrations).toMatch(/text-display-xl|PageHeading/);
-    expect(claim).toContain('bg-surface-ivory');
+    expect(claim).toMatch(/bg-surface-ivory|stitch-workspace/);
     expect(reconciliation).toMatch(/text-display-xl|PageHeading/);
     expect(reconciliation).not.toContain('text-xsmall');
     expect(reconciliation).not.toContain('text-gray-');

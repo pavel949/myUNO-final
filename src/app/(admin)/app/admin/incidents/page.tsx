@@ -1,4 +1,5 @@
 import { getLabels } from '@/lib/i18n';
+import { PageHeading } from '@/components/premium/StitchPage';
 import AdminIncidentsClient from './incidents-client';
 
 export const dynamic = 'force-dynamic';
@@ -46,12 +47,7 @@ export default async function AdminIncidentsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.incidents.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.incidents.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.incidents.title']} subtitle={labels['admin.incidents.subtitle']} />
       <AdminIncidentsClient labels={labels} />
     </div>
   );

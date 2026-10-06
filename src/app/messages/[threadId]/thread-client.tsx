@@ -127,8 +127,8 @@ export default function ThreadClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface-mint p-32">
-        <p className="text-center text-body text-text-secondary">
+      <main className="stitch-workspace">
+        <p className="stitch-page text-center text-body text-text-secondary">
           {labels['messages.thread.loading']}
         </p>
       </main>
@@ -137,8 +137,8 @@ export default function ThreadClient({
 
   if (!thread) {
     return (
-      <main className="min-h-screen bg-surface-mint p-32">
-        <div className="mx-auto max-w-2xl">
+      <main className="stitch-workspace">
+        <div className="stitch-page max-w-2xl">
           <p className="mb-16 text-body text-state-error">
             {error || labels['messages.thread.not_found']}
           </p>
@@ -156,8 +156,9 @@ export default function ThreadClient({
     .join(', ');
 
   return (
-    <div className="flex min-h-[80vh] flex-col bg-surface-ivory">
-      <div className="flex items-center justify-between border-b border-border-line bg-surface-paper px-24 py-16">
+    <div className="stitch-page max-w-4xl">
+    <div className="stitch-panel flex min-h-[70vh] flex-col overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border-line bg-surface-ivory px-24 py-16">
         <div className="flex items-center gap-16">
           <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
             {labels['messages.thread.back']}
@@ -231,12 +232,13 @@ export default function ThreadClient({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={labels['messages.thread.placeholder']}
-          className="h-48 flex-1 rounded-sm border border-border-line bg-surface-paper px-16 text-text-ink focus:border-brand-andaman focus:outline-none"
+          className="stitch-control flex-1"
         />
         <Button type="submit" isLoading={sending} disabled={!draft.trim()}>
           {labels['messages.thread.send']}
         </Button>
       </form>
+    </div>
     </div>
   );
 }

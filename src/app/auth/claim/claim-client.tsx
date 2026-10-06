@@ -99,7 +99,7 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
     'focus:border-brand-andaman focus:ring-2 focus:ring-brand-andaman focus:outline-none w-full';
 
   return (
-    <div className="min-h-screen bg-surface-ivory flex items-center justify-center p-24">
+    <div className="stitch-workspace flex min-h-screen items-center justify-center p-24">
       <div className="stitch-panel p-32 w-full max-w-md">
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels.title}</h1>
         <p className="text-body text-text-secondary mb-24">{labels.subtitle}</p>

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import ComplianceChecklistsClient from './checklists-client';
 
@@ -44,12 +45,7 @@ export default async function AdminComplianceChecklistsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.checklists.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.checklists.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.checklists.title']} subtitle={labels['admin.checklists.subtitle']} />
       <ComplianceChecklistsClient labels={labels} units={units} />
     </div>
   );

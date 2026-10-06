@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getProcessState } from './process-state';
@@ -47,8 +48,7 @@ export default async function ProcessesPage() {
     <main className="mx-auto max-w-7xl space-y-24 pb-40">
       <header className="stitch-panel p-24 md:p-32">
         <p className="stitch-kicker mb-8">{labels['admin.processes.kicker']}</p>
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.processes.title']}</h1>
-        <p className="text-body text-text-secondary max-w-3xl">{labels['admin.processes.subtitle']}</p>
+        <PageHeading title={labels['admin.processes.title']} subtitle={labels['admin.processes.subtitle']} />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-24">
           <Link href="/app/admin/properties/new" className="rounded-lg bg-brand-andaman p-16 text-on-dark-text font-semibold hover:opacity-90 transition-opacity">{labels['admin.processes.add']} <span aria-hidden="true">→</span></Link>
           <Link href="/app/admin/bookings" className="rounded-lg border border-border-line p-16 font-semibold text-text-ink hover:border-brand-andaman transition-colors">{labels['admin.processes.bookings']} <span aria-hidden="true">→</span></Link>

@@ -28,7 +28,7 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
     expect(pipeline).toContain("'lost'");
     expect(pipeline).not.toContain('🆕');
     expect(pipeline).toContain('bg-chart-seq-');
-    expect(page).toContain('text-display-xl');
+    expect(page).toMatch(/text-display-xl|PageHeading/);
   });
 
   it('does not invent a ฿286.4M forecast', () => {
@@ -42,7 +42,7 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   });
 
   it('does not invent announcement read-receipts on residence', () => {
-    expect(residence).toContain('text-display-xl');
+    expect(residence).toMatch(/text-display-xl|PageHeading/);
     expect(residence).not.toContain('have read this');
     expect(residence).not.toContain('sv-SE');
   });
@@ -51,6 +51,6 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
     expect(provider).toContain('StitchWorkspaceShell');
     expect(provider).toContain("title={labels['provider.portal.title']}");
     expect(mc).toContain('bg-surface-ivory');
-    expect(mc).toContain('text-display-xl');
+    expect(mc).toMatch(/text-display-xl|PageHeading/);
   });
 });

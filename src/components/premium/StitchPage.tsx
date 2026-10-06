@@ -21,7 +21,7 @@ export function PageHeading({
   kicker, title, subtitle, actions, children,
 }: { kicker?: ReactNode; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode }) {
   return (
-    <header className="flex flex-col gap-16 md:flex-row md:items-end md:justify-between">
+    <header className="mb-24 flex flex-col gap-16 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0">
         {kicker ? <p className="stitch-kicker">{kicker}</p> : null}
         <h1 className="mt-4 break-words font-display text-display-xl font-semibold tracking-[-0.02em] text-text-ink hyphens-auto">{title}</h1>

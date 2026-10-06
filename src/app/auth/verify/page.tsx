@@ -1,4 +1,5 @@
 import { getLabels } from '@/lib/i18n';
+import { PageHeading } from '@/components/premium/StitchPage';
 import AuthVerifyClient from './verify-client';
 
 export const dynamic = 'force-dynamic';
@@ -20,9 +21,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyPageProps)
   return (
     <main className="stitch-workspace flex items-start justify-center px-24 py-64">
       <div className="stitch-panel w-full max-w-md p-32 text-center">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">
-          {labels['auth.verify.title']}
-        </h1>
+        <PageHeading title={labels['auth.verify.title']} />
         <AuthVerifyClient token={searchParams.token} labels={labels} />
       </div>
     </main>

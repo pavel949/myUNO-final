@@ -1,4 +1,5 @@
 import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
@@ -154,12 +155,7 @@ export default async function AdminCompliancePage({
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.compliance.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.compliance.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.compliance.title']} subtitle={labels['admin.compliance.subtitle']} />
 
       <ComplianceProjectFilter
         projects={projects}

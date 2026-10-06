@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import AdminOperationalKpisClient from './kpis-client';
 
@@ -40,10 +41,7 @@ export default async function AdminOperationalKpisPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.kpis.title']}</h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.kpis.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.kpis.title']} subtitle={labels['admin.kpis.subtitle']} />
       <AdminOperationalKpisClient labels={labels} units={units} />
     </div>
   );

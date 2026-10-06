@@ -1,4 +1,5 @@
 import { getLabels } from '@/lib/i18n';
+import { PageHeading } from '@/components/premium/StitchPage';
 import AdminAttributionClient from './attribution-client';
 
 export const dynamic = 'force-dynamic';
@@ -30,12 +31,7 @@ export default async function AdminAttributionPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.attribution.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.attribution.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.attribution.title']} subtitle={labels['admin.attribution.subtitle']} />
       <AdminAttributionClient labels={labels} />
     </div>
   );

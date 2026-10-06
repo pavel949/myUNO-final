@@ -1,4 +1,5 @@
 import { getSchedulerHealth, jobsNeedingAttention, type JobHealthStatus } from '@/jobs';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 
@@ -68,12 +69,7 @@ export default async function AdminSchedulerPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.scheduler.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-16 max-w-3xl">
-        {labels['admin.scheduler.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.scheduler.title']} subtitle={labels['admin.scheduler.subtitle']} />
       <p
         className={`text-body font-semibold mb-24 ${
           attention.length === 0 ? 'text-state-success' : 'text-state-error'

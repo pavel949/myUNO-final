@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getAdminSignals } from '@/app/actions/getAdminSignals';
 import { SignalsList } from '@/app/components/admin/SignalsList';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -108,10 +109,7 @@ export default async function SignalsPage() {
   return (
     <div>
       <div className="mb-24">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-          {labels['admin.signals.title']}
-        </h1>
-        <p className="text-body text-text-secondary">{labels['admin.signals.subtitle']}</p>
+        <PageHeading title={labels['admin.signals.title']} subtitle={labels['admin.signals.subtitle']} />
       </div>
 
       <div className="stitch-panel p-24 mb-24">

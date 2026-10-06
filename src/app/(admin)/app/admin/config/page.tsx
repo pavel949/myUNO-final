@@ -1,4 +1,5 @@
 import { getLabels } from '@/lib/i18n';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { listProjects } from '@/modules/projects';
 import { getConfig } from '@/modules/config';
@@ -70,10 +71,7 @@ export default async function AdminConfigPage({
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
-        {labels['admin.config.title']}
-      </h1>
-      <p className="text-body text-text-secondary mb-24">{labels['admin.config.subtitle']}</p>
+      <PageHeading title={labels['admin.config.title']} subtitle={labels['admin.config.subtitle']} />
       {projectId ? (
         <ConfigAdminClient
           projectId={projectId}

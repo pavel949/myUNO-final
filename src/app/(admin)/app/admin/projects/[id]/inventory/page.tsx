@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import { UI_LOCALE } from '@/lib/format';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -43,7 +44,7 @@ export default async function ProjectInventoryPage({ params }: { params: { id: s
     <div className="mb-24 flex flex-wrap items-end justify-between gap-12">
       <div>
         <p className="text-kicker uppercase text-brand-andaman">Inventory</p>
-        <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>
+        <PageHeading title={project.name} />
         <p className="mt-8 text-body text-text-secondary">{project.inventoryCategories.length} categories · {unitCount} exact physical units</p>
       </div>
       <Link href={`/app/admin/properties/${project.id}/onboarding`} className="rounded-md bg-brand-andaman px-16 py-12 font-semibold text-white">Add / edit inventory</Link>

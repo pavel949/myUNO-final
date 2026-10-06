@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import StructureEditor from '@/components/property/StructureEditor';
@@ -23,12 +24,10 @@ export default async function UnitStructurePage({params}:{params:{id:string}}){
     'unit.structure.description':'Assign a verified building, wing or floor without changing the commercial category.',
   });
   const labels = {back:translated['unit.structure.back'],title:translated['unit.structure.title'],description:translated['unit.structure.description']};
-  return <main className="mx-auto max-w-5xl space-y-24 px-16 py-32">
+  return <div className="max-w-5xl space-y-24">
     <Link href={'/app/admin/units/'+unit.id} className="text-small font-semibold text-brand-andaman">{labels.back}</Link>
-    <header><h1 className="font-display text-heading-1 font-semibold text-text-ink">{unit.name} · {labels.title}</h1>
-      <p className="text-body text-text-secondary">{unit.project.name} · {labels.description}</p>
-    </header>
-    <StructureEditor projectId={unit.projectId} initialNodes={unit.project.structureNodes}
-      initialUnit={{id:unit.id,name:unit.name,structureNodeId:unit.structureNodeId,floor:unit.floor}}/>
-  </main>;
+    <PageHeading kicker={unit.project.name} title={<>{unit.name} · {labels.title}</>} subtitle={labels.description} />
+    <Panel><StructureEditor projectId={unit.projectId} initialNodes={unit.project.structureNodes}
+      initialUnit={{id:unit.id,name:unit.name,structureNodeId:unit.structureNodeId,floor:unit.floor}}/></Panel>
+  </div>;
 }

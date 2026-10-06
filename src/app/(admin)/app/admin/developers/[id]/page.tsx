@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
@@ -66,9 +67,7 @@ export default async function Developer360Page({ params }: { params: { id: strin
       <Link href="/app/admin/organizations" className="text-small text-text-secondary hover:underline">
         ← {labels['admin.dev360.back']}
       </Link>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
-        {data.organization.tradingName || data.organization.name}
-      </h1>
+      <PageHeading title={data.organization.tradingName || data.organization.name} />
       <Developer360Client
         organization={{
           id: data.organization.id,

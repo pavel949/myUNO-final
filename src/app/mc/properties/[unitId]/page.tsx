@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getMCOrganizationIdsForProject, hasManagedUnitMcAccess } from '@/app/libs/projectScope';
@@ -250,7 +251,7 @@ export default async function MCPropertyWorkspace({
               <p className="text-small font-semibold uppercase tracking-[0.12em] text-brand-andaman">Property Workspace</p>
               {focusDate && <span className={pill}>Context date · {formatDate(new Date(focusDate+'T00:00:00.000Z'), locale, { weekday: 'short', day: '2-digit', month: 'short' }, 'UTC')}</span>}
             </div>
-            <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{unit.name}</h1>
+            <PageHeading title={unit.name} />
             <p className="mt-4 text-body text-text-secondary">{unit.project.name}{unit.inventoryCategory ? ' · '+unit.inventoryCategory.name : ''}</p>
           </div>
           <div className="flex flex-wrap gap-8">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { redirect } from 'next/navigation';
 import type { RoleType } from '@prisma/client';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -104,12 +105,7 @@ export default async function MyUnoPage() {
           <p className="stitch-kicker">
             {labels['myuno.kicker']}
           </p>
-          <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold text-text-ink">
-            {labels['myuno.title']}
-          </h1>
-          <p className="mt-12 max-w-3xl text-body text-text-secondary">
-            {labels['myuno.subtitle']}
-          </p>
+          <PageHeading title={labels['myuno.title']} subtitle={labels['myuno.subtitle']} />
         </div>
       </section>
 

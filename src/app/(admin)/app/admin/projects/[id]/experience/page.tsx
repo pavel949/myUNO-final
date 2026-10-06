@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProjectAmenityOpsActor, getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
@@ -65,7 +66,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
       <div>
         <Link href={`/app/admin/projects/${project.id}`} className="text-small font-semibold text-brand-andaman hover:underline">← Project 360</Link>
         <p className="mt-12 text-kicker uppercase text-brand-andaman">Project Experience</p>
-        <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{project.name}</h1>
+        <PageHeading title={project.name} />
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
           Build the public Project Portal from canonical project data: story, facilities, food and beverage, guest-use rules and nearby places. Marketplace services remain on the shared myUNO service network.
         </p>

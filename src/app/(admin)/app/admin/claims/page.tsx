@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import { getClaimsAwaitingResolution } from '@/modules/finance';
 import { getConfig } from '@/modules/config';
@@ -50,10 +51,7 @@ export default async function AdminClaimsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['admin.claims.title']}</h1>
-      <p className="text-body text-text-secondary mb-24 max-w-3xl">
-        {labels['admin.claims.subtitle']}
-      </p>
+      <PageHeading title={labels['admin.claims.title']} subtitle={labels['admin.claims.subtitle']} />
 
       <ClaimsAdminClient
         approvalWindowHours={approvalWindowHours}

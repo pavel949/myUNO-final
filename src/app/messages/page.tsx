@@ -1,5 +1,6 @@
 
 import { redirect } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
@@ -49,9 +50,7 @@ export default async function MessagesInboxPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-surface-ivory">
       <div className="border-b border-border-line bg-surface-paper px-24 py-20 md:px-32">
-        <h1 className="font-display text-display-xl font-semibold text-brand-deep">
-          {labels['messages.inbox.title']}
-        </h1>
+        <PageHeading title={labels['messages.inbox.title']} />
       </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside className="w-full shrink-0 border-border-line md:w-[360px] md:border-r">

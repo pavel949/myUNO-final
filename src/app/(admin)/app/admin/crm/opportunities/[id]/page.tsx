@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
@@ -153,9 +154,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
               ← {labels['admin.crm.opportunities.back_link']}
             </Link>
           </div>
-          <h1 className="font-display text-display-xl font-semibold text-text-ink">
-            {opportunity.title}
-          </h1>
+          <PageHeading title={opportunity.title} />
           {opportunity.unit && ['rental','sale','purchase'].includes(opportunity.type) && <Link href={'/app/admin/crm/opportunities/'+opportunity.id+'/deal'} className="mt-12 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">{labels['admin.crm.opportunities.agreement']} →</Link>}
           <p className="text-body text-text-secondary mt-8">
             {labels['admin.crm.opportunities.details_heading']}

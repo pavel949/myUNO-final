@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
 import StatementActions from './statement-actions';
 
@@ -61,9 +62,7 @@ export default async function AdminStatementsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">
-        {labels['admin.statements.title']}
-      </h1>
+      <PageHeading title={labels['admin.statements.title']} />
 
       <StatementActions
         units={units.map((u) => ({

@@ -27,8 +27,8 @@ export default async function RegisterPage() {
   });
 
   return (
-    <main className="min-h-screen bg-surface-ivory flex items-start justify-center px-24 py-64">
-      <div className="w-full max-w-md bg-surface-paper border border-border-line rounded-lg p-32">
+    <main className="stitch-workspace flex min-h-screen items-start justify-center px-24 py-64">
+      <div className="stitch-panel w-full max-w-md p-32">
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
           {labels['auth.register.title']}
         </h1>

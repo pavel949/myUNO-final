@@ -611,4 +611,15 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Source:** 2026-10-05 token lock. Doc 06's smallest size is `small` (13/19). The unified stay calendar uses 9–11px arbitrary sizes so a month of villas fits on screen.
 - **Open:** add a `type.dense` (e.g. 11/14) to doc 06 for data grids, or redesign the grid at 13px. Arbitrary values stay as a reviewable exception until ruled.
 
+### Q79. Layantara workbook payments carry no payment date or method — OPEN (ops)
+- **Source:** 2026-10-06 reservations workbook import (founder ruling: myUNO is Layantara's booking system of record).
+- **Gap:** the workbook records *Amount paid* (8 rows: agent, direct and walk-in stays) but not when or how it was received.
+- **Provisional handling:** the import records each payment dated on the day it is imported, as a bank transfer, with receipt `workbook:RES-xxxx`. OTA-collected money is never recorded as received. Owner statements for August–September 2026 would therefore show these receipts in October.
+- **Open:** a *Paid on* and *Method* column in the workbook (or the original receipts), so a re-import can date and type them correctly.
+
+### Q80. Layantara workbook has no guest counts for most stays — OPEN (ops)
+- **Source:** 2026-10-06 reservations workbook import. *Adults*/*Children* are empty for 90 of 91 reservations.
+- **Provisional handling:** imported as 1 adult, 0 children, flagged in the import. TM30 and check-in still capture the real party at arrival.
+- **Open:** fill the columns for future stays; a re-upload updates the bookings as recorded changes.
+
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*

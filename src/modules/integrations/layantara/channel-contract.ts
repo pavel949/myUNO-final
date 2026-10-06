@@ -10,6 +10,9 @@ export type ChannelEventKind =
   | 'occupancy.protect' | 'occupancy.release' | 'booking.confirmed' | 'booking.changed'
   | 'booking.cancelled' | 'payment.received';
 
+export type ChannelEventChannel =
+  'airbnb' | 'booking_com' | 'agoda' | 'expedia' | 'trip_com' | 'direct' | 'agent';
+
 export interface ChannelEvent {
   contractVersion: 1;
   eventId: string;
@@ -22,7 +25,9 @@ export interface ChannelEvent {
   blockReason?: 'ota_import' | 'owner_hold' | 'maintenance' | 'other';
   startDate?: string;
   endDate?: string;
-  channel?: 'airbnb' | 'booking_com' | 'agoda';
+  channel?: ChannelEventChannel;
+  /** Named agent or source label (e.g. an agency) kept with the booking. */
+  sourceChannelName?: string;
   guestExternalId?: string;
   guestName?: string;
   adults?: number;
@@ -43,7 +48,7 @@ const supported = new Set<ChannelEventKind>([
   'occupancy.protect','occupancy.release','booking.confirmed','booking.changed',
   'booking.cancelled','payment.received',
 ]);
-const channels = new Set(['airbnb','booking_com','agoda']);
+const channels = new Set<string>(['airbnb','booking_com','agoda','expedia','trip_com','direct','agent']);
 const hasId = (value: unknown): value is string =>
   typeof value==='string' && identifiers.test(value);
 const positiveInteger = (value: unknown): value is number =>
@@ -73,7 +78,9 @@ export function parseChannelEvent(payload: unknown): ChannelEvent {
         e.guestName.length>180 || !Number.isInteger(e.adults) || (e.adults as number)<1 ||
         !Number.isInteger(e.children) || (e.children as number)<0 ||
         !Number.isSafeInteger(e.totalSatang) || (e.totalSatang as number)<0 ||
-        e.currency!=='THB') throw new Error('invalid_booking_contract');
+        e.currency!=='THB' ||
+        (e.sourceChannelName!==undefined && (typeof e.sourceChannelName!=='string' ||
+          e.sourceChannelName.length>120))) throw new Error('invalid_booking_contract');
   }
   if (e.eventType==='payment.received') {
     if (!hasId(e.externalPaymentId) || !positiveInteger(e.paymentSatang) ||

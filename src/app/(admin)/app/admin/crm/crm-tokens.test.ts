@@ -48,8 +48,8 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   });
 
   it('sits provider and MC portals on ivory', () => {
-    expect(provider).toContain('stitch-workspace');
-    expect(provider).toContain('bg-brand-deep');
+    expect(provider).toContain('StitchWorkspaceShell');
+    expect(provider).toContain("title={labels['provider.portal.title']}");
     expect(mc).toContain('bg-surface-ivory');
     expect(mc).toContain('text-display-xl');
   });

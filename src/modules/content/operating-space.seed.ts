@@ -18,6 +18,7 @@ export const OPERATING_SPACE_KEYS = [
   { key: 'staff.space.occupied', namespace: 'staff', description: 'Occupied metric', en: 'Occupied now', ru: 'Занято сейчас', th: 'มีผู้เข้าพัก', status: 'needs_review' as const },
   { key: 'staff.space.requests', namespace: 'staff', description: 'Booking requests metric', en: 'Booking requests', ru: 'Запросы на бронирование', th: 'คำขอจอง', status: 'needs_review' as const },
   { key: 'staff.space.tasks', namespace: 'staff', description: 'Open tasks metric', en: 'Open readiness tasks', ru: 'Открытые задачи готовности', th: 'งานเตรียมความพร้อมที่เปิดอยู่', status: 'needs_review' as const },
+  { key: 'staff.space.tasks_link', namespace: 'staff', description: 'Operating space task queue link', en: 'Tasks', ru: 'Задачи', th: 'งาน', zh: '任务', status: 'needs_review' as const },
   { key: 'staff.space.calendar', namespace: 'staff', description: 'Operating space calendar link', en: 'Calendar', ru: 'Календарь', th: 'ปฏิทิน', status: 'needs_review' as const },
   { key: 'staff.space.reservations', namespace: 'staff', description: 'Operating space reservations link', en: 'Reservations', ru: 'Бронирования', th: 'การจอง', status: 'needs_review' as const },
   { key: 'staff.space.housekeeping', namespace: 'staff', description: 'Operating space housekeeping link', en: 'Housekeeping & tasks', ru: 'Хаускипинг и задачи', th: 'แม่บ้านและงาน', status: 'needs_review' as const },

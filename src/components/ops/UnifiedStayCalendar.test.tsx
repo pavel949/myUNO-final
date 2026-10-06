@@ -99,7 +99,7 @@ describe('one calendar surface with mode-specific safe actions', () => {
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/mc');
     fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
     expect(screen.getByRole('link', { name: /Open home calendar/ }).getAttribute('href'))
-      .toContain('/mc/units/unit-a');
+      .toContain('/mc/properties/unit-a');
     expect(screen.queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('mc=1');

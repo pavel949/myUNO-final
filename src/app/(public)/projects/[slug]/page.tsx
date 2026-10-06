@@ -617,13 +617,13 @@ export default async function ProjectLandingPage({
                       {[
                         ...unit.views.map(view => ({
                           key: `view:${view}`,
-                          label: editorialCopy[`catalog.views.${view}.label`] || view.replace(/_/g, ' '),
+                          label: editorialCopy[`catalog.views.${view}.label`],
                         })),
                         ...unit.unitFeatures
                           .filter(feature => /^[a-z0-9_]+$/.test(feature))
                           .map(feature => ({
                             key: `feature:${feature}`,
-                            label: editorialCopy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' '),
+                            label: editorialCopy[`catalog.unit_features.${feature}.label`],
                           })),
                       ].slice(0, 4).map((fact) => (
                         <span key={fact.key} className="rounded-full bg-surface-sand px-12 py-4 text-[12px] text-text-secondary">

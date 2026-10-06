@@ -73,7 +73,7 @@ export default async function DailyReconciliationPage({
           { status: 'blocked' },
         ],
       },
-      select: { id: true, title: true, taskType: true, status: true, dueAt: true, unit: { select: { name: true } } },
+      select: { id: true, title: true, taskType: true, status: true, dueAt: true, unit: { select: { id: true, name: true } } },
       orderBy: { dueAt: 'asc' },
       take: 50,
     }),
@@ -139,7 +139,7 @@ export default async function DailyReconciliationPage({
             </label>
             <label className="text-small font-semibold text-text-secondary">
               {labels['staff.close.date']}
-              <input name="date" type="date" defaultValue={day} className="stitch-control mt-4 w-full" />
+              <input name="date" type="text" inputMode="numeric" pattern="\\d{4}-\\d{2}-\\d{2}" defaultValue={day} placeholder="YYYY-MM-DD" className="stitch-control mt-4 w-full font-tabular" />
             </label>
             <button type="submit" className="h-48 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">Apply</button>
           </form>
@@ -193,7 +193,7 @@ export default async function DailyReconciliationPage({
             </div>
             {openTasks.length === 0 ? <p className="p-16 text-small text-text-secondary">{labels['staff.close.no_tasks']}</p> :
               openTasks.map((task) => (
-                <Link key={task.id} href={'/ops/tasks?unitId='+encodeURIComponent(task.unit.name)}
+                <Link key={task.id} href={'/ops/tasks?unitId='+encodeURIComponent(task.unit.id)}
                   className="block border-b border-border-line p-16 last:border-0 hover:bg-surface-ivory">
                   <p className="font-semibold">{task.title || task.taskType.replace(/_/g,' ')}</p>
                   <p className="mt-4 text-small text-text-secondary">{task.unit.name} · {task.status.replace(/_/g,' ')}</p>

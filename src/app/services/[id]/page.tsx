@@ -184,7 +184,7 @@ export default async function ServiceDetailPage({
 
         {/* Key details grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-24">
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <p className="text-small text-text-secondary mb-8">{labels['services.detail.price_model']}</p>
             <p className="text-heading-3 font-semibold text-text-ink">
               {priceModelLabel[service.priceModel] || service.priceModel}
@@ -200,7 +200,7 @@ export default async function ServiceDetailPage({
           </div>
 
           {service.durationMin !== null && (
-            <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+            <div className="stitch-panel p-24">
               <p className="text-small text-text-secondary mb-8">{labels['services.detail.duration']}</p>
               <p className="text-heading-3 font-semibold text-text-ink">
                 {labels['services.detail.duration_hours'].replace('{minutes}', String(service.durationMin))}
@@ -208,7 +208,7 @@ export default async function ServiceDetailPage({
             </div>
           )}
 
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24">
+          <div className="stitch-panel p-24">
             <p className="text-small text-text-secondary mb-8">
               {labels['services.detail.advance_notice']}
             </p>
@@ -222,7 +222,7 @@ export default async function ServiceDetailPage({
 
         {/* Provider details */}
         {service.provider.description && (
-          <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
+          <div className="stitch-panel p-24 mb-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-12">
               {labels['services.detail.about_provider']}
             </h2>

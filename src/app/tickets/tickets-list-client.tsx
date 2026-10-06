@@ -46,7 +46,7 @@ export default function TicketsListClient({
   );
 
   return (
-    <main className="min-h-screen bg-surface-mint p-24 md:p-32">
+    <main className="stitch-workspace p-20 md:p-32">
       <div className="mx-auto max-w-2xl">
         <div className="mb-24 flex flex-wrap items-end justify-between gap-16">
           <h1 className="font-display text-display-xl font-semibold text-brand-deep">
@@ -86,11 +86,11 @@ export default function TicketsListClient({
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card p-32 text-center">
+          <div className="stitch-panel p-32 text-center">
             <p className="text-body text-text-secondary">{labels['tickets.list.empty']}</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border-line bg-surface-paper shadow-card">
+          <div className="stitch-panel">
             {visible.map((ticket) => (
               <div
                 key={ticket.id}

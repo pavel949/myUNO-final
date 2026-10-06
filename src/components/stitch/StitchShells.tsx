@@ -58,7 +58,7 @@ export function StitchWorkspaceShell({
 
           <details className="mt-12 md:hidden">
             <summary className="cursor-pointer rounded-md border border-white/15 px-12 py-10 text-small font-semibold">
-              Workspace navigation
+              {title}
             </summary>
             <div className="mt-8 max-h-[60vh] overflow-y-auto">{nav}</div>
           </details>

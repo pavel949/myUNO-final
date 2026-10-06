@@ -219,3 +219,59 @@ export async function importManagedYandexBatch(
     done,
   };
 }
+
+export type ManagedImportRunResult = {
+  finished: boolean;
+  next: { si: number; offset: number } | null;
+  sources: Array<{ source: string; created: number; reused: number; attached: number; errors: string[] }>;
+};
+
+/**
+ * Import every managed source in batches until `budgetMs` is spent, starting
+ * from a cursor. Shared by the scheduled cron and the admin button so both
+ * behave identically. One unreachable folder never stops the others, and the
+ * run always leaves one audit row with every per-source error message: the
+ * first scheduled runs failed with no trace at all.
+ */
+export async function runManagedYandexImport(
+  db: PrismaClient,
+  input: { si?: number; offset?: number; budgetMs: number; actorIdentityId?: string },
+): Promise<ManagedImportRunResult> {
+  const deadline = Date.now() + input.budgetMs;
+  let si = Math.max(0, Math.trunc(input.si ?? 0));
+  let offset = Math.max(0, Math.trunc(input.offset ?? 0));
+  const sources: ManagedImportRunResult['sources'] = [];
+
+  while (si < MANAGED_YANDEX_SOURCES.length && Date.now() < deadline) {
+    const source = MANAGED_YANDEX_SOURCES[si];
+    try {
+      const batch = await importManagedYandexBatch(db, { sourceKey: source.key, offset, limit: 10 });
+      sources.push({
+        source: source.key, created: batch.created, reused: batch.reused, attached: batch.attached,
+        errors: batch.errors.map(e => `${e.path}: ${e.error}`).slice(0, 5),
+      });
+      if (batch.done) { si += 1; offset = 0; } else { offset = batch.nextOffset; }
+    } catch (error) {
+      sources.push({
+        source: source.key, created: 0, reused: 0, attached: 0,
+        errors: [error instanceof Error ? error.message.slice(0, 300) : String(error)],
+      });
+      si += 1;
+      offset = 0;
+    }
+  }
+
+  const finished = si >= MANAGED_YANDEX_SOURCES.length;
+  const result = { finished, next: finished ? null : { si, offset }, sources };
+  await db.auditLog.create({
+    data: {
+      actorIdentityId: input.actorIdentityId ?? SYSTEM_IDENTITY_ID,
+      action: 'managed_yandex_media_import_run',
+      entityType: 'external_system',
+      entityId: SOURCE_SYSTEM_ID,
+      data: result,
+      at: new Date(),
+    },
+  });
+  return result;
+}

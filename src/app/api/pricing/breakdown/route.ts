@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { computePriceBreakdown, checkAvailability } from '@/modules/core';
+import { computePriceBreakdown, checkAvailability, StayUnquotableError } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { checkRateLimit } from '@/app/libs/rateLimit';
@@ -139,6 +139,15 @@ export async function POST(req: NextRequest) {
         msg.includes('No active short-stay offering')) {
         return NextResponse.json({ error: 'This stay is not available' }, { status: 404 });
       }
+    }
+    // A commercial "not for these dates" answer — minimum stay, season,
+    // party size, or a 12-month stay that must go through a lease request.
+    // The code lets the page show the right next step instead of a fault.
+    if (error instanceof StayUnquotableError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 });
+    }
+    if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
+      const msg = error.message;
       if (msg.includes('minimum') || msg.includes('exceeds') || msg.includes('not found')) {
         return NextResponse.json({ error: msg }, { status: 400 });
       }

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getConfig } from '@/modules/config';
-import { resolveStayCancellationPolicy } from '@/modules/booking';
+import { resolveStayCancellationPolicyForDates } from '@/modules/booking';
 import BookingReviewClient from './review-client';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,8 @@ export default async function BookingReviewPage({
     projectId?: string;
     startDate?: string;
     endDate?: string;
+    adults?: string;
+    children?: string;
   };
 }) {
   const inventoryCategoryId = searchParams.inventoryCategoryId || searchParams.categoryId;
@@ -81,9 +83,16 @@ export default async function BookingReviewPage({
   // The exact policy the booking will snapshot (BAR plan > category > unit >
   // configured default). The guest consents to these terms, so the page shows
   // its name and every refund step instead of a generic sentence.
-  const policy = await resolveStayCancellationPolicy(
+  // For a stay quoted on source terms this is the arrival season's ladder
+  // (ruling 2026-10-06) — the same answer the booking route snapshots.
+  const policy = await resolveStayCancellationPolicyForDates(
     prisma,
-    searchParams.unitId ? { unitId: searchParams.unitId } : { inventoryCategoryId: inventoryCategoryId! }
+    searchParams.unitId ? { unitId: searchParams.unitId } : { inventoryCategoryId: inventoryCategoryId! },
+    {
+      startDate: new Date(searchParams.startDate + 'T00:00:00Z'),
+      endDate: new Date(searchParams.endDate + 'T00:00:00Z'),
+      guests: Math.max(1, Number(searchParams.adults ?? 1) + Number(searchParams.children ?? 0)),
+    }
   ).catch(() => null);
 
   const labels = await getLabels({
@@ -93,6 +102,7 @@ export default async function BookingReviewPage({
     'catalog.cancellation_policies.flexible.label': 'Flexible',
     'catalog.cancellation_policies.moderate.label': 'Moderate',
     'catalog.cancellation_policies.strict.label': 'Strict',
+    'catalog.cancellation_policies.season.label': 'Season terms',
     'booking.review.recap': 'Your stay',
     'booking.review.check_in': 'Check-in',
     'booking.review.check_out': 'Check-out',

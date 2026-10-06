@@ -19,6 +19,13 @@ export type SourceBookingTerms = {
   included: string[];
   excluded: string[];
   stayTerms: string;
+  /**
+   * The season's refund ladder over what the guest has paid, as
+   * [{ days, pct }] from most to least days before check-in. Optional: a
+   * source rule without one keeps the configured cancellation policy.
+   * Founder ruling 2026-10-06: Layantara cancels by arrival season.
+   */
+  cancellationSteps?: Array<{ days: number; pct: number }>;
 };
 export function resolveSourceBookingTerms(
   rules: unknown, mode: SourceBookingTerms['rateMode'], seasonCode: string,
@@ -47,7 +54,20 @@ export function resolveSourceBookingTerms(
       typeof r.stay_terms !== 'string' ||
       !Array.isArray(r.included) || !Array.isArray(r.excluded))
     throw new Error('Incomplete source booking terms');
+  let cancellationSteps: SourceBookingTerms['cancellationSteps'];
+  if (r.cancellation_steps !== undefined && r.cancellation_steps !== null) {
+    const steps = r.cancellation_steps;
+    const valid = Array.isArray(steps) && steps.length > 0 && steps.every((step: unknown) => {
+      const st = step as { days?: unknown; pct?: unknown };
+      return Number.isSafeInteger(st?.days) && (st.days as number) >= 0 &&
+        Number.isFinite(st?.pct) && (st.pct as number) >= 0 && (st.pct as number) <= 100;
+    }) && steps.every((step: { days: number }, i: number) => i === 0 || step.days < steps[i - 1].days);
+    // A malformed ladder must fail closed, never silently refund nothing or everything.
+    if (!valid) throw new Error('Invalid source cancellation steps');
+    cancellationSteps = steps.map((step: { days: number; pct: number }) => ({ days: step.days, pct: step.pct }));
+  }
   return {
+    ...(cancellationSteps ? { cancellationSteps } : {}),
     sourcePolicyId: r.id,
     rateMode: mode,
     seasonCode: r.season_code ?? null,

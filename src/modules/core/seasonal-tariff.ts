@@ -74,7 +74,9 @@ export function quoteSeasonalTariffGrid(
 ): TariffQuote {
   const from = day(start), to = day(end);
   const nights = (to - from) / DAY;
-  if (nights < 1 || nights > 366) throw new Error('Invalid stay length');
+  if (nights < 1) throw new Error('Invalid stay length');
+  // Longer than one published year is a lease conversation, not a fault.
+  if (nights > 366) throw new StayUnquotableError('Stay length exceeds the bookable maximum of 366 nights');
   const rows = tariffRows(rawRows, mode);
   const lines: TariffQuote['lines'] = [];
   let firstMin = 1;
@@ -116,6 +118,20 @@ export function quoteSeasonalTariffGrid(
   return { mode, lines, subtotalSatang, includesTaxes: includesTaxes!,
     includesServiceCharge: includesServiceCharge!, includesBreakfast: includesBreakfast!,
     minNights: firstMin };
+}
+
+/**
+ * Nights from which the published 12-month lease rate applies, or null when
+ * the grid carries no sellable annual row. Stays this long are routed to a
+ * lease request (LeaseRequestRequiredError), never quoted from monthly rows.
+ */
+export function annualLeaseMinimumNights(raw: unknown): number | null {
+  if (!Array.isArray(raw)) return null;
+  const minimums = raw
+    .filter(r => r && typeof r === 'object' && r.rateMode === 'yearly' && r.sourceSellable === true)
+    .map(r => (r as Record<string, unknown>).minimumNights)
+    .filter((n): n is number => Number.isSafeInteger(n) && (n as number) >= 365);
+  return minimums.length ? Math.min(...minimums) : null;
 }
 
 /** Contract-only yearly rental preview. Never pass through the nightly

@@ -56,6 +56,8 @@ export {
   DEFAULT_POLICIES,
   resolveCancellationPolicy,
   resolveStayCancellationPolicy,
+  resolveStayCancellationPolicyForDates,
+  sourceSeasonCancellationPolicy,
   type PolicyStep,
   type CancellationPolicy,
 } from './cancellation';

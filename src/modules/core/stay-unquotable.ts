@@ -13,5 +13,18 @@
  * search into a 500 for the whole site. The type is the contract, not the text.
  */
 export class StayUnquotableError extends Error {
-  readonly name = 'StayUnquotableError';
+  readonly name: string = 'StayUnquotableError';
+  /** Stable, machine-readable reason a guest-facing page can branch on. */
+  readonly code: 'stay_unquotable' | 'lease_request_required' = 'stay_unquotable';
+}
+
+/**
+ * The stay reaches the property's annual-lease minimum (founder ruling
+ * 2026-10-06, Layantara Partner Guide): the 12-month rate is agreed through a
+ * lease request and a signed lease, never instant-booked or priced as twelve
+ * monthly blocks. The guest is routed to an enquiry instead of a checkout.
+ */
+export class LeaseRequestRequiredError extends StayUnquotableError {
+  readonly name = 'LeaseRequestRequiredError';
+  readonly code = 'lease_request_required' as const;
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isCronAuthorized, cronUnauthorized } from '@/jobs';
-import { importManagedYandexBatch, MANAGED_YANDEX_SOURCES } from '@/modules/media';
+import { importManagedYandexBatch, runManagedYandexImport, MANAGED_YANDEX_SOURCES } from '@/modules/media';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -52,48 +52,38 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET ?run=all — the scheduled import (vercel.json cron; Vercel sends the
- * CRON_SECRET bearer). Imports every source in batches until a time budget
- * is spent, then hands the remaining cursor to a fresh invocation of itself,
- * so one trigger completes the whole catalogue within the 60s function cap.
- * Idempotent: files already imported are reused, so a repeat run is a no-op.
+ * GET — the scheduled import. Vercel Cron calls the bare path with the
+ * CRON_SECRET bearer and a `vercel-cron` user agent; `?run=all` does the same
+ * by hand. Imports every source in batches within a time budget, then hands
+ * the remaining cursor to a fresh invocation of itself, so one trigger
+ * completes the catalogue under the 60s function cap. Idempotent: files
+ * already imported are reused. Each run leaves an audit row
+ * (managed_yandex_media_import_run) with per-source results and errors.
  *
- * Plain GET (no `run`) keeps listing the sources.
+ * A plain authorized GET from anything else keeps listing the sources.
  */
 const RUN_BUDGET_MS = 40_000;
 
 export async function GET(req: NextRequest) {
   if (!isImportAuthorized(req)) return cronUnauthorized();
-  if (req.nextUrl.searchParams.get('run') !== 'all') {
+  const scheduled = (req.headers.get('user-agent') ?? '').toLowerCase().includes('vercel-cron');
+  if (!scheduled && req.nextUrl.searchParams.get('run') !== 'all') {
     return NextResponse.json({
       sources: MANAGED_YANDEX_SOURCES.map(({ key, label, scope }) => ({ key, label, scope })),
     });
   }
 
-  const deadline = Date.now() + RUN_BUDGET_MS;
-  let sourceIndex = Math.max(0, Number(req.nextUrl.searchParams.get('si') || '0'));
-  let offset = Math.max(0, Number(req.nextUrl.searchParams.get('offset') || '0'));
-  const imported: Array<{ source: string; created: number; reused: number; attached: number; errors: number }> = [];
+  const result = await runManagedYandexImport(prisma, {
+    si: Number(req.nextUrl.searchParams.get('si') || '0'),
+    offset: Number(req.nextUrl.searchParams.get('offset') || '0'),
+    budgetMs: RUN_BUDGET_MS,
+  });
 
-  while (sourceIndex < MANAGED_YANDEX_SOURCES.length && Date.now() < deadline) {
-    const source = MANAGED_YANDEX_SOURCES[sourceIndex];
-    try {
-      const batch = await importManagedYandexBatch(prisma, { sourceKey: source.key, offset, limit: 10 });
-      imported.push({ source: source.key, created: batch.created, reused: batch.reused, attached: batch.attached, errors: batch.errors.length });
-      if (batch.done) { sourceIndex += 1; offset = 0; } else { offset = batch.nextOffset; }
-    } catch (error) {
-      // One unreachable folder must not stop the others.
-      imported.push({ source: source.key, created: 0, reused: 0, attached: 0, errors: 1 });
-      sourceIndex += 1;
-      offset = 0;
-    }
-  }
-
-  const finished = sourceIndex >= MANAGED_YANDEX_SOURCES.length;
-  if (!finished) {
+  if (result.next) {
     const next = new URL(req.nextUrl.toString());
-    next.searchParams.set('si', String(sourceIndex));
-    next.searchParams.set('offset', String(offset));
+    next.searchParams.set('run', 'all');
+    next.searchParams.set('si', String(result.next.si));
+    next.searchParams.set('offset', String(result.next.offset));
     // Fire the continuation; the new invocation runs on its own even after
     // this request stops waiting for it.
     await fetch(next, {
@@ -102,5 +92,5 @@ export async function GET(req: NextRequest) {
     }).catch(() => null);
   }
 
-  return NextResponse.json({ success: true, finished, next: finished ? null : { si: sourceIndex, offset }, imported });
+  return NextResponse.json({ success: true, ...result });
 }

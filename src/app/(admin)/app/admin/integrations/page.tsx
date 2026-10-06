@@ -4,6 +4,7 @@ import { getIntegrationHealth } from '@/app/actions/getIntegrationHealth';
 import { IntegrationHealthPanel } from '@/app/components/admin/IntegrationHealthPanel';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { ManagedMediaImport } from './managed-media-import';
 
 export default async function IntegrationsPage() {
   const user = await getCurrentUser();
@@ -58,6 +59,13 @@ export default async function IntegrationsPage() {
       'Per-unit iCal export is at /api/units/[unitId]/ical/export and requires the unit’s feed token in the URL. Treat that link as a secret — anyone holding it can read the unit’s availability.',
     'admin.integrations.about_conflicts':
       'Conflict detection is active — OTA bookings overlapping platform bookings are logged',
+    'admin.media_import.title': 'Managed property photos',
+    'admin.media_import.body': 'Import photos for the managed condominiums (The Base, Serenity, Oceanstone, Legendary, Capri) from their Yandex Disk folders. Safe to repeat: photos already imported are reused.',
+    'admin.media_import.run': 'Import photos',
+    'admin.media_import.running': 'Importing…',
+    'admin.media_import.done': 'Import finished.',
+    'admin.media_import.error': 'Import failed. Try again.',
+    'admin.media_import.counts': '{created} new · {reused} already imported · {attached} attached',
   });
 
   return (
@@ -72,6 +80,8 @@ export default async function IntegrationsPage() {
       </div>
 
       <IntegrationHealthPanel accounts={accounts} total={total} labels={labels} locale={locale} />
+
+      <ManagedMediaImport labels={labels} />
 
       <div className="bg-state-info-soft border border-border-line rounded-lg p-16 text-small text-text-ink">
         <p className="font-semibold mb-8">{labels['admin.integrations.about']}</p>

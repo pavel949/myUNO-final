@@ -122,6 +122,23 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'listing.reserving': 'Booking…',
     'listing.pick_dates': 'Choose dates on the search page to see the price.',
     'listing.error_price': 'Failed to calculate price',
+    'listing.unavailable_for_dates': 'This home cannot be booked for these dates. Please choose other dates.',
+    'listing.lease_required_title': 'A year or longer is arranged by lease',
+    'listing.lease_required_body':
+      'For a stay of twelve months or more, the rate and terms are agreed in a lease. Leave your contact and we will send the terms for your dates.',
+    'listing.lease_request_message': 'Lease request: {unit}, {start} – {end}, {guests} guests.',
+    'audience.lead.title': 'Leave your contact — we reply within a day',
+    'audience.lead.name': 'Your name',
+    'audience.lead.contact': 'How to reach you',
+    'audience.lead.contact_hint': 'Phone, WhatsApp, Telegram, or email — whatever suits you.',
+    'audience.lead.message': 'Tell us about your situation (optional)',
+    'audience.lead.consent':
+      'I agree that myUNO stores this information to respond to my enquiry.',
+    'audience.lead.consent_required': 'Please tick the consent box so we may contact you.',
+    'audience.lead.submit': 'Send',
+    'audience.lead.submitting': 'Sending…',
+    'audience.lead.success': 'Thank you — we received your message and will reply shortly.',
+    'audience.lead.error': 'Something went wrong. Please try again, or email us directly.',
     'listing.error_booking': 'Booking failed',
     'listing.conflict_title': 'Those dates are no longer available',
     'listing.conflict_body':
@@ -143,6 +160,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     'catalog.cancellation_policies.flexible.label': 'Flexible',
     'catalog.cancellation_policies.moderate.label': 'Moderate',
     'catalog.cancellation_policies.strict.label': 'Strict',
+    'catalog.cancellation_policies.season.label': 'By season of arrival',
   });
 
   const breadcrumbs = [
@@ -206,6 +224,23 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           pickDates: labels['listing.pick_dates'],
           errorPrice: labels['listing.error_price'],
           errorBooking: labels['listing.error_booking'],
+          unavailableForDates: labels['listing.unavailable_for_dates'],
+          leaseRequiredTitle: labels['listing.lease_required_title'],
+          leaseRequiredBody: labels['listing.lease_required_body'],
+          leaseRequestMessage: labels['listing.lease_request_message'],
+          leadForm: {
+            title: labels['audience.lead.title'],
+            name: labels['audience.lead.name'],
+            contact: labels['audience.lead.contact'],
+            contactHint: labels['audience.lead.contact_hint'],
+            message: labels['audience.lead.message'],
+            consent: labels['audience.lead.consent'],
+            consentRequired: labels['audience.lead.consent_required'],
+            submit: labels['audience.lead.submit'],
+            submitting: labels['audience.lead.submitting'],
+            success: labels['audience.lead.success'],
+            error: labels['audience.lead.error'],
+          },
           conflictTitle: labels['listing.conflict_title'],
           conflictBody: labels['listing.conflict_body'],
           searchAgain: labels['listing.search_again'],
@@ -228,6 +263,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
             flexible: labels['catalog.cancellation_policies.flexible.label'],
             moderate: labels['catalog.cancellation_policies.moderate.label'],
             strict: labels['catalog.cancellation_policies.strict.label'],
+            season: labels['catalog.cancellation_policies.season.label'],
           },
         }}
       />

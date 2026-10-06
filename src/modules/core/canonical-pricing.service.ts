@@ -8,8 +8,8 @@ import {
   DEFAULT_TIME_ZONE,
 } from '@/lib/date';
 import { getApplicableSeason, type PriceBreakdown } from './availability.service';
-import { quoteSeasonalTariffGrid, type TariffMode } from './seasonal-tariff';
-import { StayUnquotableError } from './stay-unquotable';
+import { quoteSeasonalTariffGrid, annualLeaseMinimumNights, type TariffMode } from './seasonal-tariff';
+import { StayUnquotableError, LeaseRequestRequiredError } from './stay-unquotable';
 import { resolveSourceBookingTerms } from './commercial-booking-terms';
 
 function applyRatePlanAdjustment(
@@ -168,6 +168,13 @@ export async function computeCanonicalPriceBreakdown(
       options.calendarProjection ? 'daily' : nights >= 30 ? 'monthly' : 'daily';
     if (mode === 'monthly' && monthlyGrid === null)
       throw new StayUnquotableError('Validated monthly tariff is required for this stay');
+    // Guide rule (ruling 2026-10-06): the 12-month rate is agreed by lease
+    // request, so a stay reaching the annual minimum is never priced as
+    // monthly blocks or instant-booked.
+    const leaseMinimum = mode === 'monthly' ? annualLeaseMinimumNights(monthlyGrid) : null;
+    if (leaseMinimum !== null && nights >= leaseMinimum)
+      throw new LeaseRequestRequiredError(
+        'Stays of ' + leaseMinimum + ' nights or more are arranged by lease request');
     const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
     const quoted = quoteSeasonalTariffGrid(
       selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,

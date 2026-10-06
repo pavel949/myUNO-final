@@ -48,7 +48,7 @@ export {
   computeCanonicalCalendarRates,
   type CanonicalCalendarRateLine,
 } from './canonical-pricing.service';
-export { StayUnquotableError } from './stay-unquotable';
+export { StayUnquotableError, LeaseRequestRequiredError } from './stay-unquotable';
 
 export {
   createComplianceRecord,

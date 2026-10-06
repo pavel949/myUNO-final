@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
       );
     }
     if (error instanceof StayUnquotableError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 });
     }
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;

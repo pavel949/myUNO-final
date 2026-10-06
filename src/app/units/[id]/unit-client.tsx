@@ -9,6 +9,7 @@ import { Counter } from '@/components/Counter';
 import { MoneyAmount } from '@/components/MoneyAmount';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { LeadForm, type LeadFormLabels } from '@/components/LeadForm';
 
 interface Unit {
   id: string;
@@ -53,6 +54,7 @@ interface PriceBreakdown {
   serviceFee: number;
   occupancyTax: number;
   total: number;
+  bookingTerms?: { cancellationSteps?: Array<{ days: number; pct: number }> };
 }
 
 export interface UnitDetailLabels {
@@ -102,6 +104,11 @@ export interface UnitDetailLabels {
   pickDates: string;
   errorPrice: string;
   errorBooking: string;
+  unavailableForDates: string;
+  leaseRequiredTitle: string;
+  leaseRequiredBody: string;
+  leaseRequestMessage: string;
+  leadForm: LeadFormLabels;
   conflictTitle: string;
   conflictBody: string;
   searchAgain: string;
@@ -109,6 +116,9 @@ export interface UnitDetailLabels {
   amenityLabels: Record<string, string>;
   policyLabels: Record<string, string>;
 }
+
+/** Lead pipeline for 12-month lease requests (ruling 2026-10-06). */
+const LEASE_LEAD_AUDIENCE = 'renters' as const;
 
 function fill(template: string, params: Record<string, string | number>): string {
   let result = template;
@@ -132,6 +142,7 @@ export default function UnitDetailClient({
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [leaseRequired, setLeaseRequired] = useState(false);
   const [bookingType, setBookingType] = useState<'instant' | 'request'>('instant');
 
   const startDate = searchParams?.get('startDate');
@@ -175,6 +186,11 @@ export default function UnitDetailClient({
   useEffect(() => {
     const fetchBreakdown = async () => {
       if (!unit || !startDate || !endDate) return;
+      // A quote belongs to one set of dates: never leave the previous
+      // price (and an enabled Reserve) beside a failure for new dates.
+      setBreakdown(null);
+      setError(null);
+      setLeaseRequired(false);
 
       try {
         const response = await fetch('/api/pricing/breakdown', {
@@ -188,7 +204,14 @@ export default function UnitDetailClient({
           }),
         });
 
-        if (!response.ok) throw new Error(labels.errorPrice);
+        if (!response.ok) {
+          const body = await response.json().catch(() => null) as { code?: string } | null;
+          if (body?.code === 'lease_request_required') {
+            setLeaseRequired(true);
+            return;
+          }
+          throw new Error(body?.code === 'stay_unquotable' ? labels.unavailableForDates : labels.errorPrice);
+        }
         const data = await response.json();
         setBreakdown(data);
       } catch (err) {
@@ -197,7 +220,7 @@ export default function UnitDetailClient({
     };
 
     fetchBreakdown();
-  }, [unit, startDate, endDate, adults, children, labels.errorPrice]);
+  }, [unit, startDate, endDate, adults, children, labels.errorPrice, labels.unavailableForDates]);
 
   const setAdults = (next: number) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
@@ -218,6 +241,12 @@ export default function UnitDetailClient({
     });
     router.push(`/book/review?${next.toString()}`);
   };
+
+  // A source tariff that cancels by arrival season binds the booking to that
+  // season's ladder (ruling 2026-10-06), so the dated quote wins over the
+  // property-wide default fetched before dates were known.
+  const policyKey = breakdown?.bookingTerms?.cancellationSteps
+    ? 'season' : unit?.cancellationPolicyKey;
 
   if (loading) {
     return (
@@ -333,13 +362,13 @@ export default function UnitDetailClient({
               )}
               {/* The resolved policy the booking will snapshot. No policy
                   resolved = no claim: never a "flexible" placeholder. */}
-              {unit.cancellationPolicyKey && (
+              {policyKey && (
                 <>
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
                     {labels.cancellationPolicy}
                   </p>
                   <p className="text-body text-text-stone mb-32">
-                    {labels.policyLabels[unit.cancellationPolicyKey] || unit.cancellationPolicyKey}
+                    {labels.policyLabels[policyKey] || policyKey}
                   </p>
                 </>
               )}
@@ -427,6 +456,21 @@ export default function UnitDetailClient({
                 </div>
               )}
 
+              {leaseRequired && startDate && endDate ? (
+                <div>
+                  <p className="font-display text-title font-semibold mb-8">{labels.leaseRequiredTitle}</p>
+                  <p className="text-body text-text-stone mb-16">{labels.leaseRequiredBody}</p>
+                  <LeadForm
+                    audience={LEASE_LEAD_AUDIENCE}
+                    projectId={unit.projectId}
+                    initialMessage={fill(labels.leaseRequestMessage, {
+                      unit: unit.name, start: startDate, end: endDate, guests: adults + children,
+                    })}
+                    labels={labels.leadForm}
+                  />
+                </div>
+              ) : (
+              <>
               <p className="text-small text-text-stone mb-16">
                 {bookingType === 'instant' ? labels.instantBook : labels.requestToBook}
               </p>
@@ -448,6 +492,8 @@ export default function UnitDetailClient({
               <p className="text-small text-text-stone text-center mt-12 mb-0">
                 {labels.notChargedYet}
               </p>
+              </>
+              )}
             </div>
           </div>
         </div>

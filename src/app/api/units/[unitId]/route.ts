@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown, checkAvailability } from '@/modules/core';
 import { excludedSourceControlledUnits } from '@/modules/booking/source-authority';
-import { resolveStayCancellationPolicy } from '@/modules/booking';
+import { resolveStayCancellationPolicy, resolveStayCancellationPolicyForDates } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
 import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
@@ -166,7 +166,11 @@ export async function GET(
     // The policy the booking will snapshot (BAR plan > category > unit >
     // configured default): the page must show exactly what the guest is
     // bound by, never a "flexible" placeholder.
-    const stayPolicyKey = await resolveStayCancellationPolicy(prisma, { unitId: unit.id })
+    // With dates, a source tariff's arrival-season ladder wins (ruling
+    // 2026-10-06) — the same answer the booking snapshot will take.
+    const stayPolicyKey = await (startDate && endDate
+      ? resolveStayCancellationPolicyForDates(prisma, { unitId: unit.id }, { startDate, endDate, guests })
+      : resolveStayCancellationPolicy(prisma, { unitId: unit.id }))
       .then(policy => policy.name)
       .catch(() => null);
 

@@ -35,7 +35,7 @@ export function AdminNavLinks({ sections }: { sections: NavSection[] }) {
         const isPrimary = !section.title;
 
         const links = (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {section.items.map((item) => {
               const active = isItemActive(pathname, item.href);
               const highlighted = active || pending === item.href;

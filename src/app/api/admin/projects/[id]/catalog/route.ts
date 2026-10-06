@@ -34,8 +34,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (body.action === 'category') {
       const categoryKey = String(body.categoryKey ?? '').trim();
       const name = String(body.name ?? '').trim();
-      if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(categoryKey)) {
-        throw new Error('Category key must contain lowercase letters, numbers, dashes or underscores');
+      // Imported categories use uppercase keys (Layantara: 3BR_GRAND_DELUXE_G8);
+      // editing them must not be refused for their spelling.
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/.test(categoryKey)) {
+        throw new Error('Category key must contain letters, numbers, dashes or underscores');
       }
       if (!name) throw new Error('Category name is required');
       // This API accepts BAHT from the onboarding form; the database stores SATANG.

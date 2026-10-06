@@ -8,8 +8,79 @@ import { MOBILIZATION_STEPS } from '@/modules/core';
 import OnboardingClient from './onboarding-client';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import TariffPreviewClient from './tariff-preview-client';
+import TariffEditorClient from './tariff-editor-client';
+import BookingModeClient from './booking-mode-client';
 
 export const dynamic = 'force-dynamic';
+
+/** English fallbacks for the rates and booking-mode panels (content keys, doc 05). */
+const COMMERCIAL_LABELS = {
+  'admin.tariff_editor.title': 'Rates and seasons',
+  'admin.tariff_editor.body': 'These are the prices guests are quoted. Nightly seasons apply to stays under 30 nights; the monthly rate applies from 30 nights, per 30 nights; the 12-month rate is offered by lease request only. Dates are month-day (MM-DD) and repeat every year.',
+  'admin.tariff_editor.loading': 'Loading rates…',
+  'admin.tariff_editor.load_error': 'Rates could not be loaded. Refresh the page.',
+  'admin.tariff_editor.included': 'What the price includes',
+  'admin.tariff_editor.includesTaxes': 'Price includes taxes (VAT)',
+  'admin.tariff_editor.includesServiceCharge': 'Price includes service charge',
+  'admin.tariff_editor.includesBreakfast': 'Breakfast included',
+  'admin.tariff_editor.daily_title': 'Nightly seasons',
+  'admin.tariff_editor.daily_hint': 'Every night of the year should belong to exactly one season.',
+  'admin.tariff_editor.monthly_title': 'Monthly rates (from 30 nights)',
+  'admin.tariff_editor.monthly_hint': 'Charged per 30 nights by the season of each night. Leave empty if monthly stays are not offered.',
+  'admin.tariff_editor.yearly_title': '12-month lease',
+  'admin.tariff_editor.yearly_hint': 'Shown as a lease request; never instant-booked.',
+  'admin.tariff_editor.yearly_enabled': 'Offer a 12-month lease rate',
+  'admin.tariff_editor.season': 'Season code',
+  'admin.tariff_editor.windows': 'Dates (MM-DD)',
+  'admin.tariff_editor.from': 'From',
+  'admin.tariff_editor.to': 'To',
+  'admin.tariff_editor.mm_dd': 'MM-DD',
+  'admin.tariff_editor.add_window': '+ dates',
+  'admin.tariff_editor.remove': 'Remove',
+  'admin.tariff_editor.remove_season': 'Remove season',
+  'admin.tariff_editor.add_season': 'Add season',
+  'admin.tariff_editor.rate_night': 'THB per night',
+  'admin.tariff_editor.rate_30': 'THB per 30 nights',
+  'admin.tariff_editor.rate_month': 'THB per month',
+  'admin.tariff_editor.minimum': 'Min. nights',
+  'admin.tariff_editor.cancellation': 'Cancellation for arrivals in this season (days before arrival → % refunded). Empty = the property\'s standard policy.',
+  'admin.tariff_editor.days_before': 'Days before arrival',
+  'admin.tariff_editor.days_short': 'days →',
+  'admin.tariff_editor.refund_pct': 'Refund %',
+  'admin.tariff_editor.add_step': '+ step',
+  'admin.tariff_editor.clear_steps': 'Use standard policy',
+  'admin.tariff_editor.save_unit': 'Save for this villa',
+  'admin.tariff_editor.save_category': 'Save for all {count} villas in this category',
+  'admin.tariff_editor.saving': 'Saving…',
+  'admin.tariff_editor.saved': 'Saved for {count} villa(s). New quotes use these rates now.',
+  'admin.tariff_editor.save_error': 'Rates were not saved. Please try again.',
+  'admin.tariff_editor.gaps': '{count} nights of the year have no nightly season and cannot be booked (e.g. {days}).',
+  'admin.tariff_editor.daily': 'Nightly',
+  'admin.tariff_editor.monthly': 'Monthly',
+  'admin.tariff_editor.yearly': '12-month',
+  'admin.tariff_editor.flags': 'Inclusions',
+  'admin.tariff_editor.error.season_code': '{kind} season “{season}”: use capital letters, digits or _.',
+  'admin.tariff_editor.error.season_duplicate': '{kind} season “{season}” is listed twice.',
+  'admin.tariff_editor.error.window_missing': '{kind} season “{season}” needs dates.',
+  'admin.tariff_editor.error.window_format': '{kind} season “{season}”: dates must be MM-DD, e.g. 11-01.',
+  'admin.tariff_editor.error.amount': '{kind} {season}: the rate must be more than 0.',
+  'admin.tariff_editor.error.minimum': '{kind} season “{season}”: minimum stay must be at least 1 night.',
+  'admin.tariff_editor.error.minimum_monthly': 'Monthly season “{season}”: minimum stay must be at least 30 nights.',
+  'admin.tariff_editor.error.minimum_yearly': '12-month lease: minimum stay must be at least 365 nights.',
+  'admin.tariff_editor.error.cancellation_steps': '{kind} season “{season}”: cancellation steps need days from most to fewest and refunds of 0–100 %.',
+  'admin.tariff_editor.error.overlap': '{kind}: {day} falls in more than one season ({season}).',
+  'admin.tariff_editor.error.daily_missing': 'Add at least one nightly season.',
+  'admin.tariff_editor.error.flag': 'Choose what the price includes.',
+  'admin.booking_mode.title': 'How guests book',
+  'admin.booking_mode.instant': 'Instant booking',
+  'admin.booking_mode.request': 'Request to book',
+  'admin.booking_mode.instant_hint': 'Guests confirm and pay straight away when the dates are free.',
+  'admin.booking_mode.request_hint': 'Guests send a request; your team accepts or declines before any payment.',
+  'admin.booking_mode.save_unit': 'Save for this villa',
+  'admin.booking_mode.save_category': 'Apply to all {count} villas in this category',
+  'admin.booking_mode.saved': 'Saved for {count} villa(s).',
+  'admin.booking_mode.error': 'Not saved. Please try again.',
+};
 
 /**
  * The onboarding workspace for one unit — doc 07 F-OWN-1, seven steps on one
@@ -44,6 +115,12 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     orderBy: [{ isMaster: 'desc' }, { code: 'asc' }],
   });
 
+  const [commercialLabels, categoryUnits] = await Promise.all([
+    getLabels(COMMERCIAL_LABELS),
+    unit.inventoryCategoryId
+      ? prisma.unit.count({ where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } } })
+      : Promise.resolve(1),
+  ]);
   const labels = await getLabels({
     'admin.units.breadcrumb_home': 'Home',
     'admin.units.breadcrumb_admin': 'Admin',
@@ -253,6 +330,8 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       />
 
       <div className="mt-32">
+        <BookingModeClient unitId={unit.id} instantBook={unit.instantBook} categoryUnits={categoryUnits} labels={commercialLabels} />
+        <TariffEditorClient unitId={unit.id} labels={commercialLabels} />
         <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
         <TariffPreviewClient unitId={unit.id} labels={{
           title: labels['admin.tariff_preview.title'],

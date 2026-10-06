@@ -598,7 +598,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Why not drafted:** a machine-drafted legal notice could misstate obligations under PDPA. `key-coverage.test.ts` lists the prefix as deliberately pending.
 - **Open:** commission a certified RU/TH translation; then seed the keys and remove the exclusion.
 
-### Q77. The About page names a different operating company than the footer — OPEN (founder)
+### Q77. The About page names a different operating company than the footer — CLOSED (founder, 2026-10-06)
 - **Source:** 2026-10-05 i18n sweep, while drafting RU/TH for the About page.
 - **Conflict:** the About page says Toplight Asia Pacific Co., Ltd. (DBD 0115658039800) operates myUNO, while the site footer names Ignatev Estate Co., Ltd (DBD 083-5-56602358-7).
 - **Claims needing evidence:**
@@ -606,6 +606,7 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
   - "20+ years in real estate";
   - "monthly statements tracing every dollar", although the platform is THB-only. The RU draft says "каждый бат".
 - **Open:** which entity is the operator of record, and which claims stand. The drafts are `needs_review` and carry the warning in their descriptions.
+- **Ruling (2026-10-06):** the operator is **myUNO by Ignatev Estate Co., Ltd.** (DBD 083-5-56602358-7). The About page now says so (`about.operator_*`), matching the footer; the Toplight text is removed. "Licensed to operate" became "a company registered in Thailand", and "every dollar" became "every baht". The hotel licence number stays blank until supplied (Q29). The "20+ years" biography line remains a founder statement, marked needs_review.
 
 ### Q78. Dense data grids have no type size in doc 06 — OPEN (design)
 - **Source:** 2026-10-05 token lock. Doc 06's smallest size is `small` (13/19). The unified stay calendar uses 9–11px arbitrary sizes so a month of villas fits on screen.

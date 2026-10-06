@@ -4,7 +4,7 @@ import { getMCProjectScopes, getStaffProjectIds } from '@/app/libs/projectScope'
 
 export const dynamic = 'force-dynamic';
 
-type PageProps = { searchParams?: { month?: string; projectId?: string } };
+type PageProps = { searchParams?: { month?: string; projectId?: string; organizationId?: string } };
 
 /**
  * Compatibility route. For management-company users, Portfolio now opens the
@@ -20,9 +20,15 @@ export default async function ManagedPortfolioCompatibilityPage({ searchParams }
 
   const requestedProjectId =
     typeof searchParams?.projectId === 'string' ? searchParams.projectId : '';
+  const requestedOrganizationId =
+    typeof searchParams?.organizationId === 'string' ? searchParams.organizationId : '';
 
   if (scopes.length) {
     const activeScope =
+      scopes.find((scope) =>
+        scope.projectId === requestedProjectId &&
+        (!requestedOrganizationId || scope.organizationId === requestedOrganizationId)
+      ) ??
       (requestedProjectId ? scopes.find((scope) => scope.projectId === requestedProjectId) : null) ??
       scopes[0];
     const query = new URLSearchParams({

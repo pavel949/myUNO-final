@@ -512,7 +512,7 @@ export default function FounderGovernanceClient({
                         onClick={searchPeople}
                         className="rounded-md border border-brand-andaman px-12 text-small font-semibold text-brand-andaman"
                       >
-                        Search
+                        {labels['admin.governance.search']}
                       </button>
                     </div>
                     <div className="mt-8 space-y-6">

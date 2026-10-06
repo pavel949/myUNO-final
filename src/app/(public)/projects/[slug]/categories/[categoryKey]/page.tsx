@@ -127,19 +127,22 @@ export default async function ProjectCategoryPage({
                 {[
                   ...unit.views.map(view => ({
                     key: `view:${view}`,
-                    label: copy[`catalog.views.${view}.label`] || view.replace(/_/g, ' '),
+                    label: copy[`catalog.views.${view}.label`],
                   })),
                   ...unit.unitFeatures
                     .filter(feature => /^[a-z0-9_]+$/.test(feature))
                     .map(feature => ({
                       key: `feature:${feature}`,
-                      label: copy[`catalog.unit_features.${feature}.label`] || feature.replace(/_/g, ' '),
+                      label: copy[`catalog.unit_features.${feature}.label`],
                     })),
-                ].slice(0, 4).map((fact) => (
-                  <span key={fact.key} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] text-text-secondary">
-                    {fact.label}
-                  </span>
-                ))}
+                ]
+                  .filter((fact): fact is { key: string; label: string } => Boolean(fact.label))
+                  .slice(0, 4)
+                  .map((fact) => (
+                    <span key={fact.key} className="rounded-full bg-surface-ivory px-8 py-4 text-[12px] text-text-secondary">
+                      {fact.label}
+                    </span>
+                  ))}
               </div>
             ) : null}
             {!unit.bookable ? <p className="mt-8 text-small text-text-secondary">{labels['project_category.pending']}</p> : null}

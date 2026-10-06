@@ -147,6 +147,7 @@ export default async function MCPropertyWorkspace({
     : origin === 'requests'
       ? '← Booking requests'
       : '← Today';
+  const editHref = `/ops/units/${encodeURIComponent(unit.id)}/edit?returnTo=${encodeURIComponent(workspaceHref(tab))}`;
 
   const now = new Date();
   const recentStart = new Date(now); recentStart.setDate(recentStart.getDate() - 30);
@@ -254,7 +255,7 @@ export default async function MCPropertyWorkspace({
           </div>
           <div className="flex flex-wrap gap-8">
             <Link href={calendarHref} className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Open calendar</Link>
-            <Link href={`/ops/units/${encodeURIComponent(unit.id)}/edit`} className="rounded-md border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold">Edit property</Link>
+            <Link href={editHref} className="rounded-md border border-border-line bg-surface-paper px-16 py-12 text-small font-semibold">Edit property</Link>
           </div>
         </div>
       </header>
@@ -302,7 +303,7 @@ export default async function MCPropertyWorkspace({
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={workspaceHref('calendar')}>Block dates / rate override →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/tasks?mc=1&unitId=${unit.id}`}>Open tasks →</Link>
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={workspaceHref('reservations')}>Reservations →</Link>
-            <Link className="rounded-md border border-border-line p-12 font-semibold" href={`/ops/units/${unit.id}/edit`}>Property & media →</Link>
+            <Link className="rounded-md border border-border-line p-12 font-semibold" href={editHref}>Property & media →</Link>
           </div></div>
         </section>
       </div>}
@@ -377,7 +378,7 @@ export default async function MCPropertyWorkspace({
 
       {tab==='owner' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Owner & management mandate</h2><div className="mt-12 grid gap-12 md:grid-cols-2"><div><p className={small}>Owner</p><p className="font-semibold">{unit.owner ? [unit.owner.firstName,unit.owner.lastName].filter(Boolean).join(' ') : 'Not assigned'}</p></div><div><p className={small}>Management organization</p><p className="font-semibold">{activeEngagement?.managementOrg?.name||'—'}</p></div><div><p className={small}>Engagement</p><p className="font-semibold">{activeEngagement?.engagementType.replace(/_/g,' ')||'—'}</p></div><div><p className={small}>Mandate period</p><p className="font-semibold">{activeEngagement ? date(activeEngagement.startsOn)+' → '+date(activeEngagement.endsOn) : '—'}</p></div><div><p className={small}>Fee override</p><p className="font-semibold">{activeEngagement?.feeOverridePct != null ? String(activeEngagement.feeOverridePct)+'%' : '—'}</p></div><div><p className={small}>NOI cap</p><p className="font-semibold">{activeEngagement?.noiCapAnnualThb == null ? 'No cap' : money(activeEngagement.noiCapAnnualThb)}</p></div></div></section>}
 
-      {tab==='property' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Canonical property record</h2><div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4"><div><p className={small}>Bedrooms</p><p className="font-semibold">{unit.bedrooms}</p></div><div><p className={small}>Bathrooms</p><p className="font-semibold">{unit.bathrooms}</p></div><div><p className={small}>Guests</p><p className="font-semibold">{unit.maxGuests}</p></div><div><p className={small}>Size</p><p className="font-semibold">{unit.sizeSqm||'—'} sqm</p></div><div><p className={small}>Floor</p><p className="font-semibold">{unit.floor||'—'}</p></div><div><p className={small}>Status</p><p className="font-semibold">{unit.status}</p></div><div><p className={small}>Asset status</p><p className="font-semibold">{unit.assetStatus}</p></div><div><p className={small}>Location</p><p className="font-semibold">{unit.addressSupplement}</p></div></div><Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Edit canonical record →</Link></section>}
+      {tab==='property' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Canonical property record</h2><div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4"><div><p className={small}>Bedrooms</p><p className="font-semibold">{unit.bedrooms}</p></div><div><p className={small}>Bathrooms</p><p className="font-semibold">{unit.bathrooms}</p></div><div><p className={small}>Guests</p><p className="font-semibold">{unit.maxGuests}</p></div><div><p className={small}>Size</p><p className="font-semibold">{unit.sizeSqm||'—'} sqm</p></div><div><p className={small}>Floor</p><p className="font-semibold">{unit.floor||'—'}</p></div><div><p className={small}>Status</p><p className="font-semibold">{unit.status}</p></div><div><p className={small}>Asset status</p><p className="font-semibold">{unit.assetStatus}</p></div><div><p className={small}>Location</p><p className="font-semibold">{unit.addressSupplement}</p></div></div><Link href={editHref} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Edit canonical record →</Link></section>}
 
       {tab==='media' && <section className={card}>
         <h2 className="font-display text-heading-2 font-semibold">Media</h2>
@@ -388,7 +389,7 @@ export default async function MCPropertyWorkspace({
           <div className="rounded-md bg-surface-ivory p-12"><p className={small}>Unit gallery</p><p className="font-semibold">{unit._count.media} photos</p><p className={small}>{unit.coverMediaId?'Cover set':'Cover missing'}</p></div>
         </div>
         {(unit._count.media===0||!unit.coverMediaId) && <p className="mt-12 rounded-md bg-amber-50 p-12 text-small text-amber-900">Unit presentation is incomplete. Add exact-unit photos and choose a cover before publishing.</p>}
-        <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage media →</Link>
+        <Link href={editHref} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage media →</Link>
       </section>}
 
       {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{bangkokDateTime(a.at, locale)} ICT · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}

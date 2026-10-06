@@ -6,10 +6,11 @@ import { hasManagedUnitMcAccess } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getUnitReadinessMap } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import { computeCanonicalCalendarRates } from '@/modules/core';
+import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,11 +26,11 @@ function money(satang: number | null | undefined) {
 function date(value: Date | null | undefined) {
   return value ? value.toISOString().slice(0, 10) : '—';
 }
-function bangkokDate(value: Date | null | undefined) {
-  return value ? value.toLocaleDateString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'numeric'}) : '—';
+function bangkokDate(value: Date | null | undefined, locale: string) {
+  return formatDate(value, locale) || '—';
 }
-function bangkokDateTime(value: Date | null | undefined) {
-  return value ? value.toLocaleString('en-GB',{timeZone:'Asia/Bangkok',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}) : '—';
+function bangkokDateTime(value: Date | null | undefined, locale: string) {
+  return formatDate(value, locale, 'dateTime') || '—';
 }
 function tabHref(unitId: string, tab: Tab, focusDate?: string) {
   const q = new URLSearchParams({ tab });
@@ -46,6 +47,7 @@ export default async function MCPropertyWorkspace({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=/mc/properties/${params.unitId}`);
+  const locale = await getRequestLocale();
 
   const unit = await prisma.unit.findUnique({
     where: { id: params.unitId },
@@ -160,10 +162,10 @@ export default async function MCPropertyWorkspace({
   const attentionDeadline = new Date(now.getTime() + 3 * 60 * 60 * 1000);
   const expiringRequests = bookings.filter(b => b.status==='requested' && b.requestExpiresAt && b.requestExpiresAt <= attentionDeadline);
   const expiringHolds = bookings.filter(b => b.status==='pending_payment' && b.holdExpiresAt && b.holdExpiresAt <= attentionDeadline);
-  const arrivalToday = bookings.find(b => b.status==='confirmed' && bangkokDate(b.startDate)===bangkokDate(now));
+  const arrivalToday = bookings.find(b => b.status==='confirmed' && bangkokDate(b.startDate, locale)===bangkokDate(now));
   const hasArrivalReadinessRisk = Boolean(arrivalToday && readiness.state!=='ready');
 
-  const card = 'rounded-xl border border-border-line bg-surface-paper p-16';
+  const card = 'rounded-lg border border-border-line bg-surface-paper p-16';
   const small = 'text-small text-text-secondary';
   const pill = 'rounded-full bg-surface-ivory px-8 py-4 text-[11px] font-semibold';
 
@@ -175,7 +177,7 @@ export default async function MCPropertyWorkspace({
             <Link href="/mc" className="text-small font-semibold text-brand-andaman">← Today</Link>
             <div className="mt-8 flex flex-wrap items-center gap-8">
               <p className="text-small font-semibold uppercase tracking-[0.12em] text-brand-andaman">Property Workspace</p>
-              {focusDate && <span className={pill}>Context date · {new Date(focusDate+'T00:00:00.000Z').toLocaleDateString('en-GB',{timeZone:'UTC',weekday:'short',day:'2-digit',month:'short'})}</span>}
+              {focusDate && <span className={pill}>Context date · {formatDate(new Date(focusDate+'T00:00:00.000Z'), locale, { weekday: 'short', day: '2-digit', month: 'short' }, 'UTC')}</span>}
             </div>
             <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">{unit.name}</h1>
             <p className="mt-4 text-body text-text-secondary">{unit.project.name}{unit.inventoryCategory ? ' · '+unit.inventoryCategory.name : ''}</p>
@@ -207,12 +209,12 @@ export default async function MCPropertyWorkspace({
         <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-5">
           {activeBooking ? <Link href={`/ops/stays/${activeBooking.id}`} className={card+' transition hover:border-brand-andaman'}>
             <p className={small}>Current stay</p><p className="mt-4 font-semibold">{activeBooking.guestIdentity.firstName} {activeBooking.guestIdentity.lastName}</p>
-            <p className={small}>{bangkokDate(activeBooking.startDate)} → {bangkokDate(activeBooking.endDate)} · {activeBooking.status.replace(/_/g,' ')}</p>
+            <p className={small}>{bangkokDate(activeBooking.startDate, locale)} → {bangkokDate(activeBooking.endDate, locale)} · {activeBooking.status.replace(/_/g,' ')}</p>
           </Link> : <div className={card}><p className={small}>Current stay</p><p className="mt-4 font-semibold">Vacant</p></div>}
           <Link href={tabHref(unit.id,'operations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></Link>
           <Link href={tabHref(unit.id,'channels',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></Link>
           <Link href={tabHref(unit.id,'reservations',focusDate)} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></Link>
-          {nextBooking ? <Link href={`/ops/stays/${nextBooking.id}`} className={card+' transition hover:border-brand-andaman'}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{bangkokDate(nextBooking.startDate)}</p><p className={small}>{nextBooking.guestIdentity.firstName} {nextBooking.guestIdentity.lastName} · {nextBooking.status.replace(/_/g,' ')}</p></Link>
+          {nextBooking ? <Link href={`/ops/stays/${nextBooking.id}`} className={card+' transition hover:border-brand-andaman'}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{bangkokDate(nextBooking.startDate, locale)}</p><p className={small}>{nextBooking.guestIdentity.firstName} {nextBooking.guestIdentity.lastName} · {nextBooking.status.replace(/_/g,' ')}</p></Link>
             : <div className={card}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">—</p><p className={small}>No upcoming stay</p></div>}
         </section>
         <section className="grid gap-16 xl:grid-cols-2">
@@ -251,14 +253,14 @@ export default async function MCPropertyWorkspace({
 
       {tab==='reservations' && <section className="space-y-16">
         <div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Reservations & stays</h2><Link href="/mc" className="text-small font-semibold text-brand-andaman">PMS Today →</Link></div>
-        {bookings.length===0?<div className={card}>No stays from {bangkokDate(recentStart)} to {bangkokDate(futureEnd)}.</div>:
+        {bookings.length===0?<div className={card}>No stays from {bangkokDate(recentStart, locale)} to {bangkokDate(futureEnd, locale)}.</div>:
           bookingGroups.map(([group,items]) => items.length ? <section key={group}>
             <h3 className="mb-8 text-small font-semibold uppercase tracking-[0.08em] text-text-secondary">{group} · {items.length}</h3>
             <div className="space-y-8">{items.map(b=><article key={b.id} className={card}>
               <div className="flex flex-wrap items-center justify-between gap-8">
                 <div>
                   <p className="font-semibold">{b.guestIdentity.firstName} {b.guestIdentity.lastName}</p>
-                  <p className={small}>{bangkokDate(b.startDate)} → {bangkokDate(b.endDate)} · {b.channel.replace(/_/g,' ')}</p>
+                  <p className={small}>{bangkokDate(b.startDate, locale)} → {bangkokDate(b.endDate, locale)} · {b.channel.replace(/_/g,' ')}</p>
                   <span className={pill}>{b.status.replace(/_/g,' ')}</span>
                 </div>
                 <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div>
@@ -269,8 +271,8 @@ export default async function MCPropertyWorkspace({
       </section>}
 
       {tab==='operations' && <div className="grid gap-16 xl:grid-cols-2">
-        <section className={card}><div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Tasks</h2><Link href={`/ops/tasks?mc=1&unitId=${unit.id}`} className="text-small font-semibold text-brand-andaman">Task queue →</Link></div><div className="mt-12 space-y-8">{tasks.length?tasks.map(t=><Link key={t.id} href={`/ops/tasks?mc=1&unitId=${unit.id}#task-${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title||t.taskType.replace(/_/g,' ')}</p><p className={small}>{t.status.replace(/_/g,' ')} · due {bangkokDateTime(t.dueAt)} · {t.priority}{t.blocksInventory?' · blocks inventory':''}</p></Link>):<p className={small}>No open operational tasks.</p>}</div></section>
-        <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><Link key={t.id} href={`/tickets/${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {bangkokDateTime(t.createdAt)}</p></Link>):<p className={small}>No open issues.</p>}</div></section>
+        <section className={card}><div className="flex items-center justify-between"><h2 className="font-display text-heading-2 font-semibold">Tasks</h2><Link href={`/ops/tasks?mc=1&unitId=${unit.id}`} className="text-small font-semibold text-brand-andaman">Task queue →</Link></div><div className="mt-12 space-y-8">{tasks.length?tasks.map(t=><Link key={t.id} href={`/ops/tasks?mc=1&unitId=${unit.id}#task-${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title||t.taskType.replace(/_/g,' ')}</p><p className={small}>{t.status.replace(/_/g,' ')} · due {bangkokDateTime(t.dueAt, locale)} · {t.priority}{t.blocksInventory?' · blocks inventory':''}</p></Link>):<p className={small}>No open operational tasks.</p>}</div></section>
+        <section className={card}><h2 className="font-display text-heading-2 font-semibold">Issues</h2><div className="mt-12 space-y-8">{tickets.length?tickets.map(t=><Link key={t.id} href={`/tickets/${t.id}`} className="block rounded-md bg-surface-ivory p-12 hover:ring-1 hover:ring-brand-andaman"><p className="font-semibold">{t.title}</p><p className={small}>{t.status.replace(/_/g,' ')} · {t.priority} · {bangkokDateTime(t.createdAt, locale)}</p></Link>):<p className={small}>No open issues.</p>}</div></section>
       </div>}
 
       {tab==='rates' && <section className={card}>
@@ -282,7 +284,7 @@ export default async function MCPropertyWorkspace({
           <div><p className={small}>Minimum stay</p><p className="font-semibold">{activeRule?.minNightsOverride??unit.minNights} nights</p><p className={small}>{activeRule?'Current unit override':'Property default'}</p></div>
           <div><p className={small}>Booking mode</p><p className="font-semibold">{unit.instantBook?'Instant book':'Request to book'}</p><p className={small}>{unit.instantBook?'Guest can hold inventory immediately while paying.':'Host approval is required before dates are held.'}</p></div>
           <div><p className={small}>Current rule</p><p className="font-semibold">{activeRule?money(activeRule.nightlyThb):'None'}</p><p className={small}>{activeRule?.label||'No unit-specific override today'}</p></div>
-          <div><p className={small}>Next rule</p><p className="font-semibold">{nextRule?bangkokDate(nextRule.startDate):'—'}</p><p className={small}>{nextRule?money(nextRule.nightlyThb)+(nextRule.label?' · '+nextRule.label:''):'No upcoming override'}</p></div>
+          <div><p className={small}>Next rule</p><p className="font-semibold">{nextRule?bangkokDate(nextRule.startDate, locale):'—'}</p><p className={small}>{nextRule?money(nextRule.nightlyThb)+(nextRule.label?' · '+nextRule.label:''):'No upcoming override'}</p></div>
         </div>
         <Link href={tabHref(unit.id,'calendar',focusDate)} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage rate overrides →</Link>
       </section>}
@@ -294,7 +296,7 @@ export default async function MCPropertyWorkspace({
           <p><span className="text-text-secondary">Rates</span><br/><span className="font-semibold">{row.rates==='push'?'✓ Live':'Manual'}</span></p>
           <p><span className="text-text-secondary">Restrictions</span><br/><span className="font-semibold">{row.restrictions==='push'?'✓ Live':'Manual'}</span></p>
         </div>
-        {'lastSyncAt' in row && row.lastSyncAt ? <p className={small+' mt-8'}>Last synced {bangkokDateTime(new Date(row.lastSyncAt))}</p> : null}
+        {'lastSyncAt' in row && row.lastSyncAt ? <p className={small+' mt-8'}>Last synced {bangkokDateTime(new Date(row.lastSyncAt), locale)}</p> : null}
         {'error' in row && row.error ? <p className="mt-8 text-small text-state-error">{String(row.error)}</p> : null}
       </div>):<p className={small}>No channel mapping. Inventory is manual-only.</p>}</div></section>}
 
@@ -319,7 +321,7 @@ export default async function MCPropertyWorkspace({
         <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white">Manage media →</Link>
       </section>}
 
-      {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{bangkokDateTime(a.at)} ICT · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}
+      {tab==='activity' && <section className={card}><h2 className="font-display text-heading-2 font-semibold">Activity</h2><div className="mt-12 space-y-8">{audit.length?audit.map(a=><div key={a.id} className="border-b border-border-line pb-8 last:border-0"><p className="font-semibold">{a.action}</p><p className={small}>{bangkokDateTime(a.at, locale)} ICT · {a.entityType} · {a.actor ? [a.actor.firstName,a.actor.lastName].filter(Boolean).join(' ') : 'system'}</p></div>):<p className={small}>No unit-level audit events yet.</p>}</div></section>}
     </div>
   </main>;
 }

@@ -395,11 +395,39 @@ export default function UnifiedStayCalendar(props: Props) {
               {item.kind === 'booking' ?
                 props.mode === 'mc' ? null :
                 <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
-                <Link href={(props.mode==='mc'?'/mc/properties/':'/ops/calendar/')+encodeURIComponent(inspect.id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
+                <Link href={props.mode==='mc'
+                  ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
+                      projectId: inspect.projectId,
+                      organizationId: props.organizationId || '',
+                      origin: 'calendar',
+                      tab: 'calendar',
+                      date: selected.date,
+                      calendarStart: props.start,
+                      days: String(props.daysCount),
+                      ...(inspect.categoryId ? { categoryId: inspect.categoryId } : {}),
+                    }).toString()
+                  : '/ops/calendar/'+encodeURIComponent(inspect.id)}
+                  className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">
-          <Link href={(props.mode==='mc'?'/mc/properties/':'/ops/calendar/')+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({projectId:inspect.projectId,categoryId:inspect.categoryId||'',start:props.start,days:String(props.daysCount)}).toString()} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
+          <Link href={props.mode==='mc'
+            ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
+                projectId: inspect.projectId,
+                organizationId: props.organizationId || '',
+                origin: 'calendar',
+                tab: 'calendar',
+                date: selected.date,
+                calendarStart: props.start,
+                days: String(props.daysCount),
+                ...(inspect.categoryId ? { categoryId: inspect.categoryId } : {}),
+              }).toString()
+            : '/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
+                projectId: inspect.projectId,
+                categoryId: inspect.categoryId || '',
+                start: props.start,
+                days: String(props.daysCount),
+              }).toString()} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {props.labels['staff.unified_calendar.open_unit']} →
           </Link>
           <Link

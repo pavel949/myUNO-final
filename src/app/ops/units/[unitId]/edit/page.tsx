@@ -23,7 +23,7 @@ export default async function EditManagedUnitPage({ params }: { params: { unitId
   const selfListing = await hasSelfListingAccess(user.identityId, unit.id);
   if (!user.isAdmin && !staff && !mc && !selfListing) notFound();
   return <main className="stitch-workspace px-16 py-32 md:px-32"><div className="mx-auto max-w-4xl">
-    <Link href={selfListing ? `/property/listings/${unit.id}` : mc && !staff ? `/mc/units/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
+    <Link href={selfListing ? `/property/listings/${unit.id}` : mc && !staff ? `/mc/properties/${unit.id}` : `/ops/calendar/${unit.id}`} className="text-brand-andaman">← Unit calendar</Link>
     <h1 className="mt-12 font-display text-display-xl text-text-ink">Edit {unit.name}</h1>
     <p className="mt-8 text-text-secondary">{unit.project.name} · {unit.status} · Canonical physical record</p>
     <ManagedUnitEditor unit={unit}/><ManagedGallery scope="unit" id={unit.id}/>

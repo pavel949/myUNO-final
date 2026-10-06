@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProcessStepper } from '@/components/premium/PremiumPrimitives';
-import { CHECK_IN_CHECKLIST_ITEMS, type CheckInChecklistItem } from '@/modules/ops';
+import { CHECK_IN_CHECKLIST_ITEMS, type CheckInChecklistItem } from '@/modules/ops/check-in-checklist';
 
 export default function CheckInWizard({
   bookingId,

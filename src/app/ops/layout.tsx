@@ -13,6 +13,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
     'staff.shell.housekeeping': 'Housekeeping',
     'staff.shell.maintenance': 'Maintenance',
     'staff.shell.tasks': 'Tasks',
+    'staff.shell.daily_close': 'Daily Reconciliation',
     'staff.shell.spaces': 'Workspaces',
   });
 
@@ -28,6 +29,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
         { href: '/ops/housekeeping', label: labels['staff.shell.housekeeping'] },
         { href: '/ops/maintenance', label: labels['staff.shell.maintenance'] },
         { href: '/ops/tasks', label: labels['staff.shell.tasks'] },
+        { href: '/ops/night-audit', label: labels['staff.shell.daily_close'] },
         { href: '/ops/spaces', label: labels['staff.shell.spaces'] },
       ]}
     >

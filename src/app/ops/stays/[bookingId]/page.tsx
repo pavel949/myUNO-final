@@ -134,7 +134,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
             <p className="stitch-kicker">{labels['staff.stay_360.folio']}</p>
             <h2 className="mt-4 text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.services']}</h2>
           </div>
-          {booking.depositPreauth ? <span className="rounded-full bg-surface-ivory px-10 py-4 text-small font-semibold">
+          {booking.depositPreauth ? <span className="rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold">
             {labels['staff.stay_360.deposit']} · {booking.depositPreauth.status} · {amount(booking.depositPreauth.amountThb)}
           </span> : null}
         </div>

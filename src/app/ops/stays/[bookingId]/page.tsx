@@ -59,6 +59,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
     'staff.stay_360.deposit':'Damage deposit',
     'staff.stay_360.claims':'Deposit claims',
     'staff.stay_360.condition':'Condition reports',
+    'staff.stay_360.media':'media',
     'staff.stay_360.no_services':'No stay-linked services.',
     'staff.stay_360.no_claims':'No deposit claims.',
     'staff.stay_360.no_condition':'No condition reports.',
@@ -155,7 +156,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
             <h3 className="font-semibold">{labels['staff.stay_360.condition']}</h3>
             {booking.conditionReports.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_condition']}</p>:
               <ul className="mt-8 space-y-8">{booking.conditionReports.map(report=><li key={report.id} className="rounded-md bg-surface-ivory p-12 text-small">
-                <div className="flex justify-between gap-8"><span className="font-semibold">{report.reportType.replace(/_/g,' ')}</span><span>{report._count.media} media</span></div>
+                <div className="flex justify-between gap-8"><span className="font-semibold">{report.reportType.replace(/_/g,' ')}</span><span>{report._count.media} {labels['staff.stay_360.media']}</span></div>
                 <p className="mt-4 text-text-secondary">{formatDate(report.createdAt,locale)}{report.notes?' · '+report.notes:''}</p>
               </li>)}</ul>}
           </div>

@@ -88,7 +88,7 @@ export default function CheckInWizard({
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              className="mt-4 min-h-120 w-full rounded-md border border-border-line bg-surface-paper p-12"
+              className="mt-4 min-h-[120px] w-full rounded-md border border-border-line bg-surface-paper p-12"
             />
           </label>
         </section>

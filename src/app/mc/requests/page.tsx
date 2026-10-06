@@ -154,6 +154,8 @@ export default async function McRequestsPage({ searchParams }: McRequestsPagePro
             breakdownLines: request.breakdownLines,
           }))}
           labels={labels}
+          projectId={activeScope.projectId}
+          organizationId={activeScope.organizationId}
         />
       </div>
     </main>

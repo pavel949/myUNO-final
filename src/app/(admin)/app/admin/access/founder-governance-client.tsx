@@ -337,6 +337,14 @@ export default function FounderGovernanceClient({
           <div className="mt-40 border-t border-border-line pt-16">
             <h3 className="font-semibold text-text-ink">{labels['admin.governance.create_title']}</h3>
             <p className="mt-4 text-small text-text-secondary">{labels['admin.governance.create_hint']}</p>
+            {organizations.length === 0 ? (
+              <div className="mt-12 rounded-md border border-brand-sun/40 bg-surface-ivory p-12">
+                <p className="text-small text-text-secondary">{labels['admin.governance.organization_required']}</p>
+                <Link href="/app/admin/organizations" className="mt-8 inline-block text-small font-semibold text-brand-andaman">
+                  {labels['admin.governance.organization_link']} →
+                </Link>
+              </div>
+            ) : null}
             <div className="mt-12 space-y-8">
               <input
                 value={createForm.name}

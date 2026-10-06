@@ -68,7 +68,7 @@ export default function ProviderApplyClient({
 
   if (done) {
     return (
-      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24">
+      <div className="stitch-panel p-24">
         <p className="text-body text-state-success">{labels['provider.apply.success']}</p>
       </div>
     );
@@ -80,7 +80,7 @@ export default function ProviderApplyClient({
   return (
     <form
       onSubmit={submit}
-      className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 flex flex-col gap-16"
+      className="stitch-panel p-24 flex flex-col gap-16"
     >
       <div>
         <h2 className="font-display text-display-sm text-brand-deep mb-4">

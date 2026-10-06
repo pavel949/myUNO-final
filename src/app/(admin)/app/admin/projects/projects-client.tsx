@@ -122,7 +122,7 @@ export default function ProjectsAdminClient({
         return (
           <div
             key={project.id}
-            className="bg-surface-paper border border-border-line rounded-lg shadow-card p-16 flex flex-col gap-8"
+            className="stitch-panel p-16 flex flex-col gap-8"
           >
             <div className="flex flex-wrap items-center justify-between gap-8">
               <div>
@@ -230,7 +230,7 @@ export default function ProjectsAdminClient({
         );
       })}
 
-      <div className="bg-surface-paper border border-border-line rounded-lg shadow-card p-16">
+      <div className="stitch-panel p-16">
         <p className="text-subtitle font-semibold text-text-ink mb-12">
           {labels['admin.projects.create_title']}
         </p>

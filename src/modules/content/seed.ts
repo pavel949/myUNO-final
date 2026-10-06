@@ -4577,6 +4577,7 @@ const AUDIT_FIX_KEYS: KeyDef[] = [
   { key: 'admin.media_import.done', namespace: 'admin', description: 'Integrations: import finished', en: 'Import finished.', ru: 'Импорт завершён.', th: 'นำเข้าเสร็จแล้ว', status: NR },
   { key: 'admin.media_import.error', namespace: 'admin', description: 'Integrations: import failed', en: 'Import failed. Try again.', ru: 'Не удалось импортировать. Попробуйте ещё раз.', th: 'นำเข้าไม่สำเร็จ โปรดลองอีกครั้ง', status: NR },
   { key: 'admin.media_import.counts', namespace: 'admin', description: 'Integrations: per-folder import totals', en: '{created} new · {reused} already imported · {attached} attached', ru: 'Новых: {created} · уже загружено: {reused} · привязано: {attached}', th: 'ใหม่ {created} · นำเข้าแล้ว {reused} · เชื่อมแล้ว {attached}', status: NR },
+  { key: 'catalog.cancellation_policies.season.label', namespace: 'catalog', description: 'Cancellation policy name: refund ladder set by the arrival season (source booking terms)', en: 'Season terms', ru: 'Условия сезона', th: 'เงื่อนไขตามฤดูกาล', status: NR },
 ];
 
 export async function seedContent(

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
   createBooking,
   resolveStayCancellationPolicy,
+  sourceSeasonCancellationPolicy,
   findAvailableUnitsForCategory,
 } from '@/modules/booking';
 import { createCheckout } from '@/modules/finance';
@@ -246,7 +247,10 @@ export async function POST(req: NextRequest) {
 
       // The same resolver the unit and review pages show the guest: the
       // snapshot is the policy they consented to (BAR plan > category > unit).
-      const policy = await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
+      // Season ladder from the quoted source terms when the stay has one
+      // (ruling 2026-10-06), else the configured policy.
+      const policy = sourceSeasonCancellationPolicy(candidateBreakdown.commercialTerms)
+        ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
 
       try {
         booking = await createBooking(prisma, {

@@ -4,6 +4,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { getConfig } from '@/modules/config';
+import { computePriceBreakdown } from '@/modules/core';
 
 export interface PolicyStep {
   days_before_checkin: number;
@@ -210,3 +211,47 @@ export const DEFAULT_POLICIES: Record<string, CancellationPolicy> = {
     ],
   },
 };
+
+/**
+ * A season's refund ladder from the source booking terms, as the policy the
+ * booking snapshots. Null when the stay's terms carry no ladder, so the
+ * configured policy applies. Founder ruling 2026-10-06: Layantara cancels by
+ * arrival season (Green/Shoulder 14+ days full refund; High, Peak, EDC and
+ * monthly non-refundable), not by one property-wide ladder.
+ */
+export function sourceSeasonCancellationPolicy(
+  terms: { cancellationSteps?: Array<{ days: number; pct: number }> } | null | undefined
+): CancellationPolicy | null {
+  if (!terms?.cancellationSteps?.length) return null;
+  return {
+    name: 'season',
+    steps: terms.cancellationSteps.map((s) => ({ days_before_checkin: s.days, refund_pct: s.pct })),
+  };
+}
+
+/**
+ * The policy a guest consents to for these exact dates — the same answer the
+ * booking route snapshots. Quotes the stay (the unit, or any live unit of the
+ * category: source terms are project-wide) and prefers the season ladder;
+ * otherwise the configured policy (BAR plan > category > unit > default).
+ */
+export async function resolveStayCancellationPolicyForDates(
+  db: PrismaClient,
+  target: { unitId: string } | { inventoryCategoryId: string },
+  stay: { startDate: Date; endDate: Date; guests: number }
+): Promise<CancellationPolicy> {
+  const unitId = 'unitId' in target
+    ? target.unitId
+    : (await db.unit.findFirst({
+        where: { inventoryCategoryId: target.inventoryCategoryId, status: 'live' },
+        select: { id: true },
+        orderBy: { name: 'asc' },
+      }))?.id;
+  if (unitId) {
+    const breakdown = await computePriceBreakdown(db, unitId, stay.startDate, stay.endDate, stay.guests)
+      .catch(() => null);
+    const season = sourceSeasonCancellationPolicy(breakdown?.commercialTerms);
+    if (season) return season;
+  }
+  return resolveStayCancellationPolicy(db, target);
+}

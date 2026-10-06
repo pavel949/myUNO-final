@@ -21,4 +21,16 @@ describe('commercial booking term migration',()=>{
     expect(()=>resolveSourceBookingTerms([rule('HIGH'),rule('HIGH')],'daily','HIGH')).toThrow(/conflicting/);
     expect(()=>resolveSourceBookingTerms([rule('HIGH')],'daily','GREEN')).toThrow(/Missing/);
   });
+  it('carries the season refund ladder when the source rule has one (ruling 2026-10-06)',()=>{
+    const green={...rule('GREEN'),cancellation_steps:[{days:14,pct:100},{days:0,pct:0}]};
+    expect(resolveSourceBookingTerms([green],'daily','GREEN').cancellationSteps)
+      .toEqual([{days:14,pct:100},{days:0,pct:0}]);
+    expect(resolveSourceBookingTerms([rule('HIGH')],'daily','HIGH').cancellationSteps).toBeUndefined();
+  });
+  it('rejects a malformed ladder instead of refunding the wrong amount',()=>{
+    for (const steps of [[], [{days:0,pct:150}], [{days:0,pct:0},{days:14,pct:100}], [{days:-1,pct:0}]]) {
+      expect(()=>resolveSourceBookingTerms([{...rule('GREEN'),cancellation_steps:steps}],'daily','GREEN'))
+        .toThrow(/Invalid source cancellation steps/);
+    }
+  });
 });

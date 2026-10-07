@@ -5,6 +5,7 @@ import { listPublicProjects } from '@/modules/projects';
 import { getRequestLocale } from '@/lib/i18n';
 import { publicPageAlternates } from '@/lib/seo';
 import { ProjectCard } from '@/components/ProjectCard';
+import { discoveryCopy } from '@/components/DiscoveryHomes';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,9 @@ export default async function ProjectsHubPage() {
     'projects.hub.search_cta': 'Search stays',
   });
 
-  const projects = await listPublicProjects(getRequestLocale()).catch(() => []);
+  const locale = getRequestLocale();
+  const copy = await discoveryCopy(locale);
+  const projects = await listPublicProjects(locale).catch(() => []);
 
   return (
     <main className="stitch-workspace">
@@ -73,7 +76,7 @@ export default async function ProjectsHubPage() {
                 key={project.id}
                 project={project}
                 labels={{
-                  homes: labels['projects.hub.units_live'],
+                  homes: copy.homesCount,
                   fromPrice: labels['projects.hub.from_price'],
                   noPhoto: labels['projects.hub.no_photo'],
                   view: labels['projects.hub.view'],

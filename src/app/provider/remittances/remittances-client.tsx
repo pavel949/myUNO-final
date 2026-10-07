@@ -131,10 +131,10 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
             <p className="text-body text-text-secondary">
               <PeriodRange start={view.currentPeriod.periodStart} end={view.currentPeriod.periodEnd} />
             </p>
-            <p className="text-caption text-text-secondary mt-4">{cadenceLabel}</p>
+            <p className="text-small text-text-secondary mt-4">{cadenceLabel}</p>
           </div>
           <span
-            className={`inline-flex self-start px-12 py-4 rounded-full text-caption font-semibold ${
+            className={`inline-flex self-start px-12 py-4 rounded-full text-small font-semibold ${
               view.currentPeriod.payoutRecorded
                 ? 'bg-state-success-soft text-state-success'
                 : 'bg-state-warning-soft text-state-warning'
@@ -164,7 +164,7 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
           tone={NET_TONE}
         />
 
-        <p className="text-caption text-text-secondary mt-16">
+        <p className="text-small text-text-secondary mt-16">
           {labels['provider.remittances.order_count'].replace(
             '{count}',
             String(remittance.orderCount)
@@ -192,19 +192,19 @@ export default function ProviderRemittancesClient({ labels }: { labels: Labels }
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border-line">
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['provider.remittances.period']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['provider.remittances.amount']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['provider.remittances.executed_on']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['provider.remittances.reference']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8">
+                  <th className="text-small font-semibold text-text-secondary pb-8">
                     {labels['provider.remittances.status']}
                   </th>
                 </tr>

@@ -76,7 +76,7 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
     prisma.operatingSpaceMember.findMany({where:{operatingSpaceId:spaceId,active:true},select:{identity:{select:{id:true,firstName:true,lastName:true}}},orderBy:{identity:{firstName:'asc'}}}),
     prisma.preventiveMaintenancePlan.findMany({
       where:{operatingSpaceId:spaceId},
-      include:{unit:{select:{name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
+      include:{unit:{select:{id:true,name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
       orderBy:[{active:'desc'},{nextDueAt:'asc'}],
     }),
     prisma.operationalTask.findMany({
@@ -86,7 +86,7 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
         taskType:{in:['maintenance_followup','preventive_maintenance','utilities','pool','garden','pest_control']},
         status:{in:['planned','assigned','in_progress','inspected','blocked']},
       },
-      include:{unit:{select:{name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
+      include:{unit:{select:{id:true,name:true,project:{select:{name:true}}}},assignedTeam:{select:{name:true}},assignee:{select:{firstName:true,lastName:true}}},
       orderBy:{dueAt:'asc'},
     }),
   ]);
@@ -94,7 +94,7 @@ export default async function MaintenanceWorkspace({searchParams}:{searchParams?
   return <main className="stitch-workspace p-16 md:p-32"><div className="mx-auto max-w-7xl space-y-20">
     <header className="stitch-hero-dark"><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-sun-soft hover:underline">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">{labels['staff.maintenance.title']}</h1><p className="mt-8 text-body text-white/70">{labels['staff.maintenance.subtitle']}</p></header>
     <PreventiveMaintenanceForm operatingSpaceId={spaceId} units={units} teams={teams} members={members} labels={labels}/>
-    <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.open']}</h2><div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="stitch-panel p-16"><div className="flex items-start justify-between gap-8"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><OpsStatusPill tone={opsStateTone(task.status)}>{task.status.replace(/_/g,' ')}</OpsStatusPill></div><h3 className="mt-4 font-display text-heading-3 font-semibold">{task.title||task.taskType.replace(/_/g,' ')}</h3><p className="mt-8 text-small text-text-secondary font-tabular">{task.unit.name} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
+    <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.open']}</h2><div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="stitch-panel p-16"><div className="flex items-start justify-between gap-8"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><OpsStatusPill tone={opsStateTone(task.status)}>{task.status.replace(/_/g,' ')}</OpsStatusPill></div><h3 className="mt-4 font-display text-heading-3 font-semibold"><Link href={'/ops/tasks?' + new URLSearchParams({ spaceId, unitId: task.unit.id }) + '#task-' + encodeURIComponent(task.id)} className="text-brand-andaman hover:underline">{task.title||task.taskType.replace(/_/g,' ')}</Link></h3><p className="mt-8 text-small text-text-secondary font-tabular">{task.unit.name} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
     <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.preventive']}</h2><div className="stitch-panel mt-12 overflow-hidden">{plans.map(plan=><article key={plan.id} className="grid gap-8 border-b border-border-line p-16 transition last:border-0 hover:bg-surface-ivory md:grid-cols-4"><div><p className="font-semibold">{plan.title}</p><p className="text-small text-text-secondary">{plan.unit?plan.unit.project.name+' · '+plan.unit.name:'All scoped homes'}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.frequency']}</p><p className="font-tabular">{plan.frequencyDays} {labels['staff.maintenance.days']}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.next_due']}</p><p className="font-tabular">{plan.nextDueAt.toISOString().slice(0,10)}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.assigned']}</p><p>{plan.assignedTeam?.name||[plan.assignee?.firstName,plan.assignee?.lastName].filter(Boolean).join(' ')||'—'}</p></div></article>)}</div></section>
   </div></main>;
 }

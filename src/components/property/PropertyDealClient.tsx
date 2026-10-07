@@ -107,7 +107,7 @@ export default function PropertyDealClient(props:Props){
     {message&&<p role="status" className="rounded-md bg-green-50 p-12 text-green-800">{message}</p>}
     <section className="rounded-lg border border-border-line bg-surface-paper p-20">
       <p className="text-kicker font-semibold text-brand-andaman">CANONICAL CRM · COMMERCIAL OFFERING · PHYSICAL HOME</p>
-      <h2 className="mt-8 font-display text-heading-lg font-semibold">{props.unitName} · {kind==='sale'?'Sale':'Long-term lease'}</h2>
+      <h2 className="mt-8 font-display text-title font-semibold">{props.unitName} · {kind==='sale'?'Sale':'Long-term lease'}</h2>
       <p className="mt-8 text-small text-text-secondary">
         Agreement state: <strong>{deal?.status||'not created'}</strong> · CRM: {props.opportunityStage}.
         A completed sale never automatically changes title. A signed lease reserves physical inventory in the same shared calendar as stays.

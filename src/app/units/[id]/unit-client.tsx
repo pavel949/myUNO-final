@@ -280,7 +280,7 @@ export default function UnitDetailClient({
   }
 
   return (
-    <div className="stitch-workspace p-16 pb-96 md:p-32 lg:pb-32">
+    <div className="stitch-workspace p-16 pb-[160px] md:p-32 lg:pb-32">
       <div className="mx-auto max-w-content">
         <p className="mb-20 inline-flex rounded-full border border-border-line bg-surface-paper px-16 py-8 shadow-card">
           <Link
@@ -517,7 +517,7 @@ export default function UnitDetailClient({
         </div>
       </div>
       {breakdown && (
-        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-16 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 flex items-center justify-between gap-16 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur-xl lg:hidden">
           <MoneyAmount
             satang={Math.round((breakdown.total || 0) * 100)}
             className="text-title font-semibold"

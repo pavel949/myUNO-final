@@ -17,7 +17,7 @@ export default async function EditManagedUnitPage({
   searchParams?: { returnTo?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user) redirect('/login?next=/ops/units');
+  if (!user) redirect('/login?next=' + encodeURIComponent('/ops/units/' + params.unitId + '/edit'));
   const unit = await prisma.unit.findUnique({ where: { id: params.unitId }, select: {
     id: true, name: true, projectId: true, bedrooms: true, bathrooms: true, maxGuests: true,
     sizeSqm: true, floor: true, addressSupplement: true, inventoryCategoryId: true, status: true,

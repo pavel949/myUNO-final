@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { pmsNavigationHref } from '@/lib/pms-navigation';
 import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
@@ -9,7 +10,7 @@ import { formatDate } from '@/lib/date';
 import StayActions from '@/components/ops/StayActions';
 
 export const dynamic='force-dynamic';
-export default async function CanonicalStayPage({params}:{params:{bookingId:string}}){
+export default async function CanonicalStayPage({params,searchParams}:{params:{bookingId:string};searchParams?:{spaceId?:string}}){
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays/'+params.bookingId);
   const booking=await prisma.booking.findUnique({where:{id:params.bookingId},
@@ -81,7 +82,7 @@ export default async function CanonicalStayPage({params}:{params:{bookingId:stri
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-5xl space-y-24">
-      <Link href="/ops/stays" className="text-small font-semibold text-brand-andaman">
+      <Link href={pmsNavigationHref('/ops/stays', { spaceId: searchParams?.spaceId, projectId: booking.projectId })} className="text-small font-semibold text-brand-andaman">
         ← {labels['staff.stay_360.back']}
       </Link>
       <header className="stitch-panel p-24">

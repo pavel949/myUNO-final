@@ -40,6 +40,7 @@ export interface SearchResultsLabels {
   prompt: string;
   loading: string;
   errorGeneric: string;
+  retry: string;
   empty: string;
   emptyHint: string;
   perNight: string;
@@ -457,7 +458,8 @@ export default function SearchResults({
 
         {error && (
           <div className="bg-state-error/10 border border-state-error rounded-md p-16 mb-24">
-            <p className="text-body text-state-error">{error}</p>
+            <p className="text-body text-state-error" role="alert">{error}</p>
+            <button type="button" onClick={() => fetchPage(0)} disabled={loading} className="mt-16 min-h-48 rounded-md bg-brand-andaman px-24 font-semibold text-white disabled:opacity-50">{labels.retry}</button>
           </div>
         )}
 

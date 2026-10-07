@@ -172,7 +172,8 @@ export default function AvailabilityPricingPanel({
           className="flex flex-wrap gap-12 items-end"
           onSubmit={(event) => {
             event.preventDefault();
-            const form = new FormData(event.currentTarget as HTMLFormElement);
+            const formElement = event.currentTarget;
+            const form = new FormData(formElement);
             const startDate = String(form.get('startDate') || '');
             const endDate = String(form.get('endDate') || '');
             const reason = String(form.get('reason') || '') as ManualReason;
@@ -186,7 +187,7 @@ export default function AvailabilityPricingPanel({
                 note: note || undefined,
               })
             ).then((saved) => {
-              if (saved) (event.currentTarget as HTMLFormElement).reset();
+              if (saved) formElement.reset();
             });
           }}
         >
@@ -280,7 +281,8 @@ export default function AvailabilityPricingPanel({
           className="flex flex-wrap gap-12 items-end"
           onSubmit={(event) => {
             event.preventDefault();
-            const form = new FormData(event.currentTarget as HTMLFormElement);
+            const formElement = event.currentTarget;
+            const form = new FormData(formElement);
             const startDate = String(form.get('startDate') || '');
             const endDate = String(form.get('endDate') || '');
             const nightlyBaht = String(form.get('nightlyBaht') || '').trim();
@@ -296,8 +298,8 @@ export default function AvailabilityPricingPanel({
                 nightlyThb: Math.round(Number(nightlyBaht) * 100),
                 label: label || undefined,
               })
-            ).then(() => {
-              (event.currentTarget as HTMLFormElement).reset();
+            ).then((saved) => {
+              if (saved) formElement.reset();
             });
           }}
         >

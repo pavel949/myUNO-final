@@ -33,13 +33,29 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
   const [savedCount, setSavedCount] = useState(0);
 
   useEffect(() => {
-    fetch(`/api/admin/units/${unitId}/tariff`).then(r => r.json()).then(data => {
-      setDraft(data.draft); setCategoryUnits(data.categoryUnits ?? 1); setValidation(data.validation ?? null); setState('idle');
-    }).catch(() => setState('error'));
+    const controller = new AbortController();
+    setDraft(null);
+    setValidation(null);
+    setState('loading');
+    fetch(`/api/admin/units/${unitId}/tariff`, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Tariff load failed');
+        const data = await response.json();
+        if (!data?.draft || !Array.isArray(data.draft.daily) || !Array.isArray(data.draft.monthly)) {
+          throw new Error('Invalid tariff response');
+        }
+        return data;
+      })
+      .then(data => {
+        if (controller.signal.aborted) return;
+        setDraft(data.draft); setCategoryUnits(data.categoryUnits ?? 1); setValidation(data.validation ?? null); setState('idle');
+      })
+      .catch(() => { if (!controller.signal.aborted) setState('error'); });
+    return () => controller.abort();
   }, [unitId]);
 
   if (!draft) {
-    return <section className="stitch-panel mt-24 p-20"><p className="text-small text-text-secondary">{state === 'error' ? L('load_error') : L('loading')}</p></section>;
+    return <section className="stitch-panel mt-24 p-20"><p role={state === 'error' ? 'alert' : 'status'} className="text-small text-text-secondary">{state === 'error' ? L('load_error') : L('loading')}</p></section>;
   }
 
   const update = (next: Draft) => { setDraft(next); setState('idle'); };
@@ -48,12 +64,22 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
 
   async function save(scope: 'unit' | 'category') {
     setState('saving');
-    const res = await fetch(`/api/admin/units/${unitId}/tariff`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope }),
-    });
-    const data = await res.json().catch(() => null);
-    if (data?.validation) setValidation(data.validation);
-    if (res.ok) { setSavedCount(data.saved ?? 1); setState('saved'); } else setState('error');
+    setValidation(null);
+    try {
+      const res = await fetch(`/api/admin/units/${unitId}/tariff`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.validation) setValidation(data.validation);
+      if (!res.ok || !data || !Number.isInteger(data.saved) || data.saved < 1) {
+        setState('error');
+        return;
+      }
+      setSavedCount(data.saved);
+      setState('saved');
+    } catch {
+      setState('error');
+    }
   }
 
   const issueText = (e: Issue) => fill(L('error.' + e.code), { season: e.season ?? '', day: e.day ?? '', kind: L(e.kind) });

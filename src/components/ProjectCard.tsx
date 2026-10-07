@@ -23,6 +23,8 @@ export function ProjectCard({
   featured?: boolean;
 }) {
   const image = projectPresentationImage(project.id, project.coverUrl);
+  const viewLabel = labels.view || 'Explore';
+  const viewHasArrow = /→\s*$/.test(viewLabel);
 
   return (
     <Link
@@ -40,7 +42,7 @@ export function ProjectCard({
       />
 
       {image.illustrative ? (
-        <span className="absolute right-16 top-16 z-10 rounded-full bg-white/15 px-12 py-4 text-small font-semibold text-white backdrop-blur">
+        <span className="absolute right-16 top-16 z-10 rounded-full bg-brand-deep/90 px-12 py-4 text-small font-semibold text-white">
           {labels.noPhoto}
         </span>
       ) : null}
@@ -48,7 +50,7 @@ export function ProjectCard({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/5" />
 
       <div className="absolute inset-x-0 bottom-0 p-20 text-white md:p-24">
-        <p className="text-small text-white/70">
+        <p className="inline-flex rounded-full bg-brand-deep/90 px-12 py-4 text-small font-medium text-white">
           {[project.areaName, labels.homes.replace('{count}', String(project.liveUnitCount))]
             .filter(Boolean)
             .join(' · ')}
@@ -87,7 +89,7 @@ export function ProjectCard({
           )}
 
           <span className="shrink-0 rounded-full bg-brand-sun px-16 py-8 text-small font-semibold text-brand-deep transition-transform duration-structural group-hover:translate-x-4">
-            {labels.view || 'Explore'} →
+            {viewLabel}{viewHasArrow ? null : <span aria-hidden="true"> →</span>}
           </span>
         </div>
       </div>

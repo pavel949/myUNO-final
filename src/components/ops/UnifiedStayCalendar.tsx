@@ -1,5 +1,6 @@
 'use client';
 
+import { pmsNavigationHref } from '@/lib/pms-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -32,7 +33,7 @@ interface UnitRow {
 }
 interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
 type Props = {
-  mode?: 'staff' | 'mc'; organizationId?: string;
+  mode?: 'staff' | 'mc'; organizationId?: string; spaceId?: string;
   labels: Record<string, string>;
   today: string; start: string; days: string[]; daysCount: number;
   projects: { id: string; name: string }[];
@@ -84,6 +85,7 @@ export default function UnifiedStayCalendar(props: Props) {
   const q = (patch: Record<string,string|null>) => {
     const params = new URLSearchParams();
     for (const [key,value] of Object.entries({
+      spaceId: props.spaceId || '',
       mc:props.mode==='mc' ? '1' : '',
       projectId:props.projectId, organizationId:props.organizationId || '',
       categoryId:props.categoryId, unitId:props.unitId,
@@ -154,7 +156,7 @@ export default function UnifiedStayCalendar(props: Props) {
     <div className="mx-auto max-w-[1600px] space-y-24">
       <header className="stitch-panel flex flex-wrap items-start justify-between gap-16 p-24">
         <div className="space-y-8">
-          <Link href={props.mode==='mc' ? '/mc' : '/ops'} className="text-small font-semibold text-brand-andaman hover:underline">
+          <Link href={props.mode==='mc' ? '/mc' : pmsNavigationHref('/ops', props)} className="text-small font-semibold text-brand-andaman hover:underline">
             {props.labels['staff.unified_calendar.back']}
           </Link>
           <p className="stitch-kicker">
@@ -169,7 +171,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <span className="rounded-full border border-brand-andaman/20 bg-surface-mint px-12 py-4 text-small font-semibold text-brand-andaman">
             {props.labels['staff.unified_calendar.source']}
           </span>
-          {props.mode!=='mc' && <Link href="/ops/stays" className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
+          {props.mode!=='mc' && <Link href={pmsNavigationHref('/ops/stays', props)} className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {props.labels['staff.unified_calendar.work_queue']}
           </Link>}
           <button type="button" onClick={refresh} className="rounded-md border border-border-line bg-surface-paper px-16 py-8 text-small font-semibold text-text-ink hover:bg-surface-ivory">
@@ -394,7 +396,7 @@ export default function UnifiedStayCalendar(props: Props) {
               <span className="ml-8 text-text-secondary">{item.channel||item.status}</span>
               {item.kind === 'booking' ?
                 props.mode === 'mc' ? null :
-                <Link href={'/ops/stays/'+encodeURIComponent(id)} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
+                <Link href={'/ops/stays/'+encodeURIComponent(id)+(props.spaceId?'?'+new URLSearchParams({spaceId:props.spaceId}):'')} className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.open_stay']} →</Link> :
                 <Link href={props.mode==='mc'
                   ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
                       projectId: inspect.projectId,
@@ -406,7 +408,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       days: String(props.daysCount),
                       ...(inspect.categoryId ? { categoryId: inspect.categoryId } : {}),
                     }).toString()
-                  : '/ops/calendar/'+encodeURIComponent(inspect.id)}
+                  : '/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({ ...(props.spaceId ? { spaceId: props.spaceId } : {}), start: props.start, days: String(props.daysCount), ...(inspect.categoryId ? { categoryId: inspect.categoryId } : {}) })}
                   className="mt-8 block text-small font-semibold text-brand-andaman underline underline-offset-4">{props.labels['staff.unified_calendar.manage_block']} →</Link>}
             </li> : null;
           })}</ul>}
@@ -423,6 +425,7 @@ export default function UnifiedStayCalendar(props: Props) {
                 ...(inspect.categoryId ? { categoryId: inspect.categoryId } : {}),
               }).toString()
             : '/ops/calendar/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
+                ...(props.spaceId ? { spaceId: props.spaceId } : {}),
                 projectId: inspect.projectId,
                 categoryId: inspect.categoryId || '',
                 start: props.start,
@@ -433,6 +436,7 @@ export default function UnifiedStayCalendar(props: Props) {
           <Link
             href={'/ops/tasks?'+new URLSearchParams({
               unitId: inspect.id,
+              ...(props.spaceId ? { spaceId: props.spaceId } : {}),
               ...(props.mode==='mc' ? { mc:'1' } : {}),
             }).toString()}
             className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman"

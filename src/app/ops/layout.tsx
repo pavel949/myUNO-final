@@ -51,6 +51,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
       eyebrow={labels['staff.shell.eyebrow']}
       title={labels['staff.shell.title']}
       items={items}
+      preservePmsContext
     >
       {children}
     </StitchWorkspaceShell>

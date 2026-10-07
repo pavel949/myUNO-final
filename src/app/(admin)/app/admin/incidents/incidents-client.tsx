@@ -196,7 +196,7 @@ export default function AdminIncidentsClient({ labels }: { labels: Labels }) {
                     <td className="p-12 text-text-secondary">{typeLabel(incident.incidentType)}</td>
                     <td className="p-12">
                       <span
-                        className={`inline-block px-8 py-4 rounded-full text-caption ${severityStyle[incident.severity] || ''}`}
+                        className={`inline-block px-8 py-4 rounded-full text-small ${severityStyle[incident.severity] || ''}`}
                       >
                         {severityLabel(incident.severity)}
                       </span>
@@ -206,7 +206,7 @@ export default function AdminIncidentsClient({ labels }: { labels: Labels }) {
                     </td>
                     <td className="p-12">
                       <span
-                        className={`inline-block px-8 py-4 rounded-full text-caption ${statusStyle[incident.status] || ''}`}
+                        className={`inline-block px-8 py-4 rounded-full text-small ${statusStyle[incident.status] || ''}`}
                       >
                         {statusLabel(incident.status)}
                       </span>

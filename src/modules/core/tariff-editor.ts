@@ -207,7 +207,13 @@ export async function saveTariffDraft(
             const s = seasons.find(x => p.rate_mode === mode && p.season_code === x.seasonCode);
             if (!s) return p;
             const next: Row = { ...p, min_nights: s.minimumNights };
-            if (s.cancellationSteps) next.cancellation_steps = s.cancellationSteps;
+            if (s.cancellationSteps === null) {
+              // The editor's “Use standard policy” action explicitly removes
+              // the season refund override; undefined preserves existing terms.
+              delete next.cancellation_steps;
+            } else if (s.cancellationSteps) {
+              next.cancellation_steps = s.cancellationSteps;
+            }
             return next;
           })
           : null;

@@ -122,7 +122,7 @@ describe('one calendar surface with mode-specific safe actions', () => {
   it('retains staff canonical stay actions and unit editor', () => {
     render(<UnifiedStayCalendar {...props} mode="staff"/>);
     expect(screen.getByRole('link', { name: /Stay operations/ }).getAttribute('href'))
-      .toBe('/ops/stays');
+      .toBe('/ops/stays?projectId=project-a');
     fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
     expect(screen.getByRole('link', { name: /Open canonical stay/ }).getAttribute('href'))
       .toBe('/ops/stays/booking-a');
@@ -132,4 +132,18 @@ describe('one calendar surface with mode-specific safe actions', () => {
     expect(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href'))
       .toContain('/ops/tasks?unitId=unit-a');
   });
+  it('retains operating space through range, filters, stay and unit/task drilldowns', () => {
+    render(<UnifiedStayCalendar {...props} spaceId="resort-space" mode="staff" />);
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/ops/spaces/resort-space');
+    for (const name of [/Next/, /Previous/, /^Today$/, /30 days/, /Stay operations/]) {
+      expect(screen.getByRole('link', { name }).getAttribute('href')).toContain('spaceId=resort-space');
+    }
+    fireEvent.change(screen.getByLabelText('Category'), { target: { value: '' } });
+    expect(push.mock.calls.at(-1)?.[0]).toContain('spaceId=resort-space');
+    fireEvent.click(screen.getAllByRole('button', { name: /Villa A.*2026-09-29/ })[0]);
+    for (const name of [/Open canonical stay/, /Open home calendar/, /Housekeeping & readiness/]) {
+      expect(screen.getByRole('link', { name }).getAttribute('href')).toContain('spaceId=resort-space');
+    }
+  });
+
 });

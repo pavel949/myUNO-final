@@ -635,7 +635,7 @@ export function MCDashboardClient({
         <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
           <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
             <div className="flex gap-8 overflow-x-auto lg:flex-col">
-              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+              <p className="hidden px-12 pt-4 text-small font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.operate']}
               </p>
               <button
@@ -672,7 +672,7 @@ export function MCDashboardClient({
               </Link>
 
               <div className="hidden lg:block my-8 border-t border-border-line" />
-              <p className="hidden px-12 pt-4 text-caption font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
+              <p className="hidden px-12 pt-4 text-small font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
                 {labels['mc.workspace.manage']}
               </p>
               <button
@@ -748,7 +748,7 @@ export function MCDashboardClient({
                     [labels['mc.workspace.channel_issues'], icalConflicts.length],
                   ].map(([label, value]) => (
                     <div key={String(label)} className="stitch-panel p-12">
-                      <p className="text-caption text-text-secondary">{label}</p>
+                      <p className="text-small text-text-secondary">{label}</p>
                       <p className="mt-4 font-display text-heading-2 font-semibold tabular-nums text-text-ink">{value}</p>
                     </div>
                   ))}
@@ -988,7 +988,7 @@ export function MCDashboardClient({
                               {statusLabel(booking.status)}
                             </span>
                             {booking.status === 'requested' && booking.requestExpiresAt ? (
-                              <p className="text-caption text-state-warning mt-4">
+                              <p className="text-small text-state-warning mt-4">
                                 {labels['mc.bookings.request_expires']}:{' '}
                                 {new Date(booking.requestExpiresAt).toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                               </p>

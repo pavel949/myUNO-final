@@ -169,7 +169,7 @@ export default async function AdminCompliancePage({
             key={status}
             className="stitch-panel p-16 text-center"
           >
-            <p className="text-caption text-text-secondary mb-4">
+            <p className="text-small text-text-secondary mb-4">
               {tm30StatusLabel(status, labels)}
             </p>
             <p className="text-heading-3 font-bold text-text-ink tabular-nums">
@@ -196,16 +196,16 @@ export default async function AdminCompliancePage({
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border-line">
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['admin.compliance.tm30_guest']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['admin.compliance.tm30_unit']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8 pr-16">
+                  <th className="text-small font-semibold text-text-secondary pb-8 pr-16">
                     {labels['admin.compliance.tm30_due']}
                   </th>
-                  <th className="text-caption font-semibold text-text-secondary pb-8">
+                  <th className="text-small font-semibold text-text-secondary pb-8">
                     {labels['admin.compliance.tm30_status']}
                   </th>
                 </tr>
@@ -221,14 +221,14 @@ export default async function AdminCompliancePage({
                       <td className="text-body py-12 pr-16">{guestName}</td>
                       <td className="text-body py-12 pr-16">
                         {filing.unitName}
-                        <span className="text-caption text-text-secondary block">
+                        <span className="text-small text-text-secondary block">
                           {filing.projectName}
                         </span>
                       </td>
                       <td className="text-body py-12 pr-16 whitespace-nowrap">
                         {filing.dueAt.toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                         {filing.filedAt && (
-                          <span className="text-caption text-text-secondary block">
+                          <span className="text-small text-text-secondary block">
                             {labels['admin.compliance.tm30_filed']}:{' '}
                             {filing.filedAt.toLocaleString(UI_LOCALE, { timeZone: APP_TZ })}
                           </span>

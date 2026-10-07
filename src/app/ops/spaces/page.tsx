@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { pmsWorkspaceSelectionHref } from '@/lib/pms-navigation';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
@@ -7,7 +8,7 @@ import { listOperatingSpacesForIdentity } from '@/modules/ops';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OperatingSpacesPage() {
+export default async function OperatingSpacesPage({ searchParams }: { searchParams?: { view?: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/spaces');
 
@@ -81,7 +82,7 @@ export default async function OperatingSpacesPage() {
                   <p className="text-small text-text-secondary">{labels['staff.spaces.team']}</p>
                 </div>
               </div>
-              <Link href={'/ops/spaces/' + encodeURIComponent(space.id)}
+              <Link href={pmsWorkspaceSelectionHref(searchParams?.view || '', space.id)}
                 className="mt-20 inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
                 {labels['staff.spaces.open']}
               </Link>

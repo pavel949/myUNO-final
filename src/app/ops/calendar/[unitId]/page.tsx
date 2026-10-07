@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasProjectStaffAccess } from '@/app/libs/projectScope';
-import { opsHref } from '@/app/libs/opsProjectContext';
 import { UNIT_CALENDAR_LABEL_KEYS } from '@/app/libs/unitCalendarLabels';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 import UnitIntegrationHealthStrip from '@/components/units/UnitIntegrationHealthStrip';
@@ -14,7 +13,7 @@ import { getUnitIcalConflictAlerts, listIntegrationAccounts } from '@/modules/in
 
 export const dynamic = 'force-dynamic';
 
-export default async function OpsUnitCalendarPage({ params }: { params: { unitId: string } }) {
+export default async function OpsUnitCalendarPage({ params, searchParams }: { params: { unitId: string }; searchParams?: { spaceId?: string; start?: string; days?: string; categoryId?: string } }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/ops/calendar/${params.unitId}`);
@@ -37,6 +36,15 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
     notFound();
   }
 
+  const calendarQuery = new URLSearchParams({ projectId: unit.projectId });
+  for (const key of ['spaceId', 'start', 'days', 'categoryId'] as const) {
+    const value = searchParams?.[key];
+    if (typeof value === 'string' && value) calendarQuery.set(key, value);
+  }
+  const backHref = '/ops/calendar/board?' + calendarQuery.toString();
+  const unitQuery = new URLSearchParams(calendarQuery);
+  unitQuery.set('unitId', unit.id);
+
   const [labels, locale, integrationAccounts, conflictAlerts] = await Promise.all([
     getLabels({
       'staff.ops.calendar.back': '← Ops board',
@@ -54,7 +62,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
     <main className="stitch-workspace">
       <section className="max-w-4xl mx-auto px-24 py-32">
         <Link
-          href={opsHref('/ops/calendar', unit.projectId)}
+          href={backHref}
           className="text-small font-semibold text-brand-andaman hover:underline"
         >
           {labels['staff.ops.calendar.back']}
@@ -66,7 +74,7 @@ export default async function OpsUnitCalendarPage({ params }: { params: { unitId
           {unit.project.name} — {labels['staff.ops.calendar.subtitle']}
         </p>
         <div className="mt-16">
-          <Link href={'/ops/calendar/board?projectId='+unit.projectId+'&unitId='+unit.id} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
+          <Link href={'/ops/calendar/board?' + unitQuery.toString()} className="inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
             {labels['staff.ops.calendar.occupancy']}
           </Link>
         </div>

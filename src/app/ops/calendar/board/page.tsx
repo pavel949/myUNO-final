@@ -300,7 +300,7 @@ export default async function UnifiedStayCalendarPage({
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
-    mode={mcMode ? 'mc' : 'staff'} organizationId={organizationId}
+    mode={mcMode ? 'mc' : 'staff'} organizationId={organizationId} spaceId={requestedSpaceId || undefined}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}
     units={visibleUnits.map((unit) => ({

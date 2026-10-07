@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_SORTS } from '@/modules/browse';
 import SearchResults from './search-results';
-import DiscoveryHomes from '@/components/DiscoveryHomes';
+import DiscoveryHomes, { discoveryCopy } from '@/components/DiscoveryHomes';
 import { listPublicDiscoveryUnits } from '@/modules/projects/public-discovery';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,7 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
   const browse = hasDates ? [] : await listPublicDiscoveryUnits({ projectId: param('projectId'), areaSlug: param('areaSlug'), inventoryCategoryId: param('inventoryCategoryId'), bedrooms, unitTypes });
   const context = new URLSearchParams(Object.entries(searchParams).filter((entry): entry is [string, string] => typeof entry[1] === 'string')).toString();
   const locale = getRequestLocale();
+  const discovery = await discoveryCopy(locale);
   // Fetch all sort labels from the content layer (no fallbacks — labelKey must exist)
   const sortLabels = await getLabels(
     Object.fromEntries(UNIT_SORTS.map((sort) => [sort.labelKey, sort.key]))
@@ -79,6 +80,7 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
           prompt: labels['search.prompt'],
           loading: labels['search.loading'],
           errorGeneric: labels['search.error_generic'],
+          retry: discovery.retry,
           empty: labels['search.empty'],
           emptyHint: labels['search.empty_hint'],
           perNight: labels['search.per_night'],

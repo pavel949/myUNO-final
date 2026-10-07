@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { pmsNavigationHref } from '@/lib/pms-navigation';
 import type { ReactNode } from 'react';
 
 export interface StitchWorkspaceNavItem {
@@ -14,25 +15,31 @@ export function StitchWorkspaceShell({
   eyebrow,
   items,
   children,
+  preservePmsContext = false,
 }: {
   title: string;
   eyebrow?: string;
   items: StitchWorkspaceNavItem[];
   children: ReactNode;
+  preservePmsContext?: boolean;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const spaceId = searchParams.get('spaceId') || (pathname.startsWith('/ops/spaces/') ? decodeURIComponent(pathname.split('/')[3] || '') : '');
 
   const nav = (
     <nav className="space-y-4" aria-label={title}>
       {items.map((item) => {
-        const depth = item.href.split('/').filter(Boolean).length;
+        const itemPath = item.href.split('?')[0];
+        const href = preservePmsContext ? pmsNavigationHref(item.href, { spaceId, projectId: searchParams.get('projectId') || '' }) : item.href;
+        const depth = itemPath.split('/').filter(Boolean).length;
         const active =
-          pathname === item.href ||
-          (depth > 1 && pathname.startsWith(item.href + '/'));
+          pathname === itemPath ||
+          (depth > 1 && pathname.startsWith(itemPath + '/'));
         return (
           <Link
             key={item.href}
-            href={item.href}
+            href={href}
             aria-current={active ? 'page' : undefined}
             className={
               active

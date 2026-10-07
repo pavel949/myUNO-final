@@ -39,6 +39,26 @@ afterEach(() => {
  * InventoryCategory id the search API already returns.
  */
 describe('SearchResults — category booking uses the canonical id', () => {
+  it('retries a failed request without changing the search context', async () => {
+    let unitCalls = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('groupBy=category')) return { ok: true, json: async () => ({ categories: [] }) } as Response;
+      unitCalls++;
+      return unitCalls === 1
+        ? { ok: false, json: async () => ({}) } as Response
+        : { ok: true, json: async () => ({ units: [], mapProjects: [], total: 0 }) } as Response;
+    }));
+    const labels = new Proxy({}, { get: (_t, key) => String(key) });
+    render(<SearchResults labels={labels as never} sortOptions={[{ key: 'recommended', label: 'Recommended' }]} typeOptions={[]} />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }));
+    await waitFor(() => expect(unitCalls).toBe(2));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    const request = new URL(String(vi.mocked(fetch).mock.calls[1][0]), 'https://example.test');
+    expect(request.searchParams.get('inventoryCategoryId')).toBe('cat-uuid-1');
+    expect(request.searchParams.get('startDate')).toBe('2026-11-10');
+  });
+
   it('routes "book category" to the review page with inventoryCategoryId, not categoryKey', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const body = String(url).includes('groupBy=category')

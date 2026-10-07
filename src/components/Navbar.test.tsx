@@ -1,64 +1,78 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/owner',
+  usePathname: vi.fn(() => '/trips'),
 }));
 
 vi.mock('./NotificationBell', () => ({
   NotificationBell: () => <div data-testid="bell" />,
 }));
 
+const labels = {
+  stay: 'Stay',
+  monthly: 'Monthly',
+  buy: 'Buy',
+  homes: 'Homes',
+  sell: 'Sell',
+  rentOut: 'Rent Out',
+  manage: 'Manage',
+  explore: 'Explore',
+  areas: 'Areas',
+  projects: 'Projects',
+  services: 'Services',
+  owners: 'Owners',
+  partners: 'Partners',
+  about: 'About',
+  trust: 'Trust',
+  help: 'Help',
+  global: 'Global',
+  language: 'Language',
+  login: 'Log in',
+  register: 'Sign up',
+  logout: 'Log out',
+  myTrips: 'My trips',
+  saved: 'Saved',
+  addProperty: 'Add property',
+  developers: 'Developers',
+  buyers: 'Buyers',
+  management: 'Management',
+  messages: 'Messages',
+  tickets: 'My requests',
+  orders: 'My orders',
+  account: 'Account',
+  menu: 'Menu',
+  more: 'More',
+  myUno: 'My UNO',
+};
+
+function renderNavbar() {
+  return render(
+    <Navbar
+      user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
+      labels={labels}
+      roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
+      bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}
+      locale="en"
+      localeOptions={{ en: 'EN', ru: 'RU', th: 'TH', zh: 'ZH' }}
+    />
+  );
+}
+
 describe('Navbar', () => {
+  beforeEach(() => {
+    vi.mocked(usePathname).mockReturnValue('/trips');
+  });
+
   it('marks the current role surface in andaman', () => {
-    render(
-      <Navbar
-        user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
-        labels={{
-          stay: 'Stay',
-          monthly: 'Monthly',
-          buy: 'Buy',
-          homes: 'Homes',
-          sell: 'Sell',
-          rentOut: 'Rent Out',
-          manage: 'Manage',
-          explore: 'Explore',
-          areas: 'Areas',
-          projects: 'Projects',
-          services: 'Services',
-          owners: 'Owners',
-          partners: 'Partners',
-          about: 'About',
-          trust: 'Trust',
-          help: 'Help',
-          global: 'Global',
-          language: 'Language',
-          login: 'Log in',
-          register: 'Sign up',
-          logout: 'Log out',
-          myTrips: 'My trips',
-          saved: 'Saved', addProperty: 'Add property',
-          developers: 'Developers', buyers: 'Buyers', management: 'Management',
-          messages: 'Messages',
-          tickets: 'My requests',
-          orders: 'My orders',
-          account: 'Account',
-          menu: 'Menu',
-          more: 'More',
-          myUno: 'My UNO',
-        }}
-        roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
-        bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}
-        locale="en"
-        localeOptions={{ en: 'EN', ru: 'RU', th: 'TH', zh: 'ZH' }}
-      />
-    );
-    const owner = screen.getAllByRole('link', { name: 'Owner dashboard' })[0];
-    expect(owner).toHaveClass('text-brand-andaman');
-    expect(owner).toHaveClass('font-semibold');
+    renderNavbar();
     const trips = screen.getAllByRole('link', { name: 'My trips' })[0];
-    expect(trips).not.toHaveClass('font-semibold');
+    expect(trips).toHaveClass('text-brand-andaman');
+    expect(trips).toHaveClass('font-semibold');
+    const owner = screen.getAllByRole('link', { name: 'Owner dashboard' })[0];
+    expect(owner).not.toHaveClass('font-semibold');
     const menu = screen.getByRole('button', { name: 'Menu' });
     expect(menu.parentElement).toHaveClass('xl:hidden');
     fireEvent.click(menu);
@@ -67,5 +81,14 @@ describe('Navbar', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(menu).toHaveAttribute('aria-expanded', 'false');
     expect(menu).toHaveFocus();
+  });
+
+  it('collapses discovery chrome on owner workspace', () => {
+    vi.mocked(usePathname).mockReturnValue('/owner');
+    renderNavbar();
+    expect(screen.queryByRole('button', { name: 'Menu' })).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'My UNO' })).toBeInTheDocument();
+    const owner = screen.getAllByRole('link', { name: 'Owner dashboard' })[0];
+    expect(owner).toHaveClass('stitch-list-row');
   });
 });

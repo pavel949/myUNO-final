@@ -109,7 +109,7 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
     expect(health).not.toContain('Run now');
     expect(composer).toContain('onClick={() => setAudience(value)}');
     expect(composer).not.toContain('<option key={value} value={value}>');
-    expect(apply).toContain('text-display-sm');
+    expect(apply).toContain('text-title');
     expect(onboarding).toContain('doneCount');
     expect(onboarding).toContain('bg-brand-andaman');
   });

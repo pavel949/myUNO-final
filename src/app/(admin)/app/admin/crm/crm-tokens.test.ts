@@ -20,7 +20,7 @@ describe('CRM / admin / partner tokens (Claude Design boards 10–12)', () => {
   it('keeps admin nav hrefs in the layout file', () => {
     expect(layout).toContain("href: '/app/admin/crm'");
     expect(layout).toContain('bg-surface-mint');
-    expect(layout).toContain('bg-brand-deep');
+    expect(layout).toContain('bg-console-deep');
   });
 
   it('does not invent pipeline stages or emoji column names', () => {

@@ -90,7 +90,7 @@ export default function ManualReservationForm({
       <button disabled={busy} className="rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
         {busy?labels['reservations.creating']:labels['reservations.create_action']}
       </button>
-      {error?<span role="alert" className="text-small text-red-700">{error}</span>:null}
+      {error?<span role="alert" className="text-small text-state-error">{error}</span>:null}
     </div>
   </form>;
 }

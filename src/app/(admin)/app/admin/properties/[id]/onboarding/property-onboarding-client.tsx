@@ -51,9 +51,9 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   return <StepContext.Provider value={activeStep}><main className="max-w-6xl pb-48">
     <div className="flex flex-wrap items-start justify-between gap-16 mb-24"><div><p className="text-kicker text-brand-andaman">Set up your property</p><h1 className="font-display text-display-xl font-semibold">{initialProject.name}</h1></div><span className={`rounded-full px-12 py-8 text-small ${initialReadiness.readyForActivation ? 'bg-state-success-soft text-state-success' : 'bg-state-warning-soft text-state-warning'}`}>{initialReadiness.score}% ready</span></div>
     <nav aria-label="Onboarding progress" className="flex gap-8 overflow-x-auto mb-24">{steps.map((step, index) => <button key={step} type="button" onClick={() => setActiveStep(index + 1)} aria-current={activeStep === index + 1 ? 'step' : undefined} className={`shrink-0 rounded-full border px-12 py-8 text-small ${activeStep === index + 1 ? 'border-brand-andaman bg-brand-andaman text-white' : 'border-border-line'}`}>{index + 1}. {step}</button>)}</nav>
-    <div className="mb-24 h-8 overflow-hidden rounded-full bg-surface-muted"><div className="h-full bg-brand-andaman transition-all" style={{width: `${activeStep / steps.length * 100}%`}} /></div>
+    <div className="mb-24 h-8 overflow-hidden rounded-full bg-surface-subtle"><div className="h-full bg-brand-andaman transition-all" style={{width: `${activeStep / steps.length * 100}%`}} /></div>
     <p className="mb-20 text-small text-text-secondary">Step {activeStep} of {steps.length}. Complete this step, then continue. Your changes are saved to the existing property record.</p>
-    {message ? <p role="status" className="mb-16 rounded-md bg-surface-muted p-12">{message}</p> : null}
+    {message ? <p role="status" className="mb-16 rounded-md bg-surface-subtle p-12">{message}</p> : null}
 
     <Section id="step-1" title="1. Project and area"><p>Canonical area and location are set on the project record. Use Project 360 for detailed physical facts.</p><div className="mt-12 flex gap-12"><Link className="text-brand-andaman underline" href={`/app/admin/projects/${initialProject.id}`}>Open Project 360</Link><Link className="text-brand-andaman underline" href="/app/admin/areas">Manage areas</Link><Link className="text-brand-andaman underline" href={'/app/admin/projects/'+initialProject.id+'/structure'}>Buildings, wings & floors</Link></div></Section>
 
@@ -92,7 +92,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
     <Section id="step-4" title="4. Compliance, mobilization and sleeping arrangements"><p>Permitted-use evidence, all seven mobilization steps and a bed-level sleeping layout are activation blockers.</p><SleepingForm units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
     <Section id="step-5" title="5. Stay offering"><p className="mb-12">Enable a short-stay commercial offering for each home. The physical home is not the commercial offering; keep its facts on Project / Category / Unit.</p><StayOfferingForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-6" title="6. Pricing and rate plans">
-      <p className="rounded-md bg-surface-muted p-12 mb-16">The category base nightly rate is the master amount. BAR is the canonical rate plan; a unit-level dated rule is an explicit exception.</p>
+      <p className="rounded-md bg-surface-subtle p-12 mb-16">The category base nightly rate is the master amount. BAR is the canonical rate plan; a unit-level dated rule is an explicit exception.</p>
       <form className="flex flex-wrap items-end gap-8" onSubmit={form(async d => {
         await submit(`/api/admin/projects/${initialProject.id}/catalog`, {
           action: 'rate_plan', categoryId: d.get('category'),

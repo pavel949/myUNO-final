@@ -73,7 +73,7 @@ export const ActiveOrdersList = React.forwardRef<HTMLDivElement, ActiveOrdersLis
 
     if (!orders || orders.length === 0) {
       return (
-        <div ref={ref} className="text-center py-32 bg-surface-paper-soft rounded-md">
+        <div ref={ref} className="text-center py-32 bg-surface-subtle rounded-md">
           <p className="text-body text-text-secondary">No active orders</p>
         </div>
       );

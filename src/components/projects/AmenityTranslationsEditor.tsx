@@ -75,7 +75,7 @@ export default function AmenityTranslationsEditor({
         {LOCALES.map(l => <button key={l} type="button" onClick={()=>setLocale(l)} className={`rounded-md px-12 py-8 text-small font-semibold uppercase ${locale===l ? 'bg-brand-andaman text-white' : 'text-text-secondary'}`}>{l}</button>)}
       </div>
     </div>
-    {message ? <p role="status" className="mt-12 rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
+    {message ? <p role="status" className="mt-12 rounded-md bg-surface-subtle p-12 text-small">{message}</p> : null}
     <div className="mt-16 space-y-12">
       {rows.map(row => {
         const id = `${row.field}::${locale}`;

@@ -77,7 +77,7 @@ export default function OperationalTaskQueueClient({
   }
 
   return <div className="space-y-12">
-    {error && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-12 text-small text-red-900">{error}</div>}
+    {error && <div role="alert" className="rounded-md border border-state-error/40 bg-state-error-soft p-12 text-small text-state-error">{error}</div>}
     {tasks.map((task) => {
       const isInspection = task.taskType === 'turnover_inspection';
       return <article key={task.id} id={`task-${task.id}`} className="stitch-panel scroll-mt-24 p-16">

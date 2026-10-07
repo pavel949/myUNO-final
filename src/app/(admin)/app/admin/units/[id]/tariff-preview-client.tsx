@@ -57,7 +57,7 @@ export default function TariffPreviewClient({
       <button type="submit" disabled={busy}
         className="self-end rounded-md bg-brand-deep text-white px-16 py-12 disabled:opacity-50">{labels.preview}</button>
     </form>
-    {result?.error && <p role="alert" className="mt-12 text-state-danger">{result.error}</p>}
+    {result?.error && <p role="alert" className="mt-12 text-state-error">{result.error}</p>}
     {result && !result.error && <div role="status" className="mt-16 space-y-8 text-small">
       <p>{labels.total}: <strong>{money(result.subtotalSatang ??
         result.illustrativeTwelveMonthSatang ?? 0)}</strong></p>

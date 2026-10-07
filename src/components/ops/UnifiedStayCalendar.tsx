@@ -51,16 +51,16 @@ type Props = {
 };
 const stateClass: Record<CalendarState, string> = {
   free: 'bg-surface-mint hover:bg-brand-andaman/10 text-brand-andaman',
-  request: 'bg-sky-50 hover:bg-sky-100 text-sky-800',
+  request: 'bg-state-info-soft hover:bg-state-info/15 text-state-info',
   hold: 'bg-brand-sun/25 hover:bg-brand-sun/40 text-brand-deep',
   confirmed: 'bg-brand-andaman hover:bg-brand-andaman/90 text-white',
   in_house: 'bg-brand-deep hover:bg-brand-deep/90 text-white',
   past: 'bg-surface-sand text-text-secondary',
-  owner: 'bg-violet-100 hover:bg-violet-200 text-violet-900',
-  maintenance: 'bg-orange-100 hover:bg-orange-200 text-orange-900',
+  owner: 'bg-surface-ivory hover:bg-surface-sand text-text-ink ring-1 ring-inset ring-border-line',
+  maintenance: 'bg-state-warning-soft hover:bg-state-warning/20 text-text-ink',
   external: 'bg-brand-sun hover:bg-brand-sun/90 text-brand-deep',
-  blocked: 'bg-slate-200 hover:bg-slate-300 text-slate-800',
-  conflict: 'bg-red-600 hover:bg-red-700 text-white',
+  blocked: 'bg-surface-sand hover:bg-border-line text-text-secondary',
+  conflict: 'bg-state-error hover:bg-state-error/90 text-white',
 };
 const stateLabel: Record<CalendarState, string> = {
   free:'Available', request:'Request only', hold:'Hold', confirmed:'Reserved',
@@ -187,10 +187,10 @@ export default function UnifiedStayCalendar(props: Props) {
           <p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{value}</p>
         </div>)}
       </section>
-      {conflicts>0 && <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-16 text-red-900">
+      {conflicts>0 && <div role="alert" className="rounded-md border border-state-error/40 bg-state-error-soft p-16 text-state-error">
         {conflicts} {props.labels['staff.unified_calendar.conflict_warning']}
       </div>}
-      {channelAttention>0 && <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-16 text-amber-950">
+      {channelAttention>0 && <div role="alert" className="rounded-md border border-state-warning/40 bg-state-warning-soft p-16 text-text-ink">
         {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
       <section aria-label="Calendar filters" className="stitch-panel p-16 md:p-24">
@@ -287,7 +287,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   </span>
                 </span>
                 <span className="text-right">
-                  <span className={'block shrink-0 rounded-md px-12 py-8 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                  <span className={'block shrink-0 rounded-md px-12 py-8 text-[11px] font-semibold '+(!unit.sellable&&cell.state==='free'?'bg-surface-sand text-text-secondary':stateClass[cell.state])}>
                     {state}
                   </span>
                   <span className="mt-4 block text-[10px] font-semibold text-text-secondary">
@@ -320,7 +320,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       {props.labels['staff.unified_calendar.readiness']}: {props.labels['staff.unified_calendar.'+unit.readiness] || unit.readiness}
                       {' · '}{props.labels['staff.unified_calendar.channel_health']}: {(props.labels['staff.unified_calendar.channel_state.'+unit.channelState] ?? unit.channelState.replace(/_/g,' '))}
                     </span>
-                    {!unit.sellable && <span className="block text-[10px] font-semibold text-amber-900">{props.labels['staff.unified_calendar.not_sellable']}</span>}
+                    {!unit.sellable && <span className="block text-[10px] font-semibold text-state-warning">{props.labels['staff.unified_calendar.not_sellable']}</span>}
                   </th>
                   {(props.cells[unit.id]||[]).map((cell,index)=>{
                     const day=props.days[index];
@@ -336,7 +336,7 @@ export default function UnifiedStayCalendar(props: Props) {
                         aria-label={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
                         title={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
                         onClick={()=>setSelected({unitId:unit.id,date:day,cell})}
-                        className={'h-48 w-full rounded-md text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-slate-100 text-slate-500':stateClass[cell.state])}>
+                        className={'h-48 w-full rounded-md text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-surface-sand text-text-secondary':stateClass[cell.state])}>
                         <span className="block">{!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}</span>
                         <span className="block text-[9px] font-medium font-tabular opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}</span>
                       </button>
@@ -378,7 +378,7 @@ export default function UnifiedStayCalendar(props: Props) {
                   ฿{Math.round(props.rates[inspect.id].byDate[selected.date].nightlyThb/100).toLocaleString(UI_LOCALE)}
                   {' · '}{props.rates[inspect.id].byDate[selected.date].source}
                 </span>
-              : <span className="font-semibold text-amber-900">{props.rates[inspect.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']}</span>}
+              : <span className="font-semibold text-state-warning">{props.rates[inspect.id]?.error || props.labels['staff.unified_calendar.rate_unavailable']}</span>}
           </div>
         </div>
         {inspect.channelRows.length>0 && <div className="mb-12 space-y-4">

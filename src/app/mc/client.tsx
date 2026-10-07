@@ -631,95 +631,43 @@ export function MCDashboardClient({
         </div>
       </section>
 
-      <div className="max-w-[1600px] mx-auto lg:grid lg:grid-cols-[228px_minmax(0,1fr)]">
-        <aside className="border-b lg:border-b-0 lg:border-r border-border-line bg-surface-paper lg:min-h-[calc(100vh-110px)]">
-          <nav aria-label={labels['mc.portal.title']} className="p-12 lg:p-16">
-            <div className="flex gap-8 overflow-x-auto lg:flex-col">
-              <p className="hidden px-12 pt-4 text-small font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
-                {labels['mc.workspace.operate']}
-              </p>
+      <div className="mx-auto max-w-[1600px]">
+        <nav aria-label={labels['mc.portal.title']} className="border-b border-border-line bg-surface-paper px-16 py-12 lg:px-24">
+          <div className="flex gap-8 overflow-x-auto pb-4">
+            {([
+              ['overview', 'mc.workspace.today'],
+              ['bookings', 'mc.workspace.reservations'],
+              ['service_orders', 'mc.workspace.services'],
+              ['tickets', 'mc.workspace.issues'],
+              ['reports', 'mc.workspace.revenue_finance'],
+            ] as const).map(([tab, key]) => (
               <button
+                key={tab}
                 type="button"
-                onClick={() => setActiveTab('overview')}
-                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'overview' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
+                aria-pressed={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+                className={`min-h-44 shrink-0 rounded-md px-16 py-8 text-small font-semibold transition ${activeTab === tab ? 'bg-brand-andaman text-white' : 'bg-surface-sand text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
               >
-                {labels['mc.workspace.today']}
+                {labels[key]}
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('bookings')}
-                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold transition ${activeTab === 'bookings' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
-              >
-                {labels['mc.workspace.reservations']}
-              </button>
-              <Link
-                href={`/mc/calendar?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
-              >
-                {labels['mc.tabs.calendar']}
-              </Link>
-              <Link
-                href={`/mc/tm30?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`}
-                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
-              >
-                {labels['mc.workspace.guests']}
-              </Link>
-              <Link
-                href="/ops/tasks?mc=1"
-                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-semibold text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
-              >
-                {labels['mc.workspace.tasks']}
-              </Link>
-
-              <div className="hidden lg:block my-8 border-t border-border-line" />
-              <p className="hidden px-12 pt-4 text-small font-semibold uppercase tracking-[0.12em] text-text-secondary lg:block">
-                {labels['mc.workspace.manage']}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('overview');
-                  window.requestAnimationFrame(() => {
-                    document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  });
-                }}
-                className="whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink"
-              >
-                {labels['mc.workspace.portfolio']}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('service_orders')}
-                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'service_orders' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
-              >
-                {labels['mc.workspace.services']}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('tickets')}
-                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'tickets' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
-              >
-                {labels['mc.workspace.issues']}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('reports')}
-                className={`whitespace-nowrap rounded-md px-12 py-8 text-left text-small font-medium transition ${activeTab === 'reports' ? 'bg-brand-andaman-soft text-brand-andaman' : 'text-text-secondary hover:bg-surface-ivory hover:text-text-ink'}`}
-              >
-                {labels['mc.workspace.revenue_finance']}
-              </button>
-              <Link href={`/mc/mobilization?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.nav.mobilization']}
-              </Link>
-              <Link href={`/mc/costs?projectId=${encodeURIComponent(activeContext?.projectId || '')}&organizationId=${encodeURIComponent(activeContext?.organizationId || '')}`} className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.costs']}
-              </Link>
-              <Link href="/announcements" className="hidden lg:block rounded-md px-12 py-8 text-small font-medium text-text-secondary hover:bg-surface-ivory hover:text-text-ink">
-                {labels['mc.workspace.announcements']}
-              </Link>
-            </div>
-          </nav>
-        </aside>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('overview');
+                window.requestAnimationFrame(() => {
+                  document.getElementById('managed-properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+              }}
+              className="min-h-44 shrink-0 rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman hover:bg-surface-ivory"
+            >
+              {labels['mc.workspace.portfolio']}
+            </button>
+            <Link href="/announcements" className="inline-flex min-h-44 shrink-0 items-center rounded-md px-16 text-small font-semibold text-brand-andaman hover:bg-surface-ivory">
+              {labels['mc.workspace.announcements']}
+            </Link>
+          </div>
+        </nav>
 
         <div className="min-w-0">
           {icalConflicts.length > 0 && (
@@ -784,7 +732,7 @@ export function MCDashboardClient({
                         className="rounded-md bg-surface-ivory p-16 text-left transition hover:ring-1 hover:ring-brand-andaman"
                       >
                         <p className="text-small font-semibold text-text-ink">{label}</p>
-                        <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{value}</p>
+                        <p className="mt-4 font-display text-display-xl font-semibold tabular-nums text-brand-andaman">{value}</p>
                         <p className="mt-8 text-small text-text-secondary">{hint}</p>
                       </button>
                     ))}
@@ -843,7 +791,7 @@ export function MCDashboardClient({
                   ].map(([label, count, status]) => (
                     <div key={String(label)} className="rounded-md bg-surface-ivory p-16">
                       <p className="text-small font-semibold text-text-ink">{label}</p>
-                      <p className="mt-4 font-display text-display-lg font-semibold tabular-nums text-brand-andaman">{count}</p>
+                      <p className="mt-4 font-display text-display-xl font-semibold tabular-nums text-brand-andaman">{count}</p>
                       <p className="mt-8 text-small text-text-secondary">{status}</p>
                     </div>
                   ))}

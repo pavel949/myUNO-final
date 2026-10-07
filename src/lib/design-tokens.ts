@@ -26,6 +26,13 @@ export const COLOR = {
     mint: '#EFFCF9',
     ivory: '#FBF9F5',
     paper: '#FFFFFF',
+    subtle: '#E9F5F2',
+  },
+  console: {
+    deep: '#081713',
+    card: '#0F241E',
+    hover: '#18382F',
+    border: '#1D4237',
   },
   text: {
     ink: '#1C2826',
@@ -96,7 +103,9 @@ export const tailwindColors = {
     background: COLOR.surface.ivory,
     sand: COLOR.surface.sand,
     mint: COLOR.surface.mint,
+    subtle: COLOR.surface.subtle,
   },
+  console: COLOR.console,
   text: {
     ink: COLOR.text.ink,
     stone: COLOR.text.stone,

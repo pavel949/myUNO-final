@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -11,6 +12,7 @@ import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
 import { formatServicePriceLabel } from './price-label';
 import { getDestination } from '@/modules/destinations';
+import { servicePresentationImage } from '@/lib/presentation-media';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +76,7 @@ export default async function ServiceDetailPage({
   ]).catch(() => null);
 
   const labels = await getLabels({
+    'landing.services.no_photo': 'Illustrative image',
     'services.breadcrumb_home': 'Home',
     'services.breadcrumb_services': 'Services',
     'services.breadcrumb_detail': 'Service Details',
@@ -144,49 +147,46 @@ export default async function ServiceDetailPage({
     { label: labels['services.breadcrumb_services'], href: '/services' },
     { label: labels['services.breadcrumb_detail'], current: true },
   ];
+  const presentation = servicePresentationImage(service.id, service.coverUrl, service.categoryKey);
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
+    <main className="stitch-workspace">
       <Breadcrumb items={breadcrumbs} />
-      <div className="p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
+      <div className="stitch-page">
+      <div className="grid min-w-0 gap-24 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div className="min-w-0 space-y-24">
         {/* Cover image */}
-        {service.coverUrl && (
-          <div className="mb-24 rounded-lg overflow-hidden bg-surface-paper">
+          <figure className="relative mb-24 rounded-lg overflow-hidden bg-surface-paper">
             <Image
-              src={service.coverUrl}
-              alt={service.title}
+              src={presentation.src}
+              alt={presentation.illustrative ? '' : service.title}
               width={640}
               height={384}
               priority
-              className="w-full h-64 md:h-96 object-cover"
+              className="aspect-[4/3] w-full object-cover"
             />
-          </div>
-        )}
+            {presentation.illustrative ? <figcaption className="absolute bottom-12 left-12 rounded-full bg-brand-deep/90 px-12 py-4 text-small text-white">{labels['landing.services.no_photo']}</figcaption> : null}
+          </figure>
 
         {/* Title & provider */}
-        <div className="mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{service.title}</h1>
-          <div className="flex items-center gap-8 text-body text-text-secondary mb-16">
+        <PageHeading title={service.title} subtitle={service.description || undefined}>
+          <div className="mt-12 flex flex-wrap items-center gap-8 text-body text-text-secondary">
             <span>
               {labels['services.detail.by_provider'].replace('{provider}', service.provider.name)}
             </span>
             {service.provider.vetted && (
-              <span className="inline-flex items-center gap-4 px-8 py-4 bg-status-good bg-opacity-10 text-status-good rounded-full text-small font-semibold">
+              <span className="inline-flex items-center gap-4 px-8 py-4 bg-state-success-soft bg-opacity-10 text-state-success rounded-full text-small font-semibold">
                 ✓ {labels['services.detail.vetted_badge']}
               </span>
             )}
           </div>
-          {service.description && (
-            <p className="text-body text-text-secondary">{service.description}</p>
-          )}
-        </div>
+        </PageHeading>
 
         {/* Key details grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-24 mb-24">
-          <div className="stitch-panel p-24">
+        <div className="stitch-panel grid grid-cols-1 gap-16 p-20 sm:grid-cols-3">
+          <div className="min-w-0">
             <p className="text-small text-text-secondary mb-8">{labels['services.detail.price_model']}</p>
-            <p className="text-heading-3 font-semibold text-text-ink">
+            <p className="font-display text-subtitle font-semibold text-text-ink">
               {priceModelLabel[service.priceModel] || service.priceModel}
             </p>
             {service.basePriceThb !== null && (
@@ -200,19 +200,19 @@ export default async function ServiceDetailPage({
           </div>
 
           {service.durationMin !== null && (
-            <div className="stitch-panel p-24">
+            <div className="min-w-0">
               <p className="text-small text-text-secondary mb-8">{labels['services.detail.duration']}</p>
-              <p className="text-heading-3 font-semibold text-text-ink">
+              <p className="font-display text-subtitle font-semibold text-text-ink">
                 {labels['services.detail.duration_hours'].replace('{minutes}', String(service.durationMin))}
               </p>
             </div>
           )}
 
-          <div className="stitch-panel p-24">
+          <div className="min-w-0">
             <p className="text-small text-text-secondary mb-8">
               {labels['services.detail.advance_notice']}
             </p>
-            <p className="text-heading-3 font-semibold text-text-ink">
+            <p className="font-display text-subtitle font-semibold text-text-ink">
               {service.advanceNoticeHours > 0
                 ? labels['services.detail.advance_notice_hours'].replace('{hours}', String(service.advanceNoticeHours))
                 : labels['services.detail.advance_notice_none']}
@@ -222,18 +222,15 @@ export default async function ServiceDetailPage({
 
         {/* Provider details */}
         {service.provider.description && (
-          <div className="stitch-panel p-24 mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">
-              {labels['services.detail.about_provider']}
-            </h2>
+          <Panel title={labels['services.detail.about_provider']}>
             <p className="text-body text-text-secondary">{service.provider.description}</p>
-          </div>
+          </Panel>
         )}
 
         {/* Gallery */}
         {service.mediaUrls.length > 0 && (
           <div className="mb-24">
-            <h2 className="text-heading-2 font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
+            <h2 className="font-display text-title font-semibold text-text-ink mb-12">{labels['services.detail.photos']}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12 rounded-lg overflow-hidden">
               {service.mediaUrls.map((url, idx) => (
                 <Image
@@ -249,8 +246,9 @@ export default async function ServiceDetailPage({
           </div>
         )}
 
-        {/* SA-2: the ordering surface — refine → place → pay → confirm */}
-        <div className="mt-32">
+      </div>
+        {/* SA-2: same canonical ordering surface in a contextual rail. */}
+        <aside className="min-w-0 lg:sticky lg:top-96">
           <OrderWizard
             service={{
               id: service.id,
@@ -276,7 +274,7 @@ export default async function ServiceDetailPage({
               ← {labels['services.detail.back']}
             </Link>
           </div>
-        </div>
+        </aside>
       </div>
       </div>
     </main>

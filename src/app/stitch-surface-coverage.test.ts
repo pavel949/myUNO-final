@@ -8,12 +8,14 @@ describe('Stitch system-wide surface coverage', () => {
   it('keeps every operational workspace on the shared Stitch shell', () => {
     for (const path of [
       'src/app/ops/layout.tsx',
-      'src/app/mc/layout.tsx',
       'src/app/owner/layout.tsx',
       'src/app/provider/layout.tsx',
     ]) {
       expect(source(path)).toContain('StitchWorkspaceShell');
     }
+    expect(source('src/app/mc/layout.tsx')).toContain('McWorkspaceShell');
+    expect(source('src/components/stitch/McWorkspaceShell.tsx')).toContain('StitchWorkspaceShell');
+    expect(source('src/app/admin/layout.tsx')).toContain("@/app/(admin)/app/admin/layout");
     expect(source('src/app/(admin)/app/admin/layout.tsx')).toContain('stitch-workspace');
     expect(source('src/app/(admin)/app/admin/layout.tsx')).toContain('stitch-admin-content');
     expect(source('src/app/ops/layout.tsx')).toContain('getDepartmentProjectIds');

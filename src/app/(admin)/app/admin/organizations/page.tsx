@@ -99,7 +99,7 @@ export default async function AdminOrganizationsPage() {
                       {developer.projectRoles.length} {labels['admin.organizations.developer360_projects']}
                     </p>
                   </div>
-                  <span className="text-small px-8 py-8 rounded-full bg-brand-sand text-text-ink">
+                  <span className="text-small px-8 py-8 rounded-full bg-surface-sand text-text-ink">
                     {developer.developerVerification || 'unverified'}
                   </span>
                 </div>

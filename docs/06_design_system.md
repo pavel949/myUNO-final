@@ -6,6 +6,12 @@ Personality to preserve in every screen: *warm but trustworthy, personal but ins
 
 ---
 
+## Adopted Stitch reconciliation (October 2026)
+
+The current implementation values are `src/lib/design-tokens.ts` and `tailwind.config.ts`, reconciled with `docs/design/stitch/specs/tailwind-theme-tokens.md` v2.4. Historical token tables below do not override those files. Current brand is Andaman `#11382E`, deep `#0B2C24`, brass `#D19A5B`; public/workspace canvas mint `#EFFCF9`, ivory `#FBF9F5`, paper white, subtle mint `#E9F5F2`. Console navigation uses its own dark green tokens. Controls use 8px corners, cards 16px. Public hero type is 36/44 mobile and 56/64 desktop; page headings 32/40, workspace headings 40/48. Numeric Outfit is separate from locale display so Russian financial figures retain geometric numerals; body and controls use Manrope. Letter spacing uses valid `em`, never percentage CSS.
+
+Shared-shell adoption is not proof that every child composition matches the reference. `docs/stitch-fidelity-audit.md` records concrete corrections, source evidence and remaining runtime verification boundaries.
+
 ## 1. UX principles (the constitution's five, made operational)
 
 1. **Mobile-first.** Every screen is designed at 390px first and enhanced upward (breakpoints §2.6). Owners check from phones in Moscow; guests live on phones in villas. Desktop is the enhancement, not the target.
@@ -49,7 +55,7 @@ Rules: text on ivory/paper uses ink/stone only; `brand.sun` is never body-text c
 
 ### 2.2 Typography
 
-Display is locale-aware: **Outfit** for Latin-script EN, **Manrope 600** for Cyrillic RU, and **Noto Sans Thai 600** for TH; body is **Manrope** with Noto Sans Thai fallback. This avoids mixed fallback glyphs inside one heading. All fonts use `display: swap`. The files are self-hosted (`@fontsource-variable/*`) so `next build` does not fetch Google Fonts — that compile-time fetch is what broke GitHub `ci` on `main` after #167.
+Display is locale-aware: **Outfit** for Latin-script EN, **Source Serif 4** for Cyrillic editorial RU headings (the adopted Stitch references), and **Noto Sans Thai** for TH; body is **Manrope** with Noto Sans Thai fallback. This avoids mixed fallback glyphs inside one heading. All fonts use `display: swap`. The files are self-hosted (`@fontsource-variable/*`) so `next build` does not fetch Google Fonts — that compile-time fetch is what broke GitHub `ci` on `main` after #167.
 
 | Token | Spec | Use |
 |---|---|---|
@@ -68,7 +74,7 @@ Display is locale-aware: **Outfit** for Latin-script EN, **Manrope 600** for Cyr
 
 - **Spacing scale:** 4-based — `4, 8, 12, 16, 20, 24, 32, 40, 56, 80`, plus the component sizes `44` (touch target), `48` (md button), `64` and `96` (media/avatars), and `0`/`px` (1px hairlines). Screen gutter: 16 (mobile) / 24 (desktop). Card padding: 16–24.
   - **Enforced, not advisory (2026-09-30):** the scale is defined at Tailwind's theme level (not `extend`), so any other numeric spacing class generates no CSS; `src/lib/spacing-scale.test.ts` fails on any off-scale class in source. The scale previously sat under `extend`, so off-scale classes silently fell back to Tailwind's rem defaults (`py-10` rendered 40px, not the intended 10px) — ~190 usages across 78 files were rewritten to the nearest on-scale token. A genuinely one-off size uses an arbitrary value (`w-[240px]`), which stays visible in review.
-- **Radius:** `r.sm 8` (inputs, chips), `r.md 12` (buttons), `r.lg 16` (cards, modals — the brand's card radius), `r.full` (pills, avatars, the mark).
+- **Radius:** `r.sm 8` (inputs, chips), `r.md 8` (buttons), `r.lg 16` (cards, modals — the brand's card radius), `r.full` (pills, avatars, the mark).
 - **Elevation:** flat-by-default. `shadow.card` `0 1px 2px rgba(22,33,31,.06)` + 1px `border.line`; `shadow.float` `0 8px 24px rgba(14,79,75,.16)` for modals/popovers only. Depth comes from warm borders, not heavy shadows.
 - **Motion:** 150ms ease-out micro (hover, press), 250ms ease-in-out structural (modals, drawers, accordion). Skeletons pulse at 1.2s. Nothing bounces; calm confidence.
 - **Iconography:** one outline icon set (Lucide), 1.5px stroke, 20px default, `text.stone` at rest / `brand.andaman` active. The ring-and-point mark is reserved for brand moments (logo, favicon, loading) — never used as a generic icon.
@@ -84,7 +90,7 @@ Loop one ships **light only** (ivory). Tokens are CSS variables so a dark theme 
 
 ### 2.6 Breakpoints & layout
 
-`sm 640 · md 768 · lg 1024 · xl 1280`; content max-width 1080px (the brand board's measure). App screens: single column to `md`, then sidebar-plus-content (240px nav rail). Public pages: centered column with full-bleed `deep`/image bands.
+`sm 640 · md 768 · lg 1024 · xl 1280`; content max-width 1080px (the brand board's measure). App screens: single column to `md`, then sidebar-plus-content (256px nav rail). Public pages: centered column with full-bleed `deep`/image bands.
 
 ## 3. Component library
 

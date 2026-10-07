@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { StitchMain, PublicHero } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { listBrowsableAreas } from '@/modules/projects';
@@ -40,25 +41,16 @@ export default async function AreasPage() {
   );
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <section className="bg-brand-deep px-20 py-56 text-surface-ivory md:px-32 md:py-80">
-        <div className="mx-auto max-w-7xl">
-          <p className="text-kicker uppercase tracking-[0.18em] text-brand-sun-soft">{labels['areas.kicker']}</p>
-          <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.02em]">
-            {labels['areas.title']}
-          </h1>
-          <p className="mt-16 max-w-2xl text-body text-surface-ivory/72">{labels['areas.body']}</p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
+    <StitchMain>
+      <PublicHero dark kicker={labels['areas.kicker']} title={labels['areas.title']} body={labels['areas.body']} />
+      <section>
         {resolved.length ? (
           <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
             {resolved.map((area) => (
               <Link
                 key={area.id}
                 href={`/areas/${area.slug}`}
-                className="group flex min-h-[240px] flex-col justify-between rounded-lg border border-border-line bg-surface-paper p-24 transition-shadow duration-structural hover:shadow-card"
+                className="group stitch-panel flex min-h-[240px] min-w-0 flex-col justify-between p-24 transition-shadow duration-structural hover:shadow-float"
               >
                 <div>
                   <p className="text-small font-semibold text-brand-andaman">
@@ -89,6 +81,6 @@ export default async function AreasPage() {
           />
         )}
       </section>
-    </main>
+    </StitchMain>
   );
 }

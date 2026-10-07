@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import { StitchMain, PageHeading, LinkButton } from '@/components/premium/StitchPage';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getAreaForBrowse, listPublicProjects } from '@/modules/projects';
 import { t } from '@/modules/content';
 import { ProjectCard } from '@/components/ProjectCard';
-import { EmptyState, RecordPageHeader } from '@/components/premium/PremiumPrimitives';
+import { EmptyState } from '@/components/premium/PremiumPrimitives';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,38 +54,31 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
       : null;
 
   return (
-    <main className="min-h-screen bg-surface-ivory">
-      <RecordPageHeader
-        eyebrow={<Link href="/areas" className="hover:text-brand-andaman">{labels['area.back']}</Link>}
+    <StitchMain>
+      <PageHeading
+        kicker={<Link href="/areas" className="hover:text-brand-andaman">{labels['area.back']}</Link>}
         title={title}
         subtitle={description || labels['area.projects'].replace('{count}', String(projects.length))}
-        chips={
-          <>
-            <span className="text-small font-semibold text-brand-andaman">
-              {labels['area.projects'].replace('{count}', String(projects.length))}
-            </span>
-          </>
-        }
         actions={
           <>
-            <Link
+            <LinkButton
               href={`/search?areaSlug=${encodeURIComponent(area.area.slug)}`}
-              className="inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-20 text-small font-semibold text-white hover:bg-brand-deep"
+
             >
               {labels['area.search']}
-            </Link>
-            <Link
+            </LinkButton>
+            <LinkButton variant="secondary"
               href="/projects"
-              className="inline-flex min-h-48 items-center rounded-lg border border-border-line bg-surface-paper px-20 text-small font-semibold text-text-ink hover:border-border-line-2"
+
             >
               {labels['area.all_projects']}
-            </Link>
+            </LinkButton>
           </>
         }
       />
 
       {children.length ? (
-        <section className="mx-auto max-w-7xl px-20 pt-40 md:px-32">
+        <section className="stitch-panel p-20 md:p-24">
           <h2 className="font-display text-title font-semibold text-text-ink">{labels['area.children']}</h2>
           <div className="mt-16 flex flex-wrap gap-8">
             {children.map((child) => (
@@ -100,7 +94,7 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
         </section>
       ) : null}
 
-      <section className="mx-auto max-w-7xl px-20 py-56 md:px-32 md:py-80">
+      <section className="min-w-0">
         <h2 className="font-display text-display font-semibold text-text-ink">{labels['area.collection']}</h2>
         {projects.length ? (
           <div className="mt-32 grid grid-cols-1 gap-16 md:grid-cols-2 lg:grid-cols-3">
@@ -124,6 +118,6 @@ export default async function AreaDetailPage({ params }: { params: { slug: strin
           </div>
         )}
       </section>
-    </main>
+    </StitchMain>
   );
 }

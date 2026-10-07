@@ -63,7 +63,7 @@ export default function ProjectServicesClient({
   };
 
   return <div className="space-y-12">
-    {message ? <div className="rounded-lg bg-surface-muted p-12 text-small">{message}</div> : null}
+    {message ? <div className="rounded-lg bg-surface-subtle p-12 text-small">{message}</div> : null}
     {services.map(service => {
       const hasOverride = service.priceOverrideThb !== null || service.leadTimeHours !== null || service.takeRatePct !== null;
       return <article key={service.id} className="rounded-md border border-border-line bg-surface-paper p-16">
@@ -74,7 +74,7 @@ export default function ProjectServicesClient({
             <p className="mt-8 text-small text-text-secondary">
               {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? 'quote' : `฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`} · {service.baseLeadTimeHours}h
             </p>
-            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-brand-sand px-8 py-4 text-small">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
+            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-surface-sand px-8 py-4 text-small">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
           </div>
           <div className="grid flex-1 gap-8 sm:grid-cols-3">
             <label className="text-small text-text-secondary">{labels['admin.project_services.price_override']}

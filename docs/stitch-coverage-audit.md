@@ -247,3 +247,20 @@ No pixel-level comparison of every Stitch export, viewport overflow assurance, c
 The 24 undefined `text-caption` usages in the seven listed admin/MC/provider files were replaced with canonical `text-small`. The two undefined `text-heading-lg` section headings in admin property onboarding and `PropertyDealClient` were replaced with canonical `text-title`. These changes reuse the existing theme and do not alter data, permissions or writers. The original gap table remains baseline evidence; this typography finding is **fixed in source**, awaiting the parent release build/deploy/runtime review. No new implementation-mirroring tests were introduced for utility renames. Selected ESLint result is recorded below.
 
 Validation: selected ESLint over all nine changed production files **passed (exit 0)**. Source rescan confirms neither undefined typography utility remains in these files. Runtime verification and production deployment are not claimed by this source correction.
+
+## Scoped shell correction, baseline f90a564
+
+Reviewed the actual `myuno_pms/screen.png` and exported HTML plus superadmin ledger HTML against the adopted token theme. The reference has one operational rail, compact workspace controls and legible contextual panels. Unsupported example metrics and channel claims were not copied.
+
+- MC Today no longer renders a second 228px desktop rail. Its local Today/Reservations/Services/Issues/Finance views are a horizontal, scrollable 44px segmented action row with explicit selection. Portfolio scroll and announcement access remain available; global operational sections stay in the single shared shell.
+- `McWorkspaceShell` reuses `StitchWorkspaceShell` and forwards only selected `projectId`/`organizationId` to MC links. Explicit link scopes win; unrelated filters/identity parameters do not propagate. Existing Tasks link remains in global MC navigation. These query parameters are navigation context, not grants.
+- Legacy `/admin/finance/reconciliation` now inherits the same authenticated AdminLayout as `/app/admin/**` through a shared layout export. The URL, existing API authorization and financial writers remain intact; no duplicate sidebar or permissive financial gate was created.
+- Provider already inherits the shared shell; its shell was preserved. No globals/Tailwind/public/ops changes belong to this correction.
+
+Targeted tests: 11/11 passed (MC scope preservation, existing PMS shell behavior, route shell coverage). Selected ESLint and production TypeScript validation are tracked in the parent release. Source fixes are not evidence of authenticated runtime completeness.
+
+Scoped validation: selected ESLint passed with no errors/warnings. The concurrent production TypeScript run reported one error in the independently edited public onboarding stepper (`property/onboard/wizard.tsx:87`, unsupported `info`/`good` states); no MC/admin-shell error was reported. This must be resolved in the combined release before claiming a green production typecheck.
+
+## Combined fidelity correction
+
+See `stitch-fidelity-audit.md`. The public stepper state mismatch is resolved to the supported done/active/waiting enum. Production TypeScript and selected regression checks pass. Legacy reconciliation now uses the admin shell; property listing detail uses the public composition. Original tables are baseline source inventory, not visual parity certification.

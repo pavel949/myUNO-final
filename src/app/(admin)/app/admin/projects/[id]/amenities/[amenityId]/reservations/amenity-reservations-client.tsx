@@ -36,7 +36,7 @@ export default function AmenityReservationsClient({ reservations }: { reservatio
   }
 
   return <div className="space-y-12">
-    {message ? <p role="status" className="rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
+    {message ? <p role="status" className="rounded-md bg-surface-subtle p-12 text-small">{message}</p> : null}
     {reservations.map(row => <article key={row.id} className="rounded-md border border-border-line bg-surface-paper p-16">
       <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
         <div>

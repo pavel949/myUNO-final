@@ -37,6 +37,6 @@ export default function ReservationGroupForm({
     <button disabled={busy} className="h-44 rounded-md border border-brand-deep px-12 text-small font-semibold text-brand-deep">
       {busy?labels['reservations.creating']:labels['reservations.create_group']}
     </button>
-    {error?<p role="alert" className="md:col-span-4 text-small text-red-700">{error}</p>:null}
+    {error?<p role="alert" className="md:col-span-4 text-small text-state-error">{error}</p>:null}
   </form>;
 }

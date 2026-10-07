@@ -213,7 +213,7 @@ export default function ProjectNearbyEditor({
 
         <div>
           {message ? (
-            <p role="status" className="mb-12 rounded-lg bg-surface-muted p-12 text-small">
+            <p role="status" className="mb-12 rounded-lg bg-surface-subtle p-12 text-small">
               {message}
             </p>
           ) : null}

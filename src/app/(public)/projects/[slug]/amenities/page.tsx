@@ -55,7 +55,7 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
               <Link key={amenity.id} href={`/projects/${project.slug}/amenities/${amenity.slug}`} className="stitch-panel overflow-hidden transition hover:border-brand-andaman hover:shadow-float">
                 {amenity.coverUrl ? (
                   <Image src={amenity.coverUrl} alt={amenity.name} width={720} height={420} className="aspect-video w-full object-cover" />
-                ) : <div className="aspect-video bg-surface-muted" />}
+                ) : <div className="aspect-video bg-surface-subtle" />}
                 <div className="p-16">
                   <h3 className="font-semibold text-text-ink">{amenity.name}</h3>
                   {amenity.shortDescription ? <p className="mt-8 text-small text-text-secondary">{amenity.shortDescription}</p> : null}

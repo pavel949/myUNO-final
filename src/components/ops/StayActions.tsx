@@ -39,7 +39,7 @@ export default function StayActions({
   return <section className="stitch-panel p-20" aria-label={labels['staff.stay_360.actions']}>
     <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.actions']}</h2>
     <p className="my-12 text-small text-text-secondary">{labels['staff.stay_360.warning']}</p>
-    {message&&<p role={failed?'alert':'status'} className={'mb-12 rounded-md p-12 text-small '+(failed?'bg-red-50 text-red-800':'bg-emerald-50 text-emerald-800')}>{message}</p>}
+    {message&&<p role={failed?'alert':'status'} className={'mb-12 rounded-md p-12 text-small '+(failed?'bg-state-error-soft text-state-error':'bg-state-success-soft text-state-success')}>{message}</p>}
     <div className="flex flex-col gap-12">
       {canApprove&&<button type="button" disabled={busy} onClick={()=>run('respond',{action:'approve'})}
         className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">

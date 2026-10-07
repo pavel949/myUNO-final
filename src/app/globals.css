@@ -20,7 +20,7 @@ html[lang='th'] {
 }
 
 body {
-  @apply bg-surface-mint text-text-ink font-sans;
+  @apply bg-surface-mint text-text-ink font-sans antialiased;
 }
 
 /*
@@ -80,6 +80,11 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Display numerals keep Outfit's geometric cut even in Cyrillic editorial headings. */
+.font-display:is(.font-tabular, .tabular-nums) {
+  font-family: var(--font-outfit), var(--font-manrope), sans-serif;
+}
+
 /*
  * Stitch / Andaman Sanctuary surface language.
  * These are compositional primitives only: domain components keep ownership
@@ -108,7 +113,7 @@ body {
   }
 
   .stitch-panel-soft {
-    @apply rounded-lg border border-border-line bg-surface-ivory/80;
+    @apply rounded-lg border border-border-line bg-surface-subtle;
   }
 
   .stitch-kicker {
@@ -120,12 +125,16 @@ body {
   }
 
   .stitch-control {
-    @apply h-48 rounded-md border border-border-line bg-surface-paper px-12 text-body text-text-ink shadow-card outline-none transition focus:border-brand-andaman;
+    @apply h-48 rounded-md border border-border-line bg-surface-paper px-12 text-body text-text-ink outline-none transition focus:border-brand-andaman;
   }
 
   .stitch-list-row {
     @apply rounded-md border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
   }
+}
+
+.stitch-console .stitch-workspace {
+  min-height: calc(100dvh - 64px);
 }
 
 /* Public portal section anchors remain visible below the header and section navigation. */

@@ -158,7 +158,7 @@ export default function Project360Client({
               <p className="text-small text-brand-andaman mt-8">{labels['admin.project360.open_developer']} →</p>
             </Link>
           ) : (
-            <p className="text-small text-text-muted">{labels['admin.project360.no_developer']}</p>
+            <p className="text-small text-text-secondary">{labels['admin.project360.no_developer']}</p>
           )}
 
           <h3 className="font-semibold text-small text-text-ink mt-12">
@@ -173,7 +173,7 @@ export default function Project360Client({
                 </div>
                 <div className="flex gap-4 items-center">
                   {role.isPrimary ? <span className="text-small px-8 py-8 bg-brand-andaman text-on-dark-text rounded-sm">{labels['admin.project360.primary']}</span> : null}
-                  <span className="text-small px-8 py-8 bg-brand-sand text-text-ink rounded-sm">
+                  <span className="text-small px-8 py-8 bg-surface-sand text-text-ink rounded-sm">
                     {role.roleKey.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -224,7 +224,7 @@ export default function Project360Client({
         </div>
 
         {canonicalInventory.categories.length === 0 ? (
-          <p className="text-small text-text-muted">{labels['admin.project360.categories_empty']}</p>
+          <p className="text-small text-text-secondary">{labels['admin.project360.categories_empty']}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-small">
@@ -261,7 +261,7 @@ export default function Project360Client({
           <p className="text-small text-text-secondary">{labels['admin.project360.rate_plans_hint']}</p>
         </div>
         {canonicalInventory.ratePlans.length === 0 ? (
-          <p className="text-small text-text-muted">{labels['admin.project360.rate_plans_empty']}</p>
+          <p className="text-small text-text-secondary">{labels['admin.project360.rate_plans_empty']}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {canonicalInventory.ratePlans.map((plan) => (

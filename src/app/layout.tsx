@@ -11,6 +11,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { siteUrl } from '@/lib/seo';
+import { ApplicationFrame } from '@/components/stitch/ApplicationFrame';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileTabBar } from '@/components/MobileTabBar';
@@ -159,7 +160,8 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
         <LocaleProvider locale={locale}>
-        <Navbar
+        <ApplicationFrame
+          navigation={<Navbar
           user={
             user
               ? {
@@ -218,11 +220,8 @@ export default async function RootLayout({
             th: navLabels['nav.locale.th'],
             zh: navLabels['nav.locale.zh'],
           }}
-        />
-
-        <div className="flex-1 pb-56 md:pb-0">{children}</div>
-
-        <MobileTabBar
+        />}
+          mobileNavigation={<MobileTabBar
           labels={{
             residences: navLabels['nav.projects'],
             explore: navLabels['nav.explore'],
@@ -231,9 +230,8 @@ export default async function RootLayout({
             profile: navLabels['nav.my_uno'],
           }}
           profileHref={user ? '/app' : '/login'}
-        />
-
-        <Footer
+        />}
+          footer={<Footer
           locale={locale}
           labels={{
             brandName: footerLabels['nav.footer.brand_name'],
@@ -276,7 +274,10 @@ export default async function RootLayout({
             th: navLabels['nav.locale.th'],
             zh: navLabels['nav.locale.zh'],
           }}
-        />
+        />}
+        >
+          {children}
+        </ApplicationFrame>
         </LocaleProvider>
       </body>
     </html>

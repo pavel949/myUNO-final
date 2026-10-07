@@ -83,7 +83,7 @@ export default function ProviderApplyClient({
       className="stitch-panel p-24 flex flex-col gap-16"
     >
       <div>
-        <h2 className="font-display text-display-sm text-brand-deep mb-4">
+        <h2 className="font-display text-title text-brand-deep mb-4">
           {labels['provider.apply.title']}
         </h2>
         <p className="text-body text-text-secondary">{labels['provider.apply.subtitle']}</p>

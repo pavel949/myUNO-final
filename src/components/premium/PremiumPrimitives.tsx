@@ -117,10 +117,10 @@ export function KpiTile({
   meta?: ReactNode;
 }) {
   return (
-    <article className="rounded-md border border-border-line bg-surface-paper p-20">
+    <article className="stitch-panel min-w-0 p-20">
       <p className="text-small text-text-secondary">{label}</p>
       <div className="mt-8 flex items-baseline gap-8">
-        <p className="font-display text-display font-semibold text-text-ink">{value}</p>
+        <p className="min-w-0 break-words font-numeric text-display font-semibold tabular-nums text-brand-andaman">{value}</p>
         {delta ? <span className="text-small font-semibold text-brand-andaman">{delta}</span> : null}
       </div>
       {meta ? <p className="mt-8 text-small text-text-secondary">{meta}</p> : null}
@@ -234,7 +234,7 @@ export function CtaBar({
   primary: ReactNode;
 }) {
   return (
-    <div className="sticky bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur md:static md:rounded-md md:border md:px-20">
+    <div className="sticky bottom-64 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur md:bottom-0 md:static md:rounded-md md:border md:px-20">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-16">
         <div className="min-w-0 flex-1">{summary}</div>
         <div className="flex shrink-0 items-center gap-8">

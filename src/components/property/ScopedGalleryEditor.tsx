@@ -122,7 +122,7 @@ export default function ScopedGalleryEditor({
   }
 
   return <section className="space-y-16" aria-label="Property gallery editor">
-    <div className="rounded-lg border border-border-line bg-surface-muted p-16">
+    <div className="rounded-lg border border-border-line bg-surface-subtle p-16">
       <h3 className="font-semibold">{labels['admin.gallery.title']}</h3>
       <p className="text-small text-text-secondary mt-4">
         {labels['admin.gallery.scope_hint']}
@@ -202,7 +202,7 @@ export default function ScopedGalleryEditor({
           }}/>
       </label>
     </div>
-    {message && <p role="status" className="rounded-md bg-surface-muted p-12 text-small">{message}</p>}
+    {message && <p role="status" className="rounded-md bg-surface-subtle p-12 text-small">{message}</p>}
     {loading ? <p role="status">{labels['admin.gallery.loading']}</p> :
       items.length === 0 ? <p className="rounded-lg border border-dashed border-border-line p-24 text-center text-text-secondary">
         {labels['admin.gallery.empty']}

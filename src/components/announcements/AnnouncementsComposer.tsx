@@ -230,7 +230,7 @@ export function AnnouncementsComposer({
       </section>
 
       {error ? (
-        <p className="mb-16 text-small text-status-error" role="alert">
+        <p className="mb-16 text-small text-state-error" role="alert">
           {error}
         </p>
       ) : null}

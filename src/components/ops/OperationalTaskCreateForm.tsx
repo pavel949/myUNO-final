@@ -65,6 +65,6 @@ export default function OperationalTaskCreateForm({
     </label>
     <label className="flex items-center gap-8 text-small text-text-secondary"><input type="checkbox" name="blocksInventory"/>{labels['staff.task_form.blocks_inventory']}</label>
     <button disabled={busy} className="h-44 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{busy?labels['staff.task_form.creating']:labels['staff.task_form.create']}</button>
-    {error?<p role="alert" className="text-small text-red-700 md:col-span-2 xl:col-span-4">{error}</p>:null}
+    {error?<p role="alert" className="text-small text-state-error md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }

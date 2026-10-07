@@ -180,7 +180,7 @@ export default async function ProjectSpacePreview({ params }: { params: { id: st
             {content[descriptionKey] && <p className="mt-12 text-small leading-relaxed text-text-secondary">{content[descriptionKey]}</p>}
             <div className="mt-16 grid grid-cols-2 gap-12">
               {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="rounded-lg border border-border-line p-8 hover:border-brand-andaman">
-                {unit.coverMedia ? <Image src={unit.coverMedia.storageKey} alt={unit.name} width={300} height={180} className="aspect-video w-full rounded-md object-cover"/> : <div className="aspect-video rounded-md bg-surface-muted"/>}
+                {unit.coverMedia ? <Image src={unit.coverMedia.storageKey} alt={unit.name} width={300} height={180} className="aspect-video w-full rounded-md object-cover"/> : <div className="aspect-video rounded-md bg-surface-subtle"/>}
                 <p className="mt-8 font-semibold">{unit.name}</p>
                 <p className="text-small text-text-secondary">{labels['admin.project_preview.photos'].replace('{count}', String(unit._count.media)).replace('{status}', unit.status)}</p>
               </Link>)}

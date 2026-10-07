@@ -22,7 +22,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'h-40 px-16 text-small rounded-md font-sans',
   md: 'h-48 px-24 text-body rounded-md font-sans',
-  lg: 'h-56 px-32 text-subtitle rounded-lg font-display',
+  lg: 'h-56 px-32 text-subtitle rounded-md font-sans',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -39,7 +39,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium transition-colors duration-micro disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseClasses = 'inline-flex items-center justify-center gap-8 font-semibold transition-colors duration-micro disabled:opacity-50 disabled:cursor-not-allowed';
     const variantClass = variantClasses[variant];
     const sizeClass = sizeClasses[size];
     const widthClass = fullWidth ? 'w-full' : '';

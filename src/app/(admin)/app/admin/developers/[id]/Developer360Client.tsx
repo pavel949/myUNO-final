@@ -89,7 +89,7 @@ export default function Developer360Client({
           </div>
         </div>
         <div className="flex items-center gap-8 flex-wrap">
-          <span className="px-12 py-4 text-small bg-brand-sand text-text-ink rounded-full uppercase font-medium">
+          <span className="px-12 py-4 text-small bg-surface-sand text-text-ink rounded-full uppercase font-medium">
             {organization.developerVerification || labels['admin.dev360.verification_unverified']}
           </span>
           <span className="px-12 py-4 text-small bg-surface-ivory border border-border-line text-text-ink rounded-full">
@@ -183,7 +183,7 @@ export default function Developer360Client({
         </div>
 
         {projectRelationships.length === 0 ? (
-          <p className="text-small text-text-muted">{labels['admin.dev360.no_projects']}</p>
+          <p className="text-small text-text-secondary">{labels['admin.dev360.no_projects']}</p>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
             {projectRelationships.map((relationship) => (
@@ -207,7 +207,7 @@ export default function Developer360Client({
                         {labels['admin.dev360.primary']}
                       </span>
                     ) : null}
-                    <span className="text-small px-8 py-8 bg-brand-sand text-text-ink rounded-full">
+                    <span className="text-small px-8 py-8 bg-surface-sand text-text-ink rounded-full">
                       {relationship.roleKey.replace(/_/g, ' ')}
                     </span>
                   </div>

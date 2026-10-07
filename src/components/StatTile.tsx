@@ -21,17 +21,17 @@ export const StatTile = React.forwardRef<HTMLDivElement, StatTileProps>(
     const variantClasses = {
       occupancy: 'border-l-4 border-l-brand-andaman',
       revenue: 'border-l-4 border-l-brand-sun',
-      neutral: 'border border-border-line',
+      neutral: '',
     };
 
     return (
       <div
         ref={ref}
-        className={`rounded-md p-24 bg-surface-paper ${variantClasses[variant]}`}
+        className={`stitch-panel min-w-0 p-24 ${variantClasses[variant]}`}
       >
         <p className="text-small text-text-stone mb-8">{label}</p>
-        <div className="flex items-baseline gap-16">
-          <p className="font-display text-display font-semibold text-text-ink tabular-nums">{value}</p>
+        <div className="flex flex-wrap items-baseline gap-8">
+          <p className="min-w-0 break-words font-numeric text-display font-semibold text-brand-andaman tabular-nums">{value}</p>
           {secondary && <p className="text-body text-text-stone">{secondary}</p>}
         </div>
         {delta ? <div className="mt-8">{delta}</div> : null}

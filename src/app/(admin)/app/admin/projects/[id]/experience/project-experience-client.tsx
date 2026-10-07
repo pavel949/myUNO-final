@@ -245,7 +245,7 @@ export default function ProjectExperienceClient({
     </aside>
 
     <section>
-      {message ? <p role="status" className="mb-12 rounded-lg bg-surface-muted p-12 text-small">{message}</p> : null}
+      {message ? <p role="status" className="mb-12 rounded-lg bg-surface-subtle p-12 text-small">{message}</p> : null}
       {!selected ? <div className="rounded-md border border-border-line bg-surface-paper p-24 text-text-secondary">Select an amenity or add a new one.</div> : (
         <form key={selected.id} onSubmit={saveAmenity} className="space-y-20">
           <div className="rounded-md border border-border-line bg-surface-paper p-20">

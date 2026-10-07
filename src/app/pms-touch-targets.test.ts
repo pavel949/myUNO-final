@@ -14,9 +14,9 @@ describe('PMS touch targets', () => {
   it('marks every PMS workspace as a touch-target scope', () => {
     const shared = read('src/components/stitch/StitchShells.tsx');
     expect(shared).toContain('pms-touch');
-    for (const layout of ['src/app/ops/layout.tsx', 'src/app/mc/layout.tsx']) {
-      expect(read(layout), layout).toContain('StitchWorkspaceShell');
-    }
+    expect(read('src/app/ops/layout.tsx')).toContain('StitchWorkspaceShell');
+    expect(read('src/app/mc/layout.tsx')).toContain('McWorkspaceShell');
+    expect(read('src/components/stitch/McWorkspaceShell.tsx')).toContain('StitchWorkspaceShell');
     expect(read('src/app/(admin)/app/admin/layout.tsx')).toContain('pms-touch');
   });
 

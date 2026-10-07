@@ -78,6 +78,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
   const labels = await getLabels({
     ...bookingRequestInboxLabelDrafts,
     'staff.ops.title': 'Today',
+    'staff.shell.title': 'Operations',
     'staff.ops.priority.title': 'Needs attention now',
     'staff.ops.priority.arrivals': 'Arrivals',
     'staff.ops.priority.departures': 'Departures',
@@ -263,7 +264,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     unpaid: pendingPayment.length,
   });
 
-  const navClass = 'rounded-lg bg-white/10 px-12 py-8 text-small font-semibold text-white transition hover:bg-white/15';
+  const navClass = 'inline-flex min-h-40 items-center rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-text-ink transition hover:bg-surface-sand';
 
   return (
     <main className="stitch-workspace p-20 md:p-32">
@@ -275,7 +276,21 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             </h1>
             <p className="text-body text-white/70">{boardSubtitle}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-12">
+          <Link href={opsHref('/ops/calendar/board', validActiveProjectId)} className="inline-flex min-h-40 items-center rounded-md bg-surface-paper px-16 py-12 text-small font-semibold text-brand-deep transition hover:bg-surface-mint">
+            {labels['staff.ops.calendar_link']}
+          </Link>
+        </div>
+
+        <OpsProjectSwitcher
+          projects={projects}
+          activeProjectId={validActiveProjectId}
+          basePath={switcherBasePath}
+          labels={labels}
+        />
+
+        <details className="stitch-panel mb-24 p-16">
+          <summary className="cursor-pointer text-small font-semibold text-text-ink">{labels['staff.shell.title']}</summary>
+          <nav className="mt-12 flex flex-wrap items-center gap-8" aria-label={labels['staff.shell.title']}>
             <Link href={opsHref('/ops/costs', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.costs_link']}
             </Link>
@@ -294,9 +309,7 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             <Link href="/ops/team" className={navClass}>
               {labels['staff.ops.team_link']}
             </Link>
-            <Link href={opsHref('/ops/calendar/board', validActiveProjectId)} className={navClass}>
-              {labels['staff.ops.calendar_link']}
-            </Link>
+
             <Link href={opsHref('/ops/stays', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.stays_link']}
             </Link>
@@ -309,15 +322,8 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
             <Link href="/announcements" className={navClass}>
               {labels['staff.ops.announcements_link']}
             </Link>
-          </div>
-        </div>
-
-        <OpsProjectSwitcher
-          projects={projects}
-          activeProjectId={validActiveProjectId}
-          basePath={switcherBasePath}
-          labels={labels}
-        />
+          </nav>
+        </details>
 
         <section className="mb-32">
           <h2 className="font-display text-heading-2 font-semibold text-text-ink">

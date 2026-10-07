@@ -24,7 +24,7 @@ export const LatestStatementCard = React.forwardRef<HTMLDivElement, LatestStatem
     }
 
     return (
-      <div ref={ref} className="stitch-panel p-24 hover:bg-surface-paper-soft transition-colors">
+      <div ref={ref} className="stitch-panel p-24 hover:bg-surface-subtle transition-colors">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-body font-medium text-text-ink">Latest Statement</p>

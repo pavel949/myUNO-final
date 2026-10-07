@@ -42,6 +42,25 @@ function sourceFiles(dir: string): string[] {
 const FOREIGN_BRAND_MARKS = new Set(['src/app/login/google-login-button.tsx']);
 
 describe('the token file is the only place a colour is defined', () => {
+  it('every semantic colour utility names a real theme token', () => {
+    const tokens = new Set<string>();
+    const flatten = (value: Record<string, unknown>, prefix = '') => {
+      for (const [key, child] of Object.entries(value)) {
+        const name = prefix ? `${prefix}-${key}` : key;
+        if (typeof child === 'string') tokens.add(name);
+        else flatten(child as Record<string, unknown>, name);
+      }
+    };
+    flatten(tailwindColors);
+    const missing: string[] = [];
+    for (const path of sourceFiles(SRC)) {
+      const source = readFileSync(path, 'utf8');
+      for (const match of source.matchAll(/\b(?:bg|text|border|ring|divide|placeholder|from|via|to)-((?:brand|surface|state|status|text|border|on-dark|console)-[a-z][a-z0-9-]*)/g)) {
+        if (!tokens.has(match[1])) missing.push(`${path.slice(SRC.length + 1)}: ${match[0]}`);
+      }
+    }
+    expect([...new Set(missing)], 'undefined utilities silently lose their colour in production').toEqual([]);
+  });
   it('finds no hex literal anywhere else in src', () => {
     const offenders = sourceFiles(SRC)
       .map((path) => path.slice(process.cwd().length + 1))

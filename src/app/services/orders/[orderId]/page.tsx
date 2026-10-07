@@ -259,12 +259,12 @@ export default async function ServiceOrderDetailPage({
                 <span
                   className={`px-12 py-4 rounded-full text-small font-semibold ${
                     order.status === 'fulfilled'
-                      ? 'bg-status-good bg-opacity-10 text-status-good'
+                      ? 'bg-state-success-soft bg-opacity-10 text-state-success'
                       : order.status === 'cancelled'
-                        ? 'bg-status-serious bg-opacity-10 text-status-serious'
+                        ? 'bg-state-error-soft bg-opacity-10 text-state-error'
                         : order.status === 'declined'
-                          ? 'bg-status-warning bg-opacity-10 text-status-warning'
-                          : 'bg-brand-light bg-opacity-10 text-brand-deep'
+                          ? 'bg-state-warning-soft bg-opacity-10 text-state-warning'
+                          : 'bg-brand-andaman/10 bg-opacity-10 text-brand-deep'
                   }`}
                 >
                   {statusLabel[order.status] || order.status}
@@ -364,8 +364,8 @@ export default async function ServiceOrderDetailPage({
             <span
               className={`px-12 py-4 rounded-full text-small font-semibold ${
                 isPaid
-                  ? 'bg-status-good bg-opacity-10 text-status-good'
-                  : 'bg-status-warning bg-opacity-10 text-status-warning'
+                  ? 'bg-state-success-soft bg-opacity-10 text-state-success'
+                  : 'bg-state-warning-soft bg-opacity-10 text-state-warning'
               }`}
             >
               {isPaid
@@ -414,7 +414,7 @@ export default async function ServiceOrderDetailPage({
               {order.provider.name}
             </p>
             {order.provider.vetted && (
-              <span className="inline-flex items-center gap-4 px-8 py-4 bg-status-good bg-opacity-10 text-status-good rounded-full text-small font-semibold">
+              <span className="inline-flex items-center gap-4 px-8 py-4 bg-state-success-soft bg-opacity-10 text-state-success rounded-full text-small font-semibold">
                 {labels['service-order.detail.vetted_badge']}
               </span>
             )}
@@ -496,18 +496,18 @@ export default async function ServiceOrderDetailPage({
 
         {/* Cancellation Info */}
         {order.status === 'cancelled' && (
-          <div className="bg-status-serious bg-opacity-10 border border-status-serious rounded-lg p-24 mb-24">
-            <h3 className="text-heading-3 font-semibold text-status-serious mb-12">
+          <div className="bg-state-error-soft bg-opacity-10 border border-state-error rounded-lg p-24 mb-24">
+            <h3 className="text-heading-3 font-semibold text-state-error mb-12">
               {labels['service-order.detail.cancelled']}
             </h3>
             {order.cancellationReason && (
-              <p className="text-body text-status-serious">
+              <p className="text-body text-state-error">
                 {labels['service-order.detail.cancellation_reason']}:{' '}
                 {order.cancellationReason}
               </p>
             )}
             {order.refundAccruedThb > 0 && (
-              <p className="text-body text-status-serious mt-8">
+              <p className="text-body text-state-error mt-8">
                 {labels['service-order.detail.refund_accrued']}: ฿{baht(order.refundAccruedThb)}
               </p>
             )}

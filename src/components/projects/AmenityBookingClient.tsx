@@ -117,7 +117,7 @@ export default function AmenityBookingClient({
           <textarea name="note" rows={3} className="mt-4 w-full rounded-md border border-border-line bg-surface-ivory p-12 text-text-ink"/>
         </label>
       </div>
-      {message ? <p role="status" className="mt-12 rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
+      {message ? <p role="status" className="mt-12 rounded-md bg-surface-subtle p-12 text-small">{message}</p> : null}
       <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">{busy ? labels['amenity_booking.saving'] : labels['amenity_booking.submit']}</button>
     </form>
 

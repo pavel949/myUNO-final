@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isStitchWorkspace } from '@/lib/stitch-surface';
 import { Button } from './Button';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { NotificationBell, type BellLabels } from './NotificationBell';
@@ -145,6 +146,29 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
         { href: '/account', label: labels.account },
       ]
     : [];
+
+  if (isStitchWorkspace(pathname)) {
+    return (
+      <header className="sticky top-0 z-50 border-b border-border-line bg-surface-ivory/95 backdrop-blur-xl">
+        <nav aria-label={labels.myUno} className="flex h-64 items-center justify-between gap-12 px-16 md:px-24">
+          <Link href="/" className="font-sans text-title font-bold tracking-tight text-brand-andaman">myUNO</Link>
+          <div className="flex min-w-0 items-center gap-8 md:gap-12">
+            <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
+            {user ? <>
+              <details className="relative">
+                <summary className="max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName} · {labels.myUno}</summary>
+                <div className="absolute right-0 top-full z-50 mt-8 flex max-h-[70vh] min-w-[240px] flex-col gap-4 overflow-y-auto rounded-lg border border-border-line bg-surface-paper p-12 shadow-float">
+                  {userLinks.map(link => <Link key={link.href} href={link.href} className="stitch-list-row text-small">{link.label}</Link>)}
+                  <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>{labels.logout}</Button>
+                </div>
+              </details>
+              <NotificationBell labels={bellLabels} />
+            </> : <Link href="/login" className="text-small font-semibold text-brand-andaman">{labels.login}</Link>}
+          </div>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-line bg-surface-ivory/85 backdrop-blur-xl">

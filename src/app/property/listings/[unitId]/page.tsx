@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
+import { StitchMain, PageHeading, LinkButton } from '@/components/premium/StitchPage';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
@@ -17,11 +18,11 @@ export default async function SupplierListingPage({ params }: { params: { unitId
   const allowed = await hasSelfListingAccess(user.identityId, unit.id) || await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id });
   if (!allowed) notFound();
   const labels = await getLabels(UNIT_CALENDAR_LABEL_KEYS);
-  return <main className="mx-auto max-w-content px-20 py-40">
+  return <StitchMain>
     <Link href="/property/listings" className="text-brand-andaman">← My listings</Link>
-    <h1 className="mt-16 font-display text-display-xl">{unit.name}</h1>
+    <PageHeading title={unit.name} />
     <p className="mt-12 text-text-secondary">Maintain your property details, photos, dated prices and unavailable dates. myUNO reviews publication and remains the guest booking and support contact. These settings do not grant publication or booking authority.</p>
-    <Link href={`/ops/units/${unit.id}/edit`} className="mt-16 inline-flex min-h-44 items-center rounded-lg border border-border-line px-16 text-brand-andaman">Edit details and photos →</Link>
+    <LinkButton variant="secondary" href={`/ops/units/${unit.id}/edit`}>Edit details and photos →</LinkButton>
     <AvailabilityPricingPanel unitId={unit.id} labels={labels} />
-  </main>;
+  </StitchMain>;
 }

@@ -38,25 +38,25 @@ const config: Config = {
     // `text-micro` silently inherited its parent's size).
     fontSize: {
       // Typography (doc 06 §2.2)
-      'display-hero': ['36px', { lineHeight: '44px', letterSpacing: '-2%' }],
-      'display-hero-lg': ['56px', { lineHeight: '64px', letterSpacing: '-2%' }],
-      'display-xl': ['32px', { lineHeight: '40px', letterSpacing: '-1%' }],
+      'display-hero': ['36px', { lineHeight: '44px', letterSpacing: '-0.02em' }],
+      'display-hero-lg': ['56px', { lineHeight: '64px', letterSpacing: '-0.02em' }],
+      'display-xl': ['32px', { lineHeight: '40px', letterSpacing: '-0.01em' }],
       'display': ['28px', { lineHeight: '34px' }],
       'title': ['20px', { lineHeight: '26px', fontWeight: '600' }],
       'subtitle': ['16px', { lineHeight: '24px', fontWeight: '500' }],
-      'kicker': ['12px', { lineHeight: '16px', letterSpacing: '24%', fontWeight: '500' }],
+      'kicker': ['12px', { lineHeight: '16px', letterSpacing: '0.16em', fontWeight: '500' }],
       'body': ['15px', { lineHeight: '23px' }],
       'body-strong': ['15px', { lineHeight: '23px', fontWeight: '600' }],
       'small': ['13px', { lineHeight: '19px' }],
       'num': ['15px', { fontWeight: '500' }],
       // Heading aliases of the doc 06 scale (display-xl / display / title)
-      'heading-1': ['40px', { lineHeight: '44px', letterSpacing: '-1%', fontWeight: '600' }],
+      'heading-1': ['40px', { lineHeight: '48px', letterSpacing: '-0.02em', fontWeight: '600' }],
       'heading-2': ['28px', { lineHeight: '34px', fontWeight: '600' }],
       'heading-3': ['20px', { lineHeight: '26px', fontWeight: '600' }],
     },
     borderRadius: {
       sm: '8px',
-      md: '12px',
+      md: '8px',
       lg: '16px',
       full: '9999px',
       none: '0px',
@@ -74,6 +74,7 @@ const config: Config = {
     extend: {
       colors: tailwindColors,
       fontFamily: {
+        numeric: ['var(--font-outfit)', 'var(--font-manrope)', 'sans-serif'],
         display: [
           'var(--font-display-active)',
           'var(--font-manrope)',

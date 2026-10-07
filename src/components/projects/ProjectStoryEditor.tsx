@@ -50,7 +50,7 @@ export default function ProjectStoryEditor({
         These are the same canonical translations used by the Project Portal. Edit them here instead of maintaining a separate CMS.
       </p>
     </div>
-    {message ? <p role="status" className="mb-12 rounded-md bg-surface-muted p-12 text-small">{message}</p> : null}
+    {message ? <p role="status" className="mb-12 rounded-md bg-surface-subtle p-12 text-small">{message}</p> : null}
     <div className="space-y-16">
       {fields.map(field => <div key={field.key} className="rounded-lg border border-border-line p-16">
         <p className="font-semibold text-text-ink">{field.label}</p>

@@ -32,6 +32,6 @@ export default function PreventiveMaintenanceForm({
     <label className="flex items-center gap-8 text-small text-text-secondary"><input name="blocksInventory" type="checkbox"/>{labels['staff.maintenance.blocks_inventory']}</label>
     <textarea name="description" placeholder={labels['staff.maintenance.description']} className="min-h-24 rounded-md border border-border-line p-12 md:col-span-2 xl:col-span-3"/>
     <button disabled={busy} className="h-44 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{busy?labels['staff.maintenance.creating']:labels['staff.maintenance.create_plan']}</button>
-    {error?<p role="alert" className="text-small text-red-700 md:col-span-2 xl:col-span-4">{error}</p>:null}
+    {error?<p role="alert" className="text-small text-state-error md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }

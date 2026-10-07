@@ -128,9 +128,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="pms-touch stitch-workspace flex min-h-screen flex-col md:flex-row">
-      <aside className="sticky top-0 z-30 shrink-0 border-r border-white/10 bg-brand-deep text-on-dark-text shadow-float md:h-screen md:w-[256px]">
+      <aside className="sticky top-64 z-30 shrink-0 border-r border-console-border bg-console-deep text-on-dark-text shadow-float md:h-[calc(100dvh-64px)] md:w-[256px]">
         <div className="flex h-full flex-col p-12 md:p-16">
-          <p className="mb-12 font-display text-subtitle font-bold md:mb-16">{labels['admin.nav.title']}</p>
+          <p className="mb-12 font-sans text-subtitle font-semibold md:mb-16">{labels['admin.nav.title']}</p>
           <details className="md:hidden">
             <summary className="cursor-pointer rounded-md border border-on-dark-muted px-12 py-12 text-small font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-sun">
               {labels['admin.nav.mobile_menu']}

@@ -65,7 +65,7 @@ export function PublicHero({
       <div className={aside ? 'grid gap-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-start' : ''}>
         <div className="max-w-3xl">
           {kicker ? <p className={dark ? 'text-kicker font-semibold uppercase tracking-[0.16em] text-brand-sun' : 'stitch-kicker'}>{kicker}</p> : null}
-          <h1 className={`mt-8 break-words font-display text-display-xl font-semibold tracking-[-0.02em] hyphens-auto ${dark ? 'text-white' : 'text-text-ink'}`}>{title}</h1>
+          <h1 className={`mt-8 break-words font-display text-display-xl md:text-heading-1 font-semibold tracking-[-0.02em] hyphens-auto ${dark ? 'text-white' : 'text-text-ink'}`}>{title}</h1>
           {body ? <div className={`mt-16 text-body ${dark ? 'text-surface-ivory/90' : 'text-text-secondary'}`}>{body}</div> : null}
           {actions ? <div className="mt-32 flex flex-wrap gap-12">{actions}</div> : null}
         </div>

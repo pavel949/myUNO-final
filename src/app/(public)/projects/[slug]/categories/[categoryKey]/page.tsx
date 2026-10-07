@@ -105,7 +105,7 @@ export default async function ProjectCategoryPage({
           href={`/units/${unit.id}?${context}`}
           className="stitch-panel-soft overflow-hidden transition hover:border-brand-andaman hover:shadow-card"
         >
-          {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-muted px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
+          {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-subtle px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
           <div className="p-16">
             <p className="text-small text-brand-andaman">{category.name}</p>
             {unit.photoScope === 'room_type' ? (

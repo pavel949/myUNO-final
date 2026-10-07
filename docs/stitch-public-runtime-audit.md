@@ -44,3 +44,14 @@ Changed only `src/components/ProjectCard.tsx` and `src/app/(public)/projects/pag
 ## Evidence limits
 
 The 11 available images are exact screenshots captured and visually inspected during this run. Service-detail and login screenshots were emitted and inspected, but their saved files are unavailable; those steps are observations without persistent image evidence. No replacement evidence has been fabricated. Accepted screenshots support only the visible desktop state. Authentication, payments, service placement, account writes and booking confirmation were not exercised. No mobile viewport was available through the documented browser controls, so mobile layout is unverified. No WCAG compliance claim, pixel-perfect Stitch parity or whole-platform completion claim is made. Authenticated PMS and other protected surface audits belong to the parallel workstreams.
+
+## Public composition follow-up · implementation
+
+Compared the approved `myuno_desktop_1` service catalog image/HTML, `srv_9042` service tracking image/HTML and `myuno_owner_onboarding_wizard` image/HTML. Applied only available canonical facts and actions; invented ROI, guarantees, provider ratings and unsupported smart-lock behavior in references were not copied.
+
+- Service detail now uses the shared mint workspace, PageHeading and Panel. Price/duration/notice are compact facts; the existing OrderWizard is a sticky contextual rail on desktop and stacks on small screens. The exact server-derived amounts and writer props remain unchanged.
+- Area directory/detail use StitchMain and shared hero/page-title/link-button compositions with one container measure. Existing area readers, navigation and content remain unchanged.
+- Property listing list/detail now use StitchMain, PageHeading and shared action links. Authentication and exact authority guards remain unchanged.
+- Onboarding adopts the named six-step ProcessStepper and shared hero instead of an anonymous progress bar. Its existing saving/submitting controls sit in a sticky action panel; the same handlers and draft transitions remain unchanged.
+
+These follow-up source changes require root integration build/deployment and new production screenshots before claiming visual verification. No source screenshot is presented as production evidence.

@@ -184,7 +184,8 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         <h1 className="font-display text-display-xl font-semibold">{unit.name}</h1>
         <Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>
         <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
-        <p>{unit.bedrooms} {copy.bedrooms} · {unit.maxGuests} {copy.guests}{unit.sizeSqm ? ` · ${unit.sizeSqm} m²` : ''}</p>
+        <p>{[unit.bedrooms > 0 ? `${unit.bedrooms} ${copy.bedrooms}` : null, unit.maxGuests > 0 ? `${unit.maxGuests} ${copy.guests}` : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
+        {unit.photoScope === 'room_type' && <p className="text-small text-text-secondary">{copy.representative}</p>}
         {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
         <aside className="stitch-panel p-24"><p>{copy.pending}</p><a href="#lead-form" className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">{copy.ask}</a></aside>
       </div>

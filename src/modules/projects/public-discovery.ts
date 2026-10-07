@@ -57,6 +57,6 @@ export async function listPublicDiscoveryUnits(filters: {
       galleryUrls: media.ready ? media.urls : [],
       photoScope: media.photoScope,
     };
-  });
+  }).sort((a, b) => Number(Boolean(b.coverUrl)) - Number(Boolean(a.coverUrl)));
 }
 export type PublicDiscoveryUnit = Awaited<ReturnType<typeof listPublicDiscoveryUnits>>[number];

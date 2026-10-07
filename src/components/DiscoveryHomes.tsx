@@ -25,7 +25,8 @@ export default async function DiscoveryHomes({ units, context = '' }: { units: P
             <div className="p-20">
               <p className="text-small text-text-secondary">{unit.categoryName}</p>
               <h3 className="font-display text-heading-3 font-semibold">{unit.name}</h3>
-              <p className="mt-8 text-small text-text-secondary">{unit.bedrooms} {copy.bedrooms} · {unit.maxGuests} {copy.guests}{unit.sizeSqm ? ` · ${unit.sizeSqm} m²` : ''}</p>
+              <p className="mt-8 text-small text-text-secondary">{[unit.bedrooms > 0 ? `${unit.bedrooms} ${copy.bedrooms}` : null, unit.maxGuests > 0 ? `${unit.maxGuests} ${copy.guests}` : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
+              {unit.photoScope === 'room_type' && <p className="mt-8 text-small text-text-secondary">{copy.representative}</p>}
               <p className="mt-16 font-semibold text-brand-andaman">{copy.open} →</p>
             </div>
           </Link>

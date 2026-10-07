@@ -91,7 +91,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
   return <main className="stitch-workspace">
     <div className="mx-auto max-w-5xl px-20 py-32 md:px-32">
       <Link href={'/homes?'+backParams.toString()} className="text-small font-semibold text-brand-andaman">← {labels['homes.detail.back']}</Link>
-      <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman">{home.project.name}</p>
+      <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman"><Link href={`/projects/${home.project.slug}`} className="hover:underline">{home.project.name}</Link></p>
       <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{home.name}</h1>
       <div className="mt-24">
         <UnitPhotoMosaic
@@ -147,7 +147,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
         </div>
 
         <aside className="stitch-panel p-20 lg:sticky lg:top-96">
-          <p className="text-kicker uppercase text-brand-andaman">{home.project.name}</p>
+          <p className="text-kicker uppercase text-brand-andaman"><Link href={`/projects/${home.project.slug}`} className="hover:underline">{home.project.name}</Link></p>
           <h2 className="mt-8 font-display text-heading-2 font-semibold text-text-ink">
             {intent === 'buy' ? labels['homes.detail.buy'] : labels['homes.detail.rent']}
           </h2>

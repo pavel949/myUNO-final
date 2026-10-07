@@ -1,3 +1,4 @@
+import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
@@ -17,6 +18,7 @@ export default async function ProjectCategoryPage({
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const locale = getRequestLocale();
+  const discovery = await discoveryCopy(locale);
   const project = await getPublicProjectBySlug(params.slug, locale);
   if (!project) notFound();
 
@@ -148,7 +150,7 @@ export default async function ProjectCategoryPage({
               </div>
             ) : null}
             {!unit.bookable ? <p className="mt-8 text-small text-text-secondary">{labels['project_category.pending']}</p> : null}
-            <p className="mt-12 text-small font-semibold text-brand-andaman">{unit.bookable ? labels['project_category.view_unit'] : labels['project_category.inquiry_unit']}</p>
+            <p className="mt-12 text-small font-semibold text-brand-andaman">{discovery.open} →</p>
           </div>
         </Link>)}
       </div>

@@ -26,11 +26,16 @@ Scope: homepage, public stay search, project catalogue, project portal, inventor
 | `/search` with dates | Existing availability/quote path; category filter reaches grouped and unit endpoints | Interaction tests |
 | `/units/[id]` bookable | Inline dates, quote refresh; breadcrumb to parent project; back preserves filters | G5 baseline, source review, type check |
 | `/units/[id]` enquiry-only | Own details/photos where ready, parent project and results links, prefilled unit enquiry | Visibility/media tests, source review |
+| `/areas` and `/areas/[slug]` | Area pages → filtered `/search?areaSlug=…` and public project cards | Source review; fixed date-less browse also repairs this entry |
+| `/homes?intent=buy` / `rent` | Existing verified commercial catalogue, preserves commercial filters into `/homes/[id]` | Source review, commercial discovery tests |
+| `/homes/[id]` | Commercial detail → results; parent project name now links to `/projects/[slug]` | Source review and lint |
+| Project amenities / amenity detail / booking / passport | Existing nested routes and return links to parent project; no route collision | Source review; transactional flows not executed |
+| Navbar and footer | Stay, commercial buy/rent, project catalogue, areas point at canonical routes | Source review |
 | Invalid/suspended/private draft unit | No public detail; strict booking API remains gated | Visibility tests, source review |
 
 ## Data and booking boundaries
 
-Discovery visibility is shared between public project and catalogue readers: live inventory or explicitly managed imported drafts only, excluding suspended units and nonpublic projects. The new reader selects public property facts and ready photos, with no owner/contact fields, booking permission or rates. Imported inventory discovery does not grant booking authority. The existing strict unit API, quotation and reservation gates remain in place. Unknown photos and prices are not manufactured. No migrations or production data edits are needed.
+Discovery visibility is shared between public project and catalogue readers: live inventory or explicitly managed imported drafts only, excluding suspended units and nonpublic projects. The new reader selects public property facts and ready photos, with no owner/contact fields, booking permission or rates. Imported inventory discovery does not grant booking authority. The existing strict unit API, quotation and reservation gates remain in place. Unknown photos and prices are not manufactured. Unknown zero-value bedroom/guest facts are omitted in the new discovery/details UI, and category photography is explicitly marked as representative. No migrations or production data edits are needed.
 
 Date and guest changes clear previous quote state immediately. Aborted old quote requests cannot overwrite a newer selection. Search context is carried through project/category/unit links and return navigation. The catalogue is bounded to 200 homes; date-less discovery does not promise availability or execute price/map sorting.
 
@@ -45,4 +50,6 @@ Date and guest changes clear previous quote state immediately. Aborted old quote
 
 ## Release verification
 
-Main-only production release is intended, with no preview branch. Record deployed commit and repeat the homepage → search → project → exact-unit journey before considering runtime verification complete. Missing source photos, zero/unknown facts, and unavailable booking terms remain content/operations work; those units stay enquiry-only.
+Main-only release: implementation commit 7674e60e3c99c0949cbb9dd9fd3209074b718757; production deployment dpl_H21kaWSSXVYkqzT67LB2pd63XAog reached READY, with no preview branch. Record deployed commit and repeat the homepage → search → project → exact-unit journey before considering runtime verification complete. Missing source photos, zero/unknown facts, and unavailable booking terms remain content/operations work; those units stay enquiry-only.
+
+Runtime verification on the first production release: `/search` lists 49 discovery homes without dates; Villa A10 opens its own description and unit-prefilled enquiry; return to Layantara works; all 39 Layantara cards have exact-unit links; category G1–G5 leads to a catalogue with exactly G1, G2, G3, G4, G5 and keeps inventoryCategoryId. Final card refinements prioritize ready photos and hide unknown facts.

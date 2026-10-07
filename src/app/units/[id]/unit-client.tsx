@@ -303,7 +303,8 @@ export default function UnitDetailClient({
                 {labels.representativeMedia}
               </p>
             ) : null}
-            <div className="stitch-panel mt-32 p-20 md:p-32">
+          </div>
+          <div className="stitch-panel p-20 md:p-32">
               <h1 className="font-display text-display font-semibold tracking-[-0.02em] text-brand-deep mb-4">
                 {unit.name}
               </h1>
@@ -378,7 +379,6 @@ export default function UnitDetailClient({
                   </p>
                 </>
               )}
-            </div>
           </div>
 
           <div className="lg:col-span-1">

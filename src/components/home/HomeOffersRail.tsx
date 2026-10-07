@@ -147,9 +147,7 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
                 <p className="text-small font-semibold text-brand-andaman">{item.projectName}</p>
                 <h3 className="mt-4 font-display text-title font-semibold text-text-ink">{item.name}</h3>
                 <p className="mt-8 text-small text-text-secondary">
-                  {item.bedrooms} {labels.bedrooms} · {item.bathrooms} {labels.bathrooms}
-                  {item.sizeSqm ? ` · ${item.sizeSqm} ${labels.sqm}` : ''}
-                  {item.guests ? ` · ${labels.guests.replace('{count}', String(item.guests))}` : ''}
+                  {[item.bedrooms > 0 ? `${item.bedrooms} ${labels.bedrooms}` : null, item.bathrooms > 0 ? `${item.bathrooms} ${labels.bathrooms}` : null, item.sizeSqm && item.sizeSqm > 0 ? `${item.sizeSqm} ${labels.sqm}` : null, item.guests && item.guests > 0 ? labels.guests.replace('{count}', String(item.guests)) : null].filter(Boolean).join(' · ')}
                 </p>
                 <div className="mt-16 flex items-end justify-between gap-12">
                   <div className="min-w-0">

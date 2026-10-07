@@ -78,7 +78,12 @@ describe('GET /api/units/[unitId] — a unit is only as public as its project', 
     const res = await GET(makeRequest(), { params: { unitId: unit.id } });
     const data = await res.json();
 
-    expect(data.project).toEqual({ id: expect.any(String), name: expect.any(String) });
+    expect(data.project).toEqual({
+      id: expect.any(String),
+      name: expect.any(String),
+      slug: 'unit-detail-live',
+    });
+    expect(data.project.status).toBeUndefined();
     expect(data.status).toBeUndefined();
   });
 });

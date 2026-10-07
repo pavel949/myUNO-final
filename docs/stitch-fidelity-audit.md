@@ -28,3 +28,7 @@ Selected regression suite: 40 tests in 8 files passed (semantic tokens, workspac
 The production service detail baseline was inspected visually at 1348×926: narrow content, oversized fact cards, no image and order form below the fold. Baseline screenshot: `evidence/stitch-fidelity/01-service-before.jpg`.
 
 Authenticated PMS/MC/owner/provider/admin pages remain behind login in the available browser. Their source and pure tests were checked; full rendered role-by-role, mobile, empty/error/loading and overflow verification is not claimed. Shared theme adoption does not certify every one of the platform's screens as pixel-identical to Stitch.
+
+## Verified release
+
+Main `24138a2d717773534d923244a102631987aad641`, production deployment `dpl_2MPVG8XJupQA5R5WtWGcHJFr14zB` READY. Exact local final build passed. Served alias: https://my-uno-final.vercel.app. Same 1348×926 browser service screenshot after: `evidence/stitch-fidelity/02-service-after.jpg`; image/disclosure, mint canvas, 16px panels and right-side order form visually present without overflow. No order was submitted. Areas listing visually inspected; clicked Areas → Layan → Layantara project and checked destination page. Authenticated workspace visual parity remains not checked.

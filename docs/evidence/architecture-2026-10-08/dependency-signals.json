@@ -1,0 +1,461 @@
+{
+  "method": "Static imports from @/modules only; file counts are indicators, not runtime cycle proof. Direct prisma mutation count excludes aliases, tx.*, raw SQL and db.*.",
+  "edges": [
+    {
+      "from": "analytics",
+      "to": "comms",
+      "files": [
+        "src/modules/analytics/buyer-interest.service.ts"
+      ]
+    },
+    {
+      "from": "analytics",
+      "to": "config",
+      "files": [
+        "src/modules/analytics/signals.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "analytics",
+      "files": [
+        "src/modules/booking/booking.service.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "comms",
+      "files": [
+        "src/modules/booking/home-space.service.ts",
+        "src/modules/booking/notify-requested.ts",
+        "src/modules/booking/notify-request-reminder.ts",
+        "src/modules/booking/notify-modified.ts",
+        "src/modules/booking/booking.service.ts",
+        "src/modules/booking/lifecycle.jobs.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "config",
+      "files": [
+        "src/modules/booking/home-space.service.ts",
+        "src/modules/booking/cancellation.ts",
+        "src/modules/booking/revenue-tariff-engine.ts",
+        "src/modules/booking/lifecycle.jobs.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "content",
+      "files": [
+        "src/modules/booking/request-decline-reasons.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "core",
+      "files": [
+        "src/modules/booking/cancellation.ts",
+        "src/modules/booking/booking.service.ts",
+        "src/modules/booking/request-inbox-enrichment.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "finance",
+      "files": [
+        "src/modules/booking/booking.service.ts"
+      ]
+    },
+    {
+      "from": "booking",
+      "to": "services",
+      "files": [
+        "src/modules/booking/home-space.service.ts"
+      ]
+    },
+    {
+      "from": "comms",
+      "to": "analytics",
+      "files": [
+        "src/modules/comms/comms.service.ts",
+        "src/modules/comms/announcement.service.ts",
+        "src/modules/comms/ticket.service.ts",
+        "src/modules/comms/lead.service.ts",
+        "src/modules/comms/thread.service.ts"
+      ]
+    },
+    {
+      "from": "comms",
+      "to": "config",
+      "files": [
+        "src/modules/comms/comms.service.ts",
+        "src/modules/comms/ticket.service.ts"
+      ]
+    },
+    {
+      "from": "comms",
+      "to": "content",
+      "files": [
+        "src/modules/comms/email.seam.ts"
+      ]
+    },
+    {
+      "from": "comms",
+      "to": "finance",
+      "files": [
+        "src/modules/comms/dispute.service.ts"
+      ]
+    },
+    {
+      "from": "comms",
+      "to": "integrations",
+      "files": [
+        "src/modules/comms/comms.service.ts"
+      ]
+    },
+    {
+      "from": "core",
+      "to": "audit",
+      "files": [
+        "src/modules/core/account.service.ts"
+      ]
+    },
+    {
+      "from": "core",
+      "to": "compliance",
+      "files": [
+        "src/modules/core/compliance.service.ts"
+      ]
+    },
+    {
+      "from": "core",
+      "to": "config",
+      "files": [
+        "src/modules/core/retention.service.ts",
+        "src/modules/core/compliance.service.ts",
+        "src/modules/core/availability.service.ts",
+        "src/modules/core/canonical-pricing.service.ts"
+      ]
+    },
+    {
+      "from": "core",
+      "to": "content",
+      "files": [
+        "src/modules/core/layantara.seed.ts"
+      ]
+    },
+    {
+      "from": "core",
+      "to": "projects",
+      "files": [
+        "src/modules/core/layantara.seed.ts",
+        "src/modules/core/seed.ts"
+      ]
+    },
+    {
+      "from": "crm",
+      "to": "booking",
+      "files": [
+        "src/modules/crm/property-deal.service.ts"
+      ]
+    },
+    {
+      "from": "finance",
+      "to": "analytics",
+      "files": [
+        "src/modules/finance/bank-transfer.service.ts",
+        "src/modules/finance/finance.service.ts"
+      ]
+    },
+    {
+      "from": "finance",
+      "to": "comms",
+      "files": [
+        "src/modules/finance/finance.service.ts",
+        "src/modules/finance/deposits.service.ts"
+      ]
+    },
+    {
+      "from": "finance",
+      "to": "config",
+      "files": [
+        "src/modules/finance/payout.service.ts",
+        "src/modules/finance/remittance.service.ts",
+        "src/modules/finance/bank-transfer.service.ts",
+        "src/modules/finance/deposits.service.ts"
+      ]
+    },
+    {
+      "from": "home",
+      "to": "content",
+      "files": [
+        "src/modules/home/public-homepage.service.ts"
+      ]
+    },
+    {
+      "from": "home",
+      "to": "destinations",
+      "files": [
+        "src/modules/home/public-homepage.service.ts"
+      ]
+    },
+    {
+      "from": "home",
+      "to": "projects",
+      "files": [
+        "src/modules/home/public-homepage.service.ts"
+      ]
+    },
+    {
+      "from": "home",
+      "to": "services",
+      "files": [
+        "src/modules/home/public-homepage.service.ts"
+      ]
+    },
+    {
+      "from": "integrations",
+      "to": "booking",
+      "files": [
+        "src/modules/integrations/layantara/channel-contract.ts",
+        "src/modules/integrations/layantara/adapter.ts",
+        "src/modules/integrations/layantara/workbook-import.ts"
+      ]
+    },
+    {
+      "from": "integrations",
+      "to": "comms",
+      "files": [
+        "src/modules/integrations/ical-import.ts"
+      ]
+    },
+    {
+      "from": "ops",
+      "to": "analytics",
+      "files": [
+        "src/modules/ops/ops-board.service.ts"
+      ]
+    },
+    {
+      "from": "ops",
+      "to": "booking",
+      "files": [
+        "src/modules/ops/ops-board.service.ts"
+      ]
+    },
+    {
+      "from": "ops",
+      "to": "comms",
+      "files": [
+        "src/modules/ops/verification.service.ts",
+        "src/modules/ops/tm30-filing.service.ts"
+      ]
+    },
+    {
+      "from": "ops",
+      "to": "config",
+      "files": [
+        "src/modules/ops/verification.service.ts",
+        "src/modules/ops/tm30-filing.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "analytics",
+      "files": [
+        "src/modules/projects/owner.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "audit",
+      "files": [
+        "src/modules/projects/projects.ts",
+        "src/modules/projects/units.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "booking",
+      "files": [
+        "src/modules/projects/public.service.ts",
+        "src/modules/projects/commercial-discovery.ts",
+        "src/modules/projects/mc.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "comms",
+      "files": [
+        "src/modules/projects/residence.service.ts",
+        "src/modules/projects/notify-owner-stay.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "compliance",
+      "files": [
+        "src/modules/projects/property-readiness.ts",
+        "src/modules/projects/commercial-discovery.ts",
+        "src/modules/projects/units.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "config",
+      "files": [
+        "src/modules/projects/owner.service.ts",
+        "src/modules/projects/owner-stay-turnover.ts",
+        "src/modules/projects/projects.ts",
+        "src/modules/projects/units.ts",
+        "src/modules/projects/mc.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "content",
+      "files": [
+        "src/modules/projects/project-amenities.service.ts",
+        "src/modules/projects/public.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "core",
+      "files": [
+        "src/modules/projects/owner.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "finance",
+      "files": [
+        "src/modules/projects/owner.service.ts",
+        "src/modules/projects/owner-stay-turnover.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "integrations",
+      "files": [
+        "src/modules/projects/mc.service.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "media",
+      "files": [
+        "src/modules/projects/property-readiness.ts",
+        "src/modules/projects/public-discovery.ts",
+        "src/modules/projects/public.service.ts",
+        "src/modules/projects/commercial-discovery.ts"
+      ]
+    },
+    {
+      "from": "projects",
+      "to": "services",
+      "files": [
+        "src/modules/projects/residence.service.ts",
+        "src/modules/projects/owner-stay-turnover.ts"
+      ]
+    },
+    {
+      "from": "services",
+      "to": "analytics",
+      "files": [
+        "src/modules/services/service-order.service.ts"
+      ]
+    },
+    {
+      "from": "services",
+      "to": "comms",
+      "files": [
+        "src/modules/services/provider.service.ts",
+        "src/modules/services/provider-notify.ts",
+        "src/modules/services/notify-order-reminder.ts",
+        "src/modules/services/service-order.service.ts"
+      ]
+    },
+    {
+      "from": "services",
+      "to": "config",
+      "files": [
+        "src/modules/services/service.service.ts",
+        "src/modules/services/notify-order-reminder.ts",
+        "src/modules/services/service-order.service.ts"
+      ]
+    },
+    {
+      "from": "services",
+      "to": "content",
+      "files": [
+        "src/modules/services/service.service.ts"
+      ]
+    },
+    {
+      "from": "services",
+      "to": "finance",
+      "files": [
+        "src/modules/services/service-order.service.ts"
+      ]
+    }
+  ],
+  "mutualEdges": [
+    [
+      "comms",
+      "integrations"
+    ],
+    [
+      "comms",
+      "finance"
+    ],
+    [
+      "analytics",
+      "comms"
+    ],
+    [
+      "core",
+      "projects"
+    ]
+  ],
+  "directPrismaMutationAppFiles": [
+    "src/app/api/notifications/route.ts",
+    "src/app/api/property-submissions/route.ts",
+    "src/app/api/ops/team/route.ts",
+    "src/app/api/ops/units/[id]/access/route.ts",
+    "src/app/api/crm/opportunities/[id]/route.ts",
+    "src/app/api/crm/opportunities/[id]/stage/route.ts",
+    "src/app/api/crm/opportunities/[id]/activities/route.ts",
+    "src/app/api/crm/activities/[id]/route.ts",
+    "src/app/api/auth/callback/google/route.ts",
+    "src/app/api/admin/prospecting/route.ts",
+    "src/app/api/admin/compliance-checklists/route.ts",
+    "src/app/api/admin/incidents/route.ts",
+    "src/app/api/admin/project-team/route.ts",
+    "src/app/api/admin/operational-kpis/route.ts",
+    "src/app/api/admin/contracts/route.ts",
+    "src/app/api/admin/prospecting/[id]/transition/route.ts",
+    "src/app/api/admin/units/[id]/property-details/route.ts",
+    "src/app/api/admin/units/[id]/status/route.ts",
+    "src/app/api/admin/projects/[id]/services/route.ts",
+    "src/app/api/admin/projects/[id]/amenities/route.ts",
+    "src/app/api/admin/projects/[id]/places/route.ts",
+    "src/app/api/admin/projects/[id]/amenities/[amenityId]/route.ts",
+    "src/app/api/admin/projects/[id]/places/[placeId]/route.ts",
+    "src/app/api/admin/compliance-checklists/[id]/route.ts",
+    "src/app/api/admin/incidents/[id]/route.ts",
+    "src/app/api/admin/roles/grant/route.ts",
+    "src/app/api/admin/ledger/[entryId]/reverse/route.ts",
+    "src/app/api/admin/homepage/placements/route.ts",
+    "src/app/api/admin/regulatory-credentials/evidence/route.ts",
+    "src/app/api/admin/fees/calculate/route.ts",
+    "src/app/api/admin/statements/generate/route.ts",
+    "src/app/api/tm30/[id]/file/route.ts",
+    "src/app/api/tm30/[id]/fail/route.ts",
+    "src/app/api/project-amenity-reservations/[id]/route.ts",
+    "src/app/api/bookings/[id]/guests/route.ts",
+    "src/app/api/bookings/[id]/internal-note/route.ts",
+    "src/app/api/bookings/[id]/cancel/route.ts"
+  ]
+}

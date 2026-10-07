@@ -1,0 +1,3052 @@
+{
+  "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
+  "root": ".",
+  "summary": {
+    "pages": 160,
+    "handlers": 227,
+    "apiHandlers": 224,
+    "modules": 22,
+    "tests": 311,
+    "prismaModels": 115,
+    "migrations": 77,
+    "routeCollisions": 0
+  },
+  "routes": [
+    {
+      "path": "/",
+      "source": "src/app/(public)/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/[vanitySlug]",
+      "source": "src/app/[vanitySlug]/route.ts",
+      "kind": "handler",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/[vanitySlug]/guest",
+      "source": "src/app/[vanitySlug]/guest/route.ts",
+      "kind": "handler",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/about",
+      "source": "src/app/(public)/about/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/account",
+      "source": "src/app/account/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/admin/finance/reconciliation",
+      "source": "src/app/admin/finance/reconciliation/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/announcements",
+      "source": "src/app/announcements/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/api/account/consent",
+      "source": "src/app/api/account/consent/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/account/notifications",
+      "source": "src/app/api/account/notifications/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/account/password",
+      "source": "src/app/api/account/password/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/account/profile",
+      "source": "src/app/api/account/profile/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/areas",
+      "source": "src/app/api/admin/areas/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/areas/[id]",
+      "source": "src/app/api/admin/areas/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/audit/export",
+      "source": "src/app/api/admin/audit/export/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/bookings",
+      "source": "src/app/api/admin/bookings/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/categories/[id]/media",
+      "source": "src/app/api/admin/categories/[id]/media/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/compliance-checklists",
+      "source": "src/app/api/admin/compliance-checklists/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/compliance-checklists/[id]",
+      "source": "src/app/api/admin/compliance-checklists/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/config",
+      "source": "src/app/api/admin/config/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/config/[paramKey]",
+      "source": "src/app/api/admin/config/[paramKey]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/config/[paramKey]/history",
+      "source": "src/app/api/admin/config/[paramKey]/history/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/content",
+      "source": "src/app/api/admin/content/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/content/[keyId]",
+      "source": "src/app/api/admin/content/[keyId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/content/export",
+      "source": "src/app/api/admin/content/export/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/content/import",
+      "source": "src/app/api/admin/content/import/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/content/namespace/[namespace]",
+      "source": "src/app/api/admin/content/namespace/[namespace]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/contracts",
+      "source": "src/app/api/admin/contracts/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/activities",
+      "source": "src/app/api/admin/crm/activities/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/opportunities",
+      "source": "src/app/api/admin/crm/opportunities/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/opportunities/[opportunityId]/deal",
+      "source": "src/app/api/admin/crm/opportunities/[opportunityId]/deal/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/opportunities/[opportunityId]/deal/evidence",
+      "source": "src/app/api/admin/crm/opportunities/[opportunityId]/deal/evidence/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/opportunities/[opportunityId]/deal/transition",
+      "source": "src/app/api/admin/crm/opportunities/[opportunityId]/deal/transition/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/opportunities/[opportunityId]/transition",
+      "source": "src/app/api/admin/crm/opportunities/[opportunityId]/transition/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/pipeline",
+      "source": "src/app/api/admin/crm/pipeline/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/crm/profiles/[profileId]/transition",
+      "source": "src/app/api/admin/crm/profiles/[profileId]/transition/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/deposit-claims/[id]",
+      "source": "src/app/api/admin/deposit-claims/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/disputes",
+      "source": "src/app/api/admin/disputes/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/disputes/[id]/decide",
+      "source": "src/app/api/admin/disputes/[id]/decide/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/fees/[contractId]",
+      "source": "src/app/api/admin/fees/[contractId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/fees/calculate",
+      "source": "src/app/api/admin/fees/calculate/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/finance/reconciliation",
+      "source": "src/app/api/admin/finance/reconciliation/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/finance/refunds/[refundId]/resolve",
+      "source": "src/app/api/admin/finance/refunds/[refundId]/resolve/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/homepage/placements",
+      "source": "src/app/api/admin/homepage/placements/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/incidents",
+      "source": "src/app/api/admin/incidents/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/incidents/[id]",
+      "source": "src/app/api/admin/incidents/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/layantara/reservations-import",
+      "source": "src/app/api/admin/layantara/reservations-import/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/ledger",
+      "source": "src/app/api/admin/ledger/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/ledger/[entryId]/reverse",
+      "source": "src/app/api/admin/ledger/[entryId]/reverse/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/media/import-managed",
+      "source": "src/app/api/admin/media/import-managed/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/operational-kpis",
+      "source": "src/app/api/admin/operational-kpis/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/organizations",
+      "source": "src/app/api/admin/organizations/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/organizations/[organizationId]",
+      "source": "src/app/api/admin/organizations/[organizationId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/payouts/[payoutId]/reconcile",
+      "source": "src/app/api/admin/payouts/[payoutId]/reconcile/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/payouts/owner",
+      "source": "src/app/api/admin/payouts/owner/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/payouts/provider",
+      "source": "src/app/api/admin/payouts/provider/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/payouts/provider/preview",
+      "source": "src/app/api/admin/payouts/provider/preview/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/[identityId]/block",
+      "source": "src/app/api/admin/people/[identityId]/block/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/[identityId]/roles",
+      "source": "src/app/api/admin/people/[identityId]/roles/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/[identityId]/unblock",
+      "source": "src/app/api/admin/people/[identityId]/unblock/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/invite",
+      "source": "src/app/api/admin/people/invite/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/search",
+      "source": "src/app/api/admin/people/search/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/project-team",
+      "source": "src/app/api/admin/project-team/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects",
+      "source": "src/app/api/admin/projects/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]",
+      "source": "src/app/api/admin/projects/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/amenities",
+      "source": "src/app/api/admin/projects/[id]/amenities/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/amenities/[amenityId]",
+      "source": "src/app/api/admin/projects/[id]/amenities/[amenityId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/amenities/[amenityId]/content",
+      "source": "src/app/api/admin/projects/[id]/amenities/[amenityId]/content/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/amenities/[amenityId]/media",
+      "source": "src/app/api/admin/projects/[id]/amenities/[amenityId]/media/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/catalog",
+      "source": "src/app/api/admin/projects/[id]/catalog/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/experience/content",
+      "source": "src/app/api/admin/projects/[id]/experience/content/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/media",
+      "source": "src/app/api/admin/projects/[id]/media/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/places",
+      "source": "src/app/api/admin/projects/[id]/places/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/places/[placeId]",
+      "source": "src/app/api/admin/projects/[id]/places/[placeId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/services",
+      "source": "src/app/api/admin/projects/[id]/services/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/structure",
+      "source": "src/app/api/admin/projects/[id]/structure/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/projects/[id]/structure/[nodeId]",
+      "source": "src/app/api/admin/projects/[id]/structure/[nodeId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/property-submissions/[id]/convert",
+      "source": "src/app/api/admin/property-submissions/[id]/convert/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/prospecting",
+      "source": "src/app/api/admin/prospecting/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/prospecting/[id]/transition",
+      "source": "src/app/api/admin/prospecting/[id]/transition/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/providers",
+      "source": "src/app/api/admin/providers/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/providers/[id]",
+      "source": "src/app/api/admin/providers/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/regulatory-credentials",
+      "source": "src/app/api/admin/regulatory-credentials/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/regulatory-credentials/[id]",
+      "source": "src/app/api/admin/regulatory-credentials/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/regulatory-credentials/evidence",
+      "source": "src/app/api/admin/regulatory-credentials/evidence/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/reports/attribution",
+      "source": "src/app/api/admin/reports/attribution/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/roles/grant",
+      "source": "src/app/api/admin/roles/grant/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/roles/revoke",
+      "source": "src/app/api/admin/roles/revoke/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/service-orders",
+      "source": "src/app/api/admin/service-orders/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/services",
+      "source": "src/app/api/admin/services/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/services/[id]",
+      "source": "src/app/api/admin/services/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/statements/[statementId]/line-items",
+      "source": "src/app/api/admin/statements/[statementId]/line-items/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/statements/[statementId]/sign-off",
+      "source": "src/app/api/admin/statements/[statementId]/sign-off/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/statements/generate",
+      "source": "src/app/api/admin/statements/generate/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units",
+      "source": "src/app/api/admin/units/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]",
+      "source": "src/app/api/admin/units/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/booking-mode",
+      "source": "src/app/api/admin/units/[id]/booking-mode/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/compliance",
+      "source": "src/app/api/admin/units/[id]/compliance/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/compliance/[recordId]",
+      "source": "src/app/api/admin/units/[id]/compliance/[recordId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/confirm-permitted-use",
+      "source": "src/app/api/admin/units/[id]/confirm-permitted-use/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/engagement",
+      "source": "src/app/api/admin/units/[id]/engagement/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/media",
+      "source": "src/app/api/admin/units/[id]/media/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/mobilization",
+      "source": "src/app/api/admin/units/[id]/mobilization/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/mobilization/[itemId]",
+      "source": "src/app/api/admin/units/[id]/mobilization/[itemId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/owner",
+      "source": "src/app/api/admin/units/[id]/owner/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/property-details",
+      "source": "src/app/api/admin/units/[id]/property-details/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/status",
+      "source": "src/app/api/admin/units/[id]/status/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/tariff",
+      "source": "src/app/api/admin/units/[id]/tariff/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/units/[id]/tariff-preview",
+      "source": "src/app/api/admin/units/[id]/tariff-preview/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/analytics/public",
+      "source": "src/app/api/analytics/public/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/announcements",
+      "source": "src/app/api/announcements/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/announcements/[id]",
+      "source": "src/app/api/announcements/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/announcements/[id]/publish",
+      "source": "src/app/api/announcements/[id]/publish/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/callback/google",
+      "source": "src/app/api/auth/callback/google/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/claim",
+      "source": "src/app/api/auth/claim/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/claim/[token]",
+      "source": "src/app/api/auth/claim/[token]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/claim/generate-link",
+      "source": "src/app/api/auth/claim/generate-link/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/forgot-password",
+      "source": "src/app/api/auth/forgot-password/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/guest-access",
+      "source": "src/app/api/auth/guest-access/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/login",
+      "source": "src/app/api/auth/login/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/logout",
+      "source": "src/app/api/auth/logout/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/me",
+      "source": "src/app/api/auth/me/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/register",
+      "source": "src/app/api/auth/register/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/reset-password",
+      "source": "src/app/api/auth/reset-password/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/auth/verify-email",
+      "source": "src/app/api/auth/verify-email/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings",
+      "source": "src/app/api/bookings/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]",
+      "source": "src/app/api/bookings/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/cancel",
+      "source": "src/app/api/bookings/[id]/cancel/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/check-out",
+      "source": "src/app/api/bookings/[id]/check-out/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/checkin",
+      "source": "src/app/api/bookings/[id]/checkin/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/checkout",
+      "source": "src/app/api/bookings/[id]/checkout/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/complete",
+      "source": "src/app/api/bookings/[id]/complete/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/deposit-claim",
+      "source": "src/app/api/bookings/[id]/deposit-claim/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/guests",
+      "source": "src/app/api/bookings/[id]/guests/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/internal-note",
+      "source": "src/app/api/bookings/[id]/internal-note/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/modify",
+      "source": "src/app/api/bookings/[id]/modify/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/record-cash-payment",
+      "source": "src/app/api/bookings/[id]/record-cash-payment/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/record-transfer",
+      "source": "src/app/api/bookings/[id]/record-transfer/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/respond",
+      "source": "src/app/api/bookings/[id]/respond/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/stay-review",
+      "source": "src/app/api/bookings/[id]/stay-review/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/transfer-instructions",
+      "source": "src/app/api/bookings/[id]/transfer-instructions/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/[id]/verify-passports",
+      "source": "src/app/api/bookings/[id]/verify-passports/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/bookings/me",
+      "source": "src/app/api/bookings/me/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/buyer-signals/[signalId]/transition",
+      "source": "src/app/api/buyer-signals/[signalId]/transition/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/buying/interest",
+      "source": "src/app/api/buying/interest/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/checkout/[sessionId]",
+      "source": "src/app/api/checkout/[sessionId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/checkout/confirm",
+      "source": "src/app/api/checkout/confirm/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/content/translate",
+      "source": "src/app/api/content/translate/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/activities/[id]",
+      "source": "src/app/api/crm/activities/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/dashboard/next-actions",
+      "source": "src/app/api/crm/dashboard/next-actions/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/dashboard/summary",
+      "source": "src/app/api/crm/dashboard/summary/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/opportunities",
+      "source": "src/app/api/crm/opportunities/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/opportunities/[id]",
+      "source": "src/app/api/crm/opportunities/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/opportunities/[id]/activities",
+      "source": "src/app/api/crm/opportunities/[id]/activities/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/crm/opportunities/[id]/stage",
+      "source": "src/app/api/crm/opportunities/[id]/stage/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/check-tm30-escalations",
+      "source": "src/app/api/cron/check-tm30-escalations/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/check-verification-deadlines",
+      "source": "src/app/api/cron/check-verification-deadlines/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/expire-service-orders",
+      "source": "src/app/api/cron/expire-service-orders/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/import-managed-yandex-media",
+      "source": "src/app/api/cron/import-managed-yandex-media/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/retention-jobs",
+      "source": "src/app/api/cron/retention-jobs/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/rollup-metrics",
+      "source": "src/app/api/cron/rollup-metrics/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/run-all",
+      "source": "src/app/api/cron/run-all/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/run-frequent",
+      "source": "src/app/api/cron/run-frequent/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/cron/sync-ical-imports",
+      "source": "src/app/api/cron/sync-ical-imports/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/deposit-claims/[id]/dispute",
+      "source": "src/app/api/deposit-claims/[id]/dispute/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/disputes",
+      "source": "src/app/api/disputes/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/health",
+      "source": "src/app/api/health/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/integrations/layantara/events",
+      "source": "src/app/api/integrations/layantara/events/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/leads",
+      "source": "src/app/api/leads/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ledger/record-cost",
+      "source": "src/app/api/ledger/record-cost/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/mc/fee-report",
+      "source": "src/app/api/mc/fee-report/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/media/upload",
+      "source": "src/app/api/media/upload/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/messages/[messageId]/flag-as-purchase",
+      "source": "src/app/api/messages/[messageId]/flag-as-purchase/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/notifications",
+      "source": "src/app/api/notifications/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/notifications/stream",
+      "source": "src/app/api/notifications/stream/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/calendar/changes",
+      "source": "src/app/api/ops/calendar/changes/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/preventive-maintenance",
+      "source": "src/app/api/ops/preventive-maintenance/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/projects/[id]/facts",
+      "source": "src/app/api/ops/projects/[id]/facts/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/reservation-groups",
+      "source": "src/app/api/ops/reservation-groups/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/reservations",
+      "source": "src/app/api/ops/reservations/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/tasks",
+      "source": "src/app/api/ops/tasks/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/tasks/[id]",
+      "source": "src/app/api/ops/tasks/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/team",
+      "source": "src/app/api/ops/team/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/units/[id]/access",
+      "source": "src/app/api/ops/units/[id]/access/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/owner-stays",
+      "source": "src/app/api/owner-stays/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/owner/statements",
+      "source": "src/app/api/owner/statements/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/owner/statements/[statementId]/question",
+      "source": "src/app/api/owner/statements/[statementId]/question/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/owner/statements/[statementId]/sign-off",
+      "source": "src/app/api/owner/statements/[statementId]/sign-off/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/owner/units/[unitId]/contract",
+      "source": "src/app/api/owner/units/[unitId]/contract/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/pricing/breakdown",
+      "source": "src/app/api/pricing/breakdown/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/pricing/category-quote",
+      "source": "src/app/api/pricing/category-quote/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/profile/export",
+      "source": "src/app/api/profile/export/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/project-amenities/[amenityId]/reservations",
+      "source": "src/app/api/project-amenities/[amenityId]/reservations/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/project-amenity-reservations/[id]",
+      "source": "src/app/api/project-amenity-reservations/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/property-submissions",
+      "source": "src/app/api/property-submissions/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/provider/me",
+      "source": "src/app/api/provider/me/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/provider/orders",
+      "source": "src/app/api/provider/orders/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/provider/remittances",
+      "source": "src/app/api/provider/remittances/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/provider/services",
+      "source": "src/app/api/provider/services/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/provider/services/[id]",
+      "source": "src/app/api/provider/services/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/providers/apply",
+      "source": "src/app/api/providers/apply/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/saved/[id]",
+      "source": "src/app/api/saved/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/search/units",
+      "source": "src/app/api/search/units/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders",
+      "source": "src/app/api/service-orders/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]",
+      "source": "src/app/api/service-orders/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/accept",
+      "source": "src/app/api/service-orders/[id]/accept/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/cancel",
+      "source": "src/app/api/service-orders/[id]/cancel/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/checkout",
+      "source": "src/app/api/service-orders/[id]/checkout/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/decline",
+      "source": "src/app/api/service-orders/[id]/decline/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/fulfil",
+      "source": "src/app/api/service-orders/[id]/fulfil/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/no-show",
+      "source": "src/app/api/service-orders/[id]/no-show/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/rate",
+      "source": "src/app/api/service-orders/[id]/rate/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/service-orders/[id]/record-cash-payment",
+      "source": "src/app/api/service-orders/[id]/record-cash-payment/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/services",
+      "source": "src/app/api/services/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/threads",
+      "source": "src/app/api/threads/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/threads/[threadId]",
+      "source": "src/app/api/threads/[threadId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/threads/[threadId]/stream",
+      "source": "src/app/api/threads/[threadId]/stream/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tickets",
+      "source": "src/app/api/tickets/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tickets/[id]",
+      "source": "src/app/api/tickets/[id]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tickets/[id]/assign",
+      "source": "src/app/api/tickets/[id]/assign/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tickets/[id]/status",
+      "source": "src/app/api/tickets/[id]/status/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tm30/[id]/fail",
+      "source": "src/app/api/tm30/[id]/fail/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tm30/[id]/file",
+      "source": "src/app/api/tm30/[id]/file/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tm30/[id]/passport",
+      "source": "src/app/api/tm30/[id]/passport/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/tm30/queue",
+      "source": "src/app/api/tm30/queue/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]",
+      "source": "src/app/api/units/[unitId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]/availability-blocks",
+      "source": "src/app/api/units/[unitId]/availability-blocks/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]/availability-blocks/[blockId]",
+      "source": "src/app/api/units/[unitId]/availability-blocks/[blockId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]/ical/export",
+      "source": "src/app/api/units/[unitId]/ical/export/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]/pricing-rules",
+      "source": "src/app/api/units/[unitId]/pricing-rules/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/units/[unitId]/pricing-rules/[ruleId]",
+      "source": "src/app/api/units/[unitId]/pricing-rules/[ruleId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/webhooks/opn",
+      "source": "src/app/api/webhooks/opn/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/app",
+      "source": "src/app/app/page.tsx",
+      "kind": "page",
+      "area": "app"
+    },
+    {
+      "path": "/app/admin",
+      "source": "src/app/(admin)/app/admin/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/announcements",
+      "source": "src/app/(admin)/app/admin/announcements/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/areas",
+      "source": "src/app/(admin)/app/admin/areas/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/audit",
+      "source": "src/app/(admin)/app/admin/audit/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/bookings",
+      "source": "src/app/(admin)/app/admin/bookings/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/bookings/[id]/journey",
+      "source": "src/app/(admin)/app/admin/bookings/[id]/journey/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/claims",
+      "source": "src/app/(admin)/app/admin/claims/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/compliance",
+      "source": "src/app/(admin)/app/admin/compliance/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/compliance-checklists",
+      "source": "src/app/(admin)/app/admin/compliance-checklists/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/config",
+      "source": "src/app/(admin)/app/admin/config/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/content",
+      "source": "src/app/(admin)/app/admin/content/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/content/homepage",
+      "source": "src/app/(admin)/app/admin/content/homepage/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/contracts",
+      "source": "src/app/(admin)/app/admin/contracts/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/crm",
+      "source": "src/app/(admin)/app/admin/crm/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/crm/opportunities/[id]",
+      "source": "src/app/(admin)/app/admin/crm/opportunities/[id]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/crm/opportunities/[id]/deal",
+      "source": "src/app/(admin)/app/admin/crm/opportunities/[id]/deal/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/developers/[id]",
+      "source": "src/app/(admin)/app/admin/developers/[id]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/disputes",
+      "source": "src/app/(admin)/app/admin/disputes/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/incidents",
+      "source": "src/app/(admin)/app/admin/incidents/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/integrations",
+      "source": "src/app/(admin)/app/admin/integrations/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/layantara",
+      "source": "src/app/(admin)/app/admin/layantara/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/ledger",
+      "source": "src/app/(admin)/app/admin/ledger/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/operational-kpis",
+      "source": "src/app/(admin)/app/admin/operational-kpis/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/organizations",
+      "source": "src/app/(admin)/app/admin/organizations/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/payouts",
+      "source": "src/app/(admin)/app/admin/payouts/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/people",
+      "source": "src/app/(admin)/app/admin/people/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/processes",
+      "source": "src/app/(admin)/app/admin/processes/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects",
+      "source": "src/app/(admin)/app/admin/projects/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]",
+      "source": "src/app/(admin)/app/admin/projects/[id]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/amenities/[amenityId]/reservations",
+      "source": "src/app/(admin)/app/admin/projects/[id]/amenities/[amenityId]/reservations/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/experience",
+      "source": "src/app/(admin)/app/admin/projects/[id]/experience/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/inventory",
+      "source": "src/app/(admin)/app/admin/projects/[id]/inventory/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/media",
+      "source": "src/app/(admin)/app/admin/projects/[id]/media/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/preview",
+      "source": "src/app/(admin)/app/admin/projects/[id]/preview/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/services",
+      "source": "src/app/(admin)/app/admin/projects/[id]/services/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/projects/[id]/structure",
+      "source": "src/app/(admin)/app/admin/projects/[id]/structure/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/properties/[id]/onboarding",
+      "source": "src/app/(admin)/app/admin/properties/[id]/onboarding/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/properties/new",
+      "source": "src/app/(admin)/app/admin/properties/new/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/property-submissions",
+      "source": "src/app/(admin)/app/admin/property-submissions/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/prospecting",
+      "source": "src/app/(admin)/app/admin/prospecting/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/providers",
+      "source": "src/app/(admin)/app/admin/providers/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/reports/attribution",
+      "source": "src/app/(admin)/app/admin/reports/attribution/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/scheduler",
+      "source": "src/app/(admin)/app/admin/scheduler/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/service-orders",
+      "source": "src/app/(admin)/app/admin/service-orders/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/services",
+      "source": "src/app/(admin)/app/admin/services/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/signals",
+      "source": "src/app/(admin)/app/admin/signals/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/statements",
+      "source": "src/app/(admin)/app/admin/statements/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/tickets",
+      "source": "src/app/(admin)/app/admin/tickets/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/units",
+      "source": "src/app/(admin)/app/admin/units/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/units/[id]",
+      "source": "src/app/(admin)/app/admin/units/[id]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/app/admin/units/[id]/structure",
+      "source": "src/app/(admin)/app/admin/units/[id]/structure/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
+      "path": "/areas",
+      "source": "src/app/areas/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/areas/[slug]",
+      "source": "src/app/areas/[slug]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/auth/claim",
+      "source": "src/app/auth/claim/page.tsx",
+      "kind": "page",
+      "area": "auth"
+    },
+    {
+      "path": "/auth/reset-password",
+      "source": "src/app/auth/reset-password/page.tsx",
+      "kind": "page",
+      "area": "auth"
+    },
+    {
+      "path": "/auth/verify",
+      "source": "src/app/auth/verify/page.tsx",
+      "kind": "page",
+      "area": "auth"
+    },
+    {
+      "path": "/book/review",
+      "source": "src/app/book/review/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/bookings/[bookingId]/home-space",
+      "source": "src/app/bookings/[bookingId]/home-space/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/bookings/[bookingId]/home-space/handbook",
+      "source": "src/app/bookings/[bookingId]/home-space/handbook/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/bookings/[bookingId]/passports",
+      "source": "src/app/bookings/[bookingId]/passports/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/buyers",
+      "source": "src/app/(public)/buyers/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/buying",
+      "source": "src/app/buying/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/checkout/[sessionId]",
+      "source": "src/app/checkout/[sessionId]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/design",
+      "source": "src/app/design/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/desks",
+      "source": "src/app/(public)/desks/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/desks/[slug]",
+      "source": "src/app/(public)/desks/[slug]/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/developers",
+      "source": "src/app/(public)/developers/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/guests",
+      "source": "src/app/(public)/guests/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/guests/access",
+      "source": "src/app/(public)/guests/access/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/help",
+      "source": "src/app/(public)/help/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/homes",
+      "source": "src/app/homes/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/homes/[id]",
+      "source": "src/app/homes/[id]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/juristic",
+      "source": "src/app/juristic/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/legal",
+      "source": "src/app/(public)/legal/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/legal/privacy",
+      "source": "src/app/(public)/legal/privacy/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/legal/terms",
+      "source": "src/app/(public)/legal/terms/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/llms.txt",
+      "source": "src/app/llms.txt/route.ts",
+      "kind": "handler",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/login",
+      "source": "src/app/login/page.tsx",
+      "kind": "page",
+      "area": "auth"
+    },
+    {
+      "path": "/manage",
+      "source": "src/app/(public)/manage/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/management-companies",
+      "source": "src/app/(public)/management-companies/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/mc",
+      "source": "src/app/mc/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/calendar",
+      "source": "src/app/mc/calendar/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/costs",
+      "source": "src/app/mc/costs/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/mobilization",
+      "source": "src/app/mc/mobilization/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/mobilization/[unitId]",
+      "source": "src/app/mc/mobilization/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/portfolio",
+      "source": "src/app/mc/portfolio/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/properties/[unitId]",
+      "source": "src/app/mc/properties/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/requests",
+      "source": "src/app/mc/requests/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/tm30",
+      "source": "src/app/mc/tm30/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/mc/units/[unitId]",
+      "source": "src/app/mc/units/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "mc"
+    },
+    {
+      "path": "/messages",
+      "source": "src/app/messages/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/messages/[threadId]",
+      "source": "src/app/messages/[threadId]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/ops",
+      "source": "src/app/ops/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/calendar",
+      "source": "src/app/ops/calendar/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/calendar/[unitId]",
+      "source": "src/app/ops/calendar/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/calendar/board",
+      "source": "src/app/ops/calendar/board/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/claims",
+      "source": "src/app/ops/claims/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/costs",
+      "source": "src/app/ops/costs/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/housekeeping",
+      "source": "src/app/ops/housekeeping/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/maintenance",
+      "source": "src/app/ops/maintenance/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/mobilization",
+      "source": "src/app/ops/mobilization/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/mobilization/[unitId]",
+      "source": "src/app/ops/mobilization/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/new-unit",
+      "source": "src/app/ops/new-unit/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/night-audit",
+      "source": "src/app/ops/night-audit/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/projects/[id]/edit",
+      "source": "src/app/ops/projects/[id]/edit/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/requests",
+      "source": "src/app/ops/requests/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/reservations",
+      "source": "src/app/ops/reservations/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/spaces",
+      "source": "src/app/ops/spaces/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/spaces/[spaceId]",
+      "source": "src/app/ops/spaces/[spaceId]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/stays",
+      "source": "src/app/ops/stays/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/stays/[bookingId]",
+      "source": "src/app/ops/stays/[bookingId]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/stays/[bookingId]/check-in",
+      "source": "src/app/ops/stays/[bookingId]/check-in/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/tasks",
+      "source": "src/app/ops/tasks/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/team",
+      "source": "src/app/ops/team/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/tm30",
+      "source": "src/app/ops/tm30/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/units/[unitId]/edit",
+      "source": "src/app/ops/units/[unitId]/edit/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/owner",
+      "source": "src/app/owner/page.tsx",
+      "kind": "page",
+      "area": "owner"
+    },
+    {
+      "path": "/owner/statements",
+      "source": "src/app/owner/statements/page.tsx",
+      "kind": "page",
+      "area": "owner"
+    },
+    {
+      "path": "/owner/statements/[statementId]",
+      "source": "src/app/owner/statements/[statementId]/page.tsx",
+      "kind": "page",
+      "area": "owner"
+    },
+    {
+      "path": "/owner/units/[unitId]",
+      "source": "src/app/owner/units/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "owner"
+    },
+    {
+      "path": "/owners",
+      "source": "src/app/(public)/owners/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/partners",
+      "source": "src/app/(public)/partners/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects",
+      "source": "src/app/(public)/projects/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]",
+      "source": "src/app/(public)/projects/[slug]/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]/amenities",
+      "source": "src/app/(public)/projects/[slug]/amenities/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]/amenities/[amenitySlug]",
+      "source": "src/app/(public)/projects/[slug]/amenities/[amenitySlug]/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]/amenities/[amenitySlug]/book",
+      "source": "src/app/(public)/projects/[slug]/amenities/[amenitySlug]/book/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]/categories/[categoryKey]",
+      "source": "src/app/(public)/projects/[slug]/categories/[categoryKey]/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/projects/[slug]/passport",
+      "source": "src/app/(public)/projects/[slug]/passport/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/property/listings",
+      "source": "src/app/property/listings/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/property/listings/[unitId]",
+      "source": "src/app/property/listings/[unitId]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/property/onboard",
+      "source": "src/app/property/onboard/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/provider",
+      "source": "src/app/provider/page.tsx",
+      "kind": "page",
+      "area": "provider"
+    },
+    {
+      "path": "/provider/apply",
+      "source": "src/app/provider/apply/page.tsx",
+      "kind": "page",
+      "area": "provider"
+    },
+    {
+      "path": "/provider/remittances",
+      "source": "src/app/provider/remittances/page.tsx",
+      "kind": "page",
+      "area": "provider"
+    },
+    {
+      "path": "/provider/services",
+      "source": "src/app/provider/services/page.tsx",
+      "kind": "page",
+      "area": "provider"
+    },
+    {
+      "path": "/providers",
+      "source": "src/app/(public)/providers/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/register",
+      "source": "src/app/register/page.tsx",
+      "kind": "page",
+      "area": "auth"
+    },
+    {
+      "path": "/rent-out",
+      "source": "src/app/(public)/rent-out/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/residence",
+      "source": "src/app/residence/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/saved",
+      "source": "src/app/saved/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/search",
+      "source": "src/app/search/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/sell",
+      "source": "src/app/(public)/sell/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/services",
+      "source": "src/app/services/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/services/[id]",
+      "source": "src/app/services/[id]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/services/orders",
+      "source": "src/app/services/orders/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/services/orders/[orderId]",
+      "source": "src/app/services/orders/[orderId]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/tickets",
+      "source": "src/app/tickets/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/tickets/[id]",
+      "source": "src/app/tickets/[id]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/tickets/new",
+      "source": "src/app/tickets/new/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/trips",
+      "source": "src/app/trips/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/trips/[id]",
+      "source": "src/app/trips/[id]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/trust",
+      "source": "src/app/(public)/trust/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/trust/ombudsman",
+      "source": "src/app/(public)/trust/ombudsman/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
+      "path": "/units/[id]",
+      "source": "src/app/units/[id]/page.tsx",
+      "kind": "page",
+      "area": "guest-or-shared"
+    }
+  ],
+  "collisions": [],
+  "modules": [
+    {
+      "name": "analytics",
+      "files": 15,
+      "testFiles": 5
+    },
+    {
+      "name": "audit",
+      "files": 6,
+      "testFiles": 3
+    },
+    {
+      "name": "auth",
+      "files": 9,
+      "testFiles": 2
+    },
+    {
+      "name": "booking",
+      "files": 45,
+      "testFiles": 26
+    },
+    {
+      "name": "browse",
+      "files": 8,
+      "testFiles": 3
+    },
+    {
+      "name": "comms",
+      "files": 18,
+      "testFiles": 7
+    },
+    {
+      "name": "compliance",
+      "files": 7,
+      "testFiles": 3
+    },
+    {
+      "name": "config",
+      "files": 10,
+      "testFiles": 3
+    },
+    {
+      "name": "content",
+      "files": 33,
+      "testFiles": 5
+    },
+    {
+      "name": "core",
+      "files": 41,
+      "testFiles": 22
+    },
+    {
+      "name": "crm",
+      "files": 12,
+      "testFiles": 5
+    },
+    {
+      "name": "destinations",
+      "files": 2,
+      "testFiles": 1
+    },
+    {
+      "name": "finance",
+      "files": 27,
+      "testFiles": 12
+    },
+    {
+      "name": "global-desks.ts",
+      "files": 0,
+      "testFiles": 0
+    },
+    {
+      "name": "home",
+      "files": 6,
+      "testFiles": 3
+    },
+    {
+      "name": "integrations",
+      "files": 27,
+      "testFiles": 11
+    },
+    {
+      "name": "media",
+      "files": 7,
+      "testFiles": 2
+    },
+    {
+      "name": "onboarding",
+      "files": 4,
+      "testFiles": 1
+    },
+    {
+      "name": "ops",
+      "files": 21,
+      "testFiles": 11
+    },
+    {
+      "name": "projects",
+      "files": 54,
+      "testFiles": 24
+    },
+    {
+      "name": "services",
+      "files": 16,
+      "testFiles": 7
+    },
+    {
+      "name": "workflows",
+      "files": 1,
+      "testFiles": 1
+    }
+  ],
+  "models": [
+    "AnalyticsEvent",
+    "Announcement",
+    "AnnouncementRead",
+    "Area",
+    "AuditLog",
+    "AuthAccount",
+    "Bed",
+    "BlockedDate",
+    "Booking",
+    "BookingChange",
+    "BookingGuest",
+    "BookingReschedule",
+    "BuyerSignal",
+    "Channel",
+    "ChannelMapping",
+    "CommercialOffering",
+    "ComplianceChecklistInstance",
+    "ComplianceChecklistTemplate",
+    "ComplianceRecord",
+    "ConditionReport",
+    "ConditionReportMedia",
+    "ConfigChange",
+    "ConfigOverride",
+    "ConfigParameter",
+    "ContentKey",
+    "CrmActivity",
+    "CrmAttributionTouch",
+    "CrmConsent",
+    "CrmOpportunity",
+    "CrmProfile",
+    "DepositClaim",
+    "DepositPreauth",
+    "Dispute",
+    "EarnedFee",
+    "ExternalAggregateCheckpoint",
+    "ExternalEventInbox",
+    "ExternalMapping",
+    "ExternalSystem",
+    "HomepagePlacement",
+    "Identity",
+    "IncidentLog",
+    "IntegrationAccount",
+    "InventoryCategory",
+    "InventoryCategoryMedia",
+    "JobRun",
+    "LedgerEntry",
+    "LifecycleTransitionLog",
+    "ManagementContract",
+    "MediaAsset",
+    "Message",
+    "MetricDaily",
+    "MobilizationChecklistItem",
+    "Notification",
+    "NotificationDelivery",
+    "NotificationPreference",
+    "OneTimeToken",
+    "OperatingSpace",
+    "OperatingSpaceMember",
+    "OperatingSpaceUnit",
+    "OperatingTeam",
+    "OperatingTeamMember",
+    "OperationalKpi",
+    "OperationalTask",
+    "OperationalTaskMedia",
+    "Organization",
+    "OwnerStatement",
+    "OwnershipPeriod",
+    "Payment",
+    "Payout",
+    "PreventiveMaintenancePlan",
+    "PricingRule",
+    "Project",
+    "ProjectAmenity",
+    "ProjectAmenityMedia",
+    "ProjectAmenityReservation",
+    "ProjectMedia",
+    "ProjectNearbyPlace",
+    "ProjectOnboardingDraft",
+    "ProjectOrganizationRole",
+    "ProjectStaffPermission",
+    "ProjectStructureNode",
+    "PropertyDeal",
+    "PropertyOnboardingTemplate",
+    "ProspectingAccount",
+    "Provider",
+    "ProviderProject",
+    "RatePlan",
+    "Refund",
+    "RegulatoryCredential",
+    "ReservationGroup",
+    "Review",
+    "RoleAssignment",
+    "SavedSearch",
+    "SavedUnit",
+    "Service",
+    "ServiceMedia",
+    "ServiceOrder",
+    "ServiceOrderDispatch",
+    "ServiceProject",
+    "ServiceQuoteRequest",
+    "ServiceQuoteVersion",
+    "SleepingSpace",
+    "StatementLineItem",
+    "Thread",
+    "ThreadParticipant",
+    "Ticket",
+    "TicketEvent",
+    "TicketMedia",
+    "Tm30Filing",
+    "Translation",
+    "UnifiedDomainEvent",
+    "Unit",
+    "UnitAccessInstruction",
+    "UnitEngagement",
+    "UnitMedia"
+  ],
+  "enums": [
+    "AnalyticsEventKey",
+    "AnnouncementAudience",
+    "AnnouncementPostedAs",
+    "AnnouncementStatus",
+    "AreaStatus",
+    "AssetStatus",
+    "AuthProvider",
+    "BlockedDateReason",
+    "BookingChangeType",
+    "BookingChannel",
+    "BookingStatus",
+    "BookingType",
+    "BuyerSignalKey",
+    "BuyerSignalStatus",
+    "ChannelCategory",
+    "ComplianceChecklistFrequency",
+    "ComplianceRecordStatus",
+    "ComplianceRecordType",
+    "ConditionReportType",
+    "ContractStatus",
+    "CrmActivityStatus",
+    "CrmActivityType",
+    "CrmConsentPurpose",
+    "CrmConsentStatus",
+    "CrmLifecycleStage",
+    "CrmOpportunityStage",
+    "CrmOpportunityType",
+    "CrmTouchType",
+    "DepositClaimStatus",
+    "DepositPreauthStatus",
+    "DisputeSubjectType",
+    "FeeStatus",
+    "FeeType",
+    "FulfilmentMode",
+    "IdentityStatus",
+    "IncidentSeverity",
+    "IncidentStatus",
+    "IncidentType",
+    "IntegrationKey",
+    "IntegrationScopeType",
+    "IntegrationStatus",
+    "JobRunOutcome",
+    "KPIStatus",
+    "LedgerEntryType",
+    "LineItemCategory",
+    "ManagementFeeBasis",
+    "MediaAssetKind",
+    "MessageKind",
+    "MobilizationChecklistItemStatus",
+    "MobilizationChecklistItemStep",
+    "NotificationChannel",
+    "NotificationDeliveryStatus",
+    "NotificationType",
+    "OneTimeTokenPurpose",
+    "OperationalTaskStatus",
+    "OperationalTaskType",
+    "OrganizationStatus",
+    "OrganizationType",
+    "OwnerStatementStatus",
+    "PaymentMethod",
+    "PaymentProvider",
+    "PaymentPurpose",
+    "PaymentStatus",
+    "PayoutMethod",
+    "PayoutPayeeType",
+    "PayoutStatus",
+    "PriceModel",
+    "ProjectStatus",
+    "ProspectingAccountStatus",
+    "ProspectingAccountType",
+    "ProviderStatus",
+    "RefundMethod",
+    "RefundReason",
+    "RefundStatus",
+    "ReviewTargetType",
+    "RoleScopeType",
+    "RoleStatus",
+    "RoleType",
+    "ServiceOrderStatus",
+    "ServiceStatus",
+    "ThreadContextType",
+    "TicketEventType",
+    "TicketPriority",
+    "TicketStatus",
+    "Tm30FilingStatus",
+    "UnitEngagementStatus",
+    "UnitEngagementType",
+    "UnitStatus",
+    "UnitType",
+    "VerificationStatus"
+  ],
+  "migrations": [
+    "prisma/migrations/0_init/migration.sql",
+    "prisma/migrations/20260716000000_align_init_baseline/migration.sql",
+    "prisma/migrations/20260719000001_order_cancelled_notification/migration.sql",
+    "prisma/migrations/20260719000002_provider_applicant_identity/migration.sql",
+    "prisma/migrations/20260719000003_metric_daily_owner_stay_nights/migration.sql",
+    "prisma/migrations/20260719000004_service_order_expiry/migration.sql",
+    "prisma/migrations/20260727000005_guest_pii_encryption/migration.sql",
+    "prisma/migrations/20260727000006_one_active_engagement_per_unit/migration.sql",
+    "prisma/migrations/20260727000007_indexes_and_deletion_status/migration.sql",
+    "prisma/migrations/20260728000008_unit_category_key/migration.sql",
+    "prisma/migrations/20260813000009_crm_foundation/migration.sql",
+    "prisma/migrations/20260813000010_owner_reporting_and_transparency/migration.sql",
+    "prisma/migrations/20260815000011_operational_crm_contracts_and_lifecycle/migration.sql",
+    "prisma/migrations/20260816000012_service_approval_audit/migration.sql",
+    "prisma/migrations/20260816000013_T032_deposits_preauth_and_damage_claims/migration.sql",
+    "prisma/migrations/20260818000014_booking_no_overlap_exclusion/migration.sql",
+    "prisma/migrations/20260818000015_ownership_period/migration.sql",
+    "prisma/migrations/20260818000016_immutable_financial_records/migration.sql",
+    "prisma/migrations/20260818000017_booking_party_composition/migration.sql",
+    "prisma/migrations/20260818000018_guest_reviews/migration.sql",
+    "prisma/migrations/20260818000019_saved_units_and_searches/migration.sql",
+    "prisma/migrations/20260818000020_area/migration.sql",
+    "prisma/migrations/20260824000021_rls_every_table/migration.sql",
+    "prisma/migrations/20260824000022_bank_transfer_payments/migration.sql",
+    "prisma/migrations/20260825044246_disputes/migration.sql",
+    "prisma/migrations/20260825050000_dispute_rls/migration.sql",
+    "prisma/migrations/20260904000023_thread_context_statement/migration.sql",
+    "prisma/migrations/20260904000024_service_order_fulfilled_at/migration.sql",
+    "prisma/migrations/20260904060200_role_assignment_scope_constraints/migration.sql",
+    "prisma/migrations/20260904062200_relax_role_assignment_unit_scope_check/migration.sql",
+    "prisma/migrations/20260904130000_job_run_scheduler_health/migration.sql",
+    "prisma/migrations/20260905000025_drop_project_default_currency/migration.sql",
+    "prisma/migrations/20260906000026_crm_opportunity_value_in_satang/migration.sql",
+    "prisma/migrations/20260907000000_canonical_property_data_system/migration.sql",
+    "prisma/migrations/20260907001000_unit_project_coherence/migration.sql",
+    "prisma/migrations/20260907120000_fix_project_org_role_index_name/migration.sql",
+    "prisma/migrations/20260908000000_service_order_close_window/migration.sql",
+    "prisma/migrations/20260908000100_service_order_closed_event/migration.sql",
+    "prisma/migrations/20260909062500_dispute_subject_concurrency_guard/migration.sql",
+    "prisma/migrations/20260909160000_canonical_commerce_federation_onboarding/migration.sql",
+    "prisma/migrations/20260909161000_reschedule_hold_cleanup/migration.sql",
+    "prisma/migrations/20260909162000_seed_onboarding_templates/migration.sql",
+    "prisma/migrations/20260912000000_secure_canonical_v3_operational_tables/migration.sql",
+    "prisma/migrations/20260912010000_payout_ledger_integrity/migration.sql",
+    "prisma/migrations/20260913100000_canonical_inventory_category_links/migration.sql",
+    "prisma/migrations/20260913210000_canonical_inventory_bootstrap/migration.sql",
+    "prisma/migrations/20260923043000_pin_inventory_trigger_search_path/migration.sql",
+    "prisma/migrations/20260924180000_refund_written_off_status/migration.sql",
+    "prisma/migrations/20260928090000_unified_domain_event_outbox/migration.sql",
+    "prisma/migrations/20260928100000_layantara_private_snapshot/migration.sql",
+    "prisma/migrations/20260928183000_layantara_booking_cutover_guard/migration.sql",
+    "prisma/migrations/20260928194500_layantara_catalog_content_and_rate_matrix/migration.sql",
+    "prisma/migrations/20260928201000_layantara_origin_photo_galleries/migration.sql",
+    "prisma/migrations/20260928202000_project_staff_department_permissions/migration.sql",
+    "prisma/migrations/20260928203500_unit_commercial_offering_uniqueness/migration.sql",
+    "prisma/migrations/20260928204500_private_unit_access_instructions/migration.sql",
+    "prisma/migrations/20260928210000_phuket_property_areas/migration.sql",
+    "prisma/migrations/20260928211000_layantara_draft_rental_offers/migration.sql",
+    "prisma/migrations/20260928212000_canonical_offering_type_alignment/migration.sql",
+    "prisma/migrations/20260928213000_layantara_staging_protection/migration.sql",
+    "prisma/migrations/20260929090000_inventory_category_gallery/migration.sql",
+    "prisma/migrations/20260929100000_project_structure_nodes/migration.sql",
+    "prisma/migrations/20260929110000_property_deal_agreements/migration.sql",
+    "prisma/migrations/20260930090000_project_amenity_experience/migration.sql",
+    "prisma/migrations/20260930120000_pin_trigger_function_search_path/migration.sql",
+    "prisma/migrations/20261002193000_pms_operational_tasks/migration.sql",
+    "prisma/migrations/20261003070000_operating_spaces_foundation/migration.sql",
+    "prisma/migrations/20261003075000_pms_operational_task_enums/migration.sql",
+    "prisma/migrations/20261003080000_pms_operational_task_expansion/migration.sql",
+    "prisma/migrations/20261003090000_reservation_groups/migration.sql",
+    "prisma/migrations/20261005120000_backfill_stay_offerings/migration.sql",
+    "prisma/migrations/20261005130000_project_portal_nearby_places/migration.sql",
+    "prisma/migrations/20261005134500_homepage_placements/migration.sql",
+    "prisma/migrations/20261005150000_homepage_funnel_events/migration.sql",
+    "prisma/migrations/20261005170000_stitch_additive_gaps/migration.sql",
+    "prisma/migrations/20261006070000_layantara_public_content_normalization/migration.sql",
+    "prisma/migrations/20261006090000_booking_channel_expedia_trip_com/migration.sql"
+  ],
+  "tests": [
+    "src/app/(admin)/app/admin/admin-nav-is-reachable.test.ts",
+    "src/app/(admin)/app/admin/crm/crm-tokens.test.ts",
+    "src/app/(admin)/app/admin/crm/pipeline-client.test.tsx",
+    "src/app/(admin)/app/admin/properties/[id]/onboarding/property-onboarding-client.test.tsx",
+    "src/app/(admin)/app/admin/units/[id]/onboarding-client.test.tsx",
+    "src/app/(admin)/app/admin/units/[id]/tariff-editor-client.test.tsx",
+    "src/app/(admin)/app/admin/units/create-unit-form.test.tsx",
+    "src/app/(public)/connected-homepage.test.ts",
+    "src/app/(public)/landing-tokens.test.ts",
+    "src/app/(public)/projects/satangToThb.test.ts",
+    "src/app/(public)/server-client-boundary.test.ts",
+    "src/app/actions/session-identity.test.ts",
+    "src/app/api/admin/categories/[id]/media/route.integration.test.ts",
+    "src/app/api/admin/compliance-checklists/checklists.integration.test.ts",
+    "src/app/api/admin/contracts/contracts.integration.test.ts",
+    "src/app/api/admin/crm/profiles/__tests__/transition.integration.test.ts",
+    "src/app/api/admin/deposits.integration.test.ts",
+    "src/app/api/admin/incidents/incidents.integration.test.ts",
+    "src/app/api/admin/operational-kpis/operational-kpis.integration.test.ts",
+    "src/app/api/admin/organizations/organizations.integration.test.ts",
+    "src/app/api/admin/payouts/payouts.integration.test.ts",
+    "src/app/api/admin/projects/[id]/catalog/catalog-booking-journey.integration.test.ts",
+    "src/app/api/admin/prospecting/prospecting.integration.test.ts",
+    "src/app/api/admin/reports/attribution/attribution.integration.test.ts",
+    "src/app/api/admin/service-orders/service-orders.integration.test.ts",
+    "src/app/api/admin/services/services.integration.test.ts",
+    "src/app/api/admin/statements/__tests__/generate.integration.test.ts",
+    "src/app/api/admin/units/__tests__/status.integration.test.ts",
+    "src/app/api/admin/units/onboarding.integration.test.ts",
+    "src/app/api/admin/units/portfolio-scope.integration.test.ts",
+    "src/app/api/analytics/public/route.integration.test.ts",
+    "src/app/api/auth/callback/google/route.test.ts",
+    "src/app/api/auth/guest-access/route.integration.test.ts",
+    "src/app/api/bookings/[id]/bookings-id.integration.test.ts",
+    "src/app/api/bookings/[id]/cancel/cancel.integration.test.ts",
+    "src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts",
+    "src/app/api/bookings/[id]/modify/modify.integration.test.ts",
+    "src/app/api/bookings/[id]/ops-authorization.integration.test.ts",
+    "src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts",
+    "src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts",
+    "src/app/api/bookings/[id]/verify-passports/route.integration.test.ts",
+    "src/app/api/bookings/category-allocation.integration.test.ts",
+    "src/app/api/bookings/me/bookings-me.integration.test.ts",
+    "src/app/api/bookings/project-derivation.integration.test.ts",
+    "src/app/api/checkout/[sessionId]/checkout-session.integration.test.ts",
+    "src/app/api/health/route.integration.test.ts",
+    "src/app/api/leads/leads-rate-limit.integration.test.ts",
+    "src/app/api/ledger/record-cost/record-cost.integration.test.ts",
+    "src/app/api/mc/fee-report/fee-report.integration.test.ts",
+    "src/app/api/ops/team/route.integration.test.ts",
+    "src/app/api/owner/statements/[statementId]/question/route.integration.test.ts",
+    "src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts",
+    "src/app/api/pricing/breakdown/annual-lease.integration.test.ts",
+    "src/app/api/pricing/breakdown/pricing-breakdown.integration.test.ts",
+    "src/app/api/property-submissions/property-submissions.integration.test.ts",
+    "src/app/api/provider/portal.integration.test.ts",
+    "src/app/api/search/units/empty-db.integration.test.ts",
+    "src/app/api/search/units/price-filter.integration.test.ts",
+    "src/app/api/search/units/route.integration.test.ts",
+    "src/app/api/search/units/sort.integration.test.ts",
+    "src/app/api/search/units/unquotable-units.integration.test.ts",
+    "src/app/api/service-orders/[id]/cancel/mc-authorization.integration.test.ts",
+    "src/app/api/service-orders/[id]/lifecycle.integration.test.ts",
+    "src/app/api/service-orders/[id]/rate/rate.integration.test.ts",
+    "src/app/api/service-orders/[id]/record-cash-payment/mc-authorization.integration.test.ts",
+    "src/app/api/service-orders/multi-project-context.integration.test.ts",
+    "src/app/api/services/route.integration.test.ts",
+    "src/app/api/spine/spine.integration.test.ts",
+    "src/app/api/threads/threads-intent.integration.test.ts",
+    "src/app/api/tickets/[id]/mc-scope.integration.test.ts",
+    "src/app/api/tickets/[id]/route.integration.test.ts",
+    "src/app/api/tm30/[id]/scoping.integration.test.ts",
+    "src/app/api/tm30/queue/route.integration.test.ts",
+    "src/app/api/units/[unitId]/ical/export/ical-export.integration.test.ts",
+    "src/app/api/units/[unitId]/media-readiness.integration.test.ts",
+    "src/app/api/units/[unitId]/unit-detail.integration.test.ts",
+    "src/app/bookings/[bookingId]/home-space/stay-home-tokens.test.ts",
+    "src/app/buying/buying-tokens.test.ts",
+    "src/app/component-islands.test.ts",
+    "src/app/content-keys-seeded.test.ts",
+    "src/app/homes/stitch-long-term-surface.test.ts",
+    "src/app/layout-fonts.test.ts",
+    "src/app/libs/bookingAccess.test.ts",
+    "src/app/libs/bookingConfirmed.integration.test.ts",
+    "src/app/libs/projectScope.integration.test.ts",
+    "src/app/libs/projectScope.null-project.test.ts",
+    "src/app/libs/projectScope.test.ts",
+    "src/app/libs/supplierListingAccess.test.ts",
+    "src/app/money-display-boundary.test.ts",
+    "src/app/ops/calendar/board/page.integration.test.tsx",
+    "src/app/ops/ops-tokens.test.ts",
+    "src/app/owner/owner-tokens.test.ts",
+    "src/app/owner/portfolio-scope.test.ts",
+    "src/app/owner/statements/[statementId]/__tests__/page.integration.test.ts",
+    "src/app/owner/statements/[statementId]/client.test.tsx",
+    "src/app/pms-touch-targets.test.ts",
+    "src/app/premium-design-parity.test.ts",
+    "src/app/project-space-media-capability.test.ts",
+    "src/app/provider/provider-orders-client.test.tsx",
+    "src/app/provider/services/services-client.test.tsx",
+    "src/app/reachability.test.ts",
+    "src/app/remaining-boards-tokens.test.ts",
+    "src/app/search/search-results.category.test.tsx",
+    "src/app/services/[id]/order-preview.test.ts",
+    "src/app/services/[id]/price-label.test.ts",
+    "src/app/services/orders/[orderId]/order-money.test.ts",
+    "src/app/services/orders/[orderId]/order-timeline.test.ts",
+    "src/app/services/services-client.money.test.ts",
+    "src/app/specified-surfaces.test.ts",
+    "src/app/stitch-surface-coverage.test.ts",
+    "src/components/Button.test.tsx",
+    "src/components/Chip.test.tsx",
+    "src/components/DiscoverySearch.test.tsx",
+    "src/components/FieldAccessibility.test.tsx",
+    "src/components/Input.test.tsx",
+    "src/components/MoneyAmount.test.tsx",
+    "src/components/Navbar.test.tsx",
+    "src/components/Placeholder.test.tsx",
+    "src/components/RoleContextBanner.test.tsx",
+    "src/components/SearchBar.test.tsx",
+    "src/components/ServiceCategoryIcon.test.tsx",
+    "src/components/UnitPhotoMosaic.test.tsx",
+    "src/components/footer-labels.test.ts",
+    "src/components/instay/ActiveOrdersList.test.tsx",
+    "src/components/instay/ServicesRail.test.tsx",
+    "src/components/ops/UnifiedStayCalendar.test.tsx",
+    "src/components/primitives.test.tsx",
+    "src/components/property/ScopedGalleryEditor.test.tsx",
+    "src/components/stitch/McWorkspaceShell.test.tsx",
+    "src/components/stitch/StitchShells.test.tsx",
+    "src/components/units/AvailabilityPricingPanel.test.tsx",
+    "src/components/viz/viz.test.tsx",
+    "src/jobs/health.test.ts",
+    "src/jobs/record.integration.test.ts",
+    "src/lib/csv.test.ts",
+    "src/lib/date.test.ts",
+    "src/lib/design-token-scale.test.ts",
+    "src/lib/design-tokens.test.ts",
+    "src/lib/example.test.ts",
+    "src/lib/format-date.test.ts",
+    "src/lib/format.test.ts",
+    "src/lib/guest-journey.test.ts",
+    "src/lib/money.test.ts",
+    "src/lib/observability.test.ts",
+    "src/lib/place-search.test.ts",
+    "src/lib/plus-code.test.ts",
+    "src/lib/pms-navigation.test.ts",
+    "src/lib/resolveDatabaseUrl.test.ts",
+    "src/lib/seo.test.ts",
+    "src/lib/session-access.test.ts",
+    "src/lib/spacing-scale.test.ts",
+    "src/lib/status.test.ts",
+    "src/lib/stitch-surface.test.ts",
+    "src/middleware.test.ts",
+    "src/modules/analytics/analytics.integration.test.ts",
+    "src/modules/analytics/buyer-interest.integration.test.ts",
+    "src/modules/analytics/event-keys.test.ts",
+    "src/modules/analytics/reports.service.integration.test.ts",
+    "src/modules/analytics/signals.integration.test.ts",
+    "src/modules/audit/audit-query.integration.test.ts",
+    "src/modules/audit/audit-write-failure.integration.test.ts",
+    "src/modules/audit/audit.integration.test.ts",
+    "src/modules/auth/auth.integration.test.ts",
+    "src/modules/auth/session.test.ts",
+    "src/modules/booking/blocked-dates.integration.test.ts",
+    "src/modules/booking/booking.service.integration.test.ts",
+    "src/modules/booking/calendar-projection.test.ts",
+    "src/modules/booking/cancellation-config.integration.test.ts",
+    "src/modules/booking/cancellation.test.ts",
+    "src/modules/booking/category-quote.test.ts",
+    "src/modules/booking/check-in-gate.test.ts",
+    "src/modules/booking/date-change.integration.test.ts",
+    "src/modules/booking/double-booking.concurrency.integration.test.ts",
+    "src/modules/booking/extension-safety.integration.test.ts",
+    "src/modules/booking/guest-journey-context.test.ts",
+    "src/modules/booking/guest-review.integration.test.ts",
+    "src/modules/booking/home-space.integration.test.ts",
+    "src/modules/booking/lifecycle.jobs.integration.test.ts",
+    "src/modules/booking/notify-modified.integration.test.ts",
+    "src/modules/booking/notify-request-reminder.integration.test.ts",
+    "src/modules/booking/notify-requested.integration.test.ts",
+    "src/modules/booking/party-composition.integration.test.ts",
+    "src/modules/booking/pms-readiness.test.ts",
+    "src/modules/booking/request-inbox-enrichment.integration.test.ts",
+    "src/modules/booking/reservation-desk.test.ts",
+    "src/modules/booking/revenue-tariff-engine.test.ts",
+    "src/modules/booking/season-cancellation.integration.test.ts",
+    "src/modules/booking/state-machine-is-wired.test.ts",
+    "src/modules/booking/stay-review.integration.test.ts",
+    "src/modules/booking/work-projection.test.ts",
+    "src/modules/browse/bounds.test.ts",
+    "src/modules/browse/saved.integration.test.ts",
+    "src/modules/browse/sort.test.ts",
+    "src/modules/comms/announcement-reach.integration.test.ts",
+    "src/modules/comms/announcement.service.integration.test.ts",
+    "src/modules/comms/dispute.service.integration.test.ts",
+    "src/modules/comms/lead.service.integration.test.ts",
+    "src/modules/comms/messenger-delivery.integration.test.ts",
+    "src/modules/comms/thread.service.integration.test.ts",
+    "src/modules/comms/ticket.service.integration.test.ts",
+    "src/modules/compliance/commercial-eligibility.engine.test.ts",
+    "src/modules/compliance/regulatory-credential.integration.test.ts",
+    "src/modules/compliance/sale-authority.integration.test.ts",
+    "src/modules/config/catalog.integration.test.ts",
+    "src/modules/config/config.test.ts",
+    "src/modules/config/edit.service.integration.test.ts",
+    "src/modules/content/content.test.ts",
+    "src/modules/content/edit.service.integration.test.ts",
+    "src/modules/content/homepage-v4.seed.test.ts",
+    "src/modules/content/key-coverage.test.ts",
+    "src/modules/content/pms-trilingual.test.ts",
+    "src/modules/core/access-enforcement.test.ts",
+    "src/modules/core/account.integration.test.ts",
+    "src/modules/core/authority.alias.test.ts",
+    "src/modules/core/availability-overrides.integration.test.ts",
+    "src/modules/core/availability.service.test.ts",
+    "src/modules/core/canonical-calendar-rate.test.ts",
+    "src/modules/core/canonical-pricing.integration.test.ts",
+    "src/modules/core/commercial-booking-terms.test.ts",
+    "src/modules/core/compliance.integration.test.ts",
+    "src/modules/core/engagement.integration.test.ts",
+    "src/modules/core/invite.integration.test.ts",
+    "src/modules/core/landing.test.ts",
+    "src/modules/core/layantara.seed.integration.test.ts",
+    "src/modules/core/people.service.integration.test.ts",
+    "src/modules/core/permissions-action-coverage.test.ts",
+    "src/modules/core/permissions.matrix.test.ts",
+    "src/modules/core/retention.integration.test.ts",
+    "src/modules/core/rls.integration.test.ts",
+    "src/modules/core/seasonal-tariff.test.ts",
+    "src/modules/core/tariff-editor.integration.test.ts",
+    "src/modules/core/tariff-editor.test.ts",
+    "src/modules/core/walkthrough.seed.integration.test.ts",
+    "src/modules/crm/consent.integration.test.ts",
+    "src/modules/crm/domain.test.ts",
+    "src/modules/crm/private-deal-evidence.test.ts",
+    "src/modules/crm/property-deal.service.integration.test.ts",
+    "src/modules/crm/public-lead.integration.test.ts",
+    "src/modules/destinations/index.test.ts",
+    "src/modules/finance/bank-transfer.integration.test.ts",
+    "src/modules/finance/create-checkout-opn.integration.test.ts",
+    "src/modules/finance/deposit-claims.integration.test.ts",
+    "src/modules/finance/deposits.integration.test.ts",
+    "src/modules/finance/fee-model-boundary.integration.test.ts",
+    "src/modules/finance/finance.service.integration.test.ts",
+    "src/modules/finance/immutability.integration.test.ts",
+    "src/modules/finance/ledger.integration.test.ts",
+    "src/modules/finance/payout.integration.test.ts",
+    "src/modules/finance/provider-webhook.integration.test.ts",
+    "src/modules/finance/providers/opn.test.ts",
+    "src/modules/finance/providers/provider-seam.test.ts",
+    "src/modules/home/home-read-model.test.ts",
+    "src/modules/home/homepage-placement.test.ts",
+    "src/modules/home/public-homepage.failsoft.test.ts",
+    "src/modules/integrations/channel-health.test.ts",
+    "src/modules/integrations/ical-import.integration.test.ts",
+    "src/modules/integrations/ical-parse.test.ts",
+    "src/modules/integrations/ical-sync.integration.test.ts",
+    "src/modules/integrations/layantara/adapter.test.ts",
+    "src/modules/integrations/layantara/channel-contract.test.ts",
+    "src/modules/integrations/layantara/channel-service.integration.test.ts",
+    "src/modules/integrations/layantara/protection.service.test.ts",
+    "src/modules/integrations/layantara/unified-outbox.integration.test.ts",
+    "src/modules/integrations/layantara/workbook-import.integration.test.ts",
+    "src/modules/integrations/unit-ical-conflicts.integration.test.ts",
+    "src/modules/media/gallery-policy.test.ts",
+    "src/modules/media/public-readiness.test.ts",
+    "src/modules/onboarding/canonical-onboarding.test.ts",
+    "src/modules/ops/check-in-checklist.test.ts",
+    "src/modules/ops/guest-pii.integration.test.ts",
+    "src/modules/ops/operating-space.schema.test.ts",
+    "src/modules/ops/operational-task.schema.test.ts",
+    "src/modules/ops/operational-task.service.test.ts",
+    "src/modules/ops/ops-board.service.integration.test.ts",
+    "src/modules/ops/pms-operations-expansion.test.ts",
+    "src/modules/ops/tm30-address.test.ts",
+    "src/modules/ops/tm30-filing.service.integration.test.ts",
+    "src/modules/ops/tm30-queue.integration.test.ts",
+    "src/modules/ops/verification.service.integration.test.ts",
+    "src/modules/projects/area.integration.test.ts",
+    "src/modules/projects/canonical-property-data.test.ts",
+    "src/modules/projects/commercial-discovery.test.ts",
+    "src/modules/projects/long-term-lease.test.ts",
+    "src/modules/projects/mc.integration.test.ts",
+    "src/modules/projects/owner-landing.test.ts",
+    "src/modules/projects/owner-period-allocation.test.ts",
+    "src/modules/projects/owner.integration.test.ts",
+    "src/modules/projects/ownership.integration.test.ts",
+    "src/modules/projects/passport.service.test.ts",
+    "src/modules/projects/project-amenities.test.ts",
+    "src/modules/projects/project-editorial.test.ts",
+    "src/modules/projects/project-nearby.test.ts",
+    "src/modules/projects/projects.integration.test.ts",
+    "src/modules/projects/property-readiness.offering.integration.test.ts",
+    "src/modules/projects/public-discovery.test.ts",
+    "src/modules/projects/public-responsibility.test.ts",
+    "src/modules/projects/public-unit.integration.test.ts",
+    "src/modules/projects/public.integration.test.ts",
+    "src/modules/projects/residence.integration.test.ts",
+    "src/modules/projects/stay-offering-backfill.integration.test.ts",
+    "src/modules/projects/structure-kinds.test.ts",
+    "src/modules/projects/unit-project-coherence.integration.test.ts",
+    "src/modules/projects/units.integration.test.ts",
+    "src/modules/services/notify-order-reminder.integration.test.ts",
+    "src/modules/services/project-service-offer.test.ts",
+    "src/modules/services/provider.service.integration.test.ts",
+    "src/modules/services/service-order-customer-view.integration.test.ts",
+    "src/modules/services/service-order.service.integration.test.ts",
+    "src/modules/services/service.service.integration.test.ts",
+    "src/modules/services/service.service.test.ts",
+    "src/modules/workflows/property-to-financial-close.integration.test.ts"
+  ]
+}

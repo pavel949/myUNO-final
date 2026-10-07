@@ -1,3 +1,5 @@
+import { discoveryCopy } from '@/components/DiscoveryHomes';
+import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { Metadata } from 'next';
 import Link from 'next/link';
@@ -61,9 +63,10 @@ export async function generateMetadata({
 }
 
 export default async function ProjectLandingPage({
-  params,
+  params, searchParams = {},
 }: {
   params: { slug: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
   if (!project) notFound();
@@ -212,6 +215,7 @@ export default async function ProjectLandingPage({
   const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
+  const context = discoveryContext(searchParams, { projectId: project.id });
   const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
 
   // Project editorial and locality are editable ContentKey records, not a
@@ -226,6 +230,7 @@ export default async function ProjectLandingPage({
   ] as const;
   const editorialPrefix = `project.${project.slug}.editorial.`;
   const locale = getRequestLocale();
+  const discovery = await discoveryCopy(locale);
   const editorialKeys = editorialFields.map(field => editorialPrefix + field);
   const categoryDescriptionKeys = project.categories.flatMap(category => [category.titleKey, category.descriptionKey]);
   const unitEditorialKeys = project.units.flatMap(unit =>
@@ -313,6 +318,7 @@ export default async function ProjectLandingPage({
   const projectInquiryAudience: 'renters' = 'renters';
   const portalNavItems = [
     ...(bookableStayCount > 0 ? [{ href: '#availability', label: labels['project_page.nav.stay'] }] : []),
+    ...(project.categories.length > 0 ? [{ href: '#categories', label: labels['project_page.categories.generic_title'] }] : []),
     ...(project.units.length > 0 || buyHomeCount > 0 || rentHomeCount > 0 ? [{ href: '#homes', label: labels['project_page.nav.homes'] }] : []),
     ...(project.amenities.length > 0 ? [{ href: '#amenities', label: labels['project_page.nav.amenities'] }] : []),
     ...(services.length > 0 ? [{ href: '#services', label: labels['project_page.nav.services'] }] : []),
@@ -384,6 +390,10 @@ export default async function ProjectLandingPage({
           </h2>
           <SearchBar
             projectId={project.id}
+            initialStartDate={typeof searchParams.startDate === 'string' ? searchParams.startDate : ''}
+            initialEndDate={typeof searchParams.endDate === 'string' ? searchParams.endDate : ''}
+            initialAdults={Number(searchParams.adults) || 2}
+            initialChildren={Number(searchParams.children) || 0}
             labels={{
               checkIn: labels['landing.search.check_in'],
               checkOut: labels['landing.search.check_out'],
@@ -445,7 +455,7 @@ export default async function ProjectLandingPage({
       {/* Three styles + villa categories (config-driven: renders only when
           the project defines a unit-categories catalog) */}
       {project.categories.length > 0 ? (
-        <section className="mx-auto max-w-content px-20 py-64 md:px-32">
+        <section id="categories" className="mx-auto max-w-content px-20 py-64 md:px-32">
           {styleKeys.length > 1 ? (
             <>
               <h2 className="font-display text-display-xl font-semibold text-text-ink mb-24">
@@ -470,7 +480,7 @@ export default async function ProjectLandingPage({
             {project.categories.map((category) => (
               <Link
                 key={category.key}
-                href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}`}
+                href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}?${context}`}
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
               >
                 {category.coverUrl ? (
@@ -567,9 +577,7 @@ export default async function ProjectLandingPage({
             {project.units.map((unit) => (
               <Link
                 key={unit.id}
-                href={unit.bookable
-                  ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
-                  : '#lead-form'}
+                href={`/units/${unit.id}?${context}`}
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
                 {unit.coverUrl ? (
@@ -582,7 +590,7 @@ export default async function ProjectLandingPage({
                   />
                 ) : (
                   <div className="flex aspect-[4/3] items-center justify-center bg-surface-sand px-16 text-center text-small text-text-secondary">
-                    {labels['project_page.units.details_pending']}
+                    {discovery.pending}
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-20">
@@ -644,11 +652,11 @@ export default async function ProjectLandingPage({
                     </p>
                   ) : (
                     <p className="mb-12 text-small text-text-secondary">
-                      {labels['project_page.units.details_pending']}
+                      {discovery.pending}
                     </p>
                   )}
                   <span className="mt-auto inline-flex min-h-44 items-center justify-center rounded-md bg-brand-andaman px-20 text-small font-semibold text-white transition group-hover:bg-brand-deep">
-                    {unit.bookable ? labels['project_page.units.view'] : labels['project_page.units.inquiry']}
+                    {discovery.open} →
                   </span>
                 </div>
               </Link>

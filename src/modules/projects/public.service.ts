@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { managedImportedInventoryIds } from './public-managed-import';
+import { discoveryVisibility } from './public-discovery';
 import { categoryEditorialKeys } from './project-editorial';
 import { tMany, type Locale } from '@/modules/content';
 import { listPublicProjectAmenities } from './project-amenities.service';
@@ -187,11 +188,7 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
       },
       units: {
         where: {
-          assetStatus: { not: 'suspended' },
-          OR: [
-            { status: 'live' },
-            { status: 'draft', assetStatus: 'managed' },
-          ],
+          ...discoveryVisibility(managedImported),
         },
         select: {
           id: true,
@@ -322,11 +319,7 @@ export async function getPublicProjectBySlug(
       },
       units: {
         where: {
-          assetStatus: { not: 'suspended' },
-          OR: [
-            { status: 'live' },
-            { status: 'draft', assetStatus: 'managed' },
-          ],
+          ...discoveryVisibility(managedImported),
         },
         orderBy: [{ name: 'asc' }],
         include: {
@@ -361,7 +354,7 @@ export async function getPublicProjectBySlug(
 
   if (
     !project ||
-    (project.status !== 'live' && !managedImported.projectIds.includes(project.id))
+    (project.status !== 'live' && !(project.status === 'draft' && managedImported.projectIds.includes(project.id)))
   ) return null;
 
   const publicUnits = project.units.map((unit) => {

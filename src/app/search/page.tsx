@@ -2,10 +2,19 @@ import { Suspense } from 'react';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_SORTS } from '@/modules/browse';
 import SearchResults from './search-results';
+import DiscoveryHomes from '@/components/DiscoveryHomes';
+import { listPublicDiscoveryUnits } from '@/modules/projects/public-discovery';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage() {
+export default async function SearchPage({ searchParams = {} }: { searchParams?: Record<string, string | string[] | undefined> }) {
+  const param = (key: string) => typeof searchParams[key] === 'string' ? searchParams[key] as string : undefined;
+  const bedroomValue = param('bedrooms');
+  const bedrooms = bedroomValue && /^\d+$/.test(bedroomValue) ? Number(bedroomValue) : undefined;
+  const unitTypes = (param('unitTypes') || '').split(',').filter((value): value is 'villa' | 'condo' | 'townhouse' => ['villa', 'condo', 'townhouse'].includes(value));
+  const hasDates = Boolean(param('startDate') && param('endDate'));
+  const browse = hasDates ? [] : await listPublicDiscoveryUnits({ projectId: param('projectId'), areaSlug: param('areaSlug'), inventoryCategoryId: param('inventoryCategoryId'), bedrooms, unitTypes });
+  const context = new URLSearchParams(Object.entries(searchParams).filter((entry): entry is [string, string] => typeof entry[1] === 'string')).toString();
   const locale = getRequestLocale();
   // Fetch all sort labels from the content layer (no fallbacks — labelKey must exist)
   const sortLabels = await getLabels(
@@ -112,6 +121,7 @@ export default async function SearchPage() {
           label: sortLabels[sort.labelKey],
         }))}
       />
+      {!hasDates && <DiscoveryHomes units={browse} context={context} />}
     </Suspense>
   );
 }

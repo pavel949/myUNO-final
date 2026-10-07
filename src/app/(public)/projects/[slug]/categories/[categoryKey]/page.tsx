@@ -1,3 +1,4 @@
+import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,9 +11,10 @@ import { tMany } from '@/modules/content';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectCategoryPage({
-  params,
+  params, searchParams = {},
 }: {
   params: { slug: string; categoryKey: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const locale = getRequestLocale();
   const project = await getPublicProjectBySlug(params.slug, locale);
@@ -20,6 +22,7 @@ export default async function ProjectCategoryPage({
 
   const category = project.categories.find(item => item.key === params.categoryKey);
   if (!category) notFound();
+  const context = discoveryContext(searchParams, { projectId: project.id, inventoryCategoryId: category.id });
   const units = project.units.filter(unit => unit.categoryKey === category.key);
   const bookableUnits = units.filter(unit => unit.bookable);
   const unitEditorialKeys = units.flatMap(unit =>
@@ -56,7 +59,7 @@ export default async function ProjectCategoryPage({
     <div className="stitch-page space-y-24">
     <header className="stitch-hero">
       <div>
-        <Link href={`/projects/${project.slug}`} className="text-small font-semibold text-brand-andaman hover:underline">
+        <Link href={`/projects/${project.slug}?${context}#categories`} className="text-small font-semibold text-brand-andaman hover:underline">
           ← {labels['project_category.back']} · {project.name}
         </Link>
         <h1 className="mt-12 font-display text-display-xl font-semibold text-text-ink">{category.name}</h1>
@@ -69,7 +72,7 @@ export default async function ProjectCategoryPage({
         </div>
         {bookableUnits.length > 0 ? (
           <Link
-            href={`/search?projectId=${encodeURIComponent(project.id)}&inventoryCategoryId=${encodeURIComponent(category.id)}`}
+            href={`/search?${context}`}
             className="mt-20 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 font-semibold text-surface-ivory hover:bg-brand-deep"
           >
             {labels['project_category.search']}
@@ -97,9 +100,7 @@ export default async function ProjectCategoryPage({
       <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
         {units.map(unit => <Link
           key={unit.id}
-          href={unit.bookable
-            ? `/units/${unit.id}?projectId=${encodeURIComponent(project.id)}`
-            : `/projects/${project.slug}#lead-form`}
+          href={`/units/${unit.id}?${context}`}
           className="stitch-panel-soft overflow-hidden transition hover:border-brand-andaman hover:shadow-card"
         >
           {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-muted px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}

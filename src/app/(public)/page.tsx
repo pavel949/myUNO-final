@@ -244,11 +244,8 @@ export default async function LandingPage({
         bathrooms: unit.bathrooms,
         guests: unit.maxGuests,
         // The base rate is indicative: it is never presented as a total.
-        priceMode: 'base_nightly',
-        priceText: L('landing.hp.offers.price.base_nightly').replace(
-          '{price}',
-          formatThb(unit.baseNightlyThb / 100, locale)
-        ),
+        priceMode: unit.baseNightlyThb > 0 ? 'base_nightly' : 'on_request',
+        priceText: unit.baseNightlyThb > 0 ? L('landing.hp.offers.price.base_nightly').replace('{price}', formatThb(unit.baseNightlyThb / 100, locale)) : L('landing.hp.offers.price.on_request'),
         priceNote: L('landing.hp.offers.price.base_note'),
       };
     }),
@@ -397,7 +394,7 @@ export default async function LandingPage({
               />
               <p className="mt-12 px-4 text-small text-text-ink">
                 {labels['landing.hp.hero.dates_note']}{' '}
-                <Link href="/projects" className="font-semibold text-brand-andaman hover:underline">
+                <Link href="/search" className="font-semibold text-brand-andaman hover:underline">
                   {labels['landing.hp.hero.no_dates']} →
                 </Link>
               </p>

@@ -10,6 +10,7 @@ const params = new URLSearchParams({
   adults: '2',
   children: '0',
   projectId: 'project-1',
+  inventoryCategoryId: 'cat-uuid-1',
 });
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn() }),
@@ -55,5 +56,7 @@ describe('SearchResults — category booking uses the canonical id', () => {
     expect(target.pathname).toBe('/book/review');
     expect(target.searchParams.get('inventoryCategoryId')).toBe('cat-uuid-1');
     expect(target.searchParams.get('categoryKey')).toBeNull();
+    const requests = vi.mocked(fetch).mock.calls.map(([url]) => new URL(String(url), 'https://example.test'));
+    expect(requests.every(url => url.searchParams.get('inventoryCategoryId') === 'cat-uuid-1')).toBe(true);
   });
 });

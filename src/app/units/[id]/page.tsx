@@ -1,4 +1,10 @@
 import { Suspense } from 'react';
+import { discoveryContext } from '@/lib/discovery-navigation';
+import Link from 'next/link';
+import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { discoveryCopy } from '@/components/DiscoveryHomes';
+import { listPublicDiscoveryUnits } from '@/modules/projects/public-discovery';
+import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -32,10 +38,9 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const unit = await getPublicUnitById(params.id).catch(() => null);
+  const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];
 
-  // A draft or paused unit has no public face, so it gets no indexable
-  // metadata either (doc 08 §7).
+  // Only live units and explicitly imported public discovery inventory get metadata.
   if (!unit) {
     return { robots: { index: false, follow: false } };
   }
@@ -54,11 +59,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function UnitDetailPage({ params }: { params: { id: string } }) {
-  // Suspended/draft entities never render (doc 08 §7). The booking widget
-  // below is client-rendered, so without this gate a paused unit would still
-  // serve a page and get indexed.
-  const unit = await getPublicUnitById(params.id).catch(() => null);
+export default async function UnitDetailPage({ params, searchParams = {} }: { params: { id: string }; searchParams?: Record<string, string | string[] | undefined> }) {
+  // Booking stays behind the strict gate; imported inventory gets inquiry-only details.
+  const context = discoveryContext(searchParams);
+  const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];
   if (!unit) {
     notFound();
   }
@@ -71,8 +75,10 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
     source: 'stay_unit_detail',
   }).catch(() => null);
 
+  const copy = await discoveryCopy(getRequestLocale());
+  const projectHref = `/projects/${unit.project.slug}${context ? `?${context}` : ''}`;
   const description = await unitDescription(unit.descriptionKey);
-  const jsonLd = unitJsonLd({ ...unit, description });
+  const jsonLd = 'bookable' in unit ? unitJsonLd({ ...unit, description }) : null;
 
   const labels = await getLabels({
     'units.breadcrumb_home': 'Home',
@@ -165,8 +171,26 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
 
   const breadcrumbs = [
     { label: labels['units.breadcrumb_home'], href: '/' },
-    { label: labels['units.breadcrumb_detail'], current: true },
+    { label: unit.project.name, href: projectHref },
+    { label: unit.name, current: true },
   ];
+
+  const inquiryAudience = 'renters' as const;
+  if (!('bookable' in unit)) {
+    return <main className="stitch-workspace">
+      <Breadcrumb items={breadcrumbs} />
+      <div className="stitch-page space-y-24">
+        <Link href={`/search${context ? `?${context}` : ''}`} className="text-brand-andaman hover:underline">{labels['listing.back_to_results']}</Link>
+        <h1 className="font-display text-display-xl font-semibold">{unit.name}</h1>
+        <Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>
+        <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
+        <p>{unit.bedrooms} {copy.bedrooms} · {unit.maxGuests} {copy.guests}{unit.sizeSqm ? ` · ${unit.sizeSqm} m²` : ''}</p>
+        {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
+        <aside className="stitch-panel p-24"><p>{copy.pending}</p><a href="#lead-form" className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">{copy.ask}</a></aside>
+      </div>
+      <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} initialMessage={`${unit.project.name} — ${unit.name} (${unit.id})`} />
+    </main>;
+  }
 
   return (
     <Suspense>
@@ -221,7 +245,7 @@ export default async function UnitDetailPage({ params }: { params: { id: string 
           guestNotePlaceholder: labels['listing.guest_note_placeholder'],
           reserve: labels['listing.reserve'],
           reserving: labels['listing.reserving'],
-          pickDates: labels['listing.pick_dates'],
+          pickDates: copy.note,
           errorPrice: labels['listing.error_price'],
           errorBooking: labels['listing.error_booking'],
           unavailableForDates: labels['listing.unavailable_for_dates'],

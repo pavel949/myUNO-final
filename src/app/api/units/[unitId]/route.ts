@@ -107,7 +107,7 @@ export async function GET(
           },
         },
         project: {
-          select: { id: true, name: true, status: true, projectType: true },
+          select: { id: true, name: true, slug: true, status: true, projectType: true },
         },
         coverMedia: {
           select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true },
@@ -274,7 +274,7 @@ export async function GET(
             name: inventoryCategory.name,
           }
         : null,
-      project: { id: project.id, name: project.name },
+      project: { id: project.id, name: project.name, slug: project.slug },
     };
     const coverUrl = mediaReadiness.coverUrl;
 

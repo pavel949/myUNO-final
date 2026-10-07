@@ -44,7 +44,7 @@ describe('connected public homepage', () => {
     expect(rail).toContain("url.searchParams.set('startDate', search.startDate)");
   });
   it('never presents an indicative base rate as a total price', () => {
-    expect(landing).toContain("priceMode: 'base_nightly'");
+    expect(landing).toContain("priceMode: unit.baseNightlyThb > 0 ? 'base_nightly' : 'on_request'");
     expect(landing).toContain('landing.hp.offers.price.base_note');
   });
   it('keeps a shared header/footer with account role links', () => {

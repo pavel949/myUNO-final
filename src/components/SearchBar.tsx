@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from './Button';
 import { StayDatePicker } from './StayDatePicker';
 import { useLocale } from './LocaleProvider';
@@ -49,6 +49,7 @@ export function SearchBar({
   stayMode,
 }: SearchBarProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = useLocale();
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
@@ -65,13 +66,12 @@ export function SearchBar({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!startDate || !endDate || endDate <= startDate) return;
-    const params = new URLSearchParams({
-      startDate,
-      endDate,
-      adults: String(adults),
-      children: String(children),
-    });
+    if ((startDate || endDate) && (!startDate || !endDate || endDate <= startDate)) return;
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.set('startDate', startDate);
+    params.set('endDate', endDate);
+    params.set('adults', String(adults));
+    params.set('children', String(children));
     if (projectId) params.set('projectId', projectId);
     if (areaSlug) params.set('areaSlug', areaSlug);
     if (stayMode) params.set('stayMode', stayMode);

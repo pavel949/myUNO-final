@@ -9,6 +9,8 @@ import { Counter } from '@/components/Counter';
 import { MoneyAmount } from '@/components/MoneyAmount';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { StayDatePicker } from '@/components/StayDatePicker';
+import { useLocale } from '@/components/LocaleProvider';
 import { LeadForm, type LeadFormLabels } from '@/components/LeadForm';
 
 interface Unit {
@@ -39,7 +41,7 @@ interface Unit {
   inventoryCategory?: { id: string; categoryKey: string; name: string } | null;
   /** Canonical category base rate, satang. */
   baseRateSatang?: number;
-  project?: { id: string; name: string };
+  project?: { id: string; name: string; slug?: string };
   photoScope?: 'exact_unit' | 'room_type';
 }
 
@@ -136,6 +138,14 @@ export default function UnitDetailClient({
   labels: UnitDetailLabels;
 }) {
   const router = useRouter();
+  const locale = useLocale();
+  const pickerLabels = {
+    ru: { previous: 'Назад', next: 'Вперёд', close: 'Закрыть', clear: 'Очистить' },
+    th: { previous: 'ก่อนหน้า', next: 'ถัดไป', close: 'ปิด', clear: 'ล้าง' },
+    zh: { previous: '上个月', next: '下个月', close: '关闭', clear: '清除' },
+    en: { previous: 'Previous', next: 'Next', close: 'Close', clear: 'Clear' },
+  };
+  const pickerCopy = pickerLabels[locale as keyof typeof pickerLabels] ?? pickerLabels.en;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [unit, setUnit] = useState<Unit | null>(null);
@@ -149,19 +159,8 @@ export default function UnitDetailClient({
   const endDate = searchParams?.get('endDate');
   const adults = parseInt(searchParams?.get('adults') || '1');
   const children = parseInt(searchParams?.get('children') || '0');
-  const projectId = searchParams?.get('projectId');
-  const areaSlug = searchParams?.get('areaSlug');
-  const stayMode = searchParams?.get('stayMode');
 
-  const backToSearch = `/search?${new URLSearchParams({
-    startDate: startDate || '',
-    endDate: endDate || '',
-    adults: String(adults),
-    children: String(children),
-    ...(projectId ? { projectId } : {}),
-    ...(areaSlug ? { areaSlug } : {}),
-    ...(stayMode ? { stayMode } : {}),
-  })}`;
+  const backToSearch = `/search?${searchParams?.toString() || ''}`;
 
   useEffect(() => {
     const fetchUnit = async () => {
@@ -184,8 +183,12 @@ export default function UnitDetailClient({
   }, [unitId, labels.notFound]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    setBreakdown(null);
+    setError(null);
+    setLeaseRequired(false);
     const fetchBreakdown = async () => {
-      if (!unit || !startDate || !endDate) return;
+      if (!unit || !startDate || !endDate || endDate <= startDate) return;
       // A quote belongs to one set of dates: never leave the previous
       // price (and an enabled Reserve) beside a failure for new dates.
       setBreakdown(null);
@@ -194,6 +197,7 @@ export default function UnitDetailClient({
 
       try {
         const response = await fetch('/api/pricing/breakdown', {
+          signal: controller.signal,
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -207,23 +211,25 @@ export default function UnitDetailClient({
         if (!response.ok) {
           const body = await response.json().catch(() => null) as { code?: string } | null;
           if (body?.code === 'lease_request_required') {
-            setLeaseRequired(true);
+            if (!controller.signal.aborted) setLeaseRequired(true);
             return;
           }
           throw new Error(body?.code === 'stay_unquotable' ? labels.unavailableForDates : labels.errorPrice);
         }
         const data = await response.json();
-        setBreakdown(data);
+        if (!controller.signal.aborted) setBreakdown(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : labels.errorPrice);
+        if (!controller.signal.aborted) setError(err instanceof Error ? err.message : labels.errorPrice);
       }
     };
 
     fetchBreakdown();
+    return () => controller.abort();
   }, [unit, startDate, endDate, adults, children, labels.errorPrice, labels.unavailableForDates]);
 
   const setAdults = (next: number) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
+    setBreakdown(null);
     params.set('adults', String(next));
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -309,7 +315,7 @@ export default function UnitDetailClient({
               {unit.project?.name && (
                 <p className="text-body text-text-stone mb-20">
                   {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
-                  {unit.project.name}{' '}
+                  {unit.project.slug ? <Link href={`/projects/${unit.project.slug}?${searchParams?.toString() || ''}`} className="text-brand-andaman hover:underline">{unit.project.name}</Link> : unit.project.name}{' '}
                   <span className="text-text-stone-2">· {labels.onMyUno}</span>
                 </p>
               )}
@@ -398,6 +404,18 @@ export default function UnitDetailClient({
                 {breakdown && breakdown.nights > 0 ? labels.averageForDates : labels.baseRateNote}
               </p>
 
+              <div className="mb-20">
+                <StayDatePicker start={startDate || ''} end={endDate || ''}
+                  min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })}
+                  locale={locale} labels={{ checkIn: labels.checkIn, checkOut: labels.checkOut, ...pickerCopy }}
+                  onChange={(start, end) => {
+                    setBreakdown(null);
+                    const next = new URLSearchParams(searchParams?.toString() || '');
+                    if (start) next.set('startDate', start); else next.delete('startDate');
+                    if (end) next.set('endDate', end); else next.delete('endDate');
+                    router.replace(`${pathname}?${next}`, { scroll: false });
+                  }} />
+              </div>
               {!startDate || !endDate ? (
                 <p className="text-body text-text-stone mb-24">{labels.pickDates}</p>
               ) : (

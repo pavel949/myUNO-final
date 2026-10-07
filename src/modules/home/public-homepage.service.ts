@@ -4,7 +4,7 @@ import { listPublicProjects } from '@/modules/projects';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { listBrowsableAreas } from '@/modules/projects/area.service';
 import { listPublicMarketplaceServices } from '@/modules/services';
-import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
+import { listPublicDiscoveryUnits } from '@/modules/projects/public-discovery';
 import { tMany, type Locale } from '@/modules/content';
 import { interleaveByProject, rankProjects } from './home-read-model';
 import { applyHomepagePlacements } from './homepage-placement';
@@ -32,7 +32,6 @@ export interface HomepageArea {
 }
 
 async function readHomepageData(locale: Locale) {
-  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const destination = getDestination();
 
   const [projects, commercialHomes, services, rawAreas, units, areaCoverProjects, placements] = await Promise.all([
@@ -40,51 +39,7 @@ async function readHomepageData(locale: Locale) {
     listPublicCommercialHomes(prisma),
     listPublicMarketplaceServices(prisma, locale, { limit: 24 }).catch(() => []),
     listBrowsableAreas(prisma),
-    prisma.unit.findMany({
-      where: {
-        status: 'live',
-        assetStatus: { not: 'suspended' },
-        id: excludedIds.length ? { notIn: excludedIds } : undefined,
-        project: { status: 'live' },
-        inventoryCategory: { status: 'live' },
-        OR: [
-          { project: { projectType: null } },
-          {
-            commercialOfferings: {
-              some: {
-                offeringType: { in: ['short_term_stay', 'short_stay'] },
-                status: 'active',
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        bedrooms: true,
-        bathrooms: true,
-        maxGuests: true,
-        baseNightlyThb: true,
-        coverMedia: { select: { storageKey: true } },
-        media: {
-          take: 1,
-          orderBy: { sort: 'asc' },
-          select: { media: { select: { storageKey: true } } },
-        },
-        project: { select: { id: true, slug: true, name: true, area: { select: { slug: true } } } },
-        inventoryCategory: {
-          select: {
-            name: true,
-            baseNightlyThb: true,
-            coverMedia: { select: { storageKey: true } },
-          },
-        },
-      },
-      orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-      // Wide read; the shelf is chosen below so one project cannot fill it.
-      take: 48,
-    }),
+    listPublicDiscoveryUnits(),
     prisma.project.findMany({
       where: { status: 'live', areaId: { not: null } },
       select: {
@@ -118,20 +73,10 @@ async function readHomepageData(locale: Locale) {
     }
   }
 
-  const allStayUnits: HomepageStayUnit[] = units.map(unit => ({
-    id: unit.id,
-    name: unit.name,
-    bedrooms: unit.bedrooms,
-    bathrooms: unit.bathrooms,
-    maxGuests: unit.maxGuests,
-    baseNightlyThb: unit.inventoryCategory?.baseNightlyThb ?? unit.baseNightlyThb,
-    coverUrl:
-      unit.coverMedia?.storageKey ??
-      unit.media[0]?.media.storageKey ??
-      unit.inventoryCategory?.coverMedia?.storageKey ??
-      null,
-    project: { id: unit.project.id, slug: unit.project.slug, name: unit.project.name, areaSlug: unit.project.area?.slug ?? null },
-    categoryName: unit.inventoryCategory?.name ?? null,
+  const allStayUnits: HomepageStayUnit[] = units.filter(unit => unit.coverUrl).map(unit => ({
+    ...unit,
+    // Browse cards deliberately show terms on request; a base rate is not a quote.
+    baseNightlyThb: 0,
   }));
   const stayUnits = interleaveByProject(
     allStayUnits.map(unit => ({ ...unit, projectId: unit.project.id })),

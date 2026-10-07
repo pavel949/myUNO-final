@@ -127,3 +127,6 @@ body {
     @apply rounded-md border border-transparent px-12 py-[14px] transition hover:border-border-line hover:bg-surface-ivory;
   }
 }
+
+/* Public portal section anchors remain visible below the header and section navigation. */
+.stitch-workspace section[id] { scroll-margin-top: 9rem; }

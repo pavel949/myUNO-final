@@ -121,6 +121,7 @@ export default function SearchResults({
   const adults = searchParams?.get('adults') || '1';
   const children = searchParams?.get('children') || '0';
   const projectId = searchParams?.get('projectId');
+  const inventoryCategoryId = searchParams?.get('inventoryCategoryId');
   const areaSlug = searchParams?.get('areaSlug');
   const stayMode = searchParams?.get('stayMode');
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
@@ -161,6 +162,7 @@ export default function SearchResults({
           offset: String(offset),
         });
         if (projectId) params.set('projectId', projectId);
+        if (inventoryCategoryId) params.set('inventoryCategoryId', inventoryCategoryId);
         if (areaSlug) params.set('areaSlug', areaSlug);
         if (stayMode) params.set('stayMode', stayMode);
         if (bedrooms) params.set('bedrooms', bedrooms);
@@ -218,7 +220,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, inventoryCategoryId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -527,15 +529,7 @@ export default function SearchResults({
                       <Link
                         id={`unit-card-${unit.id}`}
                         key={unit.id}
-                        href={`/units/${unit.id}?${new URLSearchParams({
-                          startDate: startDate || '',
-                          endDate: endDate || '',
-                          adults,
-                          children,
-                          ...(projectId ? { projectId } : {}),
-                          ...(areaSlug ? { areaSlug } : {}),
-                          ...(stayMode ? { stayMode } : {}),
-                        }).toString()}`}
+                        href={`/units/${unit.id}?${searchParams?.toString() || ''}`}
                         onMouseEnter={() => setSelectedProjectId(unit.project?.id ?? null)}
                         onFocus={() => setSelectedProjectId(unit.project?.id ?? null)}
                         className={

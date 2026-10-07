@@ -85,7 +85,7 @@ export function HomeFinder({
       return;
     }
 
-    if (!startDate || !endDate || startDate < today || endDate <= startDate) {
+    if ((startDate || endDate) && (!startDate || !endDate || startDate < today || endDate <= startDate)) {
       setError(labels.datesError);
       return;
     }
@@ -97,7 +97,7 @@ export function HomeFinder({
       deviceClass: deviceClass(),
       projectId: place?.kind === 'project' ? place.id : undefined,
       areaId: place?.kind === 'area' ? place.id : undefined,
-      hasDates: true,
+      hasDates: Boolean(startDate && endDate),
     });
     const params = new URLSearchParams({
       startDate,

@@ -66,7 +66,7 @@ Test reconciliation: the old catalog retry assertion expected 409; it now requir
 
 ## Next verified risks
 
-- Scoped calendar permission/effective-date checks and hotel category-media onboarding need targeted verification.
+- Hotel category-media onboarding needs targeted verification.
 - Production URLs and external provider credentials are not test targets; no production-readiness claim follows from local evidence.
 
 ## Reconciliation notes
@@ -74,3 +74,17 @@ Test reconciliation: the old catalog retry assertion expected 409; it now requir
 The old T-number plan and old PR references are historical evidence. Current canonical requirements and actual code take precedence. `RECONCILIATION.md` contains historical release/CI blockers and an older Layantara rate-source assertion; these do not override current user-designated sources (Reservations Improved for availability, the Claude rate artifact, Drive descriptions). No Layantara inventory, AA/A13/V7 mapping, media or source-authority changes are part of this slice.
 
 Parent media evidence: source-labelled photos/video exist for 20 of 39 villas. Representative category photos and ambiguous mappings must not be assigned to a villa or used to weaken villa/condo readiness. Any hotel-category fallback remains hotel-specific; Media Master stays private and untouched.
+
+Updated parent evidence: A12 and V2 New include PNG files marked with `c2pa.created`, `gpt-image` and `trainedAlgorithmicMedia`; these are not verified real-villa photographs. Inventory Master takes precedence over derivative mappings: V7 = 2BR Garden Retreat / SPA; B23 = 3BR Superior; A13 = AA is still unconfirmed. No imports or inventory edits were performed.
+
+## Slice 4 - current operating authority
+
+Baseline: four failures, three passes. A scoped calendar opened without `view_calendar` or for an archived operating space; future operating-space assignments were exposed; MC scope ignored mandate start/end dates.
+
+The board now uses the existing capability helper, which requires an active member, active space and the requested capability. Operating-space inventory requires an active space and a current unit assignment. Current MC reads and `hasManagedUnitMcAccess` share the same active mandate period `[startsOn, endsOn)`, permitting legacy null bounds but excluding future, expired and ended mandates. The direct unit guard also verifies the unit's actual project against the claimed role scope. MC booking, request, ticket, service-order and dashboard unit readers use the same predicate. Explicit draft/future mobilization preparation remains a separate existing permission; it is not current guest/booking access.
+
+Passed: 36 tests across MC service, calendar, ticket scope, project helpers and the new DB mandate cases. Additional cross-project guard case passed, followed by production TypeScript, ESLint and diff checks. Coverage includes missing capability, revoked member/role, inactive space, future/expired assignments, legacy/current mandates, different organizations and overlapping portfolios. No migration or live role/security setting was changed.
+
+## Review handoff
+
+The first two commits (`91015fd1`, `12d4cfe5`) were exported relative to `3e6fa8d5` as `booking-first-two-review.patch` and saved to Library for the parent's independent review. Later slices remain separate commits.

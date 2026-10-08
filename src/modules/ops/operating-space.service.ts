@@ -57,13 +57,16 @@ export async function getOperatingSpaceUnitIds(
   db: PrismaClient,
   operatingSpaceId: string,
 ) {
+  const now = new Date();
   const rows = await db.operatingSpaceUnit.findMany({
     where: {
       operatingSpaceId,
       active: true,
+      operatingSpace: { status: 'active' },
+      startsOn: { lte: now },
       OR: [
         { endsOn: null },
-        { endsOn: { gt: new Date() } },
+        { endsOn: { gt: now } },
       ],
     },
     select: { unitId: true },

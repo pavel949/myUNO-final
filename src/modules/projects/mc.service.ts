@@ -6,6 +6,7 @@ import {
 import { getConfig } from '@/modules/config';
 import { getProjectIcalConflictAlerts, type UnitIcalConflictAlert } from '@/modules/integrations';
 import { satangToBaht } from '@/lib/money';
+import { currentEngagementWhere } from './engagement-scope';
 
 /**
  * Get all units managed by an MC member.
@@ -43,7 +44,7 @@ export async function getMCManagedUnits(
         some: {
           engagementType: 'via_management_company',
           managementOrgId: organizationId,
-          status: 'active',
+          ...currentEngagementWhere(),
         },
       },
     },
@@ -55,7 +56,7 @@ export async function getMCManagedUnits(
       baseNightlyThb: true,
       status: true,
       engagements: {
-        where: { status: 'active' },
+        where: { engagementType: 'via_management_company', managementOrgId: organizationId, ...currentEngagementWhere() },
         select: {
           id: true,
           engagementType: true,
@@ -107,7 +108,7 @@ export async function getMCBookings(
         some: {
           engagementType: 'via_management_company',
           managementOrgId: organizationId,
-          status: 'active',
+          ...currentEngagementWhere(),
         },
       },
     },
@@ -199,7 +200,7 @@ export async function getMcBookingRequests(
         some: {
           engagementType: 'via_management_company',
           managementOrgId: organizationId,
-          status: 'active',
+          ...currentEngagementWhere(),
         },
       },
     },
@@ -278,7 +279,7 @@ export async function getMCTickets(
         some: {
           engagementType: 'via_management_company',
           managementOrgId: organizationId,
-          status: 'active',
+          ...currentEngagementWhere(),
         },
       },
     },
@@ -371,7 +372,7 @@ export async function getMCServiceOrders(
         some: {
           engagementType: 'via_management_company',
           managementOrgId: organizationId,
-          status: 'active',
+          ...currentEngagementWhere(),
         },
       },
     },
@@ -540,7 +541,7 @@ export async function getMCFeeReport(
         select: {
           name: true,
           engagements: {
-            where: { status: 'active' },
+            where: { engagementType: 'via_management_company', managementOrgId: organizationId, ...currentEngagementWhere() },
             select: {
               feeOverridePct: true,
             },
@@ -569,7 +570,7 @@ export async function getMCFeeReport(
         select: {
           name: true,
           engagements: {
-            where: { status: 'active' },
+            where: { engagementType: 'via_management_company', managementOrgId: organizationId, ...currentEngagementWhere() },
             select: {
               feeOverridePct: true,
             },

@@ -1,4 +1,5 @@
-import { PrismaClient, BookingStatus, Prisma } from '@prisma/client';
+import { PrismaClient, BookingStatus, Prisma, type PaymentMethod } from '@prisma/client';
+import { blockingBookingConditions, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
 import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
@@ -36,6 +37,7 @@ export interface CreateBookingInput {
   priceBreakdown?: Record<string, unknown>;
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
+  paymentMethod?: PaymentMethod;
   holdMinutes?: number;
   requestHours?: number;
   guestNote?: string;
@@ -158,10 +160,7 @@ async function findBlockingConflict(
       ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       startDate: { lt: endDate },
       endDate: { gt: startDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: now } },
-      ],
+      OR: blockingBookingConditions(now),
     },
     select: { id: true },
   });
@@ -212,10 +211,7 @@ export async function findAvailableUnitsForCategory(
       bookings: {
         none: {
           ...overlaps,
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            { status: 'pending_payment', holdExpiresAt: { gt: now } },
-          ],
+          OR: blockingBookingConditions(now),
         },
       },
       blockedDates: { none: overlaps },
@@ -269,6 +265,7 @@ export async function createBooking(
     priceBreakdown: suppliedPriceBreakdown,
     cancellationPolicySnapshot,
     instantBook,
+    paymentMethod,
     holdMinutes = 30,
     requestHours = 24,
     guestNote,
@@ -380,6 +377,7 @@ export async function createBooking(
         bookingType,
         channel,
         status: initialStatus,
+        paymentMethod,
         startDate,
         endDate,
         adults,
@@ -389,7 +387,7 @@ export async function createBooking(
         totalThb,
         ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
         ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-        holdExpiresAt: canInstantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
+        holdExpiresAt: canInstantBook ? paymentHoldExpiry(paymentMethod, now, holdMinutes) : null,
         requestExpiresAt: !canInstantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
         guestNote,
       },
@@ -554,7 +552,7 @@ export async function approveBookingRequest(
         unitId,
         ...(repriced ? { totalThb: repriced.total_thb, priceBreakdown: repriced as any } : {}),
         status: 'pending_payment',
-        holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
+        holdExpiresAt: paymentHoldExpiry(current.paymentMethod, now, holdMinutes),
         requestExpiresAt: null,
       },
       include: { unit: { select: { name: true } } },
@@ -1060,10 +1058,7 @@ export async function requestExtension(
           id: { not: bookingId },
           startDate: { lt: newEndDate },
           endDate: { gt: booking.endDate },
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-          ],
+          OR: blockingBookingConditions(),
         },
       });
 

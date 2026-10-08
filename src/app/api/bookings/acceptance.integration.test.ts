@@ -58,5 +58,7 @@ describe('direct-unit booking acceptance with PostgreSQL', () => {
     const booking = await db.booking.findFirstOrThrow();
     expect(booking.totalThb).toBe(body.acceptedTotalSatang);
     expect(booking.status).toBe('pending_payment');
+    expect(booking.paymentMethod).toBe('cash');
+    expect(booking.holdExpiresAt).toBeNull();
   });
 });

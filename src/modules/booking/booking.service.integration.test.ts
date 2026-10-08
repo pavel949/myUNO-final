@@ -456,8 +456,8 @@ describe('booking.service — integration tests', () => {
 
   describe('approveBookingRequest', () => {
     it('transitions requested → pending_payment', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
+      const project = await createProject({ status: 'live' });
+      const unit = await createUnit({ projectId: project.id, status: 'live' });
       const guest = await createIdentity();
 
       const booking = await bookingService.createBooking(db, {
@@ -1227,8 +1227,8 @@ describe('booking.service — integration tests', () => {
     });
 
     it('does not auto-decline approved bookings', async () => {
-      const project = await createProject();
-      const unit = await createUnit(project.id);
+      const project = await createProject({ status: 'live' });
+      const unit = await createUnit({ projectId: project.id, status: 'live' });
       const guest = await createIdentity();
 
       const booking = await bookingService.createBooking(db, {

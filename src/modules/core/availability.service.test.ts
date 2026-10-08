@@ -948,10 +948,10 @@ describe('Availability & Pricing Service', () => {
   });
 
   describe('isActiveHold', () => {
-    it('returns false when hold_expires_at is null', () => {
+    it('keeps an untimed manual-payment reservation active', () => {
       const result = isActiveHold(null, new Date());
 
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
 
     it('returns true when hold has not expired', () => {

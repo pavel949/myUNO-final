@@ -2,6 +2,7 @@ import { PrismaClient, BlockedDate, PricingRule, BlockedDateReason } from '@pris
 import type { SourceBookingTerms } from './commercial-booking-terms';
 import { getConfig, type SeasonPeriod } from '@/modules/config';
 import { daysBetween, toCalendarDay } from '@/lib/date';
+import { blockingBookingConditions, isActiveBookingHold } from './booking-occupancy';
 
 /**
  * Scope for pricing config resolution. Every pricing read goes through
@@ -120,10 +121,7 @@ export async function getApplicableSeason(
  * Check if a pending payment hold is still active.
  */
 export function isActiveHold(holdExpiresAt: Date | null, now: Date = new Date()): boolean {
-  if (!holdExpiresAt) {
-    return false;
-  }
-  return now < holdExpiresAt;
+  return isActiveBookingHold(holdExpiresAt, now);
 }
 
 /**
@@ -162,10 +160,7 @@ export async function checkAvailability(
       where: {
         unitId,
         ...overlaps,
-        OR: [
-          { status: { in: ['confirmed', 'checked_in'] } },
-          { status: 'pending_payment', holdExpiresAt: { gt: now } },
-        ],
+        OR: blockingBookingConditions(now),
       },
       select: { id: true },
     }),
@@ -253,10 +248,7 @@ export async function createManualBlock(
         unitId,
         startDate: { lt: endDate },
         endDate: { gt: startDate },
-        OR: [
-          { status: { in: ['confirmed', 'checked_in'] } },
-          { status: 'pending_payment', holdExpiresAt: { gt: now } },
-        ],
+        OR: blockingBookingConditions(now),
       },
       select: { id: true },
     });

@@ -29,6 +29,11 @@ describe('one canonical calendar projection', () => {
     expect(projectCalendarCell([block], 'villa-1', '2026-10-03', now).state).toBe('external');
     expect(projectCalendarCell([reservation, block], 'villa-1', '2026-10-02', now).state).toBe('conflict');
   });
+  it('keeps cash reservations occupied without a card deadline', () => {
+    const cash = { ...reservation, status: 'pending_payment', holdExpiresAt: null };
+    expect(projectCalendarCell([cash], 'villa-1', '2026-10-01', now))
+      .toMatchObject({ state: 'hold', blocking: true, bookingIds: ['booking-1'] });
+  });
   it('keeps a physical unit and its booking isolation intact', () => {
     const cells = projectCalendar(['villa-1', 'villa-2'], ['2026-10-01'], [reservation], now);
     expect(cells['villa-1'][0].state).toBe('confirmed');

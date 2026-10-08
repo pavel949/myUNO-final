@@ -21,7 +21,7 @@
 - Passed: 23 tests in `booking-acceptance.test.ts`, API `acceptance.test.ts`, `review-client.test.tsx`, and `category-quote.test.ts`.
 - Passed: focused ESLint, production TypeScript check, `git diff --check`.
 - Initial TypeScript check failed on an effect's missing return; corrected and the repeat passed.
-- Added but not yet run: `acceptance.integration.test.ts` on PostgreSQL and updated project-derivation fixtures for the new public acceptance contract.
+- Passed on PostgreSQL 16.15: `acceptance.integration.test.ts` (3), project-derivation (5), category allocation, blocked dates and concurrent booking tests. The initial 86-test DB run had 84 passes and two approval failures from old draft fixtures; corrected in slice 2 without weakening the live eligibility guard.
 - Not run: full DB suite, browser journey, production build and deployed checks in this slice.
 
 | Dimension | Status | Evidence / limitation |
@@ -32,17 +32,32 @@
 | data_config_ready | not checked | No production configuration queried/changed |
 | permission_verified | partial | Server capability regression tests; broader tenant checks pending |
 | ui_reachable | partial | Component flows passed; browser journey pending |
-| critical_test_passed | partial | 23 unit/component/API tests passed; real DB concurrency pending |
+| critical_test_passed | verified for this slice | Unit/component/API tests and real DB price, mode, allocation and concurrency checks passed |
 | deployed | not checked | Explicitly not authorized |
 | runtime_checked | not checked | No production/runtime claim |
 
+## Slice 2 - manual settlement and inventory occupancy
+
+Cash and bank-transfer choices now persist on Booking. They create and approve into untimed `pending_payment`, matching F-GUEST-3 and the manually reconciled transfer rail. Card and legacy unspecified rails retain a finite hold. The bank instruction's chase deadline is not silently treated as authority to cancel a reservation.
+
+All active availability predicates now share `blockingBookingConditions`: confirmed, checked-in, or pending payment with no expiry / future expiry. This covers direct writes, category assignment, date extension, availability checks, search, manual blocks, lease protection and Layantara intake. The PMS projection uses the same untimed-hold semantics. PostgreSQL's existing exclusion constraint remains unchanged. Requests remain nonblocking, and finite card holds still expire.
+
+The migration `20261008170000_booking_payment_method` adds one nullable enum column without changing existing reservations or finance records. Applied only to the disposable local database. Production application needs separate authorization. Safe application rollback is to retain the additive column; do not drop it once new rows depend on their selected rail without exporting that data and resolving active reservations.
+
+Passed: 139 tests in seven files, including seven new DB scenarios for cash/bank search, allocation, PMS, duplicate-sale/manual-block rejection, request approval, actual synthetic receipt/ledger recording, card expiry and archived-project rejection. The two positive legacy approval fixtures now use live supply; the eligibility gate is retained and has an explicit negative test.
+
+## Test runtime
+
+Docker remains unavailable (HTTP 500), but this no longer blocks database verification. A portable official PostgreSQL 16.15 distribution was started as a task-local process at `127.0.0.1:55432`, with a fresh `myuno_night_test` database. All 77 baseline migrations and the additive slice-2 migration applied successfully after the same Supabase compatibility-role bootstrap used by CI. Only synthetic data is used; no production URL, credentials or Windows service was changed. Dependencies are a private copy in this isolated checkout.
+
 ## Next verified risks
 
-- Cash/bank reservations currently receive the card hold expiry; all availability readers must agree on non-expiring unpaid reservations before changing the writer. DB exclusion already covers every `pending_payment` booking.
 - Booking creation has no durable intent/replay key, especially across category fallback.
 - Scoped calendar permission/effective-date checks and hotel category-media onboarding need targeted verification.
-- Docker API returns HTTP 500; no disposable PostgreSQL is listening. Investigating a separate portable PostgreSQL process confined to this task. Production URLs and external provider credentials are not test targets.
+- Production URLs and external provider credentials are not test targets; no production-readiness claim follows from local evidence.
 
 ## Reconciliation notes
 
 The old T-number plan and old PR references are historical evidence. Current canonical requirements and actual code take precedence. `RECONCILIATION.md` contains historical release/CI blockers and an older Layantara rate-source assertion; these do not override current user-designated sources (Reservations Improved for availability, the Claude rate artifact, Drive descriptions). No Layantara inventory, AA/A13/V7 mapping, media or source-authority changes are part of this slice.
+
+Parent media evidence: source-labelled photos/video exist for 20 of 39 villas. Representative category photos and ambiguous mappings must not be assigned to a villa or used to weaken villa/condo readiness. Any hotel-category fallback remains hotel-specific; Media Master stays private and untouched.

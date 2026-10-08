@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { assertLayantaraBookingAuthority } from '@/modules/booking/source-authority';
 import { lifecycleAfterWinForExisting } from './domain';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 export type PropertyDealKind = 'sale' | 'long_term_rental';
 export type PropertyDealStatus = 'draft' | 'proposed' | 'accepted' | 'signed' | 'closed' | 'cancelled';
@@ -94,10 +95,7 @@ async function claimLeaseDates(tx: Prisma.TransactionClient,deal:{
   await assertLayantaraBookingAuthority(tx as unknown as PrismaClient,deal.unitId);
   const overlap={unitId:deal.unitId,startDate:{lt:deal.endsOn},endDate:{gt:deal.startsOn}};
   const [booking,block]=await Promise.all([
-    tx.booking.findFirst({where:{...overlap,OR:[
-      {status:{in:['confirmed','checked_in']}},
-      {status:'pending_payment',holdExpiresAt:{gt:new Date()}},
-    ]},select:{id:true}}),
+    tx.booking.findFirst({where:{...overlap,OR: blockingBookingConditions()},select:{id:true}}),
     tx.blockedDate.findFirst({where:overlap,select:{id:true}}),
   ]);
   if(booking||block)throw new Error('lease_dates_unavailable');

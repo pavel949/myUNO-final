@@ -66,6 +66,17 @@ describe('booking acceptance at the canonical writer', () => {
     const booking = await createBooking(db, { ...input, instantBook: false });
     expect(booking.status).toBe('requested');
   });
+  it.each(['cash', 'bank_transfer'] as const)('persists %s without a card timeout', async (paymentMethod) => {
+    unit.instantBook = true;
+    const booking = await createBooking(db, { ...input, paymentMethod });
+    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod, holdExpiresAt: null });
+  });
+
+  it('keeps the deadline for card payments', async () => {
+    unit.instantBook = true;
+    const booking = await createBooking(db, { ...input, paymentMethod: 'card_provider' });
+    expect(booking.holdExpiresAt).toBeInstanceOf(Date);
+  });
 
   it('rejects an increase at the final price calculation without writing a booking', async () => {
     vi.mocked(computePriceBreakdown).mockResolvedValue({ total_thb: 300_001 } as never);

@@ -59,6 +59,12 @@ describe('POST booking acceptance', () => {
   it('passes the direct-unit accepted cap to the canonical writer', async () => {
     expect((await POST(request(direct))).status).toBe(201);
     expect(mocks.create.mock.calls[0][1].acceptedMaxTotalThb).toBe(300_000);
+    expect(mocks.create.mock.calls[0][1].paymentMethod).toBe('cash');
+  });
+
+  it('rejects an unknown payment method without creating a reservation', async () => {
+    expect((await POST(request({ ...direct, paymentMethod: 'unknown' }))).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('uses the committed booking total when the writer calculates a lower card charge', async () => {

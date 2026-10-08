@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
     } = body;
 
     const inventoryCategoryId = requestedInventoryCategoryId || categoryId;
+    if (!['cash', 'bank_transfer', 'card_provider'].includes(paymentMethod)) {
+      throw createPublicError('invalid payment method', 400);
+    }
     const hasCategorySelector = Boolean(inventoryCategoryId || categoryKey);
 
     if (
@@ -271,6 +274,7 @@ export async function POST(req: NextRequest) {
           totalThb: candidateBreakdown.total_thb,
           acceptedMaxTotalThb: acceptedTotal,
           instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
+          paymentMethod,
           guestNote,
           priceBreakdown: {
             ...candidateBreakdown,
@@ -291,10 +295,7 @@ export async function POST(req: NextRequest) {
     }
 
     const instantBook = booking.status !== 'requested';
-    const method =
-      paymentMethod === 'card_provider' || paymentMethod === 'bank_transfer'
-        ? paymentMethod
-        : 'cash';
+    const method = paymentMethod;
 
     if (instantBook && method === 'card_provider') {
       const checkout = await createCheckout(prisma, {

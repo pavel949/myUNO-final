@@ -141,7 +141,7 @@ describe('verified captures cannot resurrect released inventory', () => {
 
   it('rejects direct confirmation of an expired checkout hold', async () => {
     const f = await fixture();
-    await expect(confirmBooking(db, { bookingId: f.booking.id })).rejects.toThrow();
+    await expect(confirmBooking(db, { bookingId: f.booking.id, paymentReceivedAt: new Date() })).rejects.toThrow();
     expect((await db.booking.findUniqueOrThrow({ where: { id: f.booking.id } })).status).not.toBe('confirmed');
   });
 
@@ -150,7 +150,7 @@ describe('verified captures cannot resurrect released inventory', () => {
     await db.blockedDate.create({ data: { unitId: f.unit.id, startDate: f.booking.startDate,
       endDate: f.booking.endDate, reason: 'maintenance' } });
     const common = { purpose: 'stay' as const, bookingId: f.booking.id, payerIdentityId: f.guest.id, amountThb: 400_000 };
-    const attempt = method === 'direct' ? confirmBooking(db, { bookingId: f.booking.id })
+    const attempt = method === 'direct' ? confirmBooking(db, { bookingId: f.booking.id, paymentReceivedAt: new Date() })
       : method === 'cash' ? recordCashPayment(db, { ...common, receivedByIdentityId: f.operator.id, receiptRef: 'synthetic' })
         : recordBankTransfer(db, { ...common, confirmedByIdentityId: f.operator.id, bankReference: 'synthetic' });
     await expect(attempt).rejects.toThrow();

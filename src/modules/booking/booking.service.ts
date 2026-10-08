@@ -66,6 +66,9 @@ export interface CancelBookingInput {
   cancelledByIdentityId: string;
   reason: string;
   refundAmountThb: number;
+  /** Server snapshot used to calculate/authorize this cancellation. */
+  expectedUpdatedAt?: Date;
+  expectedStatus?: BookingStatus;
 }
 
 // PDPA/doc 12: identity rows carry hashedPassword and PII — never include the
@@ -718,28 +721,23 @@ export async function cancelBooking(
 ) {
   const { bookingId, cancelledByIdentityId, reason, refundAmountThb } = input;
 
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
-
-  // 'requested' included per doc 02 §3.1 — guest may withdraw a request freely.
-  const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
-  if (!cancellableStatuses.includes(booking.status)) {
-    throw new Error(`Cannot cancel booking with status ${booking.status}`);
-  }
-
-  const cancelled = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: 'cancelled',
-      cancelledAt: new Date(),
-      cancelledByIdentityId,
-      cancellationReason: reason,
-      refundAccruedThb: refundAmountThb,
-      holdExpiresAt: null,
-      requestExpiresAt: null,
-    },
+  const cancelled = await db.$transaction(async tx => {
+    const booking = await lockBookingInventory(tx, bookingId);
+    if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if ((input.expectedUpdatedAt && booking.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) ||
+        (input.expectedStatus && booking.status !== input.expectedStatus)) {
+      throw Object.assign(new Error('Booking changed while cancellation was being prepared. Review the updated payment and refund before cancelling again.'), {
+        code: 'BOOKING_CHANGED',
+      });
+    }
+    // Requested stays may be withdrawn without reserving or returning money.
+    const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
+    if (!cancellableStatuses.includes(booking.status)) throw new Error(`Cannot cancel booking with status ${booking.status}`);
+    return tx.booking.update({ where: { id: bookingId }, data: {
+      status: 'cancelled', cancelledAt: new Date(), cancelledByIdentityId,
+      cancellationReason: reason, refundAccruedThb: refundAmountThb,
+      holdExpiresAt: null, requestExpiresAt: null,
+    } });
   });
 
   // Track analytics event

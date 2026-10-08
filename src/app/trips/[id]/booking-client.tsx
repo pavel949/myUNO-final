@@ -190,6 +190,10 @@ export default function BookingDetailClient({
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        if (body?.code === 'BOOKING_CHANGED') {
+          await load();
+          throw new Error(labels['booking.detail.cancel_changed']);
+        }
         throw new Error(body?.error || labels['booking.detail.error_generic']);
       }
       await load();

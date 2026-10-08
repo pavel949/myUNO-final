@@ -51,6 +51,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.cancel_confirm':
       'Cancel this booking? Refund by your cancellation policy: ฿{refund}.',
     'booking.detail.cancel_confirm_unpaid': 'Cancel this booking request?',
+    'booking.detail.cancel_changed': 'The booking or payment changed. Review the updated refund amount before confirming cancellation again.',
     'booking.detail.cancelled_note': 'This booking was cancelled. Refund: ฿{refund}.',
     'booking.detail.modify_title': 'Change dates',
     'booking.detail.modify_start': 'New check-in',

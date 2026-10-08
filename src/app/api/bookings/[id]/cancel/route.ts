@@ -189,6 +189,8 @@ export async function POST(
       cancelledByIdentityId: user.identityId,
       reason,
       refundAmountThb,
+      expectedUpdatedAt: booking.updatedAt,
+      expectedStatus: booking.status,
     });
     const { issuedRefundThb, refundsCreated } = await issueCancellationRefunds({
       bookingId,
@@ -212,6 +214,10 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
+    if ((error as { code?: string })?.code === 'BOOKING_CHANGED') {
+      return NextResponse.json({ code: 'BOOKING_CHANGED',
+        error: 'Booking changed. Review the updated payment and refund before cancelling again.' }, { status: 409 });
+    }
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Booking cancellation error:', message);
     return NextResponse.json({ error: message }, { status: 400 });

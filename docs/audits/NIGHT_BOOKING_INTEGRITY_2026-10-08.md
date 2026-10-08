@@ -64,9 +64,9 @@ Passed: 67 tests across nine files covering the canonical catalog-to-booking jou
 
 Test reconciliation: the old catalog retry assertion expected 409; it now requires 200 with the original booking id and still requires 409/DOUBLE_BOOK for a distinct intent on occupied inventory. Archived-project and sale-only negative fixtures now carry valid acceptance input, reaching the actual eligibility guard instead of failing earlier on missing request fields.
 
-## Next verified risks
+## Remaining verification
 
-- Hotel category-media onboarding needs targeted verification.
+- The full test suite, production compile and local browser journey remain to be checked.
 - Production URLs and external provider credentials are not test targets; no production-readiness claim follows from local evidence.
 
 ## Reconciliation notes
@@ -88,3 +88,11 @@ Passed: 36 tests across MC service, calendar, ticket scope, project helpers and 
 ## Review handoff
 
 The first two commits (`91015fd1`, `12d4cfe5`) were exported relative to `3e6fa8d5` as `booking-first-two-review.patch` and saved to Library for the parent's independent review. Later slices remain separate commits.
+
+## Slice 5 - consistent accommodation media activation
+
+Baseline: six failures. The public readiness report accepted room-type photos, but onboarding and commercial activation required unit photo links. Conversely, activation counted three links without validating their media. An explicit villa, condo or townhouse inside a hotel project incorrectly inherited representative-room privileges.
+
+Onboarding and short-stay activation now use the existing public gallery validator, including valid MIME/type, nonempty storage key, positive size, unencrypted assets, three distinct photos and a cover within the gallery. Hotel rooms may use their category's representative gallery; their media is never relabelled as exact-unit photography. An explicit private accommodation type overrides the project label and still requires exact-unit photos. Legacy unclassified hotel rooms retain the existing category fallback. Project readiness uses the same classification for its instructions.
+
+Passed: 44 tests across six files, including the six new real-database regressions, legacy hotel/resort unit detail and the catalog-to-booking journey. Test assets are synthetic metadata confined to the disposable database; no real media was uploaded, assigned or imported. Production TypeScript, changed-file ESLint and whitespace verification accompany this slice. No migration, inventory mapping or external media changes.

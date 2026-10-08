@@ -113,7 +113,11 @@ export function isRepresentativeRoom(input: {
   projectType?: string | null;
   accommodationType?: string | null;
 }): boolean {
-  return input.projectType === 'hotel' || input.accommodationType === 'hotel_room';
+  // Preserve unclassified legacy hotel rooms, but an explicit private-home
+  // classification must never inherit representative photos from its project.
+  return input.accommodationType
+    ? input.accommodationType === 'hotel_room'
+    : input.projectType === 'hotel';
 }
 
 export function assessUnitMediaReadiness(input: {

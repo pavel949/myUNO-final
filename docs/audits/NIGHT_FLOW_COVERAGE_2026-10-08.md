@@ -1,5 +1,7 @@
 # Night execution coverage — 8/9 October 2026
 
+> This records the completed `b4a985af` checkpoint. Independent review subsequently reproduced a cancellation-consent gap before the POST's first read. The follow-up binds cancellation to the displayed quote and has passed targeted tests, TypeScript and lint; complete gates for that new change are pending. Do not attribute the checkpoint's complete results to the latest branch until the final rerun is recorded.
+
 Checked application commit: `b4a985af8898b2ad20731fcc77c0cfd9c7ff8438` on `codex/night-booking-integrity-20261008`. Base: `3e6fa8d5`, preserving nine earlier unpublished commits above remote-known main `c0627258`. Thirteen implementation commits are local only. This is a coverage report for the changed slices, not whole-platform production acceptance.
 
 | Canonical flow | Evidence from this run | Remaining coverage / next step |

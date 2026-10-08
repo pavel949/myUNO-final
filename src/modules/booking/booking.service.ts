@@ -1,6 +1,7 @@
 import { PrismaClient, BookingStatus, Prisma, type PaymentMethod } from '@prisma/client';
 import { blockingBookingConditions, initialStayConfirmationIssue, lockBookingInventory, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
 import { isBookingCreationKey, type BookingCreationIntent } from './creation-intent';
+import { cancellationQuotesMatch, getCancellationQuote, type CancellationQuote } from './cancellation-quote';
 import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
@@ -69,6 +70,8 @@ export interface CancelBookingInput {
   /** Server snapshot used to calculate/authorize this cancellation. */
   expectedUpdatedAt?: Date;
   expectedStatus?: BookingStatus;
+  /** Exact preview accepted by the caller; recomputed under inventory locks. */
+  cancellationQuote?: CancellationQuote;
 }
 
 // PDPA/doc 12: identity rows carry hashedPassword and PII — never include the
@@ -719,7 +722,7 @@ export async function cancelBooking(
   db: PrismaClient,
   input: CancelBookingInput
 ) {
-  const { bookingId, cancelledByIdentityId, reason, refundAmountThb } = input;
+  const { bookingId, cancelledByIdentityId, reason } = input;
 
   const cancelled = await db.$transaction(async tx => {
     const booking = await lockBookingInventory(tx, bookingId);
@@ -729,6 +732,16 @@ export async function cancelBooking(
       throw Object.assign(new Error('Booking changed while cancellation was being prepared. Review the updated payment and refund before cancelling again.'), {
         code: 'BOOKING_CHANGED',
       });
+    }
+    let refundAmountThb = input.refundAmountThb;
+    if (input.cancellationQuote) {
+      const currentQuote = await getCancellationQuote(tx, booking);
+      if (!cancellationQuotesMatch(input.cancellationQuote, currentQuote)) {
+        throw Object.assign(new Error('Booking or refund changed since the displayed confirmation. Review it before cancelling again.'), {
+          code: 'BOOKING_CHANGED',
+        });
+      }
+      refundAmountThb = currentQuote.refundAmountSatang;
     }
     // Requested stays may be withdrawn without reserving or returning money.
     const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
@@ -751,7 +764,7 @@ export async function cancelBooking(
     identityId: cancelled.guestIdentityId,
     nights,
     reason,
-    refundThb: refundAmountThb,
+    refundThb: cancelled.refundAccruedThb,
   }).catch(() => null);
 
   return cancelled;

@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 import BankTransferInstructions from '@/components/booking/BankTransferInstructions';
 import { LocalDate } from '@/components/LocalDate';
+import type { CancellationQuote } from '@/modules/booking/cancellation-quote';
 
 interface BookingDetail {
   id: string;
@@ -49,6 +50,7 @@ interface BookingDetail {
   viewer: { isGuest: boolean; isOwner: boolean; isStaff: boolean };
   cancellable: boolean;
   refundPreviewThb: number | null;
+  cancellationQuote?: CancellationQuote | null;
   hasReview?: boolean;
 }
 
@@ -172,6 +174,11 @@ export default function BookingDetailClient({
 
   const handleCancel = async () => {
     if (!booking) return;
+    if (!booking.cancellationQuote) {
+      await load();
+      setError(labels['booking.detail.cancel_changed']);
+      return;
+    }
     const paid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
     const message = paid
       ? fill(labels['booking.detail.cancel_confirm'], {
@@ -186,7 +193,7 @@ export default function BookingDetailClient({
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'guest_cancelled' }),
+        body: JSON.stringify({ reason: 'guest_cancelled', cancellationQuote: booking.cancellationQuote }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);

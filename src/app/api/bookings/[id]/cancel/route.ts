@@ -1,35 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { cancelBooking, computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
+import { cancelBooking } from '@/modules/booking';
+import { parseCancellationQuote } from '@/modules/booking/cancellation-quote';
 import { refund as requestCardProviderRefund } from '@/modules/finance';
 import { notifyBookingCancelled } from '@/app/libs/bookingCancelled';
-
-async function getBookingRefundCapacity(bookingId: string) {
-  const payments = await prisma.payment.findMany({
-    where: {
-      bookingId,
-      status: 'succeeded',
-      reconciliationReason: null,
-      purpose: { in: ['stay', 'stay_balance'] },
-    },
-    include: {
-      refunds: {
-        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
-        select: { amountThb: true },
-      },
-    },
-  });
-  return payments.reduce(
-    (sum, payment) =>
-      sum +
-      Math.max(
-        0,
-        payment.amountThb - payment.refunds.reduce((refundSum, refund) => refundSum + refund.amountThb, 0)
-      ),
-    0
-  );
-}
 
 async function issueCancellationRefunds(input: {
   bookingId: string;
@@ -108,8 +83,9 @@ async function issueCancellationRefunds(input: {
  * Cancel a booking and calculate refund based on policy.
  * Requires authentication (guest or unit owner).
  *
- * Request body (optional):
+ * Request body:
  * - reason?: string
+ * - cancellationQuote: the exact quote displayed by GET /api/bookings/[id]
  */
 export async function POST(
   req: NextRequest,
@@ -152,46 +128,22 @@ export async function POST(
       );
     }
 
-    // Check if booking is in a cancellable state.
-    // 'requested' is included per doc 02 §3.1 — a guest may withdraw a
-    // booking request freely (nothing has been paid yet).
-    const cancellableStatuses = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
-    if (!cancellableStatuses.includes(booking.status)) {
-      return NextResponse.json(
-        { error: `Cannot cancel booking with status ${booking.status}` },
-        { status: 400 }
-      );
+    const cancellationQuote = parseCancellationQuote(body.cancellationQuote);
+    if (!cancellationQuote) {
+      return NextResponse.json({ code: 'BOOKING_CHANGED',
+        error: 'Refresh the booking and confirm the displayed refund before cancelling.' }, { status: 409 });
     }
 
-    // Calculate refund amount based on policy snapshot.
-    // Only paid statuses can accrue a refund — requested/pending_payment
-    // bookings have no payment to refund.
-    const paidStatuses = ['confirmed', 'checked_in'];
-    let refundAmountThb = 0;
-    if (paidStatuses.includes(booking.status) && booking.cancellationPolicySnapshot) {
-      const policy = booking.cancellationPolicySnapshot as any as CancellationPolicy;
-      const now = new Date();
-      const policyRefundThb = computeRefundAmount(
-        booking.totalThb,
-        policy.steps || [],
-        booking.startDate,
-        now
-      );
-      // Policy defines the entitlement, but money returned can never exceed
-      // succeeded stay payments that have not already been reserved/refunded.
-      const refundablePaidThb = await getBookingRefundCapacity(bookingId);
-      refundAmountThb = Math.min(policyRefundThb, refundablePaidThb);
-    }
-
-    // Cancel the booking
+    // Bind consent to the displayed snapshot, not a fresh server read in this
+    // POST. The canonical writer rechecks the version and amount under locks.
     const cancelled = await cancelBooking(prisma, {
       bookingId,
       cancelledByIdentityId: user.identityId,
       reason,
-      refundAmountThb,
-      expectedUpdatedAt: booking.updatedAt,
-      expectedStatus: booking.status,
+      refundAmountThb: cancellationQuote.refundAmountSatang,
+      cancellationQuote,
     });
+    const refundAmountThb = cancelled.refundAccruedThb;
     const { issuedRefundThb, refundsCreated } = await issueCancellationRefunds({
       bookingId,
       initiatedByIdentityId: user.identityId,

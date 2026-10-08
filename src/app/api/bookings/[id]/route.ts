@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { computeRefundAmount, type CancellationPolicy } from '@/modules/booking';
+import { getCancellationQuote } from '@/modules/booking/cancellation-quote';
 import { getActiveDepositClaimForGuest, getBookingRefundDisplayState } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canViewBooking, resolveBookingAccess } from '@/app/libs/bookingAccess';
@@ -63,23 +63,14 @@ export async function GET(
     const { isGuest, isOwner, isStaff } = access;
 
     // Live refund preview from the policy snapshotted at booking time
-    let refundPreviewThb: number | null = null;
     const fullyRefunded = (p: typeof booking.payments[number]) => p.refunds.reduce((sum, refund) => sum + refund.amountThb, 0) >= p.amountThb;
     const paymentReviewRequired = booking.payments.some(p => (p.reconciliationReason && !fullyRefunded(p)) ||
       (p.provider !== 'mock' && p.status === 'created' && p.createdAt.getTime() + 120_000 <= Date.now()));
     const unallocatedPaymentRefunded = booking.payments.some(p => p.reconciliationReason && fullyRefunded(p));
     const hasPaid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
-    if (CANCELLABLE_STATUSES.includes(booking.status) && hasPaid) {
-      const snapshot = booking.cancellationPolicySnapshot as unknown as CancellationPolicy | null;
-      if (snapshot?.steps) {
-        refundPreviewThb = computeRefundAmount(
-          booking.totalThb,
-          snapshot.steps,
-          booking.startDate,
-          new Date()
-        );
-      }
-    }
+    const cancellationQuote = (isGuest || isOwner) && [...CANCELLABLE_STATUSES, 'checked_in'].includes(booking.status)
+      ? await getCancellationQuote(prisma, booking) : null;
+    const refundPreviewThb = hasPaid && cancellationQuote ? cancellationQuote.refundAmountSatang : null;
 
     // Check if the guest has already reviewed this stay
     let hasReview = false;
@@ -118,7 +109,8 @@ export async function GET(
       unit: unit ? { id: unit.id, name: unit.name } : null,
       viewer: { isGuest, isOwner, isStaff },
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),
-      refundPreviewThb: refundPreviewThb === null ? null : Math.round(refundPreviewThb / 100),
+      refundPreviewThb: refundPreviewThb === null ? null : refundPreviewThb / 100,
+      cancellationQuote,
       hasReview,
       verificationStatus: booking.verificationStatus,
       paymentFailed,
@@ -136,7 +128,7 @@ export async function GET(
             canDispute: depositClaim.canDispute,
           }
         : null,
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return handleError(error);
   }

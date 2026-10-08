@@ -29,8 +29,8 @@ export interface CreateBookingInput {
   totalThb: number;
   /**
    * Maximum authoritative total the guest explicitly accepted on review.
-   * Used for category allocation, where a race may move the stay to a sibling
-   * unit. The booking service recomputes money and refuses any higher total.
+   * Applies to direct-unit review and category allocation, where a race may
+   * move the stay to a sibling unit. Never used as the authoritative price.
    */
   acceptedMaxTotalThb?: number;
   priceBreakdown?: Record<string, unknown>;
@@ -275,7 +275,6 @@ export async function createBooking(
   } = input;
 
   await assertLayantaraBookingAuthority(db, unitId);
-  const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
   const now = new Date();
 
   // Guest-stay money is authoritative only when computed here. API routes may
@@ -295,7 +294,7 @@ export async function createBooking(
     );
     if (
       acceptedMaxTotalThb !== undefined &&
-      (!Number.isInteger(acceptedMaxTotalThb) ||
+      (!Number.isSafeInteger(acceptedMaxTotalThb) ||
         acceptedMaxTotalThb < 0 ||
         authoritative.total_thb > acceptedMaxTotalThb)
     ) {
@@ -327,6 +326,16 @@ export async function createBooking(
     // released on commit or rollback, so no path can leak it.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
     await assertLayantaraBookingAuthority(tx, unitId);
+
+    // A caller may ask for approval, but cannot grant instant-book authority.
+    // Read the current unit again at the writer, including category fallbacks.
+    const unit = await tx.unit.findUnique({
+      where: { id: unitId },
+      select: { instantBook: true, projectId: true },
+    });
+    if (!unit || unit.projectId !== projectId) throw new Error('Booking unit not found');
+    const canInstantBook = instantBook === true && unit.instantBook;
+    const initialStatus: BookingStatus = canInstantBook ? 'pending_payment' : 'requested';
 
     // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
     // immutable), so a lapsed hold still occupies the range until it is retired.
@@ -380,8 +389,8 @@ export async function createBooking(
         totalThb,
         ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
         ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-        holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
-        requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
+        holdExpiresAt: canInstantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
+        requestExpiresAt: !canInstantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
         guestNote,
       },
       include: {
@@ -416,7 +425,7 @@ export async function createBooking(
   }).catch(() => null);
 
   // Track request event if this is a request-to-book
-  if (!instantBook) {
+  if (booking.status === 'requested') {
     await track(db, 'stay_booking_requested', {
       bookingId: booking.id,
       unitId,

@@ -116,6 +116,7 @@ export default async function BookingReviewPage({
     'booking.review.confirming': 'Confirming…',
     'booking.review.back': '← Back',
     'booking.review.error': 'Could not complete the booking. Please try again.',
+    'booking.review.requote': 'The price changed. Review the updated total and agree again before booking.',
     'booking.review.category_note':
       'We assign a free home in this category when you confirm. The total is calculated on that home.',
     'listing.payment_method': 'Payment method',
@@ -173,6 +174,7 @@ export default async function BookingReviewPage({
           confirming: labels['booking.review.confirming'],
           back: labels['booking.review.back'],
           error: labels['booking.review.error'],
+          requote: labels['booking.review.requote'],
           conflictTitle: labels['listing.conflict_title'],
           conflictBody: labels['listing.conflict_body'],
           searchAgain: labels['listing.search_again'],

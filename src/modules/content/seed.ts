@@ -1941,6 +1941,7 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'listing.pay_card', namespace: 'listing', description: 'Payment method option: card', en: 'Card (online)', ru: 'Картой (онлайн)', th: 'บัตร (ออนไลน์)', status: NR },
   { key: 'listing.pay_transfer', namespace: 'listing', description: 'Payment method option: bank transfer', en: 'Bank transfer', ru: 'Банковский перевод', th: 'โอนเงินผ่านธนาคาร', status: NR },
   { key: 'booking.review.title', namespace: 'booking', description: 'S5 review page title', en: 'Review and confirm', ru: 'Проверьте и подтвердите', th: 'ตรวจสอบและยืนยัน', status: NR },
+  { key: 'booking.review.requote', namespace: 'booking', description: 'S5 changed price requires fresh consent', en: 'The price changed. Review the updated total and agree again before booking.', ru: 'Цена изменилась. Проверьте новую сумму и подтвердите согласие перед бронированием.', th: 'ราคามีการเปลี่ยนแปลง กรุณาตรวจสอบยอดรวมใหม่และยืนยันอีกครั้งก่อนจอง', status: NR },
   { key: 'booking.review.recap', namespace: 'booking', description: 'S5 stay recap heading', en: 'Your stay', ru: 'Ваше проживание', th: 'การเข้าพักของคุณ', status: NR },
   { key: 'booking.review.check_in', namespace: 'booking', description: 'S5 check-in label', en: 'Check-in', ru: 'Заезд', th: 'เช็คอิน', status: NR },
   { key: 'booking.review.check_out', namespace: 'booking', description: 'S5 check-out label', en: 'Check-out', ru: 'Выезд', th: 'เช็คเอาท์', status: NR },

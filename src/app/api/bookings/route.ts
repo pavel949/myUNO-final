@@ -37,8 +37,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * - guestNote?
  * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
  *
- * The total is ALWAYS computed server-side from the production pricing engine;
- * any client-sent amount is ignored.
+ * The total is ALWAYS computed server-side. acceptedTotalSatang is a required
+ * consent ceiling, never an authoritative price, for both entry paths.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       !endDateStr ||
       adultsCount === undefined ||
       childrenCount === undefined ||
-      (requestedUnitId && requestedInstantBook === undefined)
+      (requestedUnitId && typeof requestedInstantBook !== 'boolean')
     ) {
       throw createPublicError('invalid request: missing required fields', 400);
     }
@@ -137,7 +137,13 @@ export async function POST(req: NextRequest) {
       resolvedInventoryCategoryId = category.id;
     }
 
-    let acceptedCategoryTotal: number | undefined;
+    if (!Number.isSafeInteger(acceptedTotalSatang) || acceptedTotalSatang < 0) {
+      return NextResponse.json(
+        { error: 'Review a current stay quote before booking.', code: 'REQUOTE_REQUIRED' },
+        { status: 409 }
+      );
+    }
+    let acceptedTotal: number = acceptedTotalSatang;
     if (!requestedUnitId) {
       if (
         !resolvedInventoryCategoryId ||
@@ -167,7 +173,7 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         );
       }
-      acceptedCategoryTotal = quote.acceptedTotalSatang;
+      acceptedTotal = quote.acceptedTotalSatang;
     }
 
     const candidates = requestedUnitId
@@ -188,7 +194,6 @@ export async function POST(req: NextRequest) {
     }
 
     let booking!: Awaited<ReturnType<typeof createBooking>>;
-    let breakdown!: Awaited<ReturnType<typeof computePriceBreakdown>>;
 
     for (const [index, candidate] of candidates.entries()) {
       const isLastCandidate = index === candidates.length - 1;
@@ -203,10 +208,7 @@ export async function POST(req: NextRequest) {
         Number(petsCount)
       );
 
-      if (
-        acceptedCategoryTotal !== undefined &&
-        candidateBreakdown.total_thb > acceptedCategoryTotal
-      ) {
+      if (candidateBreakdown.total_thb > acceptedTotal) {
         if (isLastCandidate) {
           return NextResponse.json(
             {
@@ -223,6 +225,7 @@ export async function POST(req: NextRequest) {
         where: { id: candidate.id },
         select: {
           cancellationPolicyKey: true,
+          instantBook: true,
           status: true,
           projectId: true,
           inventoryCategoryId: true,
@@ -266,10 +269,8 @@ export async function POST(req: NextRequest) {
           infants: Number(infantsCount),
           pets: Number(petsCount),
           totalThb: candidateBreakdown.total_thb,
-          ...(acceptedCategoryTotal !== undefined && {
-            acceptedMaxTotalThb: acceptedCategoryTotal,
-          }),
-          instantBook: candidate.instantBook,
+          acceptedMaxTotalThb: acceptedTotal,
+          instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
           guestNote,
           priceBreakdown: {
             ...candidateBreakdown,
@@ -286,7 +287,6 @@ export async function POST(req: NextRequest) {
         throw error;
       }
 
-      breakdown = candidateBreakdown;
       break;
     }
 
@@ -301,7 +301,7 @@ export async function POST(req: NextRequest) {
         purpose: 'stay',
         bookingId: booking.id,
         payerIdentityId: user.identityId,
-        amountThb: breakdown.total_thb,
+        amountThb: booking.totalThb,
       });
 
       return NextResponse.json(

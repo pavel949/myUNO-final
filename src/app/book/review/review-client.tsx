@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -26,6 +26,7 @@ export interface ReviewLabels {
   confirming: string;
   back: string;
   error: string;
+  requote: string;
   conflictTitle: string;
   conflictBody: string;
   searchAgain: string;
@@ -82,6 +83,10 @@ export default function BookingReviewClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [quoteRevision, setQuoteRevision] = useState(0);
+  const [quotedStay, setQuotedStay] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+  const stayKey = JSON.stringify([unitId, inventoryCategoryId, projectId, startDate, endDate, adults, children]);
 
   const backHref = unitId
     ? `/units/${unitId}?${new URLSearchParams({
@@ -102,12 +107,16 @@ export default function BookingReviewClient({
 
   useEffect(() => {
     if (inventoryCategoryId && !unitId && startDate && endDate) {
+      const controller = new AbortController();
       const loadCategoryQuote = async () => {
+        setConsented(false);
+        setQuotedStay(null);
         setBreakdown(null);
         setCategoryQuoteToken(null);
         setAcceptedTotalSatang(null);
         const response = await fetch('/api/pricing/category-quote', {
           method: 'POST',
+          signal: controller.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             inventoryCategoryId,
@@ -117,27 +126,43 @@ export default function BookingReviewClient({
             childrenCount: Math.max(0, children),
           }),
         });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error(labels.error);
         const data = await response.json();
+        if (controller.signal.aborted) return;
+        if (!Number.isSafeInteger(data.acceptedTotalSatang) || data.acceptedTotalSatang < 0) {
+          throw new Error(labels.error);
+        }
         if (data.categoryName) setHeadline(data.categoryName);
         setBreakdown(data.breakdown);
         setCategoryQuoteToken(data.quoteToken);
         setAcceptedTotalSatang(data.acceptedTotalSatang);
+        setQuotedStay(stayKey);
       };
-      loadCategoryQuote();
+      loadCategoryQuote().catch(() => {
+        if (!controller.signal.aborted) setError(labels.error);
+      });
+      return () => controller.abort();
     }
-  }, [inventoryCategoryId, unitId, startDate, endDate, adults, children]);
+    return undefined;
+  }, [inventoryCategoryId, unitId, startDate, endDate, adults, children, quoteRevision, stayKey, labels.error]);
 
   useEffect(() => {
     if (!unitId || !startDate || !endDate) return;
+    const controller = new AbortController();
+    setConsented(false);
+    setQuotedStay(null);
+    setBreakdown(null);
+    setAcceptedTotalSatang(null);
     const load = async () => {
-      const unitRes = await fetch(`/api/units/${unitId}`);
+      const unitRes = await fetch(`/api/units/${unitId}`, { signal: controller.signal });
       if (unitRes.ok) {
         const unit = await unitRes.json();
+        if (controller.signal.aborted) return;
         setHeadline(unit.name);
       }
       const priceRes = await fetch('/api/pricing/breakdown', {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           unitId,
@@ -146,22 +171,33 @@ export default function BookingReviewClient({
           guestCount: adults + children,
         }),
       });
-      if (priceRes.ok) {
-        setBreakdown(await priceRes.json());
+      if (!priceRes.ok) throw new Error(labels.error);
+      const quote = await priceRes.json();
+      if (controller.signal.aborted) return;
+      if (!Number.isSafeInteger(quote.acceptedTotalSatang) || quote.acceptedTotalSatang < 0) {
+        throw new Error(labels.error);
       }
+      setBreakdown(quote);
+      setAcceptedTotalSatang(quote.acceptedTotalSatang);
+      setQuotedStay(stayKey);
     };
-    load();
-  }, [unitId, startDate, endDate, adults, children]);
+    load().catch(() => {
+      if (!controller.signal.aborted) setError(labels.error);
+    });
+    return () => controller.abort();
+  }, [unitId, startDate, endDate, adults, children, quoteRevision, stayKey, labels.error]);
 
   const categorySelected = Boolean(inventoryCategoryId || categoryKey);
   const canSubmit =
     Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
     Boolean(breakdown) &&
+    quotedStay === stayKey && acceptedTotalSatang !== null &&
     (Boolean(unitId) ||
       Boolean(inventoryCategoryId && categoryQuoteToken && acceptedTotalSatang !== null));
 
   const handleConfirm = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     setConflict(false);
@@ -180,10 +216,10 @@ export default function BookingReviewClient({
           childrenCount: children,
           instantBook,
           paymentMethod,
+          acceptedTotalSatang,
           ...(inventoryCategoryId && !unitId
             ? {
                 categoryQuoteToken,
-                acceptedTotalSatang,
               }
             : {}),
         }),
@@ -195,29 +231,15 @@ export default function BookingReviewClient({
       }
       if (response.status === 409) {
         const body = await response.json().catch(() => null);
-        if (body?.code === 'REQUOTE_REQUIRED' && inventoryCategoryId && !unitId) {
+        if (body?.code === 'REQUOTE_REQUIRED') {
           setConsented(false);
+          setQuotedStay(null);
           setBreakdown(null);
           setCategoryQuoteToken(null);
           setAcceptedTotalSatang(null);
-          const quoteResponse = await fetch('/api/pricing/category-quote', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              inventoryCategoryId,
-              startDate,
-              endDate,
-              adultsCount: Math.max(1, adults),
-              childrenCount: Math.max(0, children),
-            }),
-          });
-          if (quoteResponse.ok) {
-            const quote = await quoteResponse.json();
-            setBreakdown(quote.breakdown);
-            setCategoryQuoteToken(quote.quoteToken);
-            setAcceptedTotalSatang(quote.acceptedTotalSatang);
-            if (quote.categoryName) setHeadline(quote.categoryName);
-          }
+          setError(labels.requote);
+          setQuoteRevision((revision) => revision + 1);
+          return;
         }
         setConflict(true);
         return;
@@ -235,6 +257,7 @@ export default function BookingReviewClient({
     } catch (err) {
       setError(err instanceof Error ? err.message : labels.error);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

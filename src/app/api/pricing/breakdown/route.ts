@@ -83,12 +83,9 @@ export async function POST(req: NextRequest) {
 
     // Display boundary: the engine computes every *_thb figure in satang
     // (THB x 100) — the same domain unit the booking endpoint charges with.
-    // This response quotes the guest for the booking widget only (nothing
-    // here is ever sent back to a payment/booking endpoint — the widget
-    // resubmits just dates/guest counts and the server recomputes the total
-    // in satang independently), so it's safe to convert every money field
-    // to baht here, at the response boundary. Preserve two-decimal baht
-    // precision: monthly proration may end in non-zero satang.
+    // Display values use baht. Keep the accepted ceiling in exact satang so
+    // review can carry consent back without a floating-point round trip.
+    // Booking still recomputes its own authoritative price.
     const toBaht = (satang: number) => satang / 100;
     await track(prisma, 'quote_succeeded', {
       unitId: unit?.id ?? analyticsUnitId,
@@ -117,6 +114,7 @@ export async function POST(req: NextRequest) {
           engine.subtotal_thb - engine.los_discount_thb + engine.cleaning_fee_thb
         ),
         total: toBaht(engine.total_thb),
+        acceptedTotalSatang: engine.total_thb,
         lines: engine.lines.map((line) => ({ ...line, nightly_thb: toBaht(line.nightly_thb) })),
         ...(engine.commercialTerms ? { bookingTerms: engine.commercialTerms } : {}),
       },

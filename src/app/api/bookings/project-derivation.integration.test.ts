@@ -72,6 +72,7 @@ describe('POST /api/bookings derives the project from the unit', () => {
     childrenCount: 0,
     instantBook: true,
     paymentMethod: 'cash',
+    acceptedTotalSatang: 100_000_000,
     ...extra,
   });
 

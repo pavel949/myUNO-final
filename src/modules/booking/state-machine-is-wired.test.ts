@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 /**
  * The stay transitions must be the ones the application actually runs.
@@ -31,7 +31,7 @@ function routeFiles(dir: string): string[] {
 }
 
 const routes = routeFiles(API_ROOT).map((path) => ({
-  path: path.slice(path.indexOf('src/app/api')),
+  path: `src/app/api/${relative(API_ROOT, path).split(sep).join('/')}`,
   source: readFileSync(path, 'utf8'),
 }));
 

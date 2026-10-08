@@ -1,5 +1,6 @@
 import { PrismaClient, BookingStatus, Prisma, type PaymentMethod } from '@prisma/client';
 import { blockingBookingConditions, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
+import { isBookingCreationKey, type BookingCreationIntent } from './creation-intent';
 import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
@@ -38,6 +39,7 @@ export interface CreateBookingInput {
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
   paymentMethod?: PaymentMethod;
+  creationIntent?: BookingCreationIntent;
   holdMinutes?: number;
   requestHours?: number;
   guestNote?: string;
@@ -75,6 +77,21 @@ export const SAFE_IDENTITY_SELECT = {
   email: true,
   preferredLocale: true,
 } as const;
+
+export async function findBookingByCreationIntent(
+  db: Pick<PrismaClient, 'booking'>, guestIdentityId: string, intent: BookingCreationIntent,
+) {
+  const booking = await db.booking.findUnique({
+    where: { guestIdentityId_creationKey: { guestIdentityId, creationKey: intent.key } },
+    include: { unit: true, guestIdentity: { select: SAFE_IDENTITY_SELECT } },
+  });
+  if (booking && booking.creationFingerprint !== intent.fingerprint) {
+    const error = new Error('This booking attempt already belongs to a different stay. Check your trips before starting again.');
+    (error as Error & { code: string }).code = 'BOOKING_INTENT_CONFLICT';
+    throw error;
+  }
+  return booking;
+}
 
 /**
  * Create a new booking.
@@ -248,6 +265,11 @@ export async function createBooking(
   db: PrismaClient,
   input: CreateBookingInput
 ) {
+  return (await createBookingAttempt(db, input)).booking;
+}
+
+/** The same canonical writer, with a replay result for the public request boundary. */
+export async function createBookingAttempt(db: PrismaClient, input: CreateBookingInput) {
   const {
     unitId,
     projectId,
@@ -266,54 +288,32 @@ export async function createBooking(
     cancellationPolicySnapshot,
     instantBook,
     paymentMethod,
+    creationIntent,
     holdMinutes = 30,
     requestHours = 24,
     guestNote,
   } = input;
 
-  await assertLayantaraBookingAuthority(db, unitId);
-  const now = new Date();
-
-  // Guest-stay money is authoritative only when computed here. API routes may
-  // pre-quote for UX, but no caller can persist a different total/snapshot.
-  // Owner stays keep their explicit zero/manual commercial semantics.
-  let totalThb = suppliedTotalThb;
-  let priceBreakdown = suppliedPriceBreakdown;
-  if (bookingType === 'guest_stay') {
-    const authoritative = await computePriceBreakdown(
-      db,
-      unitId,
-      startDate,
-      endDate,
-      adults + children,
-      now,
-      pets
-    );
-    if (
-      acceptedMaxTotalThb !== undefined &&
-      (!Number.isSafeInteger(acceptedMaxTotalThb) ||
-        acceptedMaxTotalThb < 0 ||
-        authoritative.total_thb > acceptedMaxTotalThb)
-    ) {
-      const err = new Error('The stay price changed after review. A new quote and consent are required.');
-      (err as { code?: string }).code = 'REQUOTE_REQUIRED';
-      throw err;
+  if (creationIntent) {
+    if (!isBookingCreationKey(creationIntent.key) || !/^[0-9a-f]{64}$/.test(creationIntent.fingerprint)) {
+      throw new Error('Invalid booking creation intent');
     }
-    totalThb = authoritative.total_thb;
-    priceBreakdown = {
-      ...authoritative,
-      ...(suppliedPriceBreakdown &&
-      typeof suppliedPriceBreakdown === 'object' &&
-      'inventory_category_id' in suppliedPriceBreakdown
-        ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id }
-        : {}),
-    };
+    const previous = await findBookingByCreationIntent(db, guestIdentityId, creationIntent);
+    if (previous) return { booking: previous, replayed: true };
   }
 
   // Availability is decided inside one transaction, and the last word belongs to
   // the `booking_no_overlap` exclusion constraint rather than to the read below.
   // Two concurrent callers can both see a free calendar; only one can commit.
   const claimDates = () => db.$transaction(async (tx) => {
+    // Always lock intent before unit. A category retry may name a different
+    // candidate, but it must wait for and recover the same committed booking.
+    if (creationIntent) {
+      const lockKey = `booking-create:${guestIdentityId}:${creationIntent.key}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const previous = await findBookingByCreationIntent(tx, guestIdentityId, creationIntent);
+      if (previous) return { booking: previous, replayed: true };
+    }
     // Serialize attempts on this unit for the life of the transaction. Without
     // it, concurrent inserts of the same range make Postgres take
     // exclusion-constraint locks in whatever order they arrive, and a stampede
@@ -323,6 +323,28 @@ export async function createBooking(
     // released on commit or rollback, so no path can leak it.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
     await assertLayantaraBookingAuthority(tx, unitId);
+    const now = new Date();
+
+    // Calculate only after replay recovery; accepted historical reservations
+    // must survive later rate changes without a second financial transaction.
+    let totalThb = suppliedTotalThb;
+    let priceBreakdown = suppliedPriceBreakdown;
+    if (bookingType === 'guest_stay') {
+      const authoritative = await computePriceBreakdown(tx as PrismaClient, unitId, startDate, endDate, adults + children, now, pets);
+      if (acceptedMaxTotalThb !== undefined && (
+        !Number.isSafeInteger(acceptedMaxTotalThb) || acceptedMaxTotalThb < 0 || authoritative.total_thb > acceptedMaxTotalThb
+      )) {
+        const err = new Error('The stay price changed after review. A new quote and consent are required.');
+        (err as { code?: string }).code = 'REQUOTE_REQUIRED';
+        throw err;
+      }
+      totalThb = authoritative.total_thb;
+      priceBreakdown = {
+        ...authoritative,
+        ...(suppliedPriceBreakdown && 'inventory_category_id' in suppliedPriceBreakdown
+          ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id } : {}),
+      };
+    }
 
     // A caller may ask for approval, but cannot grant instant-book authority.
     // Read the current unit again at the writer, including category fallbacks.
@@ -369,7 +391,7 @@ export async function createBooking(
       throw err;
     }
 
-    return tx.booking.create({
+    const booking = await tx.booking.create({
       data: {
         unitId,
         projectId,
@@ -378,6 +400,7 @@ export async function createBooking(
         channel,
         status: initialStatus,
         paymentMethod,
+        ...(creationIntent ? { creationKey: creationIntent.key, creationFingerprint: creationIntent.fingerprint } : {}),
         startDate,
         endDate,
         adults,
@@ -396,18 +419,21 @@ export async function createBooking(
         guestIdentity: { select: SAFE_IDENTITY_SELECT },
       },
     });
+    return { booking, replayed: false };
   });
 
-  let booking;
+  let result;
   for (let attempt = 0; ; attempt += 1) {
     try {
-      booking = await claimDates();
+      result = await claimDates();
       break;
     } catch (error) {
       if (attempt < 2 && isTransientConflict(error)) continue;
       rethrowAsDoubleBook(error);
     }
   }
+  if (result.replayed) return result;
+  const { booking } = result;
 
   // Track analytics event
   const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -419,7 +445,7 @@ export async function createBooking(
     channel,
     bookingType,
     nights,
-    totalThb,
+    totalThb: booking.totalThb,
   }).catch(() => null);
 
   // Track request event if this is a request-to-book
@@ -431,13 +457,13 @@ export async function createBooking(
       identityId: guestIdentityId,
       channel,
       nights,
-      totalThb,
+      totalThb: booking.totalThb,
     }).catch(() => null);
 
     await notifyBookingRequested(db, booking.id, requestHours).catch(() => null);
   }
 
-  return booking;
+  return result;
 }
 
 /**

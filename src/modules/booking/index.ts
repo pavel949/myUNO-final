@@ -4,6 +4,8 @@
 
 export {
   createBooking,
+  createBookingAttempt,
+  findBookingByCreationIntent,
   resolveUnitForCategory,
   findAvailableUnitsForCategory,
   approveBookingRequest,

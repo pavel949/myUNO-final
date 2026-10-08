@@ -9,6 +9,7 @@ import {
   makeProjectPublicMediaReady,
 } from '@/test/util';
 import { seedConfig } from '@/modules/config';
+import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 
 const session: { identityId: string } = { identityId: '' };
 vi.mock('@/lib/prisma', async () => {
@@ -204,6 +205,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
       paymentMethod: 'cash', totalThb: 1, // client-supplied total cannot override the server quote
       categoryQuoteToken: acceptedQuote.quoteToken,
       acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
+      idempotencyKey: '00000000-0000-4000-8000-000000000001',
     };
     const created = await bookingPost(request('/api/bookings', payload));
     expect(created.status).toBe(201);
@@ -217,7 +219,13 @@ describe('canonical onboarding → pricing → search → booking route journey'
     const after = await search();
     expect((await after.json()).units).toHaveLength(0);
     const retry = await bookingPost(request('/api/bookings', payload));
-    expect(retry.status).toBe(409);
+    expect(retry.status).toBe(200);
+    expect((await retry.json()).booking.id).toBe(body.booking.id);
+    const anotherIntent = await bookingPost(request('/api/bookings', {
+      ...payload, idempotencyKey: '00000000-0000-4000-8000-000000000003',
+    }));
+    expect(anotherIntent.status).toBe(409);
+    expect((await anotherIntent.json()).code).toBe('DOUBLE_BOOK');
     expect(await db.booking.count({ where: { unitId: unit.id } })).toBe(1);
   });
 
@@ -258,6 +266,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
     const booking = await bookingPost(request('/api/bookings', {
       inventoryCategoryId: c.id, projectId, startDate: '2026-11-10', endDate: '2026-11-14',
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
+      idempotencyKey: '00000000-0000-4000-8000-000000000004',
     }));
     expect(booking.status).toBe(404);
   });
@@ -288,11 +297,19 @@ describe('canonical onboarding → pricing → search → booking route journey'
     }));
     expect(quote.status).toBe(404);
     session.identityId = guestId;
+    // A previously issued token cannot bypass the current offering eligibility.
+    const { token } = createCategoryStayQuoteToken({
+      inventoryCategoryId: c.id, projectId, quotedUnitId: unit.id, ...dates,
+      adultsCount: 2, childrenCount: 0, petsCount: 0, acceptedTotalSatang: 100_000_000,
+    });
     const attempted = await bookingPost(request('/api/bookings', {
       inventoryCategoryId: c.id, projectId, ...dates,
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
+      acceptedTotalSatang: 100_000_000, categoryQuoteToken: token,
+      idempotencyKey: '00000000-0000-4000-8000-000000000005',
     }));
     expect(attempted.status).toBe(409);
+    expect((await attempted.json()).code).toBe('DOUBLE_BOOK');
     expect(await db.booking.count({ where: { unitId: unit.id } })).toBe(0);
   });
 
@@ -342,6 +359,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', totalThb: 1,
       categoryQuoteToken: acceptedQuote.quoteToken,
       acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
+      idempotencyKey: '00000000-0000-4000-8000-000000000002',
     }));
     expect(booked.status).toBe(201);
     const result = await booked.json();

@@ -25,7 +25,8 @@ describe('direct-unit booking acceptance with PostgreSQL', () => {
     const project = await createProject({ status: 'live' });
     const unit = await createUnit({ projectId: project.id, status: 'live', instantBook, baseNightlyThb: 500_000 });
     const breakdown = await computePriceBreakdown(db, unit.id, new Date(stay.startDate), new Date(stay.endDate), 2);
-    return { ...stay, unitId: unit.id, instantBook: true, acceptedTotalSatang: breakdown.total_thb, paymentMethod: 'cash' };
+    return { ...stay, unitId: unit.id, instantBook: true, acceptedTotalSatang: breakdown.total_thb, paymentMethod: 'cash',
+      idempotencyKey: '00000000-0000-4000-8000-000000000001' };
   }
 
   it('cannot bypass host approval by posting instantBook=true', async () => {

@@ -2,9 +2,9 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BookingReviewClient, { type ReviewLabels } from './review-client';
 
-const navigation = vi.hoisted(() => ({ push: vi.fn(), params: new URLSearchParams() }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: navigation.push }),
+  useRouter: () => navigation,
   useSearchParams: () => navigation.params,
 }));
 
@@ -98,7 +98,39 @@ describe('reviewed price and recovery', () => {
     await waitFor(() => expect(navigation.push).toHaveBeenCalled());
     const destination = new URL(navigation.push.mock.calls[0][0], 'http://localhost');
     expect(destination.pathname).toBe('/login');
-    expect(destination.searchParams.get('next')).toBe(`/book/review?${navigation.params}`);
+    const next = new URL(destination.searchParams.get('next')!, 'http://localhost');
+    expect(next.searchParams.get('bookingIntent')).toBe(JSON.parse(bookingCalls()[0][1].body).idempotencyKey);
+    next.searchParams.delete('bookingIntent');
+    expect(next.pathname + next.search).toBe(`/book/review?${navigation.params}`);
+  });
+
+  it('reuses the attempt after a network error and stores it in the review URL', async () => {
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => {
+      if (url === '/api/bookings') throw new Error('Lost response');
+      return normalFetch(url, options);
+    });
+    renderReview();
+    await consent();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(screen.getByText('Lost response')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(bookingCalls()).toHaveLength(2));
+    const firstKey = JSON.parse(bookingCalls()[0][1].body).idempotencyKey;
+    expect(JSON.parse(bookingCalls()[1][1].body).idempotencyKey).toBe(firstKey);
+    const review = new URL(navigation.replace.mock.calls[0][0], 'http://localhost');
+    expect(review.searchParams.get('bookingIntent')).toBe(firstKey);
+  });
+
+  it('recovers the committed booking after refresh even when its dates cannot be quoted again', async () => {
+    const key = '00000000-0000-4000-8000-000000000001';
+    navigation.params.set('bookingIntent', key);
+    fetchMock.mockImplementation(async (url: string) => url.startsWith('/api/bookings?')
+      ? response({ booking: { id: 'already-created' } }) : response({}, 409));
+    renderReview();
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/already-created'));
+    expect(fetchMock).toHaveBeenCalledWith(`/api/bookings?idempotencyKey=${key}`, expect.anything());
+    expect(bookingCalls()).toHaveLength(0);
   });
 
   it('shows quote failure and keeps confirmation disabled', async () => {

@@ -4,13 +4,15 @@ import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({
   user: vi.fn(), unit: vi.fn(), category: vi.fn(), create: vi.fn(),
   price: vi.fn(), candidates: vi.fn(), checkout: vi.fn(),
+  replay: vi.fn(),
 }));
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: mocks.user }));
 vi.mock('@/lib/prisma', () => ({ prisma: {
   unit: { findUnique: mocks.unit }, inventoryCategory: { findUnique: mocks.category },
 } }));
 vi.mock('@/modules/booking', () => ({
-  createBooking: mocks.create,
+  createBookingAttempt: mocks.create,
+  findBookingByCreationIntent: mocks.replay,
   resolveStayCancellationPolicy: vi.fn().mockResolvedValue({ key: 'flexible' }),
   sourceSeasonCancellationPolicy: vi.fn().mockReturnValue(null),
   findAvailableUnitsForCategory: mocks.candidates,
@@ -26,13 +28,15 @@ import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 
 describe('POST booking acceptance', () => {
   const stay = { startDate: '2027-02-01', endDate: '2027-02-04', adultsCount: 2, childrenCount: 0 };
-  const direct = { ...stay, unitId: 'unit-a', instantBook: true, acceptedTotalSatang: 300_000 };
+  const direct = { ...stay, unitId: 'unit-a', instantBook: true, acceptedTotalSatang: 300_000,
+    idempotencyKey: '00000000-0000-4000-8000-000000000001' };
   const request = (body: unknown) => new NextRequest('http://localhost/api/bookings', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.replay.mockResolvedValue(null);
     mocks.user.mockResolvedValue({ identityId: 'guest-a' });
     mocks.unit.mockResolvedValue({
       id: 'unit-a', projectId: 'project-a', instantBook: false, status: 'live',
@@ -44,7 +48,8 @@ describe('POST booking acceptance', () => {
     mocks.candidates.mockResolvedValue([{ id: 'unit-a', instantBook: true }]);
     mocks.price.mockResolvedValue({ total_thb: 300_000 });
     mocks.create.mockImplementation(async (_db, input) => ({
-      id: 'booking-a', status: input.instantBook ? 'pending_payment' : 'requested', totalThb: 300_000,
+      booking: { id: 'booking-a', status: input.instantBook ? 'pending_payment' : 'requested', totalThb: 300_000 },
+      replayed: false,
     }));
   });
 
@@ -72,7 +77,7 @@ describe('POST booking acceptance', () => {
       id: 'unit-a', projectId: 'project-a', instantBook: true, status: 'live',
       inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' },
     });
-    mocks.create.mockResolvedValue({ id: 'booking-a', status: 'pending_payment', totalThb: 290_000 });
+    mocks.create.mockResolvedValue({ booking: { id: 'booking-a', status: 'pending_payment', totalThb: 290_000 }, replayed: false });
     mocks.checkout.mockResolvedValue({ checkoutUrl: '/checkout/payment-a' });
     const result = await POST(request({ ...direct, paymentMethod: 'card_provider' }));
     expect(result.status).toBe(201);
@@ -103,6 +108,7 @@ describe('POST booking acceptance', () => {
     });
     const response = await POST(request({
       ...stay, inventoryCategoryId: 'category-a', acceptedTotalSatang: 300_000, categoryQuoteToken: token,
+      idempotencyKey: direct.idempotencyKey,
     }));
     expect(response.status).toBe(201);
     expect(mocks.create.mock.calls[0][1]).toMatchObject({

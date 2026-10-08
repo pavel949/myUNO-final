@@ -83,10 +83,39 @@ export default function BookingReviewClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [creationKey, setCreationKey] = useState<string | null>(null);
   const [quoteRevision, setQuoteRevision] = useState(0);
   const [quotedStay, setQuotedStay] = useState<string | null>(null);
   const submittingRef = useRef(false);
   const stayKey = JSON.stringify([unitId, inventoryCategoryId, projectId, startDate, endDate, adults, children]);
+  const reviewQuery = searchParams?.toString() || '';
+  const creationQueryRef = useRef<{ query: string; key: string } | null>(null);
+
+  useEffect(() => {
+    const query = new URLSearchParams(reviewQuery);
+    const incoming = query.get('bookingIntent');
+    if (!incoming || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(incoming)) {
+      // Preserve this attempt across refresh, back navigation and login.
+      // A fresh listing link starts a new intent.
+      const key = creationQueryRef.current?.query === reviewQuery
+        ? creationQueryRef.current.key : crypto.randomUUID();
+      creationQueryRef.current = { query: reviewQuery, key };
+      setCreationKey(key);
+      query.set('bookingIntent', key);
+      router.replace(`/book/review?${query}`, { scroll: false });
+      return undefined;
+    }
+    setCreationKey(incoming);
+    const controller = new AbortController();
+    fetch(`/api/bookings?idempotencyKey=${encodeURIComponent(incoming)}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!controller.signal.aborted && result.booking?.id) router.push(`/trips/${result.booking.id}`);
+      })
+      .catch(() => { /* A keyed POST can still recover a committed attempt. */ });
+    return () => controller.abort();
+  }, [reviewQuery, router]);
 
   const backHref = unitId
     ? `/units/${unitId}?${new URLSearchParams({
@@ -192,6 +221,7 @@ export default function BookingReviewClient({
     Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
     Boolean(breakdown) &&
     quotedStay === stayKey && acceptedTotalSatang !== null &&
+    Boolean(creationKey) &&
     (Boolean(unitId) ||
       Boolean(inventoryCategoryId && categoryQuoteToken && acceptedTotalSatang !== null));
 
@@ -217,6 +247,7 @@ export default function BookingReviewClient({
           instantBook,
           paymentMethod,
           acceptedTotalSatang,
+          idempotencyKey: creationKey,
           ...(inventoryCategoryId && !unitId
             ? {
                 categoryQuoteToken,
@@ -225,12 +256,18 @@ export default function BookingReviewClient({
         }),
       });
       if (response.status === 401) {
-        const next = `/book/review?${searchParams?.toString() || ''}`;
+        const nextQuery = new URLSearchParams(reviewQuery);
+        if (creationKey) nextQuery.set('bookingIntent', creationKey);
+        const next = `/book/review?${nextQuery}`;
         router.push(`/login?next=${encodeURIComponent(next)}`);
         return;
       }
       if (response.status === 409) {
         const body = await response.json().catch(() => null);
+        if (body?.code === 'BOOKING_INTENT_CONFLICT') {
+          setError(body.error || labels.error);
+          return;
+        }
         if (body?.code === 'REQUOTE_REQUIRED') {
           setConsented(false);
           setQuotedStay(null);

@@ -1221,6 +1221,8 @@ model Booking {
   status                     BookingStatus      @default(pending_payment)
   /// Chosen settlement rail. Null preserves legacy holds; actual receipts remain in Payment.
   paymentMethod              PaymentMethod?     @map("payment_method")
+  creationKey                String?            @map("creation_key") @db.VarChar(36)
+  creationFingerprint        String?            @map("creation_fingerprint") @db.VarChar(64)
   startDate                  DateTime           @map("start_date") @db.Date
   endDate                    DateTime           @map("end_date") @db.Date
   adults                     Int
@@ -1268,6 +1270,7 @@ model Booking {
   reschedules BookingReschedule[]
 
   @@unique([externalRef, channel])
+  @@unique([guestIdentityId, creationKey])
   @@index([reservationGroupId])
   @@index([unitId, status, startDate, endDate])
   @@index([guestIdentityId])

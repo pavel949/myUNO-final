@@ -50,9 +50,22 @@ Passed: 139 tests in seven files, including seven new DB scenarios for cash/bank
 
 Docker remains unavailable (HTTP 500), but this no longer blocks database verification. A portable official PostgreSQL 16.15 distribution was started as a task-local process at `127.0.0.1:55432`, with a fresh `myuno_night_test` database. All 77 baseline migrations and the additive slice-2 migration applied successfully after the same Supabase compatibility-role bootstrap used by CI. Only synthetic data is used; no production URL, credentials or Windows service was changed. Dependencies are a private copy in this isolated checkout.
 
+## Slice 3 - durable booking creation and recovery
+
+The corrected baseline reproduced four failures and one pass: repeated requests created new requests, category retries did not recover the assigned unit, concurrent retries were not one intent, and changed payloads were not bound to their original key. An initial fixture run failed earlier on missing cancellation configuration; it was repaired before recording the reproduction.
+
+`POST /api/bookings` now requires a UUID idempotency key. The server fingerprints the selected asset/category, project, dates, party, mode, settlement method and note, scoped to the authenticated guest. A unique database index and an intent lock acquired before the unit lock serialize concurrent attempts. Recovery precedes pricing and availability, so an already accepted booking is returned unchanged after a quote expires, rates change, or the first assigned villa disappears from search. A reused key with changed stay details returns `BOOKING_INTENT_CONFLICT`. Fresh keys still face all normal eligibility, media, pricing and overlap gates.
+
+Review keeps the attempt key in its URL through retries, refresh, back navigation and login. An authenticated, uncached GET recovers only the requesting guest's booking. Replays do not emit duplicate creation notifications/analytics or create another checkout. An unavailable provider explicitly returns `CHECKOUT_UNAVAILABLE` with the saved pending booking; retries recover it without claiming a payment succeeded. Existing trip checkout remains responsible for resuming the payment.
+
+Migration `20261008173000_booking_creation_intent` adds two nullable columns, a guest/key unique index and a paired-null check. Applied only to the disposable database (79 total migrations). It does not rewrite old reservations. Rollback should retain these columns and the uniqueness constraint: deleting recorded keys would remove retry protection for accepted attempts. Production migration remains unauthorised.
+
+Passed: 67 tests across nine files covering the canonical catalog-to-booking journey, request/category/direct creation, price acceptance, double-booking concurrency, guest isolation, one card checkout, and UI recovery. After adding the unavailable-provider case, its eight DB tests plus twelve API regressions passed (20 total, overlapping the preceding run). Production TypeScript, changed-file/new-file ESLint and diff whitespace checks passed. No live provider, notification delivery, browser journey or production build is claimed by these results.
+
+Test reconciliation: the old catalog retry assertion expected 409; it now requires 200 with the original booking id and still requires 409/DOUBLE_BOOK for a distinct intent on occupied inventory. Archived-project and sale-only negative fixtures now carry valid acceptance input, reaching the actual eligibility guard instead of failing earlier on missing request fields.
+
 ## Next verified risks
 
-- Booking creation has no durable intent/replay key, especially across category fallback.
 - Scoped calendar permission/effective-date checks and hotel category-media onboarding need targeted verification.
 - Production URLs and external provider credentials are not test targets; no production-readiness claim follows from local evidence.
 

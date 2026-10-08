@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import {
-  createBooking,
+  createBookingAttempt,
+  findBookingByCreationIntent,
   resolveStayCancellationPolicy,
   sourceSeasonCancellationPolicy,
   findAvailableUnitsForCategory,
@@ -11,6 +12,31 @@ import { createCheckout } from '@/modules/finance';
 import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
+import { bookingCreationIntent, isBookingCreationKey, type BookingCreationIntent } from '@/modules/booking/creation-intent';
+
+function replayResponse(booking: NonNullable<Awaited<ReturnType<typeof findBookingByCreationIntent>>>) {
+  // The booking is already durable. Never open another payment session on a
+  // repeated create; the trip's authenticated checkout resumes its payment.
+  return NextResponse.json({ booking, replayed: true }, { status: 200 });
+}
+
+/** Recover after refresh without needing a still-valid quote or free inventory. */
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw createPublicError('unauthorized', 401);
+    const key = req.nextUrl.searchParams.get('idempotencyKey');
+    if (!isBookingCreationKey(key)) throw createPublicError('invalid booking attempt', 400);
+    const booking = await prisma.booking.findUnique({
+      where: { guestIdentityId_creationKey: { guestIdentityId: user.identityId, creationKey: key.toLowerCase() } },
+      select: { id: true, status: true },
+    });
+    if (!booking) throw createPublicError('not found', 404);
+    return NextResponse.json({ booking }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    return handleError(error);
+  }
+}
 
 /**
  * POST /api/bookings
@@ -36,11 +62,13 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  *   gets this from the assigned unit.
  * - guestNote?
  * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
+ * - idempotencyKey: UUID identifying one guest-approved creation attempt
  *
  * The total is ALWAYS computed server-side. acceptedTotalSatang is a required
  * consent ceiling, never an authoritative price, for both entry paths.
  */
 export async function POST(req: NextRequest) {
+  let recovery: { identityId: string; intent: BookingCreationIntent } | undefined;
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -65,6 +93,7 @@ export async function POST(req: NextRequest) {
       paymentMethod = 'cash',
       categoryQuoteToken,
       acceptedTotalSatang,
+      idempotencyKey,
     } = body;
 
     const inventoryCategoryId = requestedInventoryCategoryId || categoryId;
@@ -96,6 +125,19 @@ export async function POST(req: NextRequest) {
     if (!Number.isFinite(guestCount) || guestCount < 1) {
       throw createPublicError('invalid request: at least one guest is required', 400);
     }
+
+    if (!isBookingCreationKey(idempotencyKey)) {
+      throw createPublicError('A valid booking attempt key is required', 400);
+    }
+    const creationIntent = bookingCreationIntent(idempotencyKey, {
+      unitId: requestedUnitId, inventoryCategoryId, categoryKey, projectId,
+      startDate, endDate, adults: Number(adultsCount), children: Number(childrenCount),
+      infants: Number(infantsCount), pets: Number(petsCount), instantBook: requestedInstantBook,
+      paymentMethod, guestNote,
+    });
+    recovery = { identityId: user.identityId, intent: creationIntent };
+    const previous = await findBookingByCreationIntent(prisma, user.identityId, creationIntent);
+    if (previous) return replayResponse(previous);
 
     // Resolve a canonical category once, at the API boundary. Older internals
     // still accept categoryKey while they are migrated, but every canonical
@@ -190,13 +232,12 @@ export async function POST(req: NextRequest) {
         );
 
     if (candidates.length === 0) {
-      throw createPublicError(
-        'no villa of this category is available for these dates',
-        409
-      );
+      const error = new Error('no villa of this category is available for these dates');
+      (error as Error & { code: string }).code = 'DOUBLE_BOOK';
+      throw error;
     }
 
-    let booking!: Awaited<ReturnType<typeof createBooking>>;
+    let booking!: Awaited<ReturnType<typeof createBookingAttempt>>['booking'];
 
     for (const [index, candidate] of candidates.entries()) {
       const isLastCandidate = index === candidates.length - 1;
@@ -213,13 +254,9 @@ export async function POST(req: NextRequest) {
 
       if (candidateBreakdown.total_thb > acceptedTotal) {
         if (isLastCandidate) {
-          return NextResponse.json(
-            {
-              error: 'Available homes now cost more than the amount you accepted.',
-              code: 'REQUOTE_REQUIRED',
-            },
-            { status: 409 }
-          );
+          const error = new Error('Available homes now cost more than the amount you accepted.');
+          (error as Error & { code: string }).code = 'REQUOTE_REQUIRED';
+          throw error;
         }
         continue;
       }
@@ -259,7 +296,7 @@ export async function POST(req: NextRequest) {
         ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
 
       try {
-        booking = await createBooking(prisma, {
+        const attempt = await createBookingAttempt(prisma, {
           unitId: candidate.id,
           projectId: bookingProjectId,
           guestIdentityId: user.identityId,
@@ -275,6 +312,7 @@ export async function POST(req: NextRequest) {
           acceptedMaxTotalThb: acceptedTotal,
           instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
           paymentMethod,
+          creationIntent,
           guestNote,
           priceBreakdown: {
             ...candidateBreakdown,
@@ -284,6 +322,8 @@ export async function POST(req: NextRequest) {
           },
           cancellationPolicySnapshot: { ...policy },
         });
+        booking = attempt.booking;
+        if (attempt.replayed) return replayResponse(booking);
       } catch (error) {
         if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) {
           continue;
@@ -298,12 +338,20 @@ export async function POST(req: NextRequest) {
     const method = paymentMethod;
 
     if (instantBook && method === 'card_provider') {
-      const checkout = await createCheckout(prisma, {
-        purpose: 'stay',
-        bookingId: booking.id,
-        payerIdentityId: user.identityId,
-        amountThb: booking.totalThb,
-      });
+      let checkout: Awaited<ReturnType<typeof createCheckout>>;
+      try {
+        checkout = await createCheckout(prisma, {
+          purpose: 'stay', bookingId: booking.id,
+          payerIdentityId: user.identityId, amountThb: booking.totalThb,
+        });
+      } catch {
+        // Creation already committed. Report the unavailable rail honestly and
+        // keep the same booking recoverable; no replacement stay/payment.
+        return NextResponse.json({
+          booking, code: 'CHECKOUT_UNAVAILABLE',
+          error: 'Your booking was saved, but card checkout is unavailable. Open your trip to review the payment status.',
+        }, { status: 503 });
+      }
 
       return NextResponse.json(
         {
@@ -335,6 +383,19 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    // The winner may have committed after the early lookup, before this
+    // request discovered exhausted inventory or a failed checkout response.
+    if (recovery && (error as { code?: string })?.code !== 'BOOKING_INTENT_CONFLICT') {
+      try {
+        const previous = await findBookingByCreationIntent(prisma, recovery.identityId, recovery.intent);
+        if (previous) return replayResponse(previous);
+      } catch (recoveryError) {
+        error = recoveryError;
+      }
+    }
+    if (error instanceof Error && (error as { code?: string }).code === 'BOOKING_INTENT_CONFLICT') {
+      return NextResponse.json({ error: error.message, code: 'BOOKING_INTENT_CONFLICT' }, { status: 409 });
+    }
     if (error instanceof Error && (error as { code?: string }).code === 'REQUOTE_REQUIRED') {
       return NextResponse.json(
         { error: error.message, code: 'REQUOTE_REQUIRED' },

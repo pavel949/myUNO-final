@@ -116,3 +116,17 @@ Ten of 36 new baseline cases reproduced older discrepancies: export treated requ
 The iCal export, import-conflict check and alert readers now use `blockingBookingConditions`, matching direct booking, search and PMS. Confirmed/checked-in stays and untimed/future payment holds block; requests, cancelled/declined/expired/completed/checked-out stays and elapsed holds do not. Existing feed token authorization, redaction and scoped alert filtering are retained.
 
 Passed: 70 tests across five iCal files, including 36 new state cases and existing import locking, idempotency, scoped alerts and token/redaction regressions. All events are synthetic or test fetch mocks; no production scheduler, live feed, OTA or external message was called. Production TypeScript and ESLint with zero warnings passed for both review follow-ups.
+
+## Ops board calendar correction
+
+The unchanged original arrivals assertion plus five new timezone/hold cases reproduced six failures (three other tests passed). The board now resolves each scoped project's current calendar day using `Project.timezone` and queries its stored PostgreSQL date directly. This removes the server-local midnight conversion and supports simultaneous projects on different local dates. Arrivals and unpaid stays also use the shared active occupancy predicate, excluding elapsed card holds while retaining manual reservations. Existing authorization scope and project filters remain intact.
+
+Passed: 16 tests across Ops board, new calendar regressions and calendar projection. Coverage includes Phuket early morning under UTC/Bangkok/Los Angeles server timezones, simultaneous Bangkok/Pacific properties, exclusion of an out-of-scope project, active/manual holds and an elapsed hold. The original scoped Ops board test now passes without changing its expectation.
+
+## Database replay and portability
+
+`db:verify` initially failed before any migration: the Windows `psql` argument parser ignored options following a positional URL, so the scratch database was not created. It now uses explicit `--dbname` options, and launches the installed Prisma CLI with Node instead of relying on an `npx.cmd` shell shim. No schema semantics or verification gate was removed.
+
+Passed: all five gates on PostgreSQL 16.15 at `127.0.0.1:55432`: 79 migrations applied to a fresh scratch database; ten operational tables have no anon/authenticated grants; RLS enabled; zero Prisma schema drift; a second migrate deploy applied nothing. The scratch database was dropped on completion. These are local verification results, not production migration approval.
+
+The payment correction patch (`c8ce7400`, 15844 bytes) and a 17:34 UTC progress checkpoint were also saved to Library. Approval context includes exact `booking.service.ts` and manual reservations route versions at `3e6fa8d5` and `20b36fb2`.

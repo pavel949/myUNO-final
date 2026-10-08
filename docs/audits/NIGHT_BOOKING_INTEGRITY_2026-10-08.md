@@ -188,3 +188,14 @@ A subsequent deterministic regression exposed a separate cancellation race. Fina
 Cancellation now takes the same inventory/booking locks and compares the server snapshot (status and updatedAt) used for authorization/refund calculation. A concurrent change returns 409 `BOOKING_CHANGED` without cancelling the stay, reserving a refund or notifying cancellation. The trip reloads the new payment/refund and requires another explicit cancellation confirmation. The next approved cancellation records the policy refund against the received payment; no provider refund is fabricated. Existing direct operator semantics and cancellation policies remain unchanged.
 
 Passed: 77 targeted tests over booking service, existing cancellation policies, late-payment regressions and trip UI; then 4 tests including an explicit UI check for the refreshed refund amount and absence of automatic resubmission. The regression uses synthetic mock payment and a real database lock/middleware barrier, without external money movement. No schema change for this follow-up. A complete-suite rerun is planned after its commit.
+
+
+## Final verified application checkpoint
+
+At `b4a985af8898b2ad20731fcc77c0cfd9c7ff8438`, the complete Vitest discovery passed all **2,761 tests in 331 files**, with zero failures, skipped tests or todo. All six sequential one-worker runners exited zero and their reported file sets exactly matched the manifest. The separate inventory-generator Node suite passed 4/4; full ESLint passed with zero warnings. Production TypeScript, Prisma generation and the complete one-worker Next production build passed.
+
+The fresh disposable database replay passed all five gates with **81 migrations**: replay, ten operational tables closed to anon/authenticated, RLS enabled, no schema drift and repeat deploy no-op. Production migrations remain unapplied and unapproved. The first local runner used a Prisma-only URL option rejected by psql before DB creation; the corrected plain loopback URL passed without changing application checks.
+
+The final local production HTTP smoke passed **22/22** on synthetic inventory. The server was stopped and its exact three QA screenshot copies removed. Browser E2E remains NOT RUN: the final supported-browser retry again timed out on the CDP focus command. Content review was disabled only for the local synthetic build; no property photo, rights, live provider or deployment readiness follows from these results.
+
+See [the compact canonical flow matrix](NIGHT_FLOW_COVERAGE_2026-10-08.md) for coverage boundaries, the nine readiness dimensions, required manual/access steps, untested external integrations and a separate static payment-policy follow-up. No pushes, merges, previews, production jobs, credentials, live booking/payment changes or real media imports were performed.

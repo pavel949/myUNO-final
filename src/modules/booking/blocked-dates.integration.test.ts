@@ -151,6 +151,23 @@ describe('blocked dates block a booking (P0-4)', () => {
       .toBe('requested');
   });
 
+  it('refuses an expired request even when the expiry job has not run', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+    await db.booking.update({
+      where: { id: request.id },
+      data: { requestExpiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+      .rejects.toMatchObject({ code: 'BOOKING_REQUEST_EXPIRED' });
+    const current = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
+    expect(current.status).toBe('requested');
+    expect(current.holdExpiresAt).toBeNull();
+  });
+
   it('reassigns a category request when its original villa was blocked', async () => {
     const project = await createProject({ status: 'live' });
     const original = await createUnit({

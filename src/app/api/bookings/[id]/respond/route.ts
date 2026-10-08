@@ -124,6 +124,12 @@ export async function POST(
             { status: 409 }
           );
         }
+        if ((error as { code?: string })?.code === 'BOOKING_REQUEST_EXPIRED') {
+          return NextResponse.json(
+            { error: 'This booking request has expired' },
+            { status: 409 }
+          );
+        }
         throw error;
       }
       await logAudit({

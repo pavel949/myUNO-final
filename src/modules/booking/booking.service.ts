@@ -468,6 +468,14 @@ export async function approveBookingRequest(
       (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
       throw err;
     }
+    const now = new Date();
+    // The scheduler may run late. Its pending status is not authority to
+    // approve a request after the guest's response window has closed.
+    if (current.requestExpiresAt && current.requestExpiresAt <= now) {
+      const err = new Error('Booking request has expired');
+      (err as Error & { code: string }).code = 'BOOKING_REQUEST_EXPIRED';
+      throw err;
+    }
     const sellableUnit = await tx.unit.findFirst({
       where: {
         id: unitId,
@@ -493,7 +501,6 @@ export async function approveBookingRequest(
     }
     await assertLayantaraBookingAuthority(tx, unitId);
 
-    const now = new Date();
     await tx.booking.updateMany({
       where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
       data: { status: 'expired', holdExpiresAt: null },

@@ -68,7 +68,8 @@ export async function registerTelegramAccount(
 
 /**
  * Send a message via WhatsApp or Telegram.
- * Stub for loop one; routes to mock send for testing until real adapter is configured.
+ * Provider adapters are not implemented yet. A registered account or enabled
+ * flag cannot establish delivery, so attempts fail explicitly until then.
  */
 export async function sendMessengerMessage(
   db: PrismaClient,
@@ -102,26 +103,14 @@ export async function sendMessengerMessage(
       };
     }
 
-    // Stub: In production, this would:
-    // 1. Call the messenger provider's API (Twilio, official WhatsApp API, Telegram API)
-    // 2. Send the message
-    // 3. Return external message ID for tracking
-    //
-    // For loop one, record only that a send happened. The recipient's contact
-    // details and the message body are personal data and never reach the logs
-    // (doc 12) — a stub is not a licence to print PII. The recipient is
-    // reduced to something a developer can correlate but nobody can contact.
+    const error = `MESSENGER_ADAPTER_UNAVAILABLE: ${channel} provider is not implemented`;
+    // Log the attempted channel, never claim it was queued or sent. Contact
+    // details and message content remain out of the log.
     console.log(
-      `[Messenger stub] ${channel} message queued to ${redactRecipient(recipientPhone)} (${messageBody.length} chars)`
+      `[Messenger unavailable] ${channel} delivery not attempted for ${redactRecipient(recipientPhone)} (${messageBody.length} chars)`
     );
-
-    // Record sync attempt
-    await recordIntegrationSync(db, account.id);
-
-    return {
-      success: true,
-      messageId: `stub-${Date.now()}`,
-    };
+    await recordIntegrationSync(db, account.id, error);
+    return { success: false, error };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     return {
@@ -137,24 +126,12 @@ export async function sendMessengerMessage(
  */
 export async function handleMessengerWebhook(
   _db: PrismaClient,
-  channel: MessengerChannel,
-  payload: Record<string, any>,
+  _channel: MessengerChannel,
+  _payload: Record<string, any>,
 ): Promise<boolean> {
-  try {
-    // Stub: In production, this would:
-    // 1. Verify webhook signature (provider-specific)
-    // 2. Parse incoming message or status event
-    // 3. Create Thread/Message records or update delivery status
-    // 4. Emit notifications as needed
-    //
-    // For loop one, just log the event.
-    console.log(`[Messenger webhook] ${channel} event:`, JSON.stringify(payload));
-
-    return true;
-  } catch (error) {
-    console.error(`[Messenger webhook] Error processing ${channel} event:`, error);
-    return false;
-  }
+  // No signature verification or event processing adapter exists. Never
+  // acknowledge ingestion or log arbitrary private webhook payloads.
+  return false;
 }
 
 /**

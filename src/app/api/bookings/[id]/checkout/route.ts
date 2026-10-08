@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createCheckout } from '@/modules/finance';
+import { createCheckout, CheckoutStateError } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /**
@@ -27,10 +27,6 @@ export async function POST(
         status: true,
         totalThb: true,
         guestIdentityId: true,
-        payments: {
-          where: { purpose: 'stay' },
-          select: { id: true, status: true, method: true, provider: true },
-        },
       },
     });
 
@@ -42,27 +38,8 @@ export async function POST(
       throw createPublicError('invalid request: booking is not awaiting payment', 400);
     }
 
-    if (booking.payments.some((p) => p.status === 'succeeded')) {
-      throw createPublicError('invalid request: booking already paid', 400);
-    }
-
-    // Reuse an existing pending card session if one exists
-    const pending = booking.payments.find(
-      (p) => p.status === 'pending' && p.method === 'card_provider'
-    );
-    if (pending) {
-      if (pending.provider !== 'mock') {
-        // A stored provider session ID is not a reusable checkout URL. Never send
-        // a real-payment customer to the local mock checkout page.
-        return NextResponse.json({ error: 'External payment session is pending. Complete or reconcile it before starting another checkout.' }, { status: 409 });
-      }
-      return NextResponse.json({
-        checkoutUrl: `/checkout/${pending.id}`,
-        sessionId: pending.id,
-        paymentId: pending.id,
-      });
-    }
-
+    // The canonical writer claims/reuses the session under source locks; a
+    // route-level read followed by create is not a concurrency guarantee.
     const checkout = await createCheckout(prisma, {
       purpose: 'stay',
       bookingId: booking.id,
@@ -72,6 +49,9 @@ export async function POST(
 
     return NextResponse.json(checkout);
   } catch (error) {
+    if (error instanceof CheckoutStateError) return NextResponse.json({ code: error.code, error: error.message }, {
+      status: 409, headers: { 'Cache-Control': 'private, no-store', ...(error.code === 'CHECKOUT_PREPARING' ? { 'Retry-After': '2' } : {}) },
+    });
     return handleError(error);
   }
 }

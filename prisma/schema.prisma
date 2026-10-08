@@ -1346,6 +1346,8 @@ model Payment {
   succeededAt          DateTime?       @map("succeeded_at")
   failureReason        String?         @map("failure_reason")
   reconciliationReason String?         @map("reconciliation_reason")
+  checkoutUrlEncrypted String?         @map("checkout_url_encrypted")
+  checkoutExpiresAt    DateTime?       @map("checkout_expires_at")
 
   // Relations
   booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)

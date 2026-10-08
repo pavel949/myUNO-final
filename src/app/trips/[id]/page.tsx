@@ -95,14 +95,18 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
       'Add passport details for everyone staying before check-in so we can file TM30 on time.',
     'booking.detail.expired_title': 'This reservation has expired',
     'booking.detail.expired_body':
-      'Payment was not completed in time, so these dates were released. Nothing was charged — try booking again if the villa is still free.',
+      'The reservation hold ended and these dates were released. Check the payment status below before making another booking.',
     'booking.detail.declined_title': 'This request was not approved',
     'booking.detail.declined_body':
       'The host could not accept these dates. No charge was made — you can submit a new request or pick different dates.',
     'booking.detail.book_again': 'Try booking again',
     'booking.detail.payment_failed_title': 'Payment did not go through',
     'booking.detail.payment_failed_body':
-      'Your card was declined or the checkout was interrupted. Nothing was charged — try again before your hold expires.',
+      'The payment was not confirmed. Check its status before trying again or contact the property team.',
+    'booking.detail.checkout_preparing': 'Your payment session is being prepared. Please retry shortly; no additional payment has been started.',
+    'booking.detail.payment_review_title': 'Payment needs review',
+    'payments.checkout.refunded_body': 'This payment has been refunded. See your trip for the current booking status.',
+    'booking.detail.payment_review_body': 'Please contact the property team to check this payment. Do not pay again until its status is resolved. A refund has not yet been confirmed.',
     'booking.detail.retry_payment': 'Try payment again',
     'booking.detail.refund_processing_title': 'Your refund is being processed',
     'booking.detail.refund_processing_body':

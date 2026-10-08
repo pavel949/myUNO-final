@@ -117,6 +117,15 @@ describe('verified captures cannot resurrect released inventory', () => {
     expect((await db.booking.findUniqueOrThrow({ where: { id: f.booking.id } })).status).toBe(status);
   });
 
+  it.each(['created', 'failed', 'expired'] as const)('preserves a verified late capture even if local payment status is %s', async status => {
+    const f = await fixture();
+    await db.payment.update({ where: { id: f.payment.id }, data: { status } });
+    expect(await verifyAndConfirm(db, f.payment.id)).toMatchObject({ confirmed: false, reconciliationRequired: true,
+      payment: { status: 'succeeded' } });
+    expect(confirmPayment).toHaveBeenCalledWith(f.payment.providerSessionId);
+    expect(await db.ledgerEntry.count({ where: { paymentId: f.payment.id } })).toBe(1);
+  });
+
   it('records an unallocated refund without debiting property or owner income', async () => {
     const f = await fixture();
     await verifyAndConfirm(db, f.payment.id);
@@ -127,6 +136,7 @@ describe('verified captures cannot resurrect released inventory', () => {
       entryType: 'refund_out', amountThb: -400_000, unitId: null, projectId: null,
     });
     expect((await db.ledgerEntry.aggregate({ where: { paymentId: f.payment.id }, _sum: { amountThb: true } }))._sum.amountThb).toBe(0);
+    expect((await getReconciliationData(db)).unmatchedPayments.map(p => p.id)).not.toContain(f.payment.id);
   });
 
   it('rejects direct confirmation of an expired checkout hold', async () => {

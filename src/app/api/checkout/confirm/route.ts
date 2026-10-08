@@ -91,7 +91,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(result, { status: 200 });
+    // Return only the guest's outcome, never encrypted provider redirect data.
+    const returned = result.reconciliationRequired ? await prisma.refund.aggregate({
+      where: { paymentId: sessionId, status: 'succeeded' }, _sum: { amountThb: true },
+    }) : null;
+    return NextResponse.json({
+      confirmed: result.confirmed, reconciliationRequired: result.reconciliationRequired,
+      reconciliationRefunded: result.reconciliationRequired && (returned?._sum.amountThb ?? 0) >= result.payment.amountThb,
+      payment: { id: result.payment.id, status: result.payment.status,
+        bookingId: result.payment.bookingId, serviceOrderId: result.payment.serviceOrderId },
+    }, { status: 200 });
   } catch (error) {
     // Track payment failure for bookings
     if (error instanceof Error && typeof sessionId === 'string') {

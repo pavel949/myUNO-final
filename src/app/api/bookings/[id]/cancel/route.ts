@@ -10,6 +10,7 @@ async function getBookingRefundCapacity(bookingId: string) {
     where: {
       bookingId,
       status: 'succeeded',
+      reconciliationReason: null,
       purpose: { in: ['stay', 'stay_balance'] },
     },
     include: {
@@ -43,6 +44,7 @@ async function issueCancellationRefunds(input: {
     where: {
       bookingId: input.bookingId,
       status: 'succeeded',
+      reconciliationReason: null,
       purpose: { in: ['stay', 'stay_balance'] },
     },
     include: {

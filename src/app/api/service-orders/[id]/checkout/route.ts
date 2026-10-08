@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createCheckout } from '@/modules/finance';
+import { createCheckout, CheckoutStateError } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
 
@@ -32,18 +32,6 @@ export async function POST(
       throw createPublicError('invalid request: order already paid', 400);
     }
 
-    // Reuse an existing pending card session if one exists
-    const pending = order.payments.find(
-      (p) => p.status === 'pending' && p.method === 'card_provider'
-    );
-    if (pending) {
-      return NextResponse.json({
-        checkoutUrl: `/checkout/${pending.id}`,
-        sessionId: pending.id,
-        paymentId: pending.id,
-      });
-    }
-
     const checkout = await createCheckout(prisma, {
       purpose: 'service_order',
       serviceOrderId: order.id,
@@ -53,6 +41,9 @@ export async function POST(
 
     return NextResponse.json(checkout);
   } catch (error) {
+    if (error instanceof CheckoutStateError) return NextResponse.json({ code: error.code, error: error.message }, {
+      status: 409, headers: { 'Cache-Control': 'private, no-store' },
+    });
     return handleError(error);
   }
 }

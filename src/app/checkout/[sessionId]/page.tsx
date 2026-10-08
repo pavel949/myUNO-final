@@ -22,6 +22,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     'payments.checkout.pay_now': 'Pay now',
     'payments.checkout.success_title': 'Payment confirmed',
     'payments.checkout.reconciliation_title': 'Payment received — review required',
+    'payments.checkout.refunded_title': 'Payment refunded',
+    'payments.checkout.refunded_body': 'This payment has been refunded. See your trip for the current booking status.',
     'payments.checkout.reconciliation_body': 'We received your payment, but could not confirm this booking. Please contact the property team to arrange the next step. Do not pay again. A refund has not yet been confirmed.',
     'payments.checkout.success_body':
       'Your booking is confirmed. Taking you to your trip…',

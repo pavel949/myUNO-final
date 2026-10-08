@@ -6,6 +6,7 @@ export {
   recordCashPayment,
   recordCashRefund,
   createCheckout,
+  CheckoutStateError,
   verifyAndConfirm,
   refund,
   markRefundFailed,

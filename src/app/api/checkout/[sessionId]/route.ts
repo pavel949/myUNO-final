@@ -22,6 +22,7 @@ export async function GET(
     const payment = await prisma.payment.findUnique({
       where: { id: params.sessionId },
       include: {
+        refunds: { where: { status: 'succeeded' }, select: { amountThb: true } },
         booking: {
           select: {
             id: true,
@@ -54,7 +55,9 @@ export async function GET(
       amountThb: payment.amountThb / 100,
       provider: payment.provider,
       status: payment.status,
-      reconciliationRequired: !!payment.reconciliationReason,
+      reconciliationRequired: payment.status === 'succeeded' && !!payment.reconciliationReason,
+      reconciliationRefunded: !!payment.reconciliationReason &&
+        payment.refunds.reduce((sum, refund) => sum + refund.amountThb, 0) >= payment.amountThb,
       booking: payment.booking
         ? {
             id: payment.booking.id,

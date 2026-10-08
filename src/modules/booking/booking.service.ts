@@ -1335,6 +1335,7 @@ export async function changeBookingDates(
             bookingId,
             purpose: { in: ['stay', 'stay_balance'] },
             status: 'succeeded',
+            reconciliationReason: null,
           },
           include: {
             refunds: {

@@ -37,6 +37,10 @@ export async function GET(
             amountThb: true,
             succeededAt: true,
             receiptRef: true,
+            reconciliationReason: true,
+            createdAt: true,
+            provider: true,
+            refunds: { where: { status: 'succeeded' }, select: { amountThb: true } },
           },
         },
       },
@@ -60,7 +64,11 @@ export async function GET(
 
     // Live refund preview from the policy snapshotted at booking time
     let refundPreviewThb: number | null = null;
-    const hasPaid = booking.payments.some((p) => p.status === 'succeeded');
+    const fullyRefunded = (p: typeof booking.payments[number]) => p.refunds.reduce((sum, refund) => sum + refund.amountThb, 0) >= p.amountThb;
+    const paymentReviewRequired = booking.payments.some(p => (p.reconciliationReason && !fullyRefunded(p)) ||
+      (p.provider !== 'mock' && p.status === 'created' && p.createdAt.getTime() + 120_000 <= Date.now()));
+    const unallocatedPaymentRefunded = booking.payments.some(p => p.reconciliationReason && fullyRefunded(p));
+    const hasPaid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
     if (CANCELLABLE_STATUSES.includes(booking.status) && hasPaid) {
       const snapshot = booking.cancellationPolicySnapshot as unknown as CancellationPolicy | null;
       if (snapshot?.steps) {
@@ -78,6 +86,7 @@ export async function GET(
     let depositClaim: Awaited<ReturnType<typeof getActiveDepositClaimForGuest>> = null;
     const paymentFailed =
       isGuest &&
+      !paymentReviewRequired &&
       booking.status === 'pending_payment' &&
       booking.payments.some((p) => p.status === 'failed');
     const refundDisplayState =
@@ -113,6 +122,8 @@ export async function GET(
       hasReview,
       verificationStatus: booking.verificationStatus,
       paymentFailed,
+      paymentReviewRequired,
+      unallocatedPaymentRefunded,
       refundDisplayState,
       depositClaim: depositClaim
         ? {

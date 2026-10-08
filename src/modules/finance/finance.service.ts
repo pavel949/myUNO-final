@@ -5,6 +5,7 @@ import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
 import { initialStayConfirmationIssue, lockBookingInventory } from '@/modules/core/booking-occupancy';
+import { decrypt, encrypt } from '@/lib/encryption';
 
 /** Consistent order for capture and refunds: inventory/source before payment. */
 async function lockPaymentSource(tx: Prisma.TransactionClient, paymentId: string) {
@@ -47,6 +48,13 @@ export interface CheckoutSession {
   checkoutUrl: string;
   sessionId: string;
   paymentId: string;
+}
+
+export class CheckoutStateError extends Error {
+  constructor(readonly code: 'CHECKOUT_PREPARING' | 'CHECKOUT_RECONCILIATION_REQUIRED' | 'BOOKING_NOT_PAYABLE', message: string) {
+    super(message);
+    this.name = 'CheckoutStateError';
+  }
 }
 
 async function assertStayPaymentAmount(
@@ -329,29 +337,87 @@ export async function createCheckout(
     amountThb,
   } = input;
 
-  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
+  if (!Number.isInteger(amountThb) || amountThb <= 0) throw new Error('Checkout amount must be positive whole satang');
+  if (!!bookingId === !!serviceOrderId) throw new Error('Checkout requires exactly one booking or service order');
+  if ((bookingId && purpose !== 'stay' && purpose !== 'stay_balance') || (serviceOrderId && purpose !== 'service_order')) {
+    throw new Error('Checkout purpose does not match its source');
+  }
 
-  // Enforce provider availability before creating any pending payment row.
-  // The mock provider is forbidden in production, even if no adapter method is called.
+  // Fail configuration checks before claiming the attempt or calling a provider.
   const activeProvider = getPaymentProvider();
   const { provider: providerName } = getProviderConfig();
+  if (providerName === 'opn') encrypt('checkout-key-preflight');
+
+  // Only this writer may open a provider checkout. Commit a durable claim before
+  // network I/O: another request/process sees it and cannot create another charge.
+  const claim = await db.$transaction(async tx => {
+    if (bookingId) {
+      const booking = await lockBookingInventory(tx, bookingId);
+      if (!booking) throw new Error('Booking not found');
+      if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
+      await assertStayPaymentAmount(tx as PrismaClient, purpose, bookingId, amountThb);
+      if (purpose === 'stay') {
+        const issue = await initialStayConfirmationIssue(tx, booking);
+        if (issue) throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This booking is no longer available for payment. Please review your trip.');
+        if (await tx.payment.count({ where: { bookingId, purpose: 'stay', status: 'succeeded' } })) {
+          throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'Payment has already been received. Please review your trip.');
+        }
+      } else if (purpose === 'stay_balance' && !['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) {
+        throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This booking is not awaiting a balance payment.');
+      }
+    } else if (serviceOrderId) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
+      await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
+      const order = await tx.serviceOrder.findUnique({ where: { id: serviceOrderId } });
+      if (!order || order.orderer_identity_id !== payerIdentityId || order.total_thb !== amountThb || order.status !== 'placed') {
+        throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This service order is not available for payment.');
+      }
+    }
+    const existing = await tx.payment.findMany({ where: {
+      bookingId: bookingId ?? null, serviceOrderId: serviceOrderId ?? null, purpose, method: 'card_provider',
+      OR: [{ status: { in: ['created', 'pending'] } },
+        { provider: { not: 'mock' }, status: { not: 'succeeded' } }, { reconciliationReason: { not: null } }],
+    }, orderBy: { createdAt: 'asc' } });
+    const payment = existing[0];
+    if (payment) {
+      let reason: string | null = payment.reconciliationReason;
+      if (payment.provider !== providerName) reason = 'CHECKOUT_PROVIDER_CHANGED';
+      if (existing.length > 1) reason = 'CHECKOUT_MULTIPLE_SESSIONS';
+      if (payment.payerIdentityId !== payerIdentityId || payment.amountThb !== amountThb) reason = 'CHECKOUT_DETAILS_CHANGED';
+      if (payment.status === 'created' && !reason && payment.createdAt.getTime() + 120_000 > Date.now()) {
+        return { payment, created: false, error: 'CHECKOUT_PREPARING' as const, url: null };
+      }
+      if (!reason && payment.status === 'pending' && payment.provider === 'mock') {
+        return { payment, created: false, error: null, url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/checkout/${payment.id}` };
+      }
+      let url: string | null = null;
+      if (!reason && payment.status === 'pending' && payment.checkoutUrlEncrypted && payment.providerSessionId &&
+          (!payment.checkoutExpiresAt || payment.checkoutExpiresAt > new Date())) {
+        try { url = decrypt(payment.checkoutUrlEncrypted); } catch { reason = 'CHECKOUT_URL_UNAVAILABLE'; }
+      }
+      if (url) return { payment, created: false, error: null, url };
+      await tx.payment.update({ where: { id: payment.id }, data: {
+        reconciliationReason: reason ?? 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN',
+      } });
+      return { payment, created: false, error: 'CHECKOUT_RECONCILIATION_REQUIRED' as const, url: null };
+    }
+    const created = await tx.payment.create({ data: {
+      purpose, bookingId, serviceOrderId, payerIdentityId, method: 'card_provider',
+      provider: providerName === 'opn' ? 'opn' : 'mock', amountThb,
+      status: providerName === 'opn' ? 'created' : 'pending',
+    } });
+    return { payment: created, created: true, error: null, url: null };
+  });
+
+  if (claim.error) throw new CheckoutStateError(claim.error, claim.error === 'CHECKOUT_PREPARING'
+    ? 'Your payment session is being prepared. Please retry shortly; no additional payment has been started.'
+    : 'This payment session needs review. Please contact the property team and do not start another payment.');
+  const payment = claim.payment;
+  if (claim.url) return { checkoutUrl: claim.url, sessionId: payment.id, paymentId: payment.id };
 
   const payer = await db.identity.findUnique({
     where: { id: payerIdentityId },
     select: { email: true, firstName: true, lastName: true },
-  });
-
-  const payment = await db.payment.create({
-    data: {
-      purpose,
-      bookingId,
-      serviceOrderId,
-      payerIdentityId,
-      method: 'card_provider',
-      provider: providerName === 'opn' ? 'opn' : 'mock',
-      amountThb,
-      status: 'pending',
-    },
   });
 
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
@@ -374,20 +440,28 @@ export async function createCheckout(
         cancelUrl,
         paymentId: payment.id,
       });
-    } catch (error) {
-      // A failed external checkout cannot leave an apparently usable pending
-      // session that the booking API will subsequently return as a local URL.
+    } catch {
+      // A lost response can follow provider acceptance. Keep the durable claim;
+      // do not turn an ambiguous attempt into a retryable failed payment.
       await db.payment.updateMany({
-        where: { id: payment.id, status: 'pending' },
-        data: { status: 'failed' },
-      });
-      throw error;
+        where: { id: payment.id, status: 'created' },
+        data: { reconciliationReason: 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN' },
+      }).catch(() => null);
+      throw new CheckoutStateError('CHECKOUT_RECONCILIATION_REQUIRED', 'The provider response could not be confirmed. Please contact the property team and do not pay again.');
     }
 
-    await db.payment.update({
-      where: { id: payment.id },
-      data: { providerSessionId: session.id },
+    const available = await db.$transaction(async tx => {
+      const booking = await lockPaymentSource(tx, payment.id);
+      const current = await tx.payment.findUniqueOrThrow({ where: { id: payment.id } });
+      if (current.status !== 'created') throw new CheckoutStateError('CHECKOUT_RECONCILIATION_REQUIRED', 'This payment session needs review. Do not pay again.');
+      const issue = purpose === 'stay' ? (booking ? await initialStayConfirmationIssue(tx, booking) : 'BOOKING_NOT_FOUND') : null;
+      await tx.payment.update({ where: { id: payment.id }, data: {
+        status: 'pending', providerSessionId: session.id, checkoutUrlEncrypted: encrypt(session.url),
+        checkoutExpiresAt: session.expiresAt, reconciliationReason: issue ? 'CHECKOUT_BOOKING_UNAVAILABLE' : null,
+      } });
+      return !issue;
     });
+    if (!available) throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'The booking hold ended while checkout was being prepared. Please review your trip before paying.');
 
     return {
       checkoutUrl: session.url,
@@ -438,7 +512,7 @@ export async function verifyAndConfirm(
     return { payment, confirmed: false, reconciliationRequired: !!payment.reconciliationReason };
   }
 
-  if (payment.status !== 'pending') {
+  if (payment.status !== 'pending' && payment.provider !== 'opn') {
     throw new Error(
       `Cannot confirm payment with status ${payment.status}`
     );
@@ -479,7 +553,7 @@ export async function verifyAndConfirm(
     if (current.status === 'succeeded') {
       return { payment: current, changed: false, stayBooking: null as null | { id: string; unitId: string; projectId: string; guestIdentityId: string }, serviceOrderToPay: null as null | { id: string; projectId: string | null; unitId: string | null } };
     }
-    if (current.status !== 'pending') throw new Error(`Cannot confirm payment with status ${current.status}`);
+    if (current.status !== 'pending' && current.provider !== 'opn') throw new Error(`Cannot confirm payment with status ${current.status}`);
 
     let reconciliationReason: string | null = null;
     let stayBooking: null | { id: string; unitId: string; projectId: string; guestIdentityId: string } = null;

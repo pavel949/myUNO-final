@@ -448,87 +448,140 @@ export async function approveBookingRequest(
   }
 
   if (booking.status !== 'requested') {
-    throw new Error(`Cannot approve booking with status ${booking.status}`);
+    const err = new Error(`Cannot approve booking with status ${booking.status}`);
+    (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+    throw err;
   }
-  await assertLayantaraBookingAuthority(db,booking.unitId);
+  await assertLayantaraBookingAuthority(db, booking.unitId);
 
-  // A request never blocked the calendar, so re-check the dates now —
-  // another approval or an instant booking may have taken the villa since.
-  const conflict = await findBlockingConflict(
-    db,
-    booking.unitId,
-    booking.startDate,
-    booking.endDate,
-    booking.id
-  );
-  let unitId = booking.unitId;
-  if (conflict) {
-    // A category-booked villa is the operator's choice (LY-6): reassign
-    // within the same category when another villa is free — the tariff is
-    // category-level, so the approved total stays valid. No category, or
-    // none free → refuse; the request stays open for other dates.
-    const unit = await db.unit.findUnique({
-      where: { id: booking.unitId },
-      select: { categoryKey: true },
-    });
-    const replacement = unit?.categoryKey
-      ? await resolveUnitForCategory(
-          db,
-          booking.projectId,
-          unit.categoryKey,
-          booking.startDate,
-          booking.endDate
-        )
-      : null;
-    if (!replacement) {
-      const err = new Error('Dates unavailable — booking already exists');
-      (err as any).code = 'DOUBLE_BOOK';
+  // A request does not reserve capacity. Claim one candidate at a time under
+  // the same per-unit lock used by bookings, manual blocks and iCal imports.
+  // Separate transactions avoid holding two unit locks in opposite orders when
+  // simultaneous approvals need different category replacements.
+  const claimCandidate = (unitId: string, categoryKey?: string) => db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+
+    const current = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!current) throw new Error(`Booking ${bookingId} not found`);
+    if (current.status !== 'requested') {
+      const err = new Error(`Cannot approve booking with status ${current.status}`);
+      (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
       throw err;
     }
-    unitId = replacement.id;
-  }
+    const sellableUnit = await tx.unit.findFirst({
+      where: {
+        id: unitId,
+        projectId: current.projectId,
+        status: 'live',
+        project: { status: 'live' },
+        ...(categoryKey !== undefined ? { categoryKey } : {}),
+        ...(current.bookingType === 'guest_stay' ? {
+          AND: [{ OR: [
+            { project: { projectType: null } },
+            { commercialOfferings: { some: {
+              offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+            } } },
+          ] }],
+        } : {}),
+      },
+      select: { id: true },
+    });
+    if (!sellableUnit) {
+      const err = new Error('The requested villa is no longer eligible for this stay');
+      (err as Error & { code: string }).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+    await assertLayantaraBookingAuthority(tx, unitId);
 
-  const now = new Date();
-
-  await assertLayantaraBookingAuthority(db,unitId);
-
-  // Reassignment can change unit-level dated overrides. Re-price before the
-  // request becomes a payable hold so the stored snapshot always describes
-  // the physical unit that will actually host the guest.
-  let repriced:
-    | Awaited<ReturnType<typeof computePriceBreakdown>>
-    | null = null;
-  if (unitId !== booking.unitId && booking.bookingType === 'guest_stay') {
-    repriced = await computePriceBreakdown(
-      db,
-      unitId,
-      booking.startDate,
-      booking.endDate,
-      booking.adults + booking.children,
-      now,
-      booking.pets
+    const now = new Date();
+    await tx.booking.updateMany({
+      where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+    const conflict = await findBlockingConflict(
+      tx as PrismaClient, unitId, current.startDate, current.endDate, bookingId
     );
-  }
-  // `requested` sits outside the exclusion constraint, so this update is the
-  // moment the dates are actually claimed — and the moment a race can be lost.
-  return db.booking
-    .update({
-      where: { id: bookingId },
+    const block = await tx.blockedDate.findFirst({
+      where: {
+        unitId,
+        startDate: { lt: current.endDate },
+        endDate: { gt: current.startDate },
+      },
+      select: { reason: true },
+    });
+    if (conflict || block) {
+      const err = new Error('Dates unavailable — booking or block already exists');
+      (err as Error & { code: string; blockReason?: string }).code = 'DOUBLE_BOOK';
+      if (block) (err as Error & { blockReason: string }).blockReason = block.reason;
+      throw err;
+    }
+
+    // A replacement may have a dated unit override. Store its actual price,
+    // but never raise the guest's accepted total without a fresh acceptance.
+    const repriced = unitId !== current.unitId && current.bookingType === 'guest_stay'
+      ? await computePriceBreakdown(
+          tx as PrismaClient, unitId, current.startDate, current.endDate,
+          current.adults + current.children, now, current.pets
+        )
+      : null;
+    if (repriced && repriced.total_thb > current.totalThb) {
+      const err = new Error('Replacement price exceeds the accepted request total');
+      (err as Error & { code: string }).code = 'REQUOTE_REQUIRED';
+      throw err;
+    }
+
+    // The status predicate also prevents two staff approvals of the same
+    // request from silently moving a hold to different physical villas.
+    return tx.booking.update({
+      where: { id: bookingId, status: 'requested' },
       data: {
         unitId,
-        ...(repriced
-          ? {
-              totalThb: repriced.total_thb,
-              priceBreakdown: repriced as any,
-            }
-          : {}),
+        ...(repriced ? { totalThb: repriced.total_thb, priceBreakdown: repriced as any } : {}),
         status: 'pending_payment',
         holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
         requestExpiresAt: null,
       },
       include: { unit: { select: { name: true } } },
-    })
-    .catch(rethrowAsDoubleBook);
+    }).catch((error: unknown) => {
+      if ((error as { code?: string })?.code === 'P2025') {
+        const err = new Error('Booking request was already answered');
+        (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+        throw err;
+      }
+      throw error;
+    });
+  }).catch(rethrowAsDoubleBook);
+
+  try {
+    return await claimCandidate(booking.unitId);
+  } catch (originalError) {
+    if ((originalError as { code?: string })?.code !== 'DOUBLE_BOOK') throw originalError;
+
+    const unit = await db.unit.findUnique({
+      where: { id: booking.unitId }, select: { categoryKey: true },
+    });
+    if (!unit?.categoryKey) throw originalError;
+    const replacements = await findAvailableUnitsForCategory(
+      db, booking.projectId, unit.categoryKey, booking.startDate, booking.endDate
+    );
+    let needsRequote = false;
+    for (const replacement of replacements) {
+      if (replacement.id === booking.unitId) continue;
+      try {
+        return await claimCandidate(replacement.id, unit.categoryKey);
+      } catch (error) {
+        const code = (error as { code?: string })?.code;
+        if (code === 'REQUOTE_REQUIRED') needsRequote = true;
+        else if (code !== 'DOUBLE_BOOK') throw error;
+      }
+    }
+    if (needsRequote) {
+      const err = new Error('No available replacement matches the accepted request price');
+      (err as Error & { code: string }).code = 'REQUOTE_REQUIRED';
+      throw err;
+    }
+    throw originalError;
+  }
 }
 
 /**
@@ -546,7 +599,9 @@ export async function declineBookingRequest(
   }
 
   if (booking.status !== 'requested') {
-    throw new Error(`Cannot decline booking with status ${booking.status}`);
+    const err = new Error(`Cannot decline booking with status ${booking.status}`);
+    (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+    throw err;
   }
 
   if (reasonCode !== undefined && !isBookingRequestDeclineReason(reasonCode)) {
@@ -558,7 +613,8 @@ export async function declineBookingRequest(
     : 'declined_by_host';
 
   return db.booking.update({
-    where: { id: bookingId },
+    // Approval and decline can arrive together. Only one response may win.
+    where: { id: bookingId, status: 'requested' },
     data: {
       status: 'declined',
       requestExpiresAt: null,
@@ -566,6 +622,13 @@ export async function declineBookingRequest(
       cancellationReason,
       cancelledAt: new Date(),
     },
+  }).catch((error: unknown) => {
+    if ((error as { code?: string })?.code === 'P2025') {
+      const err = new Error('Booking request was already answered');
+      (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+      throw err;
+    }
+    throw error;
   });
 }
 

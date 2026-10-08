@@ -83,6 +83,15 @@ jobs:
           missing=0
           [ -n "$CRON_SECRET" ]  || { echo "::error::Secret CRON_SECRET is not set."; missing=1; }
           [ -n "$APP_BASE_URL" ] || { echo "::error::Variable APP_BASE_URL is not set."; missing=1; }
+          if [ -n "$APP_BASE_URL" ]; then
+            if [[ ! "$APP_BASE_URL" =~ ^https://[^/?#]+$ ]]; then
+              echo "::error::APP_BASE_URL must be the HTTPS origin of the deployed myUNO app, without a path, query or trailing slash."
+              missing=1
+            elif [[ "${APP_BASE_URL#https://}" == *.supabase.co ]]; then
+              echo "::error::APP_BASE_URL points to Supabase; use the deployed myUNO Next.js app origin."
+              missing=1
+            fi
+          fi
           exit $missing
 
       - name: Dispatch scheduled jobs

@@ -111,6 +111,18 @@ export async function POST(
             { status: 409 }
           );
         }
+        if ((error as { code?: string })?.code === 'REQUOTE_REQUIRED') {
+          return NextResponse.json(
+            { error: 'The available villa costs more than the guest accepted; a new quote is required' },
+            { status: 409 }
+          );
+        }
+        if ((error as { code?: string })?.code === 'BOOKING_STATE_CHANGED') {
+          return NextResponse.json(
+            { error: 'This booking request was already answered' },
+            { status: 409 }
+          );
+        }
         throw error;
       }
       // N-05 — guest: request approved, payment window open. The approval
@@ -196,6 +208,12 @@ export async function POST(
 
     return NextResponse.json({ booking: updated }, { status: 200 });
   } catch (error) {
+    if ((error as { code?: string })?.code === 'BOOKING_STATE_CHANGED') {
+      return NextResponse.json(
+        { error: 'This booking request was already answered' },
+        { status: 409 }
+      );
+    }
     console.error(
       'Booking respond error:',
       error instanceof Error ? error.message : error

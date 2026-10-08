@@ -33,6 +33,13 @@ export default async function OperatingSpacesPage({ searchParams }: { searchPara
     : await listOperatingSpacesForIdentity(prisma, user.identityId);
 
   if (!user.isAdmin && !spaces.length) redirect('/ops');
+  // The shell sends a staff member here when their current URL has no
+  // operating-space context. A single permitted space needs no extra chooser;
+  // destination pages still enforce membership and unit scope themselves.
+  if (spaces.length === 1 &&
+      (searchParams?.view === 'housekeeping' || searchParams?.view === 'maintenance')) {
+    redirect(pmsWorkspaceSelectionHref(searchParams.view, spaces[0].id));
+  }
 
   const labels = await getLabels({
     'staff.spaces.back': '← Operations',

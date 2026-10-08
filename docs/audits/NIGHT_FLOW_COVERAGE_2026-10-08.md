@@ -87,3 +87,7 @@ Raw logs, the complete test manifest/JSON, six batch reports, HTTP report and re
 The capture-before-first-POST-read regression failed at the previous checkpoint and now passes. A fresh server read no longer substitutes for the guest's displayed agreement. The request carries the displayed booking ID/version/status and exact satang refund; the canonical writer computes the same quote under locks and checks equality. Changed refund capacity without a Booking.updatedAt change is also rejected. Missing/malformed quotes cannot cancel. After 409 the UI reloads, does not automatically resubmit, and posts the refreshed quote only after another explicit confirmation. Both capture orders, fractional amounts and unchanged authorized owner/direct-operator semantics are covered by the complete run.
 
 All full gates above were rerun on this application commit after the reviewer follow-up. The local PostgreSQL process was stopped after final verification, preserving its disposable data and logs. No new migration was needed by the consent correction.
+
+## Card checkout policy follow-up
+
+The previously static card-resume configuration concern was reproduced and corrected after checkpoint `4fd5c270`. See [the isolated follow-up and new-commit verification](CARD_CHECKOUT_POLICY_2026-10-09.md) for fresh policy enforcement on new claims, preserved existing-session recovery, saved-date balance outcomes, 2,794 passing tests and the unchanged browser/live-integration limitations. The earlier evidence above remains attributed to its own checked commit.

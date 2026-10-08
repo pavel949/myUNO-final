@@ -1,6 +1,7 @@
 import { PrismaClient, PaymentPurpose } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { track } from '@/modules/analytics';
+import { initialStayConfirmationIssue, lockBookingInventory } from '@/modules/core/booking-occupancy';
 
 /**
  * Paying by bank transfer into the company account.
@@ -149,19 +150,15 @@ export async function recordBankTransfer(
       if (!input.bookingId) throw new Error('Stay transfer requires a booking');
       // Lock the canonical booking before comparing its payment state. Two staff
       // clicks cannot record the same initial charge or balance simultaneously.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.bookingId}))`;
-      booking = await tx.booking.findUnique({
-        where: { id: input.bookingId },
-        select: {
-          unitId: true, projectId: true, guestIdentityId: true, status: true,
-          totalThb: true, balanceDueThb: true,
-        },
-      });
+      const locked = await lockBookingInventory(tx, input.bookingId);
+      booking = locked;
       if (!booking) throw new Error('Booking not found');
       if (booking.guestIdentityId !== input.payerIdentityId) throw new Error('Payer does not match booking');
 
       if (input.purpose === 'stay') {
         if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
+        const issue = await initialStayConfirmationIssue(tx, locked!);
+        if (issue) throw new Error(`Booking cannot be confirmed: ${issue}`);
         const existing = await tx.payment.count({
           where: { bookingId: input.bookingId, purpose: 'stay', status: 'succeeded' },
         });

@@ -190,6 +190,7 @@ export async function POST(req: NextRequest) {
           where: {
             bookingId: { in: bookingIds },
             status: 'succeeded',
+            reconciliationReason: null,
             purpose: { in: ['stay', 'stay_balance'] },
           },
           _sum: { amountThb: true },

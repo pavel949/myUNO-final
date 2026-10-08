@@ -92,6 +92,13 @@ export async function importICalEvents(
         const outcome = await db.$transaction(async (tx) => {
           await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
 
+          // Release stale rows under the same inventory lock as settlement.
+          // Settlement must still recheck expiry and BlockedDate itself.
+          await tx.booking.updateMany({
+            where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: new Date() } },
+            data: { status: 'expired', holdExpiresAt: null },
+          });
+
           const conflictingBooking = await checkForConflicts(
             tx as PrismaClient,
             unitId,

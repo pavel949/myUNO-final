@@ -54,6 +54,7 @@ export async function GET(
       amountThb: payment.amountThb / 100,
       provider: payment.provider,
       status: payment.status,
+      reconciliationRequired: !!payment.reconciliationReason,
       booking: payment.booking
         ? {
             id: payment.booking.id,

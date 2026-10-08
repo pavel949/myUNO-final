@@ -217,7 +217,10 @@ export async function computeProviderRemittance(
 export async function getReconciliationData(db: PrismaClient) {
   const unmatchedPayments = await db.payment.findMany({
     where: {
-      AND: [{ OR: [{ bookingId: null }, { status: 'failed' }] }, { serviceOrderId: null }],
+      OR: [
+        { reconciliationReason: { not: null } },
+        { AND: [{ OR: [{ bookingId: null }, { status: 'failed' }] }, { serviceOrderId: null }] },
+      ],
     },
     include: {
       payer: { select: { id: true, firstName: true, lastName: true } },
@@ -274,6 +277,7 @@ export async function getReconciliationData(db: PrismaClient) {
       payer: `${p.payer.firstName} ${p.payer.lastName}`.trim(),
       bookingId: p.bookingId,
       serviceOrderId: p.serviceOrderId,
+      reconciliationReason: p.reconciliationReason,
     })),
     failedRefunds: failedRefunds.map((r) => ({
       id: r.id,

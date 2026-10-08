@@ -222,6 +222,7 @@ enum LedgerEntryType {
   payout_provider
   refund_out
   adjustment
+  payment_unallocated
 }
 
 enum OwnerStatementStatus {
@@ -1344,6 +1345,7 @@ model Payment {
   status               PaymentStatus   @default(created)
   succeededAt          DateTime?       @map("succeeded_at")
   failureReason        String?         @map("failure_reason")
+  reconciliationReason String?         @map("reconciliation_reason")
 
   // Relations
   booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)

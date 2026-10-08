@@ -13,6 +13,7 @@ interface SessionInfo {
   amountThb: number;
   provider: string;
   status: string;
+  reconciliationRequired: boolean;
   booking: {
     id: string;
     startDate: string;
@@ -43,6 +44,7 @@ export default function CheckoutClient({
   const [declining, setDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [reconciliationRequired, setReconciliationRequired] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -55,7 +57,8 @@ export default function CheckoutClient({
         if (!response.ok) throw new Error(labels['payments.checkout.not_found']);
         const data: SessionInfo = await response.json();
         setSession(data);
-        if (data.status === 'succeeded') setSuccess(true);
+        setReconciliationRequired(!!data.reconciliationRequired);
+        if (data.status === 'succeeded' && !data.reconciliationRequired) setSuccess(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : labels['payments.checkout.error_generic']);
       } finally {
@@ -86,7 +89,9 @@ export default function CheckoutClient({
         return;
       }
 
-      if (result.confirmed || result.payment?.status === 'succeeded') {
+      if (result.reconciliationRequired) {
+        setReconciliationRequired(true);
+      } else if (result.confirmed || result.payment?.status === 'succeeded') {
         setSuccess(true);
         const bookingId = result.payment?.bookingId || session?.booking?.id;
         const serviceOrderId =
@@ -118,6 +123,18 @@ export default function CheckoutClient({
     return (
       <div className="stitch-workspace flex min-h-screen items-center justify-center">
         <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
+      </div>
+    );
+  }
+
+  if (reconciliationRequired) {
+    return (
+      <div className="stitch-workspace flex min-h-screen items-center justify-center px-20 py-40">
+        <div className="stitch-panel w-full max-w-lg p-32 text-center" role="status">
+          <h1 className="font-display text-display-xl font-semibold mb-12">{labels['payments.checkout.reconciliation_title']}</h1>
+          <p className="text-body text-text-secondary mb-24">{labels['payments.checkout.reconciliation_body']}</p>
+          <Link href={session?.booking ? `/trips/${session.booking.id}` : '/trips'}>{labels['payments.checkout.back_to_trip']}</Link>
+        </div>
       </div>
     );
   }

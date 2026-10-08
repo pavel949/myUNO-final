@@ -1,5 +1,5 @@
 import { PrismaClient, BookingStatus, Prisma, type PaymentMethod } from '@prisma/client';
-import { blockingBookingConditions, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
+import { blockingBookingConditions, initialStayConfirmationIssue, lockBookingInventory, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
 import { isBookingCreationKey, type BookingCreationIntent } from './creation-intent';
 import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
@@ -681,21 +681,13 @@ export async function confirmBooking(
 ) {
   const { bookingId } = input;
 
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
-
-  if (booking.status !== 'pending_payment') {
-    throw new Error(`Cannot confirm booking with status ${booking.status}`);
-  }
-
-  const updated = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: 'confirmed',
-      holdExpiresAt: null,
-    },
+  const updated = await db.$transaction(async tx => {
+    const booking = await lockBookingInventory(tx, bookingId);
+    if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if (booking.status !== 'pending_payment') throw new Error(`Cannot confirm booking with status ${booking.status}`);
+    const issue = await initialStayConfirmationIssue(tx, booking);
+    if (issue) throw new Error(`Booking cannot be confirmed: ${issue}`);
+    return tx.booking.update({ where: { id: bookingId }, data: { status: 'confirmed', holdExpiresAt: null } });
   });
 
   // Track analytics event

@@ -4,7 +4,7 @@ Checked application commit: `79dcba041362ff933d938c39c018cfaf1fc945f1` on `codex
 
 ## Reproduced issue and acceptance
 
-P1: disabling `booking.payment.methods_enabled.card_provider` did not prevent a new provider checkout through resume, balance or service-order payment. The canonical finance writer did not consult the setting. A cached project override also allowed a new direct booking after another process disabled cards. On unchanged checkpoint code, the valid synthetic regression baseline was **12 failed / 10 passed out of 22**; failures were actual unexpected checkout/booking creation, not a provider outage.
+P1: removing `card_provider` from `booking.payment.methods_enabled` did not prevent a new provider checkout through resume, balance or service-order payment. The canonical finance writer did not consult the setting. A cached project override also allowed a new direct booking after another process disabled cards. On unchanged checkpoint code, the valid synthetic regression baseline was **12 failed / 10 passed out of 22**; failures were actual unexpected checkout/booking creation, not a provider outage.
 
 Authority: [configuration table](../04_configuration.md) declares project payment rails with cash/bank-transfer defaults; [payment purposes](../10_payments.md) requires configured settlement rails for stay, stay_balance and service_order. Deposit preauthorization remains separate and card-only. No specification contradiction was needed to implement this correction.
 
@@ -37,7 +37,7 @@ The fresh configuration read runs under the existing source lock immediately bef
 | Static inventory generation | PASS; static inventory is not runtime acceptance. |
 | Browser E2E / authenticated live journeys | NOT RUN; existing supported-browser connection blocker remains open. Component checks use jsdom. |
 | Real provider, webhook, refund, external integrations, scheduler, production content and deployment | NOT RUN. All new provider traffic is synthetic; local PostgreSQL only. |
-| Production HTTP smoke on this commit | NOT RERUN. Prior 24/24 result belongs to fca67891 and is not promoted to this commit. |
+| Production HTTP smoke on this commit | PASS: 24/24 against the existing 79dcba04 build. See [the exact HTTP checks and build provenance](CARD_CHECKOUT_HTTP_2026-10-09.md). Full suite/build were not repeated. |
 
 The content review gate was disabled only for the synthetic local build, as in CI. This does not prove property content approval or production readiness. The Media Master, live bookings/payments and external integration settings were not touched. No push, merge, preview or deployment occurred.
 
@@ -47,6 +47,6 @@ Resource cleanup: the verified task-owned loopback PostgreSQL process was stoppe
 
 Separate code diff: `git-show-79dcba04-card-policy.patch`, 37840 bytes, SHA-256 `3392bc95811d451bcdebffbdbea012745dbc78ca148f9f9a4e10ffe8722d09d6`. Library ID: `libfile_d61689257dd881919b4f131049d639fc`. Initial review note: `libfile_1c105a9a2b548191b0f06146203d4e1d` (written before the full gates).
 
-Raw baseline/targeted logs, six full-suite reports, the file manifest, combined JSON, Node/TypeScript/database/build logs and runtime commands are preserved in the task workspace and final evidence archive. Independent review acceptance of this new diff is not inferred from the earlier review of fca67891.
+Raw baseline/targeted logs, six full-suite reports, the file manifest, combined JSON, Node/TypeScript/database/build logs and runtime commands are preserved in the task workspace and final evidence archive. The parent reported completed independent static review of the exact 79dcba04 patch: SHA matched, the policy bypass is closed, and no material regressions were found within that scope. The reviewer did not independently run tests, build or DB gates.
 
 Remaining release constraints are unchanged: browser acceptance, genuine media/availability/price source reconciliation, real integration tests, backup/restore and parent approval before publication or production changes.

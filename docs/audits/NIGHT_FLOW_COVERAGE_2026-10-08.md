@@ -91,3 +91,5 @@ All full gates above were rerun on this application commit after the reviewer fo
 ## Card checkout policy follow-up
 
 The previously static card-resume configuration concern was reproduced and corrected after checkpoint `4fd5c270`. See [the isolated follow-up and new-commit verification](CARD_CHECKOUT_POLICY_2026-10-09.md) for fresh policy enforcement on new claims, preserved existing-session recovery, saved-date balance outcomes, 2,794 passing tests and the unchanged browser/live-integration limitations. The earlier evidence above remains attributed to its own checked commit.
+
+The existing 79dcba04 production build subsequently passed [all 24 repeated local HTTP checks](CARD_CHECKOUT_HTTP_2026-10-09.md), with no suite/build rerun. The parent reported a matching-SHA independent static review with no material regressions in the bounded policy/recovery scope; the reviewer did not rerun tests/build/DB. Browser E2E and live integrations remain NOT RUN. Task-owned server/database processes and the three synthetic QA copies were cleaned up.

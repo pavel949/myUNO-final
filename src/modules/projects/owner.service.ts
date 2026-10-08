@@ -9,6 +9,7 @@ import { scheduleOwnerStayTurnoverClean } from './owner-stay-turnover';
 import { satangToBaht } from '@/lib/money';
 import { toCalendarDay } from '@/lib/date';
 import { allocateBookingGrossToPeriod } from './owner-period-allocation';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 const ACTIVE_TICKET_STATUSES: TicketStatus[] = [
   'open',
@@ -57,61 +58,60 @@ export interface OwnerStayInput {
 export async function bookOwnerStay(db: PrismaClient, input: OwnerStayInput): Promise<Booking> {
   const { unitId, ownerIdentityId, startDate, endDate } = input;
 
-  const unit = await db.unit.findUnique({
-    where: { id: unitId },
-  });
+  const booking = await db.$transaction(async tx => {
+    // Owner usage consumes the same physical nights as guest stays. The lock
+    // also serializes manual blocks and iCal intake, which live in a different
+    // table and are not covered by the booking exclusion constraint.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+    const unit = await tx.unit.findUnique({ where: { id: unitId } });
+    if (!unit) throw new Error(`Unit ${unitId} not found`);
+    if (unit.ownerIdentityId !== ownerIdentityId) throw new Error('Owner does not own this unit');
 
-  if (!unit) {
-    throw new Error(`Unit ${unitId} not found`);
-  }
-
-  if (unit.ownerIdentityId !== ownerIdentityId) {
-    throw new Error(`Owner does not own this unit`);
-  }
-
-  // Get minimum notice window from config
-  const noticeHours = await getConfig(db, 'owner_stay.notice_hours', {
-    projectId: unit.projectId,
-  });
-
-  const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
-  if (hoursUntilStart < (noticeHours || 24)) {
-    throw new Error(`Owner stay must be booked at least ${noticeHours || 24} hours in advance`);
-  }
-
-  // Verify availability (no overlapping confirmed bookings or blocks)
-  const conflicts = await db.booking.findMany({
-    where: {
-      unitId,
-      status: {
-        in: ['confirmed', 'checked_in', 'checked_out'],
-      },
-      AND: [
-        { startDate: { lt: endDate } },
-        { endDate: { gt: startDate } },
-      ],
-    },
-  });
-
-  if (conflicts.length > 0) {
-    throw new Error(`Dates not available; overlaps with existing booking`);
-  }
-
-  // Create owner-stay booking (zero rent, automatically confirmed)
-  const booking = await db.booking.create({
-    data: {
-      unitId,
+    const noticeHours = await getConfig(tx as PrismaClient, 'owner_stay.notice_hours', {
       projectId: unit.projectId,
-      guestIdentityId: ownerIdentityId,
-      bookingType: 'owner_stay',
-      channel: 'manual',
-      startDate,
-      endDate,
-      adults: 1,
-      children: 0,
-      totalThb: 0, // Zero rent for owner stay
-      status: 'confirmed',
-    },
+    });
+    const now = new Date();
+    const hoursUntilStart = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntilStart < (noticeHours || 24)) {
+      throw new Error(`Owner stay must be booked at least ${noticeHours || 24} hours in advance`);
+    }
+
+    // The immutable DB exclusion predicate cannot ignore elapsed holds by
+    // time. Retire them before insertion, just as the guest writer does.
+    await tx.booking.updateMany({
+      where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+    const overlaps = { unitId, startDate: { lt: endDate }, endDate: { gt: startDate } };
+    const conflict = await tx.booking.findFirst({
+      where: { ...overlaps, OR: blockingBookingConditions(now) },
+      select: { id: true },
+    });
+    if (conflict) {
+      throw Object.assign(new Error('Dates not available; overlaps with existing booking'), { code: 'DOUBLE_BOOK' });
+    }
+    const block = await tx.blockedDate.findFirst({ where: overlaps, select: { reason: true } });
+    if (block) {
+      throw Object.assign(new Error(`Dates unavailable - unit is blocked (${block.reason})`), { code: 'DOUBLE_BOOK' });
+    }
+
+    // Preserve the existing owner pricing/cleaning policy. Guest instant-book
+    // and public payment-method permissions do not grant or revoke ownership.
+    return tx.booking.create({
+      data: {
+        unitId,
+        projectId: unit.projectId,
+        guestIdentityId: ownerIdentityId,
+        bookingType: 'owner_stay',
+        channel: 'manual',
+        startDate,
+        endDate,
+        adults: 1,
+        children: 0,
+        totalThb: 0,
+        status: 'confirmed',
+      },
+    });
   });
 
   await notifyOwnerStayBooked(db, booking.id);

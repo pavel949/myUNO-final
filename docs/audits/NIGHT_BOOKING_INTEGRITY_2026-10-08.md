@@ -66,7 +66,7 @@ Test reconciliation: the old catalog retry assertion expected 409; it now requir
 
 ## Remaining verification
 
-- The full test suite, production compile and local browser journey remain to be checked.
+- Final full-suite verification is pending after the follow-up fixes below. Production compilation and HTTP runtime verification passed; browser E2E is blocked as documented below.
 - Production URLs and external provider credentials are not test targets; no production-readiness claim follows from local evidence.
 
 ## Reconciliation notes
@@ -130,3 +130,19 @@ Passed: 16 tests across Ops board, new calendar regressions and calendar project
 Passed: all five gates on PostgreSQL 16.15 at `127.0.0.1:55432`: 79 migrations applied to a fresh scratch database; ten operational tables have no anon/authenticated grants; RLS enabled; zero Prisma schema drift; a second migrate deploy applied nothing. The scratch database was dropped on completion. These are local verification results, not production migration approval.
 
 The payment correction patch (`c8ce7400`, 15844 bytes) and a 17:34 UTC progress checkpoint were also saved to Library. Approval context includes exact `booking.service.ts` and manual reservations route versions at `3e6fa8d5` and `20b36fb2`.
+
+## Local production runtime checkpoint
+
+At `c7465a1c`, full ESLint with zero warnings, Prisma generation and the Next production build (including type checking) passed. The content-review switch was disabled only for the disposable local fixture, matching the CI build setting. The build used one Next worker on this 8 GB Windows laptop. No deployment was created.
+
+The built server was bound only to `127.0.0.1:3010` against the disposable PostgreSQL database. The fixture used a clearly named synthetic project, two units (instant and request), and unchanged repository screenshots as local QA media. HTTP smoke passed 22 checks: dated scoped discovery, both exact-unit galleries, direct/category quotes and integer consent totals, public SSR pages, local image serving, streamed auth redirects for Ops/calendar/owner/MC, and 401 responses for anonymous booking creation/recovery, personal trips, owner stays and PMS creation. The production server was stopped and its three temporary screenshot copies removed after verification. Reports are `night-http-smoke.json` and `.log` in the task directory.
+
+Browser E2E was not run successfully. The in-app browser was unavailable; the Edge QA tab's DOM operations reported an unattached debugger. A subsequent screenshot-only attempt on the local QA tab timed out on `Emulation.setFocusEmulationEnabled`. Native screen/mouse/keyboard APIs are disabled in this environment. No browser security settings, foreign tabs or credentials were changed. HTTP smoke does not prove client hydration, user clicks or authenticated browser journeys.
+
+## Owner stay capacity correction (CO21)
+
+Baseline: nine new cases failed and three passed. The separate owner writer ignored maintenance/owner/OTA blocks, omitted active payment holds from its friendly conflict check, failed on elapsed holds still protected by the DB exclusion constraint, and raced calendar block creation. The deterministic concurrency case saved both an owner booking and a maintenance block for the same nights.
+
+The owner writer now takes the same transaction-scoped unit advisory lock as guest booking, manual blocks and iCal import. It reads ownership under that lock, retires elapsed finite holds, checks the shared active-booking predicate and blocked-date table, then creates the confirmed owner stay. Conflicts return `DOUBLE_BOOK` with an actionable availability message. Notifications and turnover run only after a successful reservation commit. The existing owner pricing/cleaning policy, notice window, request-only-unit behavior and database source-authority guard are retained; this change does not claim to implement every contract-based owner-charge rule in CO21.
+
+Passed: 46 tests across the 12 new availability cases, 20 existing owner experience/turnover/statement tests, and 14 public payment-policy compatibility cases. No schema or live inventory change.

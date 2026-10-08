@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { $Enums } from '@prisma/client';
 
 /**
@@ -49,37 +50,27 @@ describe('analytics event keys', () => {
     // JSON body and an `as any`. Both are checked, or this guard would miss
     // exactly the bug that prompted it.
     const patterns = [
-      "track\\(\\s*[A-Za-z_.]+,\\s*'[a-z_]+'",
-      "eventKey:\\s*'[a-z_]+'",
+      /\btrack\(\s*[A-Za-z_.]+,\s*'([a-z_]+)'/g,
+      /\beventKey:\s*'([a-z_]+)'/g,
     ];
-    let out = '';
-    for (const pattern of patterns) {
-      try {
-        out += execFileSync(
-          'grep',
-          [
-            '-rhoE', pattern, 'src/',
-            '--include=*.ts', '--include=*.tsx',
-            // Tests describe these shapes in prose; scanning them would make
-            // this guard match its own documentation.
-            '--exclude=*.test.ts', '--exclude=*.test.tsx',
-          ],
-          { encoding: 'utf8' }
-        );
-      } catch {
-        // grep exits 1 when nothing matches
+    const sourceFiles = (dir: string): string[] => readdirSync(dir).flatMap((entry) => {
+      const path = join(dir, entry);
+      if (statSync(path).isDirectory()) return sourceFiles(path);
+      // Tests describe these shapes in prose; scanning them would make this
+      // guard match its own documentation.
+      return /\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry) ? [path] : [];
+    });
+    const used = new Set<string>();
+    for (const path of sourceFiles(join(process.cwd(), 'src'))) {
+      const source = readFileSync(path, 'utf8');
+      for (const pattern of patterns) {
+        for (const match of source.matchAll(pattern)) used.add(match[1]);
       }
     }
 
-    const used = Array.from(new Set(
-      out.split('\n')
-        .map((line) => /'([a-z_]+)'/.exec(line)?.[1])
-        .filter((k): k is string => Boolean(k))
-    ));
+    expect(used.size).toBeGreaterThan(5);
 
-    expect(used.length).toBeGreaterThan(5);
-
-    const unknown = used.filter((k) => !valid.has(k));
+    const unknown = [...used].filter((k) => !valid.has(k));
     expect(unknown, `event keys not in AnalyticsEventKey: ${unknown.join(', ')}`).toEqual([]);
   });
 });

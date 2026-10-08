@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 
 /**
  * No component island: every component must be reachable from a page.
@@ -71,7 +71,7 @@ function importsOf(file: string): string[] {
  * reached, never entered.
  */
 const roots = walk(join(SRC, 'app')).filter((path) =>
-  /\/(page|layout|route|error|not-found|loading|template|default)\.tsx?$/.test(path)
+  /^(page|layout|route|error|not-found|loading|template|default)\.tsx?$/.test(basename(path))
 );
 
 const reachable = new Set<string>();

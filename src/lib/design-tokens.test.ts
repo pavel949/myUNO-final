@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { COLOR, CHART_SERIES, CHART_SEQUENTIAL, tailwindColors } from './design-tokens';
 
 /**
@@ -63,7 +63,7 @@ describe('the token file is the only place a colour is defined', () => {
   });
   it('finds no hex literal anywhere else in src', () => {
     const offenders = sourceFiles(SRC)
-      .map((path) => path.slice(process.cwd().length + 1))
+      .map((path) => relative(process.cwd(), path).split(sep).join('/'))
       .filter((path) => path !== 'src/lib/design-tokens.ts')
       .filter((path) => !FOREIGN_BRAND_MARKS.has(path))
       .filter((path) => /#[0-9a-fA-F]{6}\b/.test(readFileSync(join(process.cwd(), path), 'utf8')));

@@ -18,6 +18,9 @@ vi.mock('@/modules/booking', () => ({
   findAvailableUnitsForCategory: mocks.candidates,
 }));
 vi.mock('@/modules/finance', () => ({ createCheckout: mocks.checkout }));
+vi.mock('@/modules/config', () => ({
+  getConfig: vi.fn().mockResolvedValue(['cash', 'bank_transfer', 'card_provider']),
+}));
 vi.mock('@/modules/core', () => ({
   computePriceBreakdown: mocks.price,
   StayUnquotableError: class extends Error {},

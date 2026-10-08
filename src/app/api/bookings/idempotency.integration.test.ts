@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { computePriceBreakdown } from '@/modules/core';
-import { seedConfig } from '@/modules/config';
+import { seedConfig, setConfigOverride } from '@/modules/config';
 import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 
 const currentUser = vi.hoisted(() => vi.fn());
@@ -92,7 +92,10 @@ describe('durable booking creation intent', () => {
 
   it('opens at most one card checkout for concurrent retries', async () => {
     vi.stubEnv('PAYMENT_PROVIDER', 'mock');
-    const { category } = await fixture();
+    const { category, project } = await fixture();
+    await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: (await currentUser()).identityId,
+    });
     const responses = await Promise.all([
       post({ ...category, paymentMethod: 'card_provider' }),
       post({ ...category, paymentMethod: 'card_provider' }),
@@ -123,7 +126,10 @@ describe('durable booking creation intent', () => {
 
   it('recovers the saved stay after an unavailable provider without claiming payment or creating a replacement', async () => {
     vi.stubEnv('PAYMENT_PROVIDER', 'stripe'); // Deliberately unimplemented; no network call.
-    const { body } = await fixture();
+    const { body, project } = await fixture();
+    await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: (await currentUser()).identityId,
+    });
     const payload = { ...body, paymentMethod: 'card_provider' };
     const first = await post(payload);
     expect(first.status).toBe(503);

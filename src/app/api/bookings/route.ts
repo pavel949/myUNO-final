@@ -13,6 +13,7 @@ import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { bookingCreationIntent, isBookingCreationKey, type BookingCreationIntent } from '@/modules/booking/creation-intent';
+import { getConfig } from '@/modules/config';
 
 function replayResponse(booking: NonNullable<Awaited<ReturnType<typeof findBookingByCreationIntent>>>) {
   // The booking is already durable. Never open another payment session on a
@@ -286,6 +287,19 @@ export async function POST(req: NextRequest) {
         unit.inventoryCategoryId !== resolvedInventoryCategoryId
       ) {
         throw createPublicError('assigned unit does not belong to the requested inventory category', 409);
+      }
+
+      // Read the actual asset's project, never a client-selected scope. Manual
+      // rails reserve capacity without a card timeout, so an enum check alone
+      // would let a caller create untimed holds on a card-only property.
+      const enabledMethods = await getConfig(prisma, 'booking.payment.methods_enabled', {
+        projectId: bookingProjectId,
+      }) ?? ['cash', 'bank_transfer'];
+      if (!Array.isArray(enabledMethods) || !enabledMethods.includes(paymentMethod)) {
+        return NextResponse.json({
+          error: 'This payment method is unavailable for this property. Review the available payment options.',
+          code: 'PAYMENT_METHOD_UNAVAILABLE',
+        }, { status: 400 });
       }
 
       // The same resolver the unit and review pages show the guest: the

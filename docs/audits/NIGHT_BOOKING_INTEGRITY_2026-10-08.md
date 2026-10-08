@@ -96,3 +96,15 @@ Baseline: six failures. The public readiness report accepted room-type photos, b
 Onboarding and short-stay activation now use the existing public gallery validator, including valid MIME/type, nonempty storage key, positive size, unencrypted assets, three distinct photos and a cover within the gallery. Hotel rooms may use their category's representative gallery; their media is never relabelled as exact-unit photography. An explicit private accommodation type overrides the project label and still requires exact-unit photos. Legacy unclassified hotel rooms retain the existing category fallback. Project readiness uses the same classification for its instructions.
 
 Passed: 44 tests across six files, including the six new real-database regressions, legacy hotel/resort unit detail and the catalog-to-booking journey. Test assets are synthetic metadata confined to the disposable database; no real media was uploaded, assigned or imported. Production TypeScript, changed-file ESLint and whitespace verification accompany this slice. No migration, inventory mapping or external media changes.
+
+## Independent review correction - public payment policy
+
+The parent's independent reviewer identified a slice-2 risk: the public API validated the payment enum but not `booking.payment.methods_enabled`, allowing an unauthorized manual rail to create an untimed hold in a card-only project. Seven new baseline cases failed and seven compatibility cases passed.
+
+The public route now resolves allowed methods from the actual assigned unit's project before calling the writer. Both direct and category paths reject a disabled method with `PAYMENT_METHOD_UNAVAILABLE` and no booking/payment write; the same applies to requests awaiting approval and omitted methods defaulting to cash. Recovery of an already accepted booking still precedes this check, preserving its recorded agreement. Manual PMS authorization and the separate owner-stay writer are unchanged.
+
+Passed: 39 tests across payment-method policy (14), acceptance (12), creation recovery (8) and project derivation (5). Explicitly enabled mock-card scenarios now configure their rail in fixtures. Tests prove permitted cash/transfer, one project not inheriting another's override, authenticated manual PMS creation on both instant/request units, and zero-rent confirmed owner stays on a request-only/card-only property. No real provider or money was used.
+
+## Broad verification checkpoint
+
+The complete suite against the unchanged application at `20b36fb2` finished in 609 seconds: 320 files passed, one failed; 2655 tests passed and one failed (2656 total). The sole failure was the scoped Ops board arrivals assertion. Its `dayRange` uses server-local midnight for PostgreSQL calendar dates, causing timezone-dependent bounds. This is being investigated as an application defect; the existing expectation is retained. The independent-review regressions were added after collection and are recorded separately above, not included in this full-suite count.

@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import * as financeService from './finance.service';
+import { seedConfig, setConfigOverride } from '@/modules/config';
+
+async function enableCardCheckout(projectId: string, identityId: string) {
+  await seedConfig(db);
+  await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+    scopeType: 'project', scopeId: projectId, changedByIdentityId: identityId,
+  });
+}
 
 describe('finance.service — integration tests', () => {
   beforeEach(async () => {
@@ -255,6 +263,7 @@ describe('finance.service — integration tests', () => {
         status: 'pending_payment',
       });
 
+      await enableCardCheckout(project.id, guest.id);
       const session = await financeService.createCheckout(db, {
         purpose: 'stay',
         bookingId: booking.id,
@@ -295,6 +304,7 @@ describe('finance.service — integration tests', () => {
         status: 'pending_payment',
       });
 
+      await enableCardCheckout(project.id, guest.id);
       const session = await financeService.createCheckout(db, {
         purpose: 'stay',
         bookingId: booking.id,
@@ -333,6 +343,7 @@ describe('finance.service — integration tests', () => {
       });
       await db.booking.update({ where: { id: booking.id }, data: { balanceDueThb: 1000 } });
 
+      await enableCardCheckout(project.id, guest.id);
       const session = await financeService.createCheckout(db, {
         purpose: 'stay_balance',
         bookingId: booking.id,
@@ -365,6 +376,7 @@ describe('finance.service — integration tests', () => {
         status: 'pending_payment',
       });
 
+      await enableCardCheckout(project.id, guest.id);
       const session = await financeService.createCheckout(db, {
         purpose: 'stay',
         bookingId: booking.id,
@@ -522,6 +534,7 @@ describe('finance.service — integration tests', () => {
         status: 'pending_payment',
       });
 
+      await enableCardCheckout(project.id, guest.id);
       const session = await financeService.createCheckout(db, {
         purpose: 'stay',
         bookingId: booking.id,

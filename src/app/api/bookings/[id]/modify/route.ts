@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { createCheckout } from '@/modules/finance';
+import { createCheckout, CheckoutStateError } from '@/modules/finance';
 import { changeBookingDates } from '@/modules/booking';
 import { track } from '@/modules/analytics';
+
+async function checkoutForSavedChange(bookingId: string, payerIdentityId: string, amountThb: number) {
+  try {
+    const checkout = await createCheckout(prisma, { purpose: 'stay_balance', bookingId, payerIdentityId, amountThb });
+    return { checkoutUrl: checkout.checkoutUrl, checkoutIssue: null };
+  } catch (error) {
+    // Dates and the debt have already committed. A disabled rail or an
+    // uncertain provider response must not report that the date change failed.
+    const code = error instanceof CheckoutStateError ? error.code : 'CHECKOUT_UNAVAILABLE';
+    const detail = error instanceof CheckoutStateError ? error.message : 'Card checkout is unavailable. Please contact the property team before attempting payment.';
+    return { checkoutUrl: null, checkoutIssue: { code,
+      message: `Your dates have been saved. ${detail} Your balance remains due.`,
+    } };
+  }
+}
 
 /**
  * POST /api/bookings/[id]/modify
@@ -93,16 +108,9 @@ export async function POST(
       const priceDeltaThb = result.totalThb - result.previousTotalThb;
       const addedThb = Math.max(0, priceDeltaThb);
 
-      let checkoutUrl: string | null = null;
-      if (addedThb > 0) {
-        const checkout = await createCheckout(prisma, {
-          purpose: 'stay_balance',
-          bookingId,
-          payerIdentityId: user.identityId,
-          amountThb: addedThb,
-        });
-        checkoutUrl = checkout?.checkoutUrl || null;
-      }
+      const checkout = addedThb > 0 && result.balanceDueThb > 0
+        ? await checkoutForSavedChange(bookingId, user.identityId, result.balanceDueThb)
+        : { checkoutUrl: null, checkoutIssue: null };
 
       const extension = {
         bookingId,
@@ -121,7 +129,7 @@ export async function POST(
             oldTotalThb: result.previousTotalThb,
             newTotalThb: result.totalThb,
             balanceThb: priceDeltaThb,
-            checkoutUrl,
+            ...checkout,
           },
         },
         { status: 200 }
@@ -182,16 +190,9 @@ export async function POST(
 
     // An increase is collected through the same checkout seam as any other
     // money, after the change has committed rather than before it.
-    let checkoutUrl: string | null = null;
-    if (balanceThb > 0) {
-      const checkout = await createCheckout(prisma, {
-        purpose: 'stay_balance',
-        bookingId,
-        payerIdentityId: user.identityId,
-        amountThb: balanceThb,
-      });
-      checkoutUrl = checkout?.checkoutUrl || null;
-    }
+    const checkout = balanceThb > 0 && updated.balanceDueThb > 0
+      ? await checkoutForSavedChange(bookingId, user.identityId, updated.balanceDueThb)
+      : { checkoutUrl: null, checkoutIssue: null };
 
     // Track analytics event
     const nights = Math.ceil(
@@ -215,7 +216,7 @@ export async function POST(
           oldTotalThb,
           newTotalThb: updated.totalThb,
           balanceThb,
-          checkoutUrl,
+          ...checkout,
         },
       },
       { status: 200 }

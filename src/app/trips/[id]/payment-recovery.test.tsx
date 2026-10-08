@@ -71,4 +71,32 @@ describe('trip payment recovery', () => {
       bookingId: 'booking', bookingUpdatedAt: '2026-10-08T10:01:00.000Z', bookingStatus: 'confirmed', refundAmountSatang: 400000,
     } });
   });
+
+  it.each(['PAYMENT_METHOD_UNAVAILABLE', 'CHECKOUT_RECONCILIATION_REQUIRED'])('shows the saved dates and outstanding payment notice for %s', async code => {
+    const message = 'Your dates have been saved. Contact the property team. Your balance remains due.';
+    const fixture = { id: 'booking', status: 'confirmed', startDate: '2027-06-01', endDate: '2027-06-03',
+      adults: 2, children: 0, totalThb: 2000, payments: [],
+      unit: { id: 'unit', name: 'Synthetic unit' }, project: { id: 'project', name: 'Synthetic project' },
+      paymentReviewRequired: false, paymentFailed: false, cancellable: true, refundPreviewThb: null,
+      viewer: { isGuest: true, isOwner: false, isStaff: false } };
+    let loads = 0;
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith('/modify')) return { ok: true, status: 200, json: async () => ({
+        pricing: { checkoutUrl: null, checkoutIssue: { code, message } },
+      }) };
+      loads++;
+      return { ok: true, status: 200, json: async () => ({ ...fixture, endDate: loads > 1 ? '2027-06-04' : fixture.endDate }) };
+    });
+    vi.stubGlobal('fetch', fetcher);
+    render(<BookingDetailClient bookingId="booking" labels={labels} />);
+    const departure = await screen.findByLabelText('booking.detail.modify_end');
+    fireEvent.change(departure, { target: { value: '2027-06-04' } });
+    fireEvent.click(screen.getByRole('button', { name: 'booking.detail.modify_submit' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(loads).toBe(2);
+    expect(departure).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'booking.detail.modify_submit' })).toBeDisabled();
+    expect(fetcher.mock.calls.filter(([url]) => url.endsWith('/modify'))).toHaveLength(1);
+    expect(router.push).not.toHaveBeenCalled();
+  });
 });

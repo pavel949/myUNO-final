@@ -6,6 +6,7 @@ import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
 import { initialStayConfirmationIssue, lockBookingInventory } from '@/modules/core/booking-occupancy';
 import { decrypt, encrypt } from '@/lib/encryption';
+import { getConfig } from '@/modules/config';
 
 /** Consistent order for capture and refunds: inventory/source before payment. */
 async function lockPaymentSource(tx: Prisma.TransactionClient, paymentId: string) {
@@ -51,7 +52,7 @@ export interface CheckoutSession {
 }
 
 export class CheckoutStateError extends Error {
-  constructor(readonly code: 'CHECKOUT_PREPARING' | 'CHECKOUT_RECONCILIATION_REQUIRED' | 'BOOKING_NOT_PAYABLE', message: string) {
+  constructor(readonly code: 'CHECKOUT_PREPARING' | 'CHECKOUT_RECONCILIATION_REQUIRED' | 'BOOKING_NOT_PAYABLE' | 'PAYMENT_METHOD_UNAVAILABLE', message: string) {
     super(message);
     this.name = 'CheckoutStateError';
   }
@@ -351,6 +352,7 @@ export async function createCheckout(
   // Only this writer may open a provider checkout. Commit a durable claim before
   // network I/O: another request/process sees it and cannot create another charge.
   const claim = await db.$transaction(async tx => {
+    let projectId: string | undefined;
     if (bookingId) {
       const booking = await lockBookingInventory(tx, bookingId);
       if (!booking) throw new Error('Booking not found');
@@ -365,6 +367,8 @@ export async function createCheckout(
       } else if (purpose === 'stay_balance' && !['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) {
         throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This booking is not awaiting a balance payment.');
       }
+      const unit = await tx.unit.findUniqueOrThrow({ where: { id: booking.unitId }, select: { projectId: true } });
+      projectId = unit.projectId;
     } else if (serviceOrderId) {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
       await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
@@ -372,6 +376,9 @@ export async function createCheckout(
       if (!order || order.orderer_identity_id !== payerIdentityId || order.total_thb !== amountThb || order.status !== 'placed') {
         throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This service order is not available for payment.');
       }
+      // Project-scoped orders use their stored context; standalone commerce
+      // resolves global policy. Never accept a caller-selected project here.
+      projectId = order.project_id ?? undefined;
     }
     const existing = await tx.payment.findMany({ where: {
       bookingId: bookingId ?? null, serviceOrderId: serviceOrderId ?? null, purpose, method: 'card_provider',
@@ -400,6 +407,14 @@ export async function createCheckout(
         reconciliationReason: reason ?? 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN',
       } });
       return { payment, created: false, error: 'CHECKOUT_RECONCILIATION_REQUIRED' as const, url: null };
+    }
+    // Disabling cards forbids a NEW provider attempt, not recovery of evidence
+    // already recorded above. Resolve current policy under the source lock,
+    // bypassing other server processes' stale configuration cache.
+    const enabledMethods = await getConfig(tx, 'booking.payment.methods_enabled', { projectId, fresh: true })
+      ?? ['cash', 'bank_transfer'];
+    if (!Array.isArray(enabledMethods) || !enabledMethods.includes('card_provider')) {
+      throw new CheckoutStateError('PAYMENT_METHOD_UNAVAILABLE', 'Card payment is currently unavailable. Please contact the property or service team about payment.');
     }
     const created = await tx.payment.create({ data: {
       purpose, bookingId, serviceOrderId, payerIdentityId, method: 'card_provider',

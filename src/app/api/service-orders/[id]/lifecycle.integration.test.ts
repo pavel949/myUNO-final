@@ -9,6 +9,7 @@ import {
   createService,
 } from '@/test/util';
 import { verifyAndConfirm } from '@/modules/finance';
+import { seedConfig, setConfigOverride } from '@/modules/config';
 
 // Routes read the session via getCurrentUser — mock it per test
 const mockGetCurrentUser = vi.fn();
@@ -192,6 +193,10 @@ describe('service-order lifecycle routes (S1)', () => {
 
   describe('card checkout', () => {
     it('orderer opens checkout; confirm flips placed → paid', async () => {
+      await seedConfig(db);
+      await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+        scopeType: 'project', scopeId: projectId, changedByIdentityId: orderer.id,
+      });
       asOrderer();
       const res = await checkout(post(), { params: { id: orderId } });
       expect(res.status).toBe(200);

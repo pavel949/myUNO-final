@@ -65,29 +65,32 @@ function getCacheKey(
  * Get a configuration value with resolution order: unit → project → global
  */
 export async function getConfig<K extends ConfigKey>(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   key: K,
-  options?: { unitId?: string; projectId?: string }
+  options?: { unitId?: string; projectId?: string; fresh?: boolean }
 ): Promise<AllConfig[K] | undefined> {
   const unitId = options?.unitId;
   const projectId = options?.projectId;
+  // Authorization decisions need current database policy. Do not publish a
+  // transaction's uncommitted config into the process-wide cache either.
+  const useCache = !options?.fresh;
 
   // Try unit-level cache first
-  if (unitId) {
+  if (useCache && unitId) {
     const cacheKey = getCacheKey(key, unitId);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
   }
 
   // Try project-level cache
-  if (projectId && !unitId) {
+  if (useCache && projectId && !unitId) {
     const cacheKey = getCacheKey(key, undefined, projectId);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
   }
 
   // Try global cache
-  if (!unitId && !projectId) {
+  if (useCache && !unitId && !projectId) {
     const cacheKey = getCacheKey(key);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) return cached;
@@ -109,7 +112,7 @@ export async function getConfig<K extends ConfigKey>(
     });
     if (override) {
       value = override.value;
-      cache.set(getCacheKey(key, unitId), value);
+      if (useCache) cache.set(getCacheKey(key, unitId), value);
       return value;
     }
   }
@@ -127,7 +130,7 @@ export async function getConfig<K extends ConfigKey>(
     });
     if (override) {
       value = override.value;
-      cache.set(getCacheKey(key, undefined, projectId), value);
+      if (useCache) cache.set(getCacheKey(key, undefined, projectId), value);
       return value;
     }
   }
@@ -146,7 +149,7 @@ export async function getConfig<K extends ConfigKey>(
   });
   if (globalOverride) {
     value = globalOverride.value;
-    cache.set(getCacheKey(key), value);
+    if (useCache) cache.set(getCacheKey(key), value);
     return value;
   }
 
@@ -157,7 +160,7 @@ export async function getConfig<K extends ConfigKey>(
 
   if (param) {
     value = param.defaultValue;
-    cache.set(getCacheKey(key), value);
+    if (useCache) cache.set(getCacheKey(key), value);
     return value;
   }
 

@@ -236,6 +236,7 @@ export default function BookingDetailClient({
       setNewStart('');
       setNewEnd('');
       await load();
+      if (data?.pricing?.checkoutIssue?.message) setError(data.pricing.checkoutIssue.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
     } finally {

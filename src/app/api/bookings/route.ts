@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
       // rails reserve capacity without a card timeout, so an enum check alone
       // would let a caller create untimed holds on a card-only property.
       const enabledMethods = await getConfig(prisma, 'booking.payment.methods_enabled', {
-        projectId: bookingProjectId,
+        projectId: bookingProjectId, fresh: true,
       }) ?? ['cash', 'bank_transfer'];
       if (!Array.isArray(enabledMethods) || !enabledMethods.includes(paymentMethod)) {
         return NextResponse.json({

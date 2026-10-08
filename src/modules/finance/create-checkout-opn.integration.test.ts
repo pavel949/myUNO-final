@@ -8,6 +8,7 @@ import {
   createBooking,
 } from '@/test/util';
 import * as financeService from './finance.service';
+import { seedConfig, setConfigOverride } from '@/modules/config';
 
 const mockCreateCheckout = vi.fn();
 const mockConfirmPayment = vi.fn();
@@ -59,6 +60,10 @@ describe('createCheckout with Opn provider', () => {
       totalThb: 800_000,
     });
 
+    await seedConfig(db);
+    await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guest.id,
+    });
     const session = await financeService.createCheckout(db, {
       purpose: 'stay',
       bookingId: booking.id,
@@ -111,6 +116,10 @@ describe('createCheckout with Opn provider', () => {
       totalThb: 500_000,
     });
 
+    await seedConfig(db);
+    await setConfigOverride(db, 'booking.payment.methods_enabled', ['card_provider'], {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guest.id,
+    });
     const session = await financeService.createCheckout(db, {
       purpose: 'stay',
       bookingId: booking.id,

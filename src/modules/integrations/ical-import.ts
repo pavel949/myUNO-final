@@ -2,6 +2,7 @@ import { PrismaClient, BlockedDateReason, Booking } from '@prisma/client';
 import { recordIntegrationSync } from './integrations';
 import { createNotification } from '@/modules/comms';
 import { toCalendarDay } from '@/lib/date';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 export interface ICalEvent {
   uid: string; // Unique identifier for idempotency
@@ -39,7 +40,7 @@ async function checkForConflicts(
   const conflicting = await db.booking.findFirst({
     where: {
       unitId,
-      status: { in: ['pending_payment', 'confirmed', 'checked_in', 'checked_out', 'completed'] },
+      OR: blockingBookingConditions(),
       // Overlap check: booking.start < this.end AND booking.end > this.start
       startDate: { lt: endDate },
       endDate: { gt: startDate },

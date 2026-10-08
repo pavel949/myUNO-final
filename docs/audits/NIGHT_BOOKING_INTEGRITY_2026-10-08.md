@@ -108,3 +108,11 @@ Passed: 39 tests across payment-method policy (14), acceptance (12), creation re
 ## Broad verification checkpoint
 
 The complete suite against the unchanged application at `20b36fb2` finished in 609 seconds: 320 files passed, one failed; 2655 tests passed and one failed (2656 total). The sole failure was the scoped Ops board arrivals assertion. Its `dayRange` uses server-local midnight for PostgreSQL calendar dates, causing timezone-dependent bounds. This is being investigated as an application defect; the existing expectation is retained. The independent-review regressions were added after collection and are recorded separately above, not included in this full-suite count.
+
+## Independent review follow-up - iCal occupancy
+
+Ten of 36 new baseline cases reproduced older discrepancies: export treated requests, declined/expired and completed stays as occupied; import retained completed stays and elapsed payment holds as conflicts; unit/portfolio alerts retained elapsed holds. These were not introduced by the first two commits.
+
+The iCal export, import-conflict check and alert readers now use `blockingBookingConditions`, matching direct booking, search and PMS. Confirmed/checked-in stays and untimed/future payment holds block; requests, cancelled/declined/expired/completed/checked-out stays and elapsed holds do not. Existing feed token authorization, redaction and scoped alert filtering are retained.
+
+Passed: 70 tests across five iCal files, including 36 new state cases and existing import locking, idempotency, scoped alerts and token/redaction regressions. All events are synthetic or test fetch mocks; no production scheduler, live feed, OTA or external message was called. Production TypeScript and ESLint with zero warnings passed for both review follow-ups.

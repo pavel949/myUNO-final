@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 /**
  * Money reaches the screen through one door, and arrives in satang.
@@ -39,7 +39,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 const files = sourceFiles(SRC_ROOT).map((path) => ({
-  path: path.slice(process.cwd().length + 1),
+  path: relative(process.cwd(), path).split(sep).join('/'),
   source: readFileSync(path, 'utf8'),
 }));
 

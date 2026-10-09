@@ -6,6 +6,7 @@ import { hasProjectDepartmentAccess, hasProjectStaffAccess } from '@/app/libs/pr
 import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
+import { logAudit } from '@/modules/audit';
 import { track } from '@/modules/analytics';
 import { t, type Locale } from '@/modules/content';
 
@@ -111,8 +112,37 @@ export async function POST(
             { status: 409 }
           );
         }
+        if ((error as { code?: string })?.code === 'REQUOTE_REQUIRED') {
+          return NextResponse.json(
+            { error: 'The available villa costs more than the guest accepted; a new quote is required' },
+            { status: 409 }
+          );
+        }
+        if ((error as { code?: string })?.code === 'BOOKING_STATE_CHANGED') {
+          return NextResponse.json(
+            { error: 'This booking request was already answered' },
+            { status: 409 }
+          );
+        }
+        if ((error as { code?: string })?.code === 'BOOKING_REQUEST_EXPIRED') {
+          return NextResponse.json(
+            { error: 'This booking request has expired' },
+            { status: 409 }
+          );
+        }
         throw error;
       }
+      await logAudit({
+        actorIdentityId: user.identityId,
+        action: 'bookings:approve_request',
+        entityType: 'Booking',
+        entityId: booking.id,
+        data: {
+          before: { status: booking.status, unitId: booking.unitId },
+          after: { status: updated.status, unitId: updated.unitId, totalThb: updated.totalThb },
+          reason: updated.unitId === booking.unitId ? 'host_approved' : 'category_reassignment',
+        },
+      });
       // N-05 — guest: request approved, payment window open. The approval
       // may have reassigned the villa within the category — use the final one.
       await createNotification(prisma, {
@@ -151,6 +181,17 @@ export async function POST(
       bookingId: booking.id,
       declinedByIdentityId: user.identityId,
       reasonCode: body?.reasonCode,
+    });
+    await logAudit({
+      actorIdentityId: user.identityId,
+      action: 'bookings:decline_request',
+      entityType: 'Booking',
+      entityId: booking.id,
+      data: {
+        before: { status: booking.status, unitId: booking.unitId },
+        after: { status: updated.status, unitId: updated.unitId },
+        reason: body.reasonCode,
+      },
     });
 
     const guestIdentity = await prisma.identity.findUnique({
@@ -196,6 +237,12 @@ export async function POST(
 
     return NextResponse.json({ booking: updated }, { status: 200 });
   } catch (error) {
+    if ((error as { code?: string })?.code === 'BOOKING_STATE_CHANGED') {
+      return NextResponse.json(
+        { error: 'This booking request was already answered' },
+        { status: 409 }
+      );
+    }
     console.error(
       'Booking respond error:',
       error instanceof Error ? error.message : error

@@ -1,9 +1,23 @@
-import { PrismaClient, PaymentPurpose, RefundReason } from '@prisma/client';
+import { PrismaClient, PaymentPurpose, RefundReason, type Prisma } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
 import { ensureDepositPreauthOnStayConfirmed } from './deposits.service';
 import { getPaymentProvider, getProviderConfig } from './providers';
 import { satangToBaht } from '@/lib/money';
+import { initialStayConfirmationIssue, lockBookingInventory } from '@/modules/core/booking-occupancy';
+import { decrypt, encrypt } from '@/lib/encryption';
+import { getConfig } from '@/modules/config';
+
+/** Consistent order for capture and refunds: inventory/source before payment. */
+async function lockPaymentSource(tx: Prisma.TransactionClient, paymentId: string) {
+  const snapshot = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
+  const booking = snapshot.bookingId ? await lockBookingInventory(tx, snapshot.bookingId) : null;
+  if (snapshot.serviceOrderId) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${snapshot.serviceOrderId}))`;
+  }
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+  return booking;
+}
 
 export interface RecordCashPaymentInput {
   purpose: PaymentPurpose;
@@ -35,6 +49,13 @@ export interface CheckoutSession {
   checkoutUrl: string;
   sessionId: string;
   paymentId: string;
+}
+
+export class CheckoutStateError extends Error {
+  constructor(readonly code: 'CHECKOUT_PREPARING' | 'CHECKOUT_RECONCILIATION_REQUIRED' | 'BOOKING_NOT_PAYABLE' | 'PAYMENT_METHOD_UNAVAILABLE', message: string) {
+    super(message);
+    this.name = 'CheckoutStateError';
+  }
 }
 
 async function assertStayPaymentAmount(
@@ -145,15 +166,14 @@ export async function recordCashPayment(
 
     if (purpose === 'stay' || purpose === 'stay_balance') {
       if (!bookingId) throw new Error('Stay payment requires bookingId');
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${bookingId}))`;
-      booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-        select: { unitId: true, projectId: true, guestIdentityId: true, status: true, totalThb: true, balanceDueThb: true },
-      });
+      const locked = await lockBookingInventory(tx, bookingId);
+      booking = locked;
       if (!booking) throw new Error(`Booking ${bookingId} not found`);
       if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
       if (purpose === 'stay') {
         if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
+        const issue = await initialStayConfirmationIssue(tx, locked!);
+        if (issue) throw new Error(`Booking cannot be confirmed: ${issue}`);
         if (await tx.payment.count({ where: { bookingId, purpose: 'stay', status: 'succeeded' } })) {
           throw new Error('Initial stay payment is already recorded');
         }
@@ -259,7 +279,7 @@ export async function recordCashRefund(
   const { paymentId, amountThb, reason, paidBackByIdentityId, initiatedByIdentityId } = input;
 
   return db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    await lockPaymentSource(tx, paymentId);
     const payment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
     if (payment.method !== 'cash') {
       throw new Error('Can only refund cash payments via recordCashRefund');
@@ -277,7 +297,7 @@ export async function recordCashRefund(
       },
     });
     const now = new Date();
-    const booking = payment.bookingId
+    const booking = payment.bookingId && !payment.reconciliationReason
       ? await tx.booking.findUnique({
           where: { id: payment.bookingId },
           select: { unitId: true, projectId: true },
@@ -296,7 +316,7 @@ export async function recordCashRefund(
         description: `Cash refund: ${reason}`,
       },
     });
-    await applySucceededRefundToBooking(tx as PrismaClient, payment.bookingId, amountThb);
+    if (!payment.reconciliationReason) await applySucceededRefundToBooking(tx as PrismaClient, payment.bookingId, amountThb);
     return refund;
   });
 }
@@ -318,29 +338,101 @@ export async function createCheckout(
     amountThb,
   } = input;
 
-  await assertStayPaymentAmount(db, purpose, bookingId, amountThb);
+  if (!Number.isInteger(amountThb) || amountThb <= 0) throw new Error('Checkout amount must be positive whole satang');
+  if (!!bookingId === !!serviceOrderId) throw new Error('Checkout requires exactly one booking or service order');
+  if ((bookingId && purpose !== 'stay' && purpose !== 'stay_balance') || (serviceOrderId && purpose !== 'service_order')) {
+    throw new Error('Checkout purpose does not match its source');
+  }
 
-  // Enforce provider availability before creating any pending payment row.
-  // The mock provider is forbidden in production, even if no adapter method is called.
+  // Fail configuration checks before claiming the attempt or calling a provider.
   const activeProvider = getPaymentProvider();
   const { provider: providerName } = getProviderConfig();
+  if (providerName === 'opn') encrypt('checkout-key-preflight');
+
+  // Only this writer may open a provider checkout. Commit a durable claim before
+  // network I/O: another request/process sees it and cannot create another charge.
+  const claim = await db.$transaction(async tx => {
+    let projectId: string | undefined;
+    if (bookingId) {
+      const booking = await lockBookingInventory(tx, bookingId);
+      if (!booking) throw new Error('Booking not found');
+      if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
+      await assertStayPaymentAmount(tx as PrismaClient, purpose, bookingId, amountThb);
+      if (purpose === 'stay') {
+        const issue = await initialStayConfirmationIssue(tx, booking);
+        if (issue) throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This booking is no longer available for payment. Please review your trip.');
+        if (await tx.payment.count({ where: { bookingId, purpose: 'stay', status: 'succeeded' } })) {
+          throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'Payment has already been received. Please review your trip.');
+        }
+      } else if (purpose === 'stay_balance' && !['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) {
+        throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This booking is not awaiting a balance payment.');
+      }
+      const unit = await tx.unit.findUniqueOrThrow({ where: { id: booking.unitId }, select: { projectId: true } });
+      projectId = unit.projectId;
+    } else if (serviceOrderId) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
+      await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
+      const order = await tx.serviceOrder.findUnique({ where: { id: serviceOrderId } });
+      if (!order || order.orderer_identity_id !== payerIdentityId || order.total_thb !== amountThb || order.status !== 'placed') {
+        throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'This service order is not available for payment.');
+      }
+      // Project-scoped orders use their stored context; standalone commerce
+      // resolves global policy. Never accept a caller-selected project here.
+      projectId = order.project_id ?? undefined;
+    }
+    const existing = await tx.payment.findMany({ where: {
+      bookingId: bookingId ?? null, serviceOrderId: serviceOrderId ?? null, purpose, method: 'card_provider',
+      OR: [{ status: { in: ['created', 'pending'] } },
+        { provider: { not: 'mock' }, status: { not: 'succeeded' } }, { reconciliationReason: { not: null } }],
+    }, orderBy: { createdAt: 'asc' } });
+    const payment = existing[0];
+    if (payment) {
+      let reason: string | null = payment.reconciliationReason;
+      if (payment.provider !== providerName) reason = 'CHECKOUT_PROVIDER_CHANGED';
+      if (existing.length > 1) reason = 'CHECKOUT_MULTIPLE_SESSIONS';
+      if (payment.payerIdentityId !== payerIdentityId || payment.amountThb !== amountThb) reason = 'CHECKOUT_DETAILS_CHANGED';
+      if (payment.status === 'created' && !reason && payment.createdAt.getTime() + 120_000 > Date.now()) {
+        return { payment, created: false, error: 'CHECKOUT_PREPARING' as const, url: null };
+      }
+      if (!reason && payment.status === 'pending' && payment.provider === 'mock') {
+        return { payment, created: false, error: null, url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/checkout/${payment.id}` };
+      }
+      let url: string | null = null;
+      if (!reason && payment.status === 'pending' && payment.checkoutUrlEncrypted && payment.providerSessionId &&
+          (!payment.checkoutExpiresAt || payment.checkoutExpiresAt > new Date())) {
+        try { url = decrypt(payment.checkoutUrlEncrypted); } catch { reason = 'CHECKOUT_URL_UNAVAILABLE'; }
+      }
+      if (url) return { payment, created: false, error: null, url };
+      await tx.payment.update({ where: { id: payment.id }, data: {
+        reconciliationReason: reason ?? 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN',
+      } });
+      return { payment, created: false, error: 'CHECKOUT_RECONCILIATION_REQUIRED' as const, url: null };
+    }
+    // Disabling cards forbids a NEW provider attempt, not recovery of evidence
+    // already recorded above. Resolve current policy under the source lock,
+    // bypassing other server processes' stale configuration cache.
+    const enabledMethods = await getConfig(tx, 'booking.payment.methods_enabled', { projectId, fresh: true })
+      ?? ['cash', 'bank_transfer'];
+    if (!Array.isArray(enabledMethods) || !enabledMethods.includes('card_provider')) {
+      throw new CheckoutStateError('PAYMENT_METHOD_UNAVAILABLE', 'Card payment is currently unavailable. Please contact the property or service team about payment.');
+    }
+    const created = await tx.payment.create({ data: {
+      purpose, bookingId, serviceOrderId, payerIdentityId, method: 'card_provider',
+      provider: providerName === 'opn' ? 'opn' : 'mock', amountThb,
+      status: providerName === 'opn' ? 'created' : 'pending',
+    } });
+    return { payment: created, created: true, error: null, url: null };
+  });
+
+  if (claim.error) throw new CheckoutStateError(claim.error, claim.error === 'CHECKOUT_PREPARING'
+    ? 'Your payment session is being prepared. Please retry shortly; no additional payment has been started.'
+    : 'This payment session needs review. Please contact the property team and do not start another payment.');
+  const payment = claim.payment;
+  if (claim.url) return { checkoutUrl: claim.url, sessionId: payment.id, paymentId: payment.id };
 
   const payer = await db.identity.findUnique({
     where: { id: payerIdentityId },
     select: { email: true, firstName: true, lastName: true },
-  });
-
-  const payment = await db.payment.create({
-    data: {
-      purpose,
-      bookingId,
-      serviceOrderId,
-      payerIdentityId,
-      method: 'card_provider',
-      provider: providerName === 'opn' ? 'opn' : 'mock',
-      amountThb,
-      status: 'pending',
-    },
   });
 
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
@@ -363,20 +455,28 @@ export async function createCheckout(
         cancelUrl,
         paymentId: payment.id,
       });
-    } catch (error) {
-      // A failed external checkout cannot leave an apparently usable pending
-      // session that the booking API will subsequently return as a local URL.
+    } catch {
+      // A lost response can follow provider acceptance. Keep the durable claim;
+      // do not turn an ambiguous attempt into a retryable failed payment.
       await db.payment.updateMany({
-        where: { id: payment.id, status: 'pending' },
-        data: { status: 'failed' },
-      });
-      throw error;
+        where: { id: payment.id, status: 'created' },
+        data: { reconciliationReason: 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN' },
+      }).catch(() => null);
+      throw new CheckoutStateError('CHECKOUT_RECONCILIATION_REQUIRED', 'The provider response could not be confirmed. Please contact the property team and do not pay again.');
     }
 
-    await db.payment.update({
-      where: { id: payment.id },
-      data: { providerSessionId: session.id },
+    const available = await db.$transaction(async tx => {
+      const booking = await lockPaymentSource(tx, payment.id);
+      const current = await tx.payment.findUniqueOrThrow({ where: { id: payment.id } });
+      if (current.status !== 'created') throw new CheckoutStateError('CHECKOUT_RECONCILIATION_REQUIRED', 'This payment session needs review. Do not pay again.');
+      const issue = purpose === 'stay' ? (booking ? await initialStayConfirmationIssue(tx, booking) : 'BOOKING_NOT_FOUND') : null;
+      await tx.payment.update({ where: { id: payment.id }, data: {
+        status: 'pending', providerSessionId: session.id, checkoutUrlEncrypted: encrypt(session.url),
+        checkoutExpiresAt: session.expiresAt, reconciliationReason: issue ? 'CHECKOUT_BOOKING_UNAVAILABLE' : null,
+      } });
+      return !issue;
     });
+    if (!available) throw new CheckoutStateError('BOOKING_NOT_PAYABLE', 'The booking hold ended while checkout was being prepared. Please review your trip before paying.');
 
     return {
       checkoutUrl: session.url,
@@ -413,7 +513,7 @@ export async function createCheckout(
 export async function verifyAndConfirm(
   db: PrismaClient,
   sessionId: string
-): Promise<{ payment: any; confirmed: boolean }> {
+): Promise<{ payment: any; confirmed: boolean; reconciliationRequired: boolean }> {
   const payment = await db.payment.findUnique({
     where: { id: sessionId },
   });
@@ -424,10 +524,10 @@ export async function verifyAndConfirm(
 
   if (payment.status === 'succeeded') {
     // Idempotent: already confirmed, return early without re-processing
-    return { payment, confirmed: false };
+    return { payment, confirmed: false, reconciliationRequired: !!payment.reconciliationReason };
   }
 
-  if (payment.status !== 'pending') {
+  if (payment.status !== 'pending' && payment.provider !== 'opn') {
     throw new Error(
       `Cannot confirm payment with status ${payment.status}`
     );
@@ -463,38 +563,30 @@ export async function verifyAndConfirm(
   // Payment, booking transition and rental ledger must commit or roll back together.
   const now = new Date();
   const result = await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${sessionId}))`;
+    const booking = await lockPaymentSource(tx, sessionId);
     const current = await tx.payment.findUniqueOrThrow({ where: { id: sessionId } });
     if (current.status === 'succeeded') {
       return { payment: current, changed: false, stayBooking: null as null | { id: string; unitId: string; projectId: string; guestIdentityId: string }, serviceOrderToPay: null as null | { id: string; projectId: string | null; unitId: string | null } };
     }
-    if (current.status !== 'pending') throw new Error(`Cannot confirm payment with status ${current.status}`);
+    if (current.status !== 'pending' && current.provider !== 'opn') throw new Error(`Cannot confirm payment with status ${current.status}`);
 
+    let reconciliationReason: string | null = null;
     let stayBooking: null | { id: string; unitId: string; projectId: string; guestIdentityId: string } = null;
-    if (current.bookingId && (current.purpose === 'stay' || current.purpose === 'stay_balance')) {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${current.bookingId}))`;
-      const booking = await tx.booking.findUnique({
-        where: { id: current.bookingId },
-        select: {
-          id: true, unitId: true, projectId: true, guestIdentityId: true,
-          status: true, totalThb: true, balanceDueThb: true,
-        },
-      });
-      if (!booking) throw new Error('Booking not found for payment');
-      if (current.purpose === 'stay') {
-        if (booking.status !== 'pending_payment') throw new Error('Booking is no longer awaiting initial payment; reconcile provider charge');
-        if (current.amountThb !== booking.totalThb) throw new Error('Initial payment amount does not match booking total');
+    if (current.purpose === 'stay' || current.purpose === 'stay_balance') {
+      if (!booking) reconciliationReason = 'BOOKING_NOT_FOUND';
+      else if (booking.guestIdentityId !== current.payerIdentityId) reconciliationReason = 'BOOKING_PAYER_MISMATCH';
+      else if (current.purpose === 'stay') {
+        reconciliationReason = await initialStayConfirmationIssue(tx, booking);
+        if (!reconciliationReason && current.amountThb !== booking.totalThb) reconciliationReason = 'BOOKING_AMOUNT_CHANGED';
         const otherSucceeded = await tx.payment.count({
           where: { bookingId: current.bookingId, purpose: 'stay', status: 'succeeded', id: { not: sessionId } },
         });
-        if (otherSucceeded) throw new Error('Another initial payment already succeeded; reconcile provider charge');
+        if (otherSucceeded) reconciliationReason = 'INITIAL_PAYMENT_ALREADY_RECEIVED';
       } else {
-        if (!['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) throw new Error('Booking is not eligible for a balance payment');
-        if (booking.balanceDueThb <= 0 || current.amountThb !== booking.balanceDueThb) {
-          throw new Error('Balance payment does not match outstanding balance');
-        }
+        if (!['confirmed', 'checked_in', 'checked_out'].includes(booking.status)) reconciliationReason = 'BOOKING_BALANCE_INELIGIBLE';
+        else if (booking.balanceDueThb <= 0 || current.amountThb !== booking.balanceDueThb) reconciliationReason = 'BOOKING_BALANCE_CHANGED';
       }
-      stayBooking = booking;
+      if (!reconciliationReason) stayBooking = booking;
     }
 
     let serviceOrderToPay: null | { id: string; projectId: string | null; unitId: string | null } = null;
@@ -517,8 +609,22 @@ export async function verifyAndConfirm(
 
     const succeeded = await tx.payment.update({
       where: { id: sessionId },
-      data: { status: 'succeeded', succeededAt: now },
+      data: { status: 'succeeded', succeededAt: now, reconciliationReason },
     });
+
+    if (reconciliationReason) {
+      // Provider verification already established a receipt. Keep the money
+      // traceable without assigning revenue to a stay or an owner. An operator
+      // must reconcile/refund it; this does not pretend a refund was executed.
+      await tx.ledgerEntry.create({ data: {
+        entryType: 'payment_unallocated', amountThb: succeeded.amountThb,
+        paymentId: succeeded.id, bookingId: current.bookingId, occurredOn: now,
+        description: `Verified card receipt awaiting reconciliation: ${reconciliationReason}`,
+      } });
+      if (booking?.status === 'pending_payment' && booking.holdExpiresAt && booking.holdExpiresAt <= new Date()) {
+        await tx.booking.update({ where: { id: booking.id }, data: { status: 'expired', holdExpiresAt: null } });
+      }
+    }
 
     if (stayBooking && current.bookingId) {
       await tx.ledgerEntry.create({
@@ -547,7 +653,9 @@ export async function verifyAndConfirm(
     return { payment: succeeded, changed: true, stayBooking, serviceOrderToPay };
   });
 
-  if (!result.changed) return { payment: result.payment, confirmed: false };
+  if (!result.changed || result.payment.reconciliationReason) return {
+    payment: result.payment, confirmed: false, reconciliationRequired: !!result.payment.reconciliationReason,
+  };
   const confirmed = result.payment;
   if (result.stayBooking && confirmed.purpose === 'stay') {
     await ensureDepositPreauthOnStayConfirmed(db, result.stayBooking.id, result.stayBooking.unitId).catch(() => null);
@@ -573,7 +681,7 @@ export async function verifyAndConfirm(
     }).catch(() => null);
   }
 
-  return { payment: confirmed, confirmed: true };
+  return { payment: confirmed, confirmed: true, reconciliationRequired: false };
 }
 
 /**
@@ -589,7 +697,7 @@ export async function refund(
   initiatedByIdentityId: string
 ) {
   const payment = await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+    await lockPaymentSource(tx, paymentId);
     const refundablePayment = await assertRefundableAmount(tx as PrismaClient, paymentId, amountThb);
     if (refundablePayment.method === 'cash') {
       throw new Error('Use recordCashRefund for cash payments');
@@ -634,6 +742,8 @@ export async function refund(
 
 export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
   return db.$transaction(async (tx) => {
+    const snapshot = await tx.refund.findUniqueOrThrow({ where: { id: refundId }, select: { paymentId: true } });
+    await lockPaymentSource(tx, snapshot.paymentId);
     const refund = await tx.refund.findUnique({
       where: { id: refundId },
       include: { payment: true },
@@ -647,7 +757,7 @@ export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
     const succeeded = await tx.refund.update({ where: { id: refundId }, data: { status: 'succeeded' } });
     const existingLedger = await tx.ledgerEntry.findFirst({ where: { refundId, entryType: 'refund_out' } });
     if (!existingLedger) {
-      const booking = refund.payment.bookingId
+      const booking = refund.payment.bookingId && !refund.payment.reconciliationReason
         ? await tx.booking.findUnique({
             where: { id: refund.payment.bookingId },
             select: { unitId: true, projectId: true },
@@ -667,7 +777,7 @@ export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
         },
       });
     }
-    await applySucceededRefundToBooking(tx as PrismaClient, refund.payment.bookingId, refund.amountThb);
+    if (!refund.payment.reconciliationReason) await applySucceededRefundToBooking(tx as PrismaClient, refund.payment.bookingId, refund.amountThb);
     return succeeded;
   });
 }

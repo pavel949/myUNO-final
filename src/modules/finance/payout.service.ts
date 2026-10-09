@@ -217,10 +217,15 @@ export async function computeProviderRemittance(
 export async function getReconciliationData(db: PrismaClient) {
   const unmatchedPayments = await db.payment.findMany({
     where: {
-      AND: [{ OR: [{ bookingId: null }, { status: 'failed' }] }, { serviceOrderId: null }],
+      OR: [
+        { reconciliationReason: { not: null } },
+        { method: 'card_provider', provider: { not: 'mock' }, status: 'created', createdAt: { lte: new Date(Date.now() - 120_000) } },
+        { AND: [{ OR: [{ bookingId: null }, { status: 'failed' }] }, { serviceOrderId: null }] },
+      ],
     },
     include: {
       payer: { select: { id: true, firstName: true, lastName: true } },
+      refunds: { where: { status: 'succeeded' }, select: { amountThb: true } },
     },
   });
 
@@ -264,7 +269,8 @@ export async function getReconciliationData(db: PrismaClient) {
   // so every *Thb/*Amount figure is converted from satang (THB x 100) to
   // baht here, once, at the response boundary.
   return {
-    unmatchedPayments: unmatchedPayments.map((p) => ({
+    unmatchedPayments: unmatchedPayments.filter(p => !p.reconciliationReason ||
+      p.refunds.reduce((sum, refund) => sum + refund.amountThb, 0) < p.amountThb).map((p) => ({
       id: p.id,
       amountThb: satangToBaht(p.amountThb),
       method: p.method,
@@ -274,6 +280,7 @@ export async function getReconciliationData(db: PrismaClient) {
       payer: `${p.payer.firstName} ${p.payer.lastName}`.trim(),
       bookingId: p.bookingId,
       serviceOrderId: p.serviceOrderId,
+      reconciliationReason: p.reconciliationReason ?? (p.status === 'created' ? 'CHECKOUT_PROVIDER_OUTCOME_UNKNOWN' : null),
     })),
     failedRefunds: failedRefunds.map((r) => ({
       id: r.id,

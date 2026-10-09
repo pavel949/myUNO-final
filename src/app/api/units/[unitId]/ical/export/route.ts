@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyIcalFeedToken, icalEventUid } from '@/modules/integrations';
 import { toCalendarDay } from '@/lib/date';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 // No dynamic request API in this GET — force it dynamic so OTA calendar
 // consumers always see current availability, not a build-time snapshot.
@@ -38,7 +39,7 @@ async function generateICalContent(unitId: string): Promise<string> {
       include: { project: true },
     }),
     prisma.booking.findMany({
-      where: { unitId, status: { not: 'cancelled' } },
+      where: { unitId, OR: blockingBookingConditions() },
       orderBy: { startDate: 'asc' },
       select: { id: true, startDate: true, endDate: true, createdAt: true, updatedAt: true },
     }),

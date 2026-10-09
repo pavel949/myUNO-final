@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 function walk(dir, root) {
   if (!fs.existsSync(dir)) return [];
@@ -99,6 +100,6 @@ function cli(args) {
   } else process.stdout.write(report);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   cli(process.argv.slice(2));
 }

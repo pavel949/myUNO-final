@@ -118,7 +118,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
     expect(deliveries.map((d) => d.channel)).toEqual(['in_app']);
   });
 
-  it('creates a delivery once the flag is switched on', async () => {
+  it('records a failed delivery when enabled without an implemented provider', async () => {
     await enableChannel('whatsapp');
     const recipient = await createIdentity({ email: 'guest@example.com' });
 
@@ -138,8 +138,10 @@ describe('Messenger channels behind the config flag (T-040)', () => {
 
     expect(deliveries).toHaveLength(1);
     expect(deliveries[0].channel).toBe('whatsapp');
-    expect(deliveries[0].status).toBe('sent');
-    expect(deliveries[0].externalRef).toMatch(/^stub-/);
+    expect(deliveries[0].status).toBe('failed');
+    expect(deliveries[0].failureReason).toContain('MESSENGER_ADAPTER_UNAVAILABLE');
+    expect(deliveries[0].externalRef).toBeNull();
+    expect(deliveries[0].sentAt).toBeNull();
   });
 
   it('switches on each channel independently', async () => {
@@ -163,7 +165,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
     expect(deliveries.map((d) => d.channel)).toEqual(['telegram']);
   });
 
-  it('sends the rendered sentence, never the raw content key', async () => {
+  it('passes the rendered sentence to the adapter, never the raw content key', async () => {
     await enableChannel('whatsapp');
     const recipient = await createIdentity({ email: 'guest@example.com' });
 
@@ -172,7 +174,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       logged.push(args.join(' '));
     });
 
-    await createNotification(db, {
+    const id = await createNotification(db, {
       identityId: recipient.id,
       type: 'lead_received',
       titleKey: 'notify.lead_received.title',
@@ -181,12 +183,13 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp'],
     });
 
-    await waitFor(() => logged.some((l) => l.includes('[Messenger stub]')));
+    await waitFor(() => logged.some((l) => l.includes('[Messenger unavailable]')));
+    await settleDelivery(id!);
 
-    const stubLine = logged.find((l) => l.includes('[Messenger stub]'));
+    const stubLine = logged.find((l) => l.includes('[Messenger unavailable]'));
     expect(stubLine).toBeDefined();
 
-    // The adapter is handed a rendered body, so the stub reports a real
+    // The adapter is handed a rendered body, so its diagnostic reports a real
     // length rather than the 25-odd characters of a dotted key.
     const chars = Number(stubLine!.match(/\((\d+) chars\)/)?.[1] ?? 0);
     expect(chars).toBeGreaterThan('notify.lead_received.body'.length);
@@ -201,7 +204,7 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       logged.push(args.join(' '));
     });
 
-    await createNotification(db, {
+    const id = await createNotification(db, {
       identityId: recipient.id,
       type: 'lead_received',
       titleKey: 'notify.lead_received.title',
@@ -209,10 +212,11 @@ describe('Messenger channels behind the config flag (T-040)', () => {
       channels: ['whatsapp'],
     });
 
-    await waitFor(() => logged.some((l) => l.includes('[Messenger stub]')));
+    await waitFor(() => logged.some((l) => l.includes('[Messenger unavailable]')));
+    await settleDelivery(id!);
 
     const all = logged.join('\n');
-    expect(all).toContain('[Messenger stub]');
+    expect(all).toContain('[Messenger unavailable]');
     // A stub is not a licence to print PII: who it went to, and what it said,
     // both stay out.
     expect(all).not.toContain('private.guest@example.com');

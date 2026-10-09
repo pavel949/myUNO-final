@@ -25,6 +25,8 @@
 # Required repository configuration:
 #   Secret   CRON_SECRET  — must equal the value set in Vercel.
 #   Variable APP_BASE_URL — e.g. https://my-uno-final.vercel.app (no trailing slash).
+#   Secret   VERCEL_AUTOMATION_BYPASS_SECRET — when Vercel Authentication protects
+#            APP_BASE_URL; passed only as a request header, never in the URL.
 #
 # Once this is confirmed firing, set SCHEDULER_MODE=external in Vercel so the
 # admin scheduler panel judges these jobs against the real cadence instead of
@@ -83,11 +85,21 @@ jobs:
           missing=0
           [ -n "$CRON_SECRET" ]  || { echo "::error::Secret CRON_SECRET is not set."; missing=1; }
           [ -n "$APP_BASE_URL" ] || { echo "::error::Variable APP_BASE_URL is not set."; missing=1; }
+          if [ -n "$APP_BASE_URL" ]; then
+            if [[ ! "$APP_BASE_URL" =~ ^https://[^/?#]+$ ]]; then
+              echo "::error::APP_BASE_URL must be the HTTPS origin of the deployed myUNO app, without a path, query or trailing slash."
+              missing=1
+            elif [[ "${APP_BASE_URL#https://}" == *.supabase.co ]]; then
+              echo "::error::APP_BASE_URL points to Supabase; use the deployed myUNO Next.js app origin."
+              missing=1
+            fi
+          fi
           exit $missing
 
       - name: Dispatch scheduled jobs
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           APP_BASE_URL: ${{ vars.APP_BASE_URL }}
           SLOT_PATH: ${{ steps.slot.outputs.path }}
         run: |
@@ -99,9 +111,12 @@ jobs:
           # The body is captured so a failure names which job failed rather
           # than only its status code; the route returns per-job results.
           body_file="$(mktemp)"
+          headers=(-H "Authorization: Bearer ${CRON_SECRET}" -H 'Content-Type: application/json')
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            headers+=(-H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+          fi
           status="$(curl -sS -X POST "$url" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H 'Content-Type: application/json' \
+            "${headers[@]}" \
             --max-time 300 \
             -o "$body_file" \
             -w '%{http_code}')"
@@ -116,6 +131,7 @@ jobs:
           # application side, and this is the second, independent signal.
           case "$status" in
             2*) ;;
-            401) echo "::error::Rejected by the cron gate. CRON_SECRET here does not match Vercel."; exit 1 ;;
+            3*) echo "::error::Dispatcher redirected before completion. Check APP_BASE_URL and Vercel deployment protection."; exit 1 ;;
+            401|403) echo "::error::Request rejected. Check CRON_SECRET and Vercel deployment protection/bypass configuration."; exit 1 ;;
             *)   echo "::error::Dispatcher ${SLOT_PATH} returned HTTP ${status}."; exit 1 ;;
           esac

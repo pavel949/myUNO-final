@@ -21,6 +21,7 @@ vi.mock('@/lib/prisma', async () => {
 });
 
 import { POST } from './route';
+import { GET as detail } from '@/app/api/bookings/[id]/route';
 
 function makeRequest(body?: unknown): NextRequest {
   return new NextRequest('http://localhost/api/bookings/x/cancel', {
@@ -28,6 +29,14 @@ function makeRequest(body?: unknown): NextRequest {
     body: body ? JSON.stringify(body) : undefined,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+async function reviewedRequest(bookingId: string, reason: string) {
+  const response = await detail(new NextRequest(`http://localhost/api/bookings/${bookingId}`), { params: { id: bookingId } });
+  expect(response.status).toBe(200);
+  const shown = await response.json();
+  expect(shown.cancellationQuote?.bookingId).toBe(bookingId);
+  return makeRequest({ reason, cancellationQuote: shown.cancellationQuote });
 }
 
 const flexibleSnapshot = { name: 'flexible', steps: DEFAULT_POLICIES.flexible.steps };
@@ -87,7 +96,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       },
     });
 
-    const res = await POST(makeRequest({ reason: 'guest_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'guest_requested'), {
       params: { id: booking.id },
     });
     const body = await res.json();
@@ -121,7 +130,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const res = await POST(makeRequest({ reason: 'guest_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'guest_requested'), {
       params: { id: booking.id },
     });
     const raw = JSON.stringify(await res.json());
@@ -139,7 +148,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'host_requested'), {
       params: { id: booking.id },
     });
     const body = await res.json();
@@ -175,7 +184,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       },
     });
 
-    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'host_requested'), {
       params: { id: booking.id },
     });
     const body = await res.json();
@@ -220,7 +229,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       },
     });
 
-    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'host_requested'), {
       params: { id: booking.id },
     });
     const body = await res.json();
@@ -268,7 +277,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       },
     });
 
-    const res = await POST(makeRequest({ reason: 'host_requested' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'host_requested'), {
       params: { id: booking.id },
     });
     const body = await res.json();
@@ -290,7 +299,7 @@ describe('POST /api/bookings/[id]/cancel', () => {
       cancellationPolicySnapshot: flexibleSnapshot,
     });
 
-    const res = await POST(makeRequest({ reason: 'guest_withdrew' }), {
+    const res = await POST(await reviewedRequest(booking.id, 'guest_withdrew'), {
       params: { id: booking.id },
     });
     const body = await res.json();

@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { channelPayloadHash, type ChannelEvent } from './channel-contract';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 type Tx = Prisma.TransactionClient;
 type Outcome = { status: 'processed'|'duplicate'|'stale'|'quarantined'; bookingId: string|null; code?: string };
@@ -23,7 +24,7 @@ async function mapping(tx:Tx,systemId:string,type:string,id:string) {
 async function hasBookingConflict(tx:Tx,unitId:string,start:Date,end:Date,except?:string) {
   return tx.booking.findFirst({where:{
     unitId,...(except?{id:{not:except}}:{}),startDate:{lt:end},endDate:{gt:start},
-    OR:[{status:{in:['confirmed','checked_in']}},{status:'pending_payment',holdExpiresAt:{gt:new Date()}}],
+    OR: blockingBookingConditions(),
   },select:{id:true}});
 }
 

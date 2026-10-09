@@ -61,11 +61,11 @@ export async function processOpnEvent(
     }
 
     if (payment.status === 'succeeded') {
-      return { handled: true, action: 'already_confirmed' };
+      return { handled: true, action: payment.reconciliationReason ? 'payment_requires_reconciliation' : 'already_confirmed' };
     }
 
-    await verifyAndConfirm(db, payment.id);
-    return { handled: true, action: 'payment_confirmed' };
+    const result = await verifyAndConfirm(db, payment.id);
+    return { handled: true, action: result.reconciliationRequired ? 'payment_requires_reconciliation' : 'payment_confirmed' };
   }
 
   if (event.key === 'refund.create' || event.key === 'refund.update') {

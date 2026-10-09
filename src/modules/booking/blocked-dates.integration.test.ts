@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { createManualBlock } from '@/modules/core';
 import * as bookingService from './booking.service';
 import { importICalEvents } from '@/modules/integrations/ical-import';
 
@@ -122,6 +123,153 @@ describe('blocked dates block a booking (P0-4)', () => {
     );
 
     expect(booking.id).toBeTruthy();
+  });
+
+  it('refuses to approve a request after an owner hold takes its villa', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+    await block(unit.id, 'owner_hold');
+
+    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+      .rejects.toMatchObject({ code: 'DOUBLE_BOOK', blockReason: 'owner_hold' });
+    expect((await db.booking.findUniqueOrThrow({ where: { id: request.id } })).status)
+      .toBe('requested');
+  });
+
+  it('refuses to approve a request after its villa is unpublished', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+    await db.unit.update({ where: { id: unit.id }, data: { status: 'draft' } });
+
+    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+      .rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    expect((await db.booking.findUniqueOrThrow({ where: { id: request.id } })).status)
+      .toBe('requested');
+  });
+
+  it('refuses an expired request even when the expiry job has not run', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+    await db.booking.update({
+      where: { id: request.id },
+      data: { requestExpiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+      .rejects.toMatchObject({ code: 'BOOKING_REQUEST_EXPIRED' });
+    const current = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
+    expect(current.status).toBe('requested');
+    expect(current.holdExpiresAt).toBeNull();
+  });
+
+  it('reassigns a category request when its original villa was blocked', async () => {
+    const project = await createProject({ status: 'live' });
+    const original = await createUnit({
+      projectId: project.id, name: 'A-01', categoryKey: 'superior_2br',
+      status: 'live', instantBook: false,
+    });
+    const replacement = await createUnit({
+      projectId: project.id, name: 'B-02', categoryKey: 'superior_2br',
+      status: 'live', instantBook: false,
+    });
+    const guest = await createIdentity();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, original.id, guest.id), instantBook: false,
+    });
+    await block(original.id, 'maintenance');
+
+    const approved = await bookingService.approveBookingRequest(db, { bookingId: request.id });
+    expect(approved.status).toBe('pending_payment');
+    expect(approved.unitId).toBe(replacement.id);
+    expect(await db.blockedDate.count({ where: { unitId: original.id } })).toBe(1);
+  });
+
+  it('keeps a request open when every available replacement exceeds its accepted total', async () => {
+    const project = await createProject({ status: 'live' });
+    const original = await createUnit({
+      projectId: project.id, name: 'A-01', categoryKey: 'superior_2br',
+      status: 'live', instantBook: false,
+    });
+    const replacement = await createUnit({
+      projectId: project.id, name: 'B-02', categoryKey: 'superior_2br',
+      status: 'live', instantBook: false,
+    });
+    const guest = await createIdentity();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, original.id, guest.id), instantBook: false,
+    });
+    await db.pricingRule.create({
+      data: {
+        unitId: replacement.id, startDate: RANGE.start, endDate: RANGE.end,
+        nightlyThb: 100_000_000, label: 'Replacement premium',
+      },
+    });
+    await block(original.id, 'maintenance');
+
+    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+      .rejects.toMatchObject({ code: 'REQUOTE_REQUIRED' });
+    const current = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
+    expect(current.status).toBe('requested');
+    expect(current.unitId).toBe(original.id);
+    expect(current.totalThb).toBe(request.totalThb);
+  });
+
+  it('allows either approval or a manual block to claim the dates, never both', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+
+    const [approval, manualBlock] = await Promise.allSettled([
+      bookingService.approveBookingRequest(db, { bookingId: request.id }),
+      createManualBlock(db, {
+        unitId: unit.id, startDate: RANGE.start, endDate: RANGE.end,
+        reason: 'maintenance', createdByIdentityId: guest.id,
+      }),
+    ]);
+    expect(Number(approval.status === 'fulfilled') + Number(manualBlock.status === 'fulfilled'))
+      .toBe(1);
+    const activeBookings = await db.booking.count({
+      where: { id: request.id, status: 'pending_payment' },
+    });
+    const blocks = await db.blockedDate.count({ where: { unitId: unit.id } });
+    expect(activeBookings + blocks).toBe(1);
+    if (approval.status === 'rejected') {
+      expect(approval.reason).toMatchObject({ code: 'DOUBLE_BOOK' });
+    }
+    if (manualBlock.status === 'rejected') {
+      expect(manualBlock.reason).toMatchObject({ code: 'BOOKING_CONFLICT' });
+    }
+  });
+
+  it('allows only one concurrent approval or decline of a request', async () => {
+    const { project, unit, guest } = await fixture();
+    const request = await bookingService.createBooking(db, {
+      ...bookingFor(project.id, unit.id, guest.id), instantBook: false,
+    });
+
+    const [approval, decline] = await Promise.allSettled([
+      bookingService.approveBookingRequest(db, { bookingId: request.id }),
+      bookingService.declineBookingRequest(db, {
+        bookingId: request.id, declinedByIdentityId: guest.id,
+      }),
+    ]);
+    expect(Number(approval.status === 'fulfilled') + Number(decline.status === 'fulfilled'))
+      .toBe(1);
+    const final = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
+    expect(final.status).toBe(approval.status === 'fulfilled' ? 'pending_payment' : 'declined');
+    if (approval.status === 'rejected') {
+      expect(approval.reason).toMatchObject({ code: 'BOOKING_STATE_CHANGED' });
+    }
+    if (decline.status === 'rejected') {
+      expect(decline.reason).toMatchObject({ code: 'BOOKING_STATE_CHANGED' });
+    }
   });
 
   describe('racing an OTA import against a direct booking', () => {

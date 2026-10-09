@@ -3,6 +3,7 @@ import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-e
 import {
   assessGalleryReadiness,
   assessUnitMediaReadiness,
+  isRepresentativeRoom,
   publicMediaReadinessMessage,
 } from '@/modules/media/public-readiness';
 
@@ -259,7 +260,7 @@ export async function getPropertyReadiness(
       add(
         'blocker',
         'unit.media',
-        project.projectType === 'hotel' || unit.accommodationType === 'hotel_room'
+        isRepresentativeRoom({ projectType: project.projectType, accommodationType: unit.accommodationType })
           ? 'Add three valid room-type photos with a cover or photograph this room individually.'
           : 'Add at least three valid exact-unit photos and choose a cover.',
         { ...options, href: `/app/admin/projects/${project.id}/media?select=unit:${unit.id}` }

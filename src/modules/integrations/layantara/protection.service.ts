@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { ReconciliationDecision } from './adapter';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 /**
  * Stages a verified source occupancy using the same per-unit transaction lock
@@ -43,10 +44,7 @@ export async function stageProtection(
     const booking = await tx.booking.findFirst({
       where: {
         unitId: decision.unitId, startDate: { lt: endDate }, endDate: { gt: startDate },
-        OR: [
-          { status: { in: ['confirmed', 'checked_in'] } },
-          { status: 'pending_payment', holdExpiresAt: { gt: now } },
-        ],
+        OR: blockingBookingConditions(now),
       },
       select: { id: true },
     });

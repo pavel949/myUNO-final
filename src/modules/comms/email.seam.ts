@@ -33,7 +33,7 @@ export function redactEmail(address: string): string {
 /**
  * Send an email via the configured provider.
  * With RESEND_API_KEY: posts to Resend API.
- * Without: logs to console (development fallback).
+ * Without: logs a redacted diagnostic and reports failure; no email was sent.
  * Returns externalRef (provider message ID) on success, null on failure.
  */
 export async function sendEmail(
@@ -50,12 +50,12 @@ export async function sendEmail(
     // confirmation or reset link in them is a real disclosure.
     console.log('[EMAIL - DEV MODE]', {
       to: redactEmail(to),
-      subject,
+      subjectChars: subject?.length ?? 0,
       bodyChars: body?.length ?? 0,
       htmlChars: htmlBody?.length ?? 0,
       timestamp: new Date().toISOString(),
     });
-    return 'dev-mode-console-logged';
+    return null;
   }
 
   try {

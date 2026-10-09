@@ -278,14 +278,10 @@ export default async function ProjectLandingPage({
   const monthlyCategories = project.categories.filter((c) => c.monthlyFromThb !== null);
   const satangToThb = (satang: number) => Math.round(satang / 100).toLocaleString(UI_LOCALE);
 
-  // Long-stay requests go to the project's concierge WhatsApp (config);
-  // without a number the CTA falls back to the guests page.
-  const whatsappNumber = await getConfig(prisma, 'comms.whatsapp_number', {
-    projectId: project.id,
-  });
-  const longStayCtaHref = whatsappNumber
-    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
-    : '/guests';
+  // Keep the project and long-stay intent in the canonical, consented lead
+  // flow. The rental opportunity and staff thread are created by /api/leads.
+  const longStayInquiry = searchParams.inquiry === 'long_stay';
+  const longStayCtaHref = `/projects/${encodeURIComponent(project.slug)}?inquiry=long_stay#lead-form`;
 
   const hasVerifiedPin = Number.isFinite(project.latitude) && Number.isFinite(project.longitude) &&
     !(project.latitude === 0 && project.longitude === 0);
@@ -551,14 +547,12 @@ export default async function ProjectLandingPage({
                 </div>
               ))}
             </div>
-            <a
+            <Link
               href={longStayCtaHref}
-              target={whatsappNumber ? '_blank' : undefined}
-              rel={whatsappNumber ? 'noopener noreferrer' : undefined}
               className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
             >
               {labels['project_page.longstay.cta']}
-            </a>
+            </Link>
           </div>
         </section>
       ) : null}
@@ -760,7 +754,14 @@ export default async function ProjectLandingPage({
         }}
       />
 
-      <LeadFormSection audience={projectInquiryAudience} projectId={project.id} />
+      <LeadFormSection
+        audience={projectInquiryAudience}
+        projectId={project.id}
+        initialMessage={longStayInquiry
+          ? `${labels['project_page.longstay.title']} · ${project.name}`
+          : undefined}
+        sourceMedium={longStayInquiry ? 'project_long_stay' : undefined}
+      />
 
       {/* Handbook teaser */}
       {handbookTeaser ? (

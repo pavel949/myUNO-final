@@ -134,6 +134,14 @@ describe('Owner Statement Generation', () => {
       },
     })
 
+    // A second captured charge requiring reconciliation is not owner income,
+    // even when attached to a valid confirmed booking.
+    await db.payment.create({ data: {
+      purpose: 'stay', bookingId: testBooking.id, payerIdentityId: owner.id,
+      method: 'card_provider', provider: 'opn', amountThb: 50_000,
+      status: 'succeeded', succeededAt: new Date(), reconciliationReason: 'INITIAL_PAYMENT_ALREADY_RECEIVED',
+    } })
+
     mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
   })
 

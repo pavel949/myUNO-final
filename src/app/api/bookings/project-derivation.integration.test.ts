@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { seedConfig } from '@/modules/config';
 
@@ -72,6 +73,8 @@ describe('POST /api/bookings derives the project from the unit', () => {
     childrenCount: 0,
     instantBook: true,
     paymentMethod: 'cash',
+    acceptedTotalSatang: 100_000_000,
+    idempotencyKey: '00000000-0000-4000-8000-000000000001',
     ...extra,
   });
 
@@ -116,9 +119,11 @@ describe('POST /api/bookings derives the project from the unit', () => {
   });
 
   it('will not sell a live villa whose project has been archived', async () => {
-    await db.unit.update({
-      where: { id: unitId },
-      data: { categoryKey: 'garden_villa' },
+    const unit = await db.unit.findUniqueOrThrow({ where: { id: unitId } });
+    const { token } = createCategoryStayQuoteToken({
+      inventoryCategoryId: unit.inventoryCategoryId!, projectId: homeProjectId, quotedUnitId: unitId,
+      startDate: START, endDate: END, adultsCount: 2, childrenCount: 0, petsCount: 0,
+      acceptedTotalSatang: 100_000_000,
     });
     await db.project.update({
       where: { id: homeProjectId },
@@ -127,18 +132,22 @@ describe('POST /api/bookings derives the project from the unit', () => {
 
     const res = await POST(
       request({
-        categoryKey: 'garden_villa',
+        inventoryCategoryId: unit.inventoryCategoryId,
         projectId: homeProjectId,
         startDate: START,
         endDate: END,
         adultsCount: 2,
         childrenCount: 0,
         paymentMethod: 'cash',
+        acceptedTotalSatang: 100_000_000,
+        categoryQuoteToken: token,
+        idempotencyKey: '00000000-0000-4000-8000-000000000001',
       })
     );
 
     // Archiving a project used to stop its pages without stopping its sales.
     expect(res.status).toBe(409);
+    expect((await res.json()).error).toContain('no villa');
     expect(await db.booking.count()).toBe(0);
   });
 });

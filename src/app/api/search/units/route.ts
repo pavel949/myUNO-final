@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 import { track } from '@/modules/analytics';
 import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
@@ -225,10 +226,7 @@ export async function GET(req: NextRequest) {
         where: {
           startDate: { lt: endDate },
           endDate: { gt: startDate },
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-          ],
+          OR: blockingBookingConditions(),
         },
         select: { unitId: true },
         distinct: ['unitId'],

@@ -1,4 +1,7 @@
-import { PrismaClient, BookingStatus, Prisma } from '@prisma/client';
+import { PrismaClient, BookingStatus, Prisma, type PaymentMethod } from '@prisma/client';
+import { blockingBookingConditions, initialStayConfirmationIssue, lockBookingInventory, paymentHoldExpiry } from '@/modules/core/booking-occupancy';
+import { isBookingCreationKey, type BookingCreationIntent } from './creation-intent';
+import { cancellationQuotesMatch, getCancellationQuote, type CancellationQuote } from './cancellation-quote';
 import { track } from '@/modules/analytics';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
@@ -29,13 +32,15 @@ export interface CreateBookingInput {
   totalThb: number;
   /**
    * Maximum authoritative total the guest explicitly accepted on review.
-   * Used for category allocation, where a race may move the stay to a sibling
-   * unit. The booking service recomputes money and refuses any higher total.
+   * Applies to direct-unit review and category allocation, where a race may
+   * move the stay to a sibling unit. Never used as the authoritative price.
    */
   acceptedMaxTotalThb?: number;
   priceBreakdown?: Record<string, unknown>;
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
+  paymentMethod?: PaymentMethod;
+  creationIntent?: BookingCreationIntent;
   holdMinutes?: number;
   requestHours?: number;
   guestNote?: string;
@@ -62,6 +67,11 @@ export interface CancelBookingInput {
   cancelledByIdentityId: string;
   reason: string;
   refundAmountThb: number;
+  /** Server snapshot used to calculate/authorize this cancellation. */
+  expectedUpdatedAt?: Date;
+  expectedStatus?: BookingStatus;
+  /** Exact preview accepted by the caller; recomputed under inventory locks. */
+  cancellationQuote?: CancellationQuote;
 }
 
 // PDPA/doc 12: identity rows carry hashedPassword and PII — never include the
@@ -73,6 +83,21 @@ export const SAFE_IDENTITY_SELECT = {
   email: true,
   preferredLocale: true,
 } as const;
+
+export async function findBookingByCreationIntent(
+  db: Pick<PrismaClient, 'booking'>, guestIdentityId: string, intent: BookingCreationIntent,
+) {
+  const booking = await db.booking.findUnique({
+    where: { guestIdentityId_creationKey: { guestIdentityId, creationKey: intent.key } },
+    include: { unit: true, guestIdentity: { select: SAFE_IDENTITY_SELECT } },
+  });
+  if (booking && booking.creationFingerprint !== intent.fingerprint) {
+    const error = new Error('This booking attempt already belongs to a different stay. Check your trips before starting again.');
+    (error as Error & { code: string }).code = 'BOOKING_INTENT_CONFLICT';
+    throw error;
+  }
+  return booking;
+}
 
 /**
  * Create a new booking.
@@ -158,10 +183,7 @@ async function findBlockingConflict(
       ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       startDate: { lt: endDate },
       endDate: { gt: startDate },
-      OR: [
-        { status: { in: ['confirmed', 'checked_in'] } },
-        { status: 'pending_payment', holdExpiresAt: { gt: now } },
-      ],
+      OR: blockingBookingConditions(now),
     },
     select: { id: true },
   });
@@ -212,10 +234,7 @@ export async function findAvailableUnitsForCategory(
       bookings: {
         none: {
           ...overlaps,
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            { status: 'pending_payment', holdExpiresAt: { gt: now } },
-          ],
+          OR: blockingBookingConditions(now),
         },
       },
       blockedDates: { none: overlaps },
@@ -252,6 +271,11 @@ export async function createBooking(
   db: PrismaClient,
   input: CreateBookingInput
 ) {
+  return (await createBookingAttempt(db, input)).booking;
+}
+
+/** The same canonical writer, with a replay result for the public request boundary. */
+export async function createBookingAttempt(db: PrismaClient, input: CreateBookingInput) {
   const {
     unitId,
     projectId,
@@ -269,55 +293,33 @@ export async function createBooking(
     priceBreakdown: suppliedPriceBreakdown,
     cancellationPolicySnapshot,
     instantBook,
+    paymentMethod,
+    creationIntent,
     holdMinutes = 30,
     requestHours = 24,
     guestNote,
   } = input;
 
-  await assertLayantaraBookingAuthority(db, unitId);
-  const initialStatus: BookingStatus = instantBook ? 'pending_payment' : 'requested';
-  const now = new Date();
-
-  // Guest-stay money is authoritative only when computed here. API routes may
-  // pre-quote for UX, but no caller can persist a different total/snapshot.
-  // Owner stays keep their explicit zero/manual commercial semantics.
-  let totalThb = suppliedTotalThb;
-  let priceBreakdown = suppliedPriceBreakdown;
-  if (bookingType === 'guest_stay') {
-    const authoritative = await computePriceBreakdown(
-      db,
-      unitId,
-      startDate,
-      endDate,
-      adults + children,
-      now,
-      pets
-    );
-    if (
-      acceptedMaxTotalThb !== undefined &&
-      (!Number.isInteger(acceptedMaxTotalThb) ||
-        acceptedMaxTotalThb < 0 ||
-        authoritative.total_thb > acceptedMaxTotalThb)
-    ) {
-      const err = new Error('The stay price changed after review. A new quote and consent are required.');
-      (err as { code?: string }).code = 'REQUOTE_REQUIRED';
-      throw err;
+  if (creationIntent) {
+    if (!isBookingCreationKey(creationIntent.key) || !/^[0-9a-f]{64}$/.test(creationIntent.fingerprint)) {
+      throw new Error('Invalid booking creation intent');
     }
-    totalThb = authoritative.total_thb;
-    priceBreakdown = {
-      ...authoritative,
-      ...(suppliedPriceBreakdown &&
-      typeof suppliedPriceBreakdown === 'object' &&
-      'inventory_category_id' in suppliedPriceBreakdown
-        ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id }
-        : {}),
-    };
+    const previous = await findBookingByCreationIntent(db, guestIdentityId, creationIntent);
+    if (previous) return { booking: previous, replayed: true };
   }
 
   // Availability is decided inside one transaction, and the last word belongs to
   // the `booking_no_overlap` exclusion constraint rather than to the read below.
   // Two concurrent callers can both see a free calendar; only one can commit.
   const claimDates = () => db.$transaction(async (tx) => {
+    // Always lock intent before unit. A category retry may name a different
+    // candidate, but it must wait for and recover the same committed booking.
+    if (creationIntent) {
+      const lockKey = `booking-create:${guestIdentityId}:${creationIntent.key}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const previous = await findBookingByCreationIntent(tx, guestIdentityId, creationIntent);
+      if (previous) return { booking: previous, replayed: true };
+    }
     // Serialize attempts on this unit for the life of the transaction. Without
     // it, concurrent inserts of the same range make Postgres take
     // exclusion-constraint locks in whatever order they arrive, and a stampede
@@ -327,6 +329,38 @@ export async function createBooking(
     // released on commit or rollback, so no path can leak it.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
     await assertLayantaraBookingAuthority(tx, unitId);
+    const now = new Date();
+
+    // Calculate only after replay recovery; accepted historical reservations
+    // must survive later rate changes without a second financial transaction.
+    let totalThb = suppliedTotalThb;
+    let priceBreakdown = suppliedPriceBreakdown;
+    if (bookingType === 'guest_stay') {
+      const authoritative = await computePriceBreakdown(tx as PrismaClient, unitId, startDate, endDate, adults + children, now, pets);
+      if (acceptedMaxTotalThb !== undefined && (
+        !Number.isSafeInteger(acceptedMaxTotalThb) || acceptedMaxTotalThb < 0 || authoritative.total_thb > acceptedMaxTotalThb
+      )) {
+        const err = new Error('The stay price changed after review. A new quote and consent are required.');
+        (err as { code?: string }).code = 'REQUOTE_REQUIRED';
+        throw err;
+      }
+      totalThb = authoritative.total_thb;
+      priceBreakdown = {
+        ...authoritative,
+        ...(suppliedPriceBreakdown && 'inventory_category_id' in suppliedPriceBreakdown
+          ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id } : {}),
+      };
+    }
+
+    // A caller may ask for approval, but cannot grant instant-book authority.
+    // Read the current unit again at the writer, including category fallbacks.
+    const unit = await tx.unit.findUnique({
+      where: { id: unitId },
+      select: { instantBook: true, projectId: true },
+    });
+    if (!unit || unit.projectId !== projectId) throw new Error('Booking unit not found');
+    const canInstantBook = instantBook === true && unit.instantBook;
+    const initialStatus: BookingStatus = canInstantBook ? 'pending_payment' : 'requested';
 
     // The constraint cannot test `hold_expires_at > now()` (a predicate has to be
     // immutable), so a lapsed hold still occupies the range until it is retired.
@@ -363,7 +397,7 @@ export async function createBooking(
       throw err;
     }
 
-    return tx.booking.create({
+    const booking = await tx.booking.create({
       data: {
         unitId,
         projectId,
@@ -371,6 +405,8 @@ export async function createBooking(
         bookingType,
         channel,
         status: initialStatus,
+        paymentMethod,
+        ...(creationIntent ? { creationKey: creationIntent.key, creationFingerprint: creationIntent.fingerprint } : {}),
         startDate,
         endDate,
         adults,
@@ -380,8 +416,8 @@ export async function createBooking(
         totalThb,
         ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
         ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-        holdExpiresAt: instantBook ? new Date(now.getTime() + holdMinutes * 60 * 1000) : null,
-        requestExpiresAt: !instantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
+        holdExpiresAt: canInstantBook ? paymentHoldExpiry(paymentMethod, now, holdMinutes) : null,
+        requestExpiresAt: !canInstantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
         guestNote,
       },
       include: {
@@ -389,18 +425,21 @@ export async function createBooking(
         guestIdentity: { select: SAFE_IDENTITY_SELECT },
       },
     });
+    return { booking, replayed: false };
   });
 
-  let booking;
+  let result;
   for (let attempt = 0; ; attempt += 1) {
     try {
-      booking = await claimDates();
+      result = await claimDates();
       break;
     } catch (error) {
       if (attempt < 2 && isTransientConflict(error)) continue;
       rethrowAsDoubleBook(error);
     }
   }
+  if (result.replayed) return result;
+  const { booking } = result;
 
   // Track analytics event
   const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -412,11 +451,11 @@ export async function createBooking(
     channel,
     bookingType,
     nights,
-    totalThb,
+    totalThb: booking.totalThb,
   }).catch(() => null);
 
   // Track request event if this is a request-to-book
-  if (!instantBook) {
+  if (booking.status === 'requested') {
     await track(db, 'stay_booking_requested', {
       bookingId: booking.id,
       unitId,
@@ -424,13 +463,13 @@ export async function createBooking(
       identityId: guestIdentityId,
       channel,
       nights,
-      totalThb,
+      totalThb: booking.totalThb,
     }).catch(() => null);
 
     await notifyBookingRequested(db, booking.id, requestHours).catch(() => null);
   }
 
-  return booking;
+  return result;
 }
 
 /**
@@ -448,87 +487,147 @@ export async function approveBookingRequest(
   }
 
   if (booking.status !== 'requested') {
-    throw new Error(`Cannot approve booking with status ${booking.status}`);
+    const err = new Error(`Cannot approve booking with status ${booking.status}`);
+    (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+    throw err;
   }
-  await assertLayantaraBookingAuthority(db,booking.unitId);
+  await assertLayantaraBookingAuthority(db, booking.unitId);
 
-  // A request never blocked the calendar, so re-check the dates now —
-  // another approval or an instant booking may have taken the villa since.
-  const conflict = await findBlockingConflict(
-    db,
-    booking.unitId,
-    booking.startDate,
-    booking.endDate,
-    booking.id
-  );
-  let unitId = booking.unitId;
-  if (conflict) {
-    // A category-booked villa is the operator's choice (LY-6): reassign
-    // within the same category when another villa is free — the tariff is
-    // category-level, so the approved total stays valid. No category, or
-    // none free → refuse; the request stays open for other dates.
-    const unit = await db.unit.findUnique({
-      where: { id: booking.unitId },
-      select: { categoryKey: true },
-    });
-    const replacement = unit?.categoryKey
-      ? await resolveUnitForCategory(
-          db,
-          booking.projectId,
-          unit.categoryKey,
-          booking.startDate,
-          booking.endDate
-        )
-      : null;
-    if (!replacement) {
-      const err = new Error('Dates unavailable — booking already exists');
-      (err as any).code = 'DOUBLE_BOOK';
+  // A request does not reserve capacity. Claim one candidate at a time under
+  // the same per-unit lock used by bookings, manual blocks and iCal imports.
+  // Separate transactions avoid holding two unit locks in opposite orders when
+  // simultaneous approvals need different category replacements.
+  const claimCandidate = (unitId: string, categoryKey?: string) => db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
+
+    const current = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!current) throw new Error(`Booking ${bookingId} not found`);
+    if (current.status !== 'requested') {
+      const err = new Error(`Cannot approve booking with status ${current.status}`);
+      (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
       throw err;
     }
-    unitId = replacement.id;
-  }
+    const now = new Date();
+    // The scheduler may run late. Its pending status is not authority to
+    // approve a request after the guest's response window has closed.
+    if (current.requestExpiresAt && current.requestExpiresAt <= now) {
+      const err = new Error('Booking request has expired');
+      (err as Error & { code: string }).code = 'BOOKING_REQUEST_EXPIRED';
+      throw err;
+    }
+    const sellableUnit = await tx.unit.findFirst({
+      where: {
+        id: unitId,
+        projectId: current.projectId,
+        status: 'live',
+        project: { status: 'live' },
+        ...(categoryKey !== undefined ? { categoryKey } : {}),
+        ...(current.bookingType === 'guest_stay' ? {
+          AND: [{ OR: [
+            { project: { projectType: null } },
+            { commercialOfferings: { some: {
+              offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+            } } },
+          ] }],
+        } : {}),
+      },
+      select: { id: true },
+    });
+    if (!sellableUnit) {
+      const err = new Error('The requested villa is no longer eligible for this stay');
+      (err as Error & { code: string }).code = 'DOUBLE_BOOK';
+      throw err;
+    }
+    await assertLayantaraBookingAuthority(tx, unitId);
 
-  const now = new Date();
-
-  await assertLayantaraBookingAuthority(db,unitId);
-
-  // Reassignment can change unit-level dated overrides. Re-price before the
-  // request becomes a payable hold so the stored snapshot always describes
-  // the physical unit that will actually host the guest.
-  let repriced:
-    | Awaited<ReturnType<typeof computePriceBreakdown>>
-    | null = null;
-  if (unitId !== booking.unitId && booking.bookingType === 'guest_stay') {
-    repriced = await computePriceBreakdown(
-      db,
-      unitId,
-      booking.startDate,
-      booking.endDate,
-      booking.adults + booking.children,
-      now,
-      booking.pets
+    await tx.booking.updateMany({
+      where: { unitId, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+    const conflict = await findBlockingConflict(
+      tx as PrismaClient, unitId, current.startDate, current.endDate, bookingId
     );
-  }
-  // `requested` sits outside the exclusion constraint, so this update is the
-  // moment the dates are actually claimed — and the moment a race can be lost.
-  return db.booking
-    .update({
-      where: { id: bookingId },
+    const block = await tx.blockedDate.findFirst({
+      where: {
+        unitId,
+        startDate: { lt: current.endDate },
+        endDate: { gt: current.startDate },
+      },
+      select: { reason: true },
+    });
+    if (conflict || block) {
+      const err = new Error('Dates unavailable — booking or block already exists');
+      (err as Error & { code: string; blockReason?: string }).code = 'DOUBLE_BOOK';
+      if (block) (err as Error & { blockReason: string }).blockReason = block.reason;
+      throw err;
+    }
+
+    // A replacement may have a dated unit override. Store its actual price,
+    // but never raise the guest's accepted total without a fresh acceptance.
+    const repriced = unitId !== current.unitId && current.bookingType === 'guest_stay'
+      ? await computePriceBreakdown(
+          tx as PrismaClient, unitId, current.startDate, current.endDate,
+          current.adults + current.children, now, current.pets
+        )
+      : null;
+    if (repriced && repriced.total_thb > current.totalThb) {
+      const err = new Error('Replacement price exceeds the accepted request total');
+      (err as Error & { code: string }).code = 'REQUOTE_REQUIRED';
+      throw err;
+    }
+
+    // The status predicate also prevents two staff approvals of the same
+    // request from silently moving a hold to different physical villas.
+    return tx.booking.update({
+      where: { id: bookingId, status: 'requested' },
       data: {
         unitId,
-        ...(repriced
-          ? {
-              totalThb: repriced.total_thb,
-              priceBreakdown: repriced as any,
-            }
-          : {}),
+        ...(repriced ? { totalThb: repriced.total_thb, priceBreakdown: repriced as any } : {}),
         status: 'pending_payment',
-        holdExpiresAt: new Date(now.getTime() + holdMinutes * 60 * 1000),
+        holdExpiresAt: paymentHoldExpiry(current.paymentMethod, now, holdMinutes),
         requestExpiresAt: null,
       },
       include: { unit: { select: { name: true } } },
-    })
-    .catch(rethrowAsDoubleBook);
+    }).catch((error: unknown) => {
+      if ((error as { code?: string })?.code === 'P2025') {
+        const err = new Error('Booking request was already answered');
+        (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+        throw err;
+      }
+      throw error;
+    });
+  }).catch(rethrowAsDoubleBook);
+
+  try {
+    return await claimCandidate(booking.unitId);
+  } catch (originalError) {
+    if ((originalError as { code?: string })?.code !== 'DOUBLE_BOOK') throw originalError;
+
+    const unit = await db.unit.findUnique({
+      where: { id: booking.unitId }, select: { categoryKey: true },
+    });
+    if (!unit?.categoryKey) throw originalError;
+    const replacements = await findAvailableUnitsForCategory(
+      db, booking.projectId, unit.categoryKey, booking.startDate, booking.endDate
+    );
+    let needsRequote = false;
+    for (const replacement of replacements) {
+      if (replacement.id === booking.unitId) continue;
+      try {
+        return await claimCandidate(replacement.id, unit.categoryKey);
+      } catch (error) {
+        const code = (error as { code?: string })?.code;
+        if (code === 'REQUOTE_REQUIRED') needsRequote = true;
+        else if (code !== 'DOUBLE_BOOK') throw error;
+      }
+    }
+    if (needsRequote) {
+      const err = new Error('No available replacement matches the accepted request price');
+      (err as Error & { code: string }).code = 'REQUOTE_REQUIRED';
+      throw err;
+    }
+    throw originalError;
+  }
 }
 
 /**
@@ -546,7 +645,9 @@ export async function declineBookingRequest(
   }
 
   if (booking.status !== 'requested') {
-    throw new Error(`Cannot decline booking with status ${booking.status}`);
+    const err = new Error(`Cannot decline booking with status ${booking.status}`);
+    (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+    throw err;
   }
 
   if (reasonCode !== undefined && !isBookingRequestDeclineReason(reasonCode)) {
@@ -558,7 +659,8 @@ export async function declineBookingRequest(
     : 'declined_by_host';
 
   return db.booking.update({
-    where: { id: bookingId },
+    // Approval and decline can arrive together. Only one response may win.
+    where: { id: bookingId, status: 'requested' },
     data: {
       status: 'declined',
       requestExpiresAt: null,
@@ -566,6 +668,13 @@ export async function declineBookingRequest(
       cancellationReason,
       cancelledAt: new Date(),
     },
+  }).catch((error: unknown) => {
+    if ((error as { code?: string })?.code === 'P2025') {
+      const err = new Error('Booking request was already answered');
+      (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
+      throw err;
+    }
+    throw error;
   });
 }
 
@@ -578,21 +687,13 @@ export async function confirmBooking(
 ) {
   const { bookingId } = input;
 
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
-
-  if (booking.status !== 'pending_payment') {
-    throw new Error(`Cannot confirm booking with status ${booking.status}`);
-  }
-
-  const updated = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: 'confirmed',
-      holdExpiresAt: null,
-    },
+  const updated = await db.$transaction(async tx => {
+    const booking = await lockBookingInventory(tx, bookingId);
+    if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if (booking.status !== 'pending_payment') throw new Error(`Cannot confirm booking with status ${booking.status}`);
+    const issue = await initialStayConfirmationIssue(tx, booking);
+    if (issue) throw new Error(`Booking cannot be confirmed: ${issue}`);
+    return tx.booking.update({ where: { id: bookingId }, data: { status: 'confirmed', holdExpiresAt: null } });
   });
 
   // Track analytics event
@@ -621,30 +722,35 @@ export async function cancelBooking(
   db: PrismaClient,
   input: CancelBookingInput
 ) {
-  const { bookingId, cancelledByIdentityId, reason, refundAmountThb } = input;
+  const { bookingId, cancelledByIdentityId, reason } = input;
 
-  const booking = await db.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) {
-    throw new Error(`Booking ${bookingId} not found`);
-  }
-
-  // 'requested' included per doc 02 §3.1 — guest may withdraw a request freely.
-  const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
-  if (!cancellableStatuses.includes(booking.status)) {
-    throw new Error(`Cannot cancel booking with status ${booking.status}`);
-  }
-
-  const cancelled = await db.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: 'cancelled',
-      cancelledAt: new Date(),
-      cancelledByIdentityId,
-      cancellationReason: reason,
-      refundAccruedThb: refundAmountThb,
-      holdExpiresAt: null,
-      requestExpiresAt: null,
-    },
+  const cancelled = await db.$transaction(async tx => {
+    const booking = await lockBookingInventory(tx, bookingId);
+    if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if ((input.expectedUpdatedAt && booking.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) ||
+        (input.expectedStatus && booking.status !== input.expectedStatus)) {
+      throw Object.assign(new Error('Booking changed while cancellation was being prepared. Review the updated payment and refund before cancelling again.'), {
+        code: 'BOOKING_CHANGED',
+      });
+    }
+    let refundAmountThb = input.refundAmountThb;
+    if (input.cancellationQuote) {
+      const currentQuote = await getCancellationQuote(tx, booking);
+      if (!cancellationQuotesMatch(input.cancellationQuote, currentQuote)) {
+        throw Object.assign(new Error('Booking or refund changed since the displayed confirmation. Review it before cancelling again.'), {
+          code: 'BOOKING_CHANGED',
+        });
+      }
+      refundAmountThb = currentQuote.refundAmountSatang;
+    }
+    // Requested stays may be withdrawn without reserving or returning money.
+    const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
+    if (!cancellableStatuses.includes(booking.status)) throw new Error(`Cannot cancel booking with status ${booking.status}`);
+    return tx.booking.update({ where: { id: bookingId }, data: {
+      status: 'cancelled', cancelledAt: new Date(), cancelledByIdentityId,
+      cancellationReason: reason, refundAccruedThb: refundAmountThb,
+      holdExpiresAt: null, requestExpiresAt: null,
+    } });
   });
 
   // Track analytics event
@@ -658,7 +764,7 @@ export async function cancelBooking(
     identityId: cancelled.guestIdentityId,
     nights,
     reason,
-    refundThb: refundAmountThb,
+    refundThb: cancelled.refundAccruedThb,
   }).catch(() => null);
 
   return cancelled;
@@ -981,10 +1087,7 @@ export async function requestExtension(
           id: { not: bookingId },
           startDate: { lt: newEndDate },
           endDate: { gt: booking.endDate },
-          OR: [
-            { status: { in: ['confirmed', 'checked_in'] } },
-            { status: 'pending_payment', holdExpiresAt: { gt: new Date() } },
-          ],
+          OR: blockingBookingConditions(),
         },
       });
 
@@ -1243,6 +1346,7 @@ export async function changeBookingDates(
             bookingId,
             purpose: { in: ['stay', 'stay_balance'] },
             status: 'succeeded',
+            reconciliationReason: null,
           },
           include: {
             refunds: {

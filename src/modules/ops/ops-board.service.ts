@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { getTm30OnTimeRate } from '@/modules/analytics';
+import { calendarDayIn, startOfCalendarDayUtc } from '@/lib/date';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 import {
   enrichBookingRequestInbox,
   type BookingRequestInboxItem,
@@ -73,14 +75,6 @@ interface OpsTicket {
   assignee: { firstName: string; lastName: string } | null;
 }
 
-function dayRange(date: Date): { from: Date; to: Date } {
-  const from = new Date(date);
-  from.setHours(0, 0, 0, 0);
-  const to = new Date(from);
-  to.setDate(to.getDate() + 1);
-  return { from, to };
-}
-
 async function getScopedTm30OnTimeRate(
   db: PrismaClient,
   from: Date,
@@ -144,12 +138,23 @@ export async function getOpsBoard(
     };
   }
 
-  const { from, to } = dayRange(date);
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days
   const projectFilter = scope?.projectIds?.length
     ? { in: scope.projectIds }
     : undefined;
+
+  // Stay dates are PostgreSQL calendar days, not midnight instants in the
+  // server timezone. A portfolio can have different local dates at the same
+  // moment, so derive each scoped property's day before querying its stays.
+  const projects = await db.project.findMany({
+    where: projectFilter ? { id: projectFilter } : {},
+    select: { id: true, timezone: true },
+  });
+  const projectDays = projects.map(project => ({
+    projectId: project.id,
+    day: startOfCalendarDayUtc(calendarDayIn(date, project.timezone)),
+  }));
 
   const bookingSelect = {
     id: true,
@@ -173,7 +178,10 @@ export async function getOpsBoard(
     db.booking.findMany({
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
-        startDate: { gte: from, lt: to },
+        AND: [
+          { OR: projectDays.map(({ projectId, day }) => ({ projectId, startDate: day })) },
+          { OR: blockingBookingConditions(now) },
+        ],
         status: { in: ['confirmed', 'pending_payment'] },
       },
       select: bookingSelect,
@@ -182,7 +190,7 @@ export async function getOpsBoard(
     db.booking.findMany({
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
-        endDate: { gte: from, lt: to },
+        OR: projectDays.map(({ projectId, day }) => ({ projectId, endDate: day })),
         status: 'checked_in',
       },
       select: bookingSelect,
@@ -201,6 +209,7 @@ export async function getOpsBoard(
       where: {
         ...(projectFilter ? { projectId: projectFilter } : {}),
         status: 'pending_payment',
+        OR: blockingBookingConditions(now),
       },
       select: bookingSelect,
       orderBy: { startDate: 'asc' },

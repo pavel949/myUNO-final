@@ -7,11 +7,12 @@ import { getDestination } from '@/modules/destinations';
  * shared `audience.lead.*` content keys and mounts the client form.
  */
 export async function LeadFormSection({
-  audience, initialMessage, projectId,
+  audience, initialMessage, projectId, sourceMedium,
 }: {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   initialMessage?: string;
   projectId?: string;
+  sourceMedium?: string;
 }) {
   const locale = getRequestLocale();
   const destination = getDestination();
@@ -34,9 +35,11 @@ export async function LeadFormSection({
     <section id="lead-form" className="bg-surface-ivory py-64 px-24">
       <div className="max-w-2xl mx-auto">
         <LeadForm
+          key={sourceMedium || 'general'}
           audience={audience}
           initialMessage={initialMessage}
           projectId={projectId}
+          sourceMedium={sourceMedium}
           analytics={{ destination: destination.key, locale }}
           labels={{
             title: labels['audience.lead.title'],

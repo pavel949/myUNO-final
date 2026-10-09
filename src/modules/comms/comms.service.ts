@@ -62,6 +62,31 @@ export async function createNotification(
           },
         });
 
+        const settle = async (sent: boolean, failureReason?: string, externalRef?: string) => {
+          await db.notificationDelivery.update({
+            where: { id: delivery.id },
+            data: {
+              status: sent ? 'sent' : 'failed',
+              sentAt: sent ? new Date() : null,
+              failureReason: sent ? null : failureReason || 'Delivery unavailable',
+              externalRef: sent ? externalRef ?? null : null,
+            },
+          });
+          await track(db, sent ? 'notify_delivered' : 'notify_failed', {
+            identityId, notificationType: type, channel, notificationId: notification.id,
+          }).catch(() => null);
+        };
+
+        if (channel === 'in_app') {
+          // The persisted notification is now available to the inbox/SSE.
+          await settle(true);
+          continue;
+        }
+        if (!identity?.email) {
+          await settle(false, 'Delivery recipient is unavailable');
+          continue;
+        }
+
         // Attempt to send via channel asynchronously (fire-and-forget)
         if (channel === 'email' && identity?.email) {
           (async () => {
@@ -79,28 +104,13 @@ export async function createNotification(
                 body,
               });
 
-              // Update delivery status
-              await db.notificationDelivery.update({
-                where: { id: delivery.id },
-                data: {
-                  status: externalRef ? 'sent' : 'failed',
-                  sentAt: externalRef ? new Date() : undefined,
-                  failureReason: externalRef ? undefined : 'Email send failed',
-                  externalRef: externalRef || undefined,
-                },
-              });
+              await settle(Boolean(externalRef), 'Email send failed or provider unavailable', externalRef ?? undefined);
             } catch (err) {
               console.error(
                 `Failed to send email for delivery ${delivery.id}:`,
                 err
               );
-              await db.notificationDelivery.update({
-                where: { id: delivery.id },
-                data: {
-                  status: 'failed',
-                  failureReason: err instanceof Error ? err.message : 'Unknown error',
-                },
-              }).catch(() => {
+              await settle(false, err instanceof Error ? err.message : 'Unknown error').catch(() => {
                 // Swallow update errors; don't fail the primary action
               });
             }
@@ -112,8 +122,9 @@ export async function createNotification(
           const email = identity.email;
           (async () => {
             try {
-              // For loop one, phone numbers aren't captured in Identity; stub sends via config scope
-              // In production, Identity would have a phone field or MessengerProfile would link it
+              // These adapters fail closed. Provider enablement must also add
+              // verified recipient bindings and actual project/unit routing;
+              // an email address is not a messenger destination.
               const messengerChannel = channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM;
 
               // A messenger carries the same rendered sentence the email does
@@ -129,28 +140,13 @@ export async function createNotification(
 
               const result = await sendMessengerMessage(db, messengerChannel, email, body, undefined, false);
 
-              // Update delivery status
-              await db.notificationDelivery.update({
-                where: { id: delivery.id },
-                data: {
-                  status: result.success ? 'sent' : 'failed',
-                  sentAt: result.success ? new Date() : undefined,
-                  failureReason: result.success ? undefined : result.error || 'Unknown error',
-                  externalRef: result.messageId || undefined,
-                },
-              });
+              await settle(result.success, result.error, result.messageId);
             } catch (err) {
               console.error(
                 `Failed to send ${channel} message for delivery ${delivery.id}:`,
                 err
               );
-              await db.notificationDelivery.update({
-                where: { id: delivery.id },
-                data: {
-                  status: 'failed',
-                  failureReason: err instanceof Error ? err.message : 'Unknown error',
-                },
-              }).catch(() => {
+              await settle(false, err instanceof Error ? err.message : 'Unknown error').catch(() => {
                 // Swallow update errors; don't fail the primary action
               });
             }
@@ -163,12 +159,6 @@ export async function createNotification(
         );
       }
     }
-
-    // Track successful notification delivery
-    await track(db, 'notify_delivered', {
-      identityId,
-      notificationType: type,
-    }).catch(() => null);
 
     return notification.id;
   } catch (error) {

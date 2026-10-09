@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { seedConfig } from '@/modules/config';
 import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
@@ -92,6 +93,7 @@ describe('category booking falls through to the next villa', () => {
       adultsCount: 2,
       childrenCount: 0,
       paymentMethod: 'cash',
+      idempotencyKey: randomUUID(),
       categoryQuoteToken: token,
       acceptedTotalSatang,
     });

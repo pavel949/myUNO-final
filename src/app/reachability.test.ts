@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join, relative, sep } from 'node:path';
 
 /**
  * Every page must be linked from somewhere.
@@ -30,9 +30,9 @@ function sourceFiles(dir: string): string[] {
 
 /** `src/app/(public)/trust/page.tsx` → `/trust`; route groups do not appear in URLs. */
 function routeOf(pagePath: string): string {
-  const relative = pagePath.slice(APP_ROOT.length).replace(/\/page\.tsx$/, '');
-  const withoutGroups = relative.replace(/\/\([^)]+\)/g, '');
-  return withoutGroups === '' ? '/' : withoutGroups;
+  const segments = relative(APP_ROOT, pagePath).split(sep)
+    .filter((segment) => segment !== 'page.tsx' && !/^\([^)]+\)$/.test(segment));
+  return segments.length ? `/${segments.join('/')}` : '/';
 }
 
 const files = sourceFiles(APP_ROOT);
@@ -48,7 +48,7 @@ const landingPolicy = readFileSync(join(process.cwd(), 'src/modules/core/landing
 const allSources = [...sources, ...componentSources, landingPolicy];
 
 const routes = files
-  .filter((path) => path.endsWith('/page.tsx'))
+  .filter((path) => basename(path) === 'page.tsx')
   .map(routeOf)
   // A dynamic segment is reached from whatever lists it, never linked by name.
   .filter((route) => !route.includes('['));
@@ -136,16 +136,17 @@ describe('every page can be reached', () => {
 
 const API_ROOT = APP_ROOT;
 const apiFiles = files; // already collected from APP_ROOT above
-const apiRouteFiles = apiFiles.filter((path) => path.endsWith('/route.ts'));
-const apiCallerFiles = apiFiles.filter((path) => !path.endsWith('/route.ts'));
+const apiRouteFiles = apiFiles.filter((path) => basename(path) === 'route.ts');
+const apiCallerFiles = apiFiles.filter((path) => basename(path) !== 'route.ts');
 const apiCallerSources = [
   ...apiCallerFiles.map((path) => readFileSync(path, 'utf8')),
   ...componentSources,
 ];
 
 function routeOfApi(routeFilePath: string): string {
-  const relative = routeFilePath.slice(API_ROOT.length).replace(/\/route\.ts$/, '');
-  return relative === '' ? '/' : relative;
+  const segments = relative(API_ROOT, routeFilePath).split(sep)
+    .filter((segment) => segment !== 'route.ts');
+  return segments.length ? `/${segments.join('/')}` : '/';
 }
 
 function escapeLiteral(seg: string): string {

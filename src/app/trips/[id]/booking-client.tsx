@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { SlaCountdown } from '@/components/SlaCountdown';
 import BankTransferInstructions from '@/components/booking/BankTransferInstructions';
 import { LocalDate } from '@/components/LocalDate';
+import type { CancellationQuote } from '@/modules/booking/cancellation-quote';
 
 interface BookingDetail {
   id: string;
@@ -23,6 +24,8 @@ interface BookingDetail {
   guestNote?: string | null;
   verificationStatus?: string | null;
   paymentFailed?: boolean;
+  paymentReviewRequired?: boolean;
+  unallocatedPaymentRefunded?: boolean;
   refundDisplayState?: 'none' | 'processing' | 'completed';
   depositClaim?: {
     id: string;
@@ -42,10 +45,12 @@ interface BookingDetail {
     amountThb: number;
     succeededAt?: string | null;
     receiptRef?: string | null;
+    reconciliationReason?: string | null;
   }[];
   viewer: { isGuest: boolean; isOwner: boolean; isStaff: boolean };
   cancellable: boolean;
   refundPreviewThb: number | null;
+  cancellationQuote?: CancellationQuote | null;
   hasReview?: boolean;
 }
 
@@ -150,8 +155,16 @@ export default function BookingDetailClient({
     setError(null);
     try {
       const response = await fetch(`/api/bookings/${bookingId}/checkout`, { method: 'POST' });
-      if (!response.ok) throw new Error(labels['booking.detail.error_generic']);
       const data = await response.json();
+      if (!response.ok) {
+        const key = data.code === 'CHECKOUT_PREPARING' ? 'booking.detail.checkout_preparing'
+          : data.code === 'CHECKOUT_RECONCILIATION_REQUIRED' ? 'booking.detail.payment_review_body'
+            : 'booking.detail.error_generic';
+        if (data.code === 'CHECKOUT_RECONCILIATION_REQUIRED') {
+          setBooking(current => current ? { ...current, paymentReviewRequired: true } : current);
+        }
+        throw new Error(labels[key]);
+      }
       router.push(data.checkoutUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
@@ -161,7 +174,12 @@ export default function BookingDetailClient({
 
   const handleCancel = async () => {
     if (!booking) return;
-    const paid = booking.payments.some((p) => p.status === 'succeeded');
+    if (!booking.cancellationQuote) {
+      await load();
+      setError(labels['booking.detail.cancel_changed']);
+      return;
+    }
+    const paid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
     const message = paid
       ? fill(labels['booking.detail.cancel_confirm'], {
           refund: (booking.refundPreviewThb ?? 0).toLocaleString(UI_LOCALE),
@@ -175,10 +193,14 @@ export default function BookingDetailClient({
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'guest_cancelled' }),
+        body: JSON.stringify({ reason: 'guest_cancelled', cancellationQuote: booking.cancellationQuote }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        if (body?.code === 'BOOKING_CHANGED') {
+          await load();
+          throw new Error(labels['booking.detail.cancel_changed']);
+        }
         throw new Error(body?.error || labels['booking.detail.error_generic']);
       }
       await load();
@@ -214,6 +236,7 @@ export default function BookingDetailClient({
       setNewStart('');
       setNewEnd('');
       await load();
+      if (data?.pricing?.checkoutIssue?.message) setError(data.pricing.checkoutIssue.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['booking.detail.error_generic']);
     } finally {
@@ -342,13 +365,13 @@ export default function BookingDetailClient({
     );
   }
 
-  const paid = booking.payments.some((p) => p.status === 'succeeded');
-  const succeededPayment = booking.payments.find((p) => p.status === 'succeeded');
+  const paid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
+  const succeededPayment = booking.payments.find((p) => p.status === 'succeeded' && !p.reconciliationReason);
   const statusLabel =
     labels[`booking.detail.status.${booking.status}`] || booking.status.replace(/_/g, ' ');
   const stayStartedOrConfirmed = ['confirmed', 'checked_in'].includes(booking.status);
   const upcoming = new Date(booking.startDate) > new Date();
-  const rebookUrl = rebookHref(booking);
+  const rebookUrl = booking.paymentReviewRequired ? null : rebookHref(booking);
 
   return (
     <div className="stitch-workspace p-20 md:p-32">
@@ -575,6 +598,7 @@ export default function BookingDetailClient({
         {/* Card payment failed (F-GUEST-3) */}
         {booking.viewer.isGuest &&
           booking.status === 'pending_payment' &&
+          !booking.paymentReviewRequired &&
           booking.paymentFailed && (
             <div className="bg-state-warning-soft border border-state-warning rounded-lg p-24 mb-24">
               <h2 className="text-heading-3 font-bold text-text-ink mb-8">
@@ -603,7 +627,14 @@ export default function BookingDetailClient({
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['booking.detail.payment_title']}
           </h2>
-          {paid ? (
+          {booking.paymentReviewRequired ? (
+            <div role="status" className="text-body text-state-warning">
+              <p className="font-semibold mb-8">{labels['booking.detail.payment_review_title']}</p>
+              <p>{labels['booking.detail.payment_review_body']}</p>
+            </div>
+          ) : booking.unallocatedPaymentRefunded ? (
+            <p className="text-body" role="status">{labels['payments.checkout.refunded_body']}</p>
+          ) : paid ? (
             <p className="text-body text-state-success font-semibold">
               {labels['booking.detail.paid']}
               {succeededPayment?.receiptRef && (

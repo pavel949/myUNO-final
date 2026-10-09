@@ -38,9 +38,11 @@ import { randomBytes } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROLES_SQL = join(root, 'scripts', 'sql', 'supabase-compat-roles.sql');
+const PRISMA_CLI = createRequire(import.meta.url).resolve('prisma/build/index.js');
 
 /** Tables the security gate asserts are closed to the Data API. */
 const OPERATIONAL_TABLES = [
@@ -78,7 +80,14 @@ function run(cmd, args, env) {
 }
 
 function psql(url, sql) {
-  return run('psql', [url, '-v', 'ON_ERROR_STOP=1', '-tAc', sql]).trim();
+  // Windows psql does not permute options after a positional database name.
+  return run('psql', ['--dbname', url, '-v', 'ON_ERROR_STOP=1', '-tAc', sql]).trim();
+}
+
+function prisma(args, env) {
+  // Use the installed CLI directly: npx is a .cmd shim on Windows and cannot
+  // be spawned by execFileSync without a shell. No network install is needed.
+  return run(process.execPath, [PRISMA_CLI, ...args], env);
 }
 
 const results = [];
@@ -112,16 +121,16 @@ async function main() {
 
   let created = false;
   try {
-    run('psql', [admin, '-v', 'ON_ERROR_STOP=1', '-c', `CREATE DATABASE "${scratch}"`]);
+    run('psql', ['--dbname', admin, '-v', 'ON_ERROR_STOP=1', '-c', `CREATE DATABASE "${scratch}"`]);
     created = true;
 
     // Supabase-compatible roles, so the chain's REVOKE has both a subject and
     // something to remove. See scripts/sql/supabase-compat-roles.sql.
-    run('psql', [target, '-v', 'ON_ERROR_STOP=1', '-f', ROLES_SQL]);
+    run('psql', ['--dbname', target, '-v', 'ON_ERROR_STOP=1', '-f', ROLES_SQL]);
 
     // Gate 1 — the whole chain, from empty.
     try {
-      const out = run('npx', ['prisma', 'migrate', 'deploy'], {
+      const out = prisma(['migrate', 'deploy'], {
         DATABASE_URL: target,
         DIRECT_URL: target,
       });
@@ -157,8 +166,8 @@ async function main() {
     gate('row level security enabled', rlsOff === '', rlsOff === '' ? 'all operational tables' : `missing on: ${rlsOff}`);
 
     // Gate 3 — the datamodel still describes the database the chain built.
-    const diff = run('npx', [
-      'prisma', 'migrate', 'diff',
+    const diff = prisma([
+      'migrate', 'diff',
       '--from-url', target,
       '--to-schema-datamodel', 'prisma/schema.prisma',
       '--script',
@@ -177,12 +186,12 @@ async function main() {
     }
 
     // Gate 4 — deploys are idempotent.
-    const again = run('npx', ['prisma', 'migrate', 'deploy'], { DATABASE_URL: target, DIRECT_URL: target });
+    const again = prisma(['migrate', 'deploy'], { DATABASE_URL: target, DIRECT_URL: target });
     gate('replay is idempotent', /No pending migrations/.test(again), 'second deploy applied nothing');
   } finally {
     if (created) {
       try {
-        run('psql', [admin, '-c', `DROP DATABASE IF EXISTS "${scratch}" WITH (FORCE)`]);
+        run('psql', ['--dbname', admin, '-v', 'ON_ERROR_STOP=1', '-c', `DROP DATABASE IF EXISTS "${scratch}" WITH (FORCE)`]);
       } catch {
         console.warn(`\n(could not drop scratch database ${scratch}; drop it by hand)`);
       }

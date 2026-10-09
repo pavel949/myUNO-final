@@ -1,3 +1,5 @@
+import { isActiveBookingHold } from '@/modules/core/booking-occupancy';
+
 /**
  * Read-only projection over the canonical Booking and BlockedDate records.
  * This module never writes availability or invents a second calendar authority.
@@ -63,7 +65,7 @@ function entryState(entry: CalendarEntry, day: string, now: Date): CalendarState
   }
   if (entry.status === 'requested') return 'request'; // enquiries NEVER reserve inventory
   if (entry.status === 'pending_payment') {
-    return entry.holdExpiresAt && Date.parse(entry.holdExpiresAt) > now.getTime() ? 'hold' : null;
+    return isActiveBookingHold(entry.holdExpiresAt ? new Date(entry.holdExpiresAt) : null, now) ? 'hold' : null;
   }
   if (entry.status === 'confirmed') return 'confirmed';
   if (entry.status === 'checked_in') return 'in_house';

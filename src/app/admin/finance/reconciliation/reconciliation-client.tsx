@@ -13,6 +13,7 @@ interface ReconciliationData {
     purpose: string;
     payer: string;
     status: string;
+    reconciliationReason: string | null;
     createdAt: string;
   }>;
   failedRefunds: Array<{
@@ -219,6 +220,7 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
                       >
                         {payment.status}
                       </span>
+                      {payment.reconciliationReason && <p className="text-small text-state-error mt-4">{payment.reconciliationReason}</p>}
                     </td>
                     <td className="px-12 py-8 text-text-secondary">
                       <LocalDate value={payment.createdAt} />

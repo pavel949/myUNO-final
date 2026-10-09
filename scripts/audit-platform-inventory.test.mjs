@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { inventory } from './audit-platform-inventory.mjs';
 
 function withFixture(run) {
@@ -54,4 +56,15 @@ test('empty sources yield no fabricated evidence', () => withFixture(({ root }) 
   assert.equal(report.summary.pages, 0);
   assert.equal(report.summary.prismaModels, 0);
   assert.match(report.disclaimer, /No authorization/);
+}));
+
+test('CLI writes the requested inventory on the current platform', () => withFixture(({ root, add }) => {
+  add('src/app/(public)/page.tsx');
+  const output = path.join(root, 'inventory.json');
+  const cli = fileURLToPath(new URL('./audit-platform-inventory.mjs', import.meta.url));
+  const response = execFileSync(process.execPath, [cli, '--root', root, '--out', output], {
+    encoding: 'utf8',
+  });
+  assert.equal(JSON.parse(response).summary.pages, 1);
+  assert.equal(JSON.parse(fs.readFileSync(output, 'utf8')).summary.pages, 1);
 }));

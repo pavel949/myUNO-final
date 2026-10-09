@@ -1,5 +1,6 @@
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
+import { currentEngagementWhere } from '@/modules/projects/engagement-scope';
 
 const STAFF_ROLES = new Set(['staff_ops', 'onsite_host']);
 
@@ -80,8 +81,9 @@ export async function hasManagedUnitMcAccess(
   const engagement = await prisma.unitEngagement.findFirst({
     where: {
       unitId: input.unitId,
+      unit: { projectId: input.projectId },
       engagementType: 'via_management_company',
-      status: 'active',
+      ...currentEngagementWhere(),
       managementOrgId: { in: organizationIds },
     },
     select: { id: true },

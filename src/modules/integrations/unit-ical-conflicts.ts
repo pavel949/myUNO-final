@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { toCalendarDay } from '@/lib/date';
+import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 export interface UnitIcalConflictAlert {
   bookingId: string;
@@ -10,12 +11,6 @@ export interface UnitIcalConflictAlert {
   guestName: string;
   notifiedAt: Date;
 }
-
-const ACTIVE_BOOKING_STATUSES = [
-  'pending_payment',
-  'confirmed',
-  'checked_in',
-] as const;
 
 type ScopedBooking = {
   id: string;
@@ -80,7 +75,7 @@ export async function getUnitIcalConflictAlerts(
   const bookings = await db.booking.findMany({
     where: {
       unitId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      OR: blockingBookingConditions(),
     },
     select: {
       id: true,
@@ -129,7 +124,7 @@ export async function getProjectIcalConflictAlerts(
 
   const bookings = await db.booking.findMany({
     where: {
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      OR: blockingBookingConditions(),
       ...(scope?.projectIds?.length
         ? { projectId: { in: scope.projectIds } }
         : {}),

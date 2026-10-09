@@ -11,7 +11,7 @@ import type { CalendarEntry } from '@/modules/booking';
 import UnifiedStayCalendar from '@/components/ops/UnifiedStayCalendar';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
 import { computeCanonicalCalendarRates } from '@/modules/core';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, getUnitReadinessMap } from '@/modules/ops';
+import { hasOperatingSpaceCapability, getOperatingSpaceUnitIds, getUnitReadinessMap } from '@/modules/ops';
 import { getChannelHealthForUnits } from '@/modules/integrations';
 
 export const dynamic = 'force-dynamic';
@@ -34,10 +34,10 @@ export default async function UnifiedStayCalendarPage({
 
   const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
   const requestedSpaceId = typeof searchParams?.spaceId === 'string' ? searchParams.spaceId : '';
-  const spaceMembership = requestedSpaceId && !user.isAdmin
-    ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
-    : null;
-  if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
+  if (requestedSpaceId && !user.isAdmin &&
+      !await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'view_calendar')) {
+    redirect('/ops/spaces');
+  }
   const spaceUnitIds = requestedSpaceId
     ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
     : [];

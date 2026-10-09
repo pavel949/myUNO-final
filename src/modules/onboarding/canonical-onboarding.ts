@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import { assessUnitMediaReadiness, isRepresentativeRoom } from '@/modules/media/public-readiness';
 
 export type RequestedOffer = 'short_stay' | 'monthly' | 'yearly' | 'sale';
 export type CanonicalOfferingType = 'short_term_stay' | 'long_term_rental' | 'sale';
@@ -131,13 +132,20 @@ export async function deriveUnitOnboardingState(
     select: {
       ownerIdentityId: true,
       permittedUseConfirmedAt: true,
+      accommodationType: true,
+      coverMediaId: true,
+      project: { select: { projectType: true } },
       commercialOfferings: { select: { offeringType: true, status: true } },
       engagements: { select: { engagementType: true, status: true, mandateMediaId: true, noiCapAnnualThb: true, managementOrgId: true } },
       ratePlans: { select: { id: true, status: true } },
       inventoryCategory: {
-        select: { ratePlans: { where: { status: 'active' }, select: { id: true, status: true } } },
+        select: {
+          coverMediaId: true,
+          galleryMedia: { include: { media: true } },
+          ratePlans: { where: { status: 'active' }, select: { id: true, status: true } },
+        },
       },
-      media: { select: { mediaId: true }, take: 1 },
+      media: { include: { media: true } },
     },
   });
   if (!unit) return { state: 'blocked', blockers: ['UNIT_NOT_FOUND'] };
@@ -153,7 +161,14 @@ export async function deriveUnitOnboardingState(
       !unit.ratePlans.some((plan) => plan.status === 'active') &&
       !unit.inventoryCategory?.ratePlans.some((plan) => plan.status === 'active')
     ) blockers.push('SHORT_STAY_RATE_PLAN_MISSING');
-    if (!unit.media.length) blockers.push('PUBLIC_MEDIA_MISSING');
+    if (!assessUnitMediaReadiness({
+      projectType: unit.project.projectType,
+      accommodationType: unit.accommodationType,
+      unitCoverMediaId: unit.coverMediaId,
+      unitMedia: unit.media,
+      categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+      categoryMedia: unit.inventoryCategory?.galleryMedia,
+    }).ready) blockers.push('PUBLIC_MEDIA_MISSING');
   }
 
   const managedEngagement = unit.engagements.find(
@@ -199,8 +214,11 @@ export async function assertCommercialOfferingReadyForActivation(
     where: { id: unitId },
     include: {
       project: { select: { projectType: true } },
-      inventoryCategory: { include: { ratePlans: { where: { status: 'active' } } } },
-      media: true,
+      inventoryCategory: { include: {
+        ratePlans: { where: { status: 'active' } },
+        galleryMedia: { include: { media: true } },
+      } },
+      media: { include: { media: true } },
       sleepingSpaces: { include: { beds: true } },
       engagements: { where: { status: 'active' } },
       complianceRecords: true,
@@ -232,7 +250,21 @@ export async function assertCommercialOfferingReadyForActivation(
       blockers.push('valid_stay_pricing_required');
     }
     if (!unit.ratePlans.length && !(unit.inventoryCategory?.ratePlans.length)) blockers.push('active_rate_plan_required');
-    if (!unit.coverMediaId || unit.media.length < 3) blockers.push('exact_unit_media_required');
+    const mediaScope = {
+      projectType: unit.project.projectType,
+      accommodationType: unit.accommodationType,
+    };
+    if (!assessUnitMediaReadiness({
+      ...mediaScope,
+      unitCoverMediaId: unit.coverMediaId,
+      unitMedia: unit.media,
+      categoryCoverMediaId: unit.inventoryCategory?.coverMediaId,
+      categoryMedia: unit.inventoryCategory?.galleryMedia,
+    }).ready) {
+      blockers.push(isRepresentativeRoom(mediaScope)
+        ? 'room_type_media_required'
+        : 'exact_unit_media_required');
+    }
     if (!unit.sleepingSpaces.some((space) => space.beds.length > 0)) blockers.push('sleeping_spaces_required');
     const completed = new Set(
       unit.mobilizationChecklist

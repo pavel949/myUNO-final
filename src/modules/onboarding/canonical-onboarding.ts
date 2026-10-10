@@ -40,10 +40,10 @@ export function classifyPropertySubmission(data: PropertySubmissionLike): 'sale'
 
 export function normalizeUnitIdentifier(value: string): string {
   return value
-    .normalize('NFKD')
+    .normalize('NFKC')
     .toLowerCase()
     .replace(/\b(building|tower|unit|villa|room)\b/g, '')
-    .replace(/[^a-z0-9]+/g, '');
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, '');
 }
 
 export async function resolveCanonicalUnitTx(
@@ -63,16 +63,34 @@ export async function resolveCanonicalUnitTx(
     return { unitId: unit.id, duplicateCandidateId: null };
   }
 
+  // Serialize canonical onboarding writers by project, including applications
+  // in different CRM rows. The lock stays held until the caller creates the
+  // unit and commits, so check-and-create cannot race across these writers.
+  await tx.$queryRaw`SELECT id FROM project WHERE id = ${input.projectId} FOR UPDATE`;
   const needle = normalizeUnitIdentifier(input.unitName);
-  if (!needle) return { unitId: null, duplicateCandidateId: null };
+  const exactNeedle = input.unitName.normalize('NFKC').trim().toLowerCase();
+  if (!exactNeedle) throw new Error('Unit name is required.');
 
-  const candidates = await tx.unit.findMany({
-    where: { projectId: input.projectId },
-    select: { id: true, name: true },
-    take: 500,
-  });
-  const duplicate = candidates.find((candidate) => normalizeUnitIdentifier(candidate.name) === needle);
-  return { unitId: null, duplicateCandidateId: duplicate?.id ?? null };
+  // Scan in bounded pages rather than silently ignoring units after row 500.
+  let cursor: string | undefined;
+  while (true) {
+    const candidates = await tx.unit.findMany({
+      where: { projectId: input.projectId },
+      select: { id: true, name: true },
+      orderBy: { id: 'asc' },
+      take: 500,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const duplicate = candidates.find((candidate) =>
+      needle
+        ? normalizeUnitIdentifier(candidate.name) === needle
+        : candidate.name.normalize('NFKC').trim().toLowerCase() === exactNeedle,
+    );
+    if (duplicate) return { unitId: null, duplicateCandidateId: duplicate.id };
+    if (candidates.length < 500) break;
+    cursor = candidates[candidates.length - 1].id;
+  }
+  return { unitId: null, duplicateCandidateId: null };
 }
 
 export async function ensureDraftCommercialOfferingsTx(

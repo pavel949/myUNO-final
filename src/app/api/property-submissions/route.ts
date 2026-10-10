@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { classifyPropertySubmission } from '@/modules/onboarding';
+import { submissionUnitWhere } from '@/modules/onboarding/submission-unit-access';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
@@ -9,6 +10,9 @@ const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
 type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
+  if (body.existingUnitId && (typeof body.projectId !== 'string' || !body.projectId)) {
+    throw new Error('Choose the project for the selected existing property.');
+  }
   const kind = String(body.kind || '');
   if (!allowedKinds.has(kind)) throw new Error('Choose what you are adding.');
   const offers = Array.isArray(body.offers) ? body.offers.filter((v): v is string => typeof v === 'string' && allowedOffers.has(v)) : [];
@@ -60,21 +64,15 @@ export async function GET(req: NextRequest) {
   const projectId = req.nextUrl.searchParams.get('projectId');
   if (projectId) {
     const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
-    const scoped = access.user.roles.some(role => role.projectId === projectId && (role.role === 'owner' || role.role === 'mc_member'));
-    if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) {
+    const where = submissionUnitWhere(access.user, projectId);
+    const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+      await prisma.unit.findFirst({ where, select: { id: true } }),
+    ));
+    if (!project || (project.status !== 'live' && !privateAccess)) {
       return NextResponse.json({ error: 'Project not available.' }, { status: 404 });
     }
-    const scopedUnitIds = access.user.roles
-      .filter((role) => role.projectId === projectId && role.unitId)
-      .map((role) => role.unitId as string);
     const units = await prisma.unit.findMany({
-      where: access.user.isAdmin || scoped
-        ? { projectId, status: { not: 'offboarded' } }
-        : {
-            projectId,
-            status: { not: 'offboarded' },
-            OR: [{ status: 'live' }, ...(scopedUnitIds.length ? [{ id: { in: scopedUnitIds } }] : [])],
-          },
+      where,
       select: { id: true, name: true, floor: true, bedrooms: true, bathrooms: true, sizeSqm: true },
       orderBy: { name: 'asc' },
       take: 500,
@@ -104,11 +102,14 @@ export async function POST(req: NextRequest) {
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
-      const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
-      if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      const where = submissionUnitWhere(access.user, data.projectId);
+      const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+        await prisma.unit.findFirst({ where, select: { id: true } }),
+      ));
+      if (!project || (project.status !== 'live' && !privateAccess)) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
       if (data.existingUnitId) {
-        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
-        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+        const unit = await prisma.unit.findFirst({ where: { ...where, id: data.existingUnitId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property is not available in this project.' }, { status: 400 });
       }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) {
@@ -141,11 +142,14 @@ export async function PATCH(req: NextRequest) {
     if (!await mediaOwned([...data.photos, ...data.projectPhotos], access.user.identityId)) return NextResponse.json({ error: 'Only your uploaded public photos may be attached.' }, { status: 403 });
     if (data.projectId) {
       const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true, status: true } });
-      const scoped = access.user.roles.some(role => role.projectId === data.projectId && (role.role === 'owner' || role.role === 'mc_member'));
-      if (!project || (project.status !== 'live' && !(project.status === 'draft' && (access.user.isAdmin || scoped)))) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
+      const where = submissionUnitWhere(access.user, data.projectId);
+      const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+        await prisma.unit.findFirst({ where, select: { id: true } }),
+      ));
+      if (!project || (project.status !== 'live' && !privateAccess)) return NextResponse.json({ error: 'Choose an available project.' }, { status: 400 });
       if (data.existingUnitId) {
-        const unit = await prisma.unit.findFirst({ where: { id: data.existingUnitId, projectId: data.projectId }, select: { id: true } });
-        if (!unit) return NextResponse.json({ error: 'Selected existing property does not belong to this project.' }, { status: 400 });
+        const unit = await prisma.unit.findFirst({ where: { ...where, id: data.existingUnitId }, select: { id: true } });
+        if (!unit) return NextResponse.json({ error: 'Selected existing property is not available in this project.' }, { status: 400 });
       }
     }
     if (data.status === 'submitted' && ((!data.unitName && data.kind !== 'resort') || (!data.projectId && !data.proposedProject) || (data.kind !== 'resort' && !data.offers.length))) return NextResponse.json({ error: 'Complete your property, residence and offering before submitting.' }, { status: 400 });

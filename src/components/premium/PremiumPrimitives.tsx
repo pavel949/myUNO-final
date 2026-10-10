@@ -80,7 +80,9 @@ export function RecordPageHeader({
 
 export function ProcessStepper({
   steps,
+  ariaLabel = 'Process',
 }: {
+  ariaLabel?: string;
   steps: Array<{
     label: string;
     state: PremiumStatusTone;
@@ -88,7 +90,7 @@ export function ProcessStepper({
   }>;
 }) {
   return (
-    <ol className="grid gap-8 md:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]" aria-label="Process">
+    <ol className="grid gap-8 md:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]" aria-label={ariaLabel}>
       {steps.map((step, index) => (
         <li key={`${step.label}-${index}`} className="min-w-0">
           <div className="flex items-center gap-8">

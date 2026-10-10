@@ -1,3 +1,4 @@
+import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { discoveryCopy } from '@/components/DiscoveryHomes';
@@ -200,7 +201,7 @@ export default async function ProjectLandingPage({
     'catalog.amenities.pets_allowed.label': 'Pets allowed',
     'catalog.amenities.security_24h.label': '24h security',
     ...serviceCategoryLabels,
-  });
+  }, getRequestLocale(), PROPERTY_PUBLIC_UI_DRAFTS);
 
   const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = await Promise.all([
     resolveKey(project.areaLabelKey),

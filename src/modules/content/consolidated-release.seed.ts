@@ -633,7 +633,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project_page',
     description: 'Release 160 surface copy: project_page.owner_intake.title',
     en: 'Own or manage a home here?',
-    ru: 'Own or manage a home here?',
+    ru: "Вы владеете объектом здесь или управляете им?",
     status: 'needs_review' as const,
   },
   {
@@ -641,7 +641,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project_page',
     description: 'Release 160 surface copy: project_page.owner_intake.body',
     en: 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
-    ru: 'Submit your home to this existing residence. Our team verifies your authority and the listing before publication.',
+    ru: "Добавьте свой объект в эту резиденцию. Перед публикацией команда проверит ваши полномочия и объявление.",
     status: 'needs_review' as const,
   },
   {
@@ -649,7 +649,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project_page',
     description: 'Release 160 surface copy: project_page.owner_intake.cta',
     en: 'Add your home →',
-    ru: 'Add your home →',
+    ru: "Добавить свой объект →",
     status: 'needs_review' as const,
   },
   {
@@ -665,7 +665,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project',
     description: 'Release 160 surface copy: project.services.eyebrow',
     en: 'myUNO services',
-    ru: 'myUNO services',
+    ru: "Сервисы myUNO",
     status: 'needs_review' as const,
   },
   {
@@ -673,7 +673,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project',
     description: 'Release 160 surface copy: project.services.title',
     en: 'Everything around your stay',
-    ru: 'Everything around your stay',
+    ru: "Всё для вашего проживания",
     status: 'needs_review' as const,
   },
   {
@@ -681,7 +681,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project',
     description: 'Release 160 surface copy: project.services.body',
     en: 'Transfers, flowers, wellness, dining and other vetted services available for {project}.',
-    ru: 'Transfers, flowers, wellness, dining and other vetted services available for {project}.',
+    ru: "Трансферы, цветы, оздоровительные процедуры, питание и другие проверенные услуги, доступные для {project}.",
     status: 'needs_review' as const,
   },
   {
@@ -689,7 +689,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project',
     description: 'Release 160 surface copy: project.services.view_all',
     en: 'Explore all services →',
-    ru: 'Explore all services →',
+    ru: "Все услуги →",
     status: 'needs_review' as const,
   },
   {
@@ -697,7 +697,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project',
     description: 'Release 160 surface copy: project.services.from',
     en: 'from ฿{price}',
-    ru: 'from ฿{price}',
+    ru: "от ฿{price}",
     status: 'needs_review' as const,
   },
   {

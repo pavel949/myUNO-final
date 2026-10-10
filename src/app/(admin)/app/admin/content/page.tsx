@@ -58,6 +58,7 @@ export default async function AdminContentPage({
         }))}
         initialNamespace={activeNs}
         initialKeys={keys.map((k) => ({
+          id: k.id,
           key: k.key,
           description: k.description,
           translations: Object.fromEntries(

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/Button';
 
 interface KeyRow {
+  id: string;
   key: string;
   description: string;
   translations: Record<string, { value: string | null; status: string }>;
@@ -16,6 +17,7 @@ const LOCALES = ['ru', 'en', 'th', 'zh'] as const;
 function mapApiKey(raw: Record<string, unknown>): KeyRow {
   const translations = Array.isArray(raw.translations) ? raw.translations : [];
   return {
+    id: typeof raw.id === 'string' ? raw.id : '',
     key: String(raw.key),
     description: String(raw.description || ''),
     translations: Object.fromEntries(
@@ -82,14 +84,15 @@ export default function ContentAdminClient({
 
   const draftId = (key: string, locale: string) => `${key}::${locale}`;
 
-  const save = async (key: string, locale: string) => {
-    const id = draftId(key, locale);
+  const save = async (row: KeyRow, locale: string) => {
+    if (!row.id) { setError(labels['admin.content.error_generic']); return; }
+    const id = draftId(row.key, locale);
     const value = drafts[id];
     if (value === undefined) return;
     setBusyKey(id);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/content/${encodeURIComponent(key)}`, {
+      const response = await fetch(`/api/admin/content/${encodeURIComponent(row.id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locale, value }),
@@ -270,9 +273,9 @@ export default function ContentAdminClient({
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => save(row.key, locale)}
+                          onClick={() => save(row, locale)}
                           isLoading={busyKey === id}
-                          disabled={drafts[id] === undefined}
+                          disabled={!row.id || drafts[id] === undefined}
                         >
                           {savedFlash === id
                             ? labels['admin.content.saved']

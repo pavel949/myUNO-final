@@ -1,3 +1,5 @@
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { PROPERTY_ONBOARDING_KEYS, PROPERTY_ONBOARDING_LOCALE_DRAFTS } from '@/modules/content/property-onboarding.seed';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
@@ -16,6 +18,8 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     const query = params.toString() ? `?${params.toString()}` : '';
     redirect(`/login?next=${encodeURIComponent('/property/onboard' + query)}`);
   }
+  const locale = getRequestLocale();
+  const labels = await getLabels(Object.fromEntries(PROPERTY_ONBOARDING_KEYS.map(row => [row.key, row.en])), locale, PROPERTY_ONBOARDING_LOCALE_DRAFTS);
   const scopedIds = user.roles.map(role => role.projectId).filter((id): id is string => Boolean(id));
   const [projects, areas] = await Promise.all([prisma.project.findMany({
     where: user.isAdmin ? { status: { not: 'archived' } } : { OR: [{ status: 'live' }, { id: { in: scopedIds }, status: 'draft' }] }, orderBy: { name: 'asc' },
@@ -30,6 +34,7 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     ? searchParams?.operatingModel
     : undefined;
   return <PropertySubmissionWizard
+    labels={labels}
     projects={projects}
     areas={areas}
     initialSubmissionId={searchParams?.submissionId}

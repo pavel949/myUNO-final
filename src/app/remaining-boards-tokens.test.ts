@@ -63,7 +63,9 @@ describe('remaining canvas boards 13–21 (existing surfaces only)', () => {
     expect(searchLayout).toContain('StitchConsumerShell');
     expect(tripsLayout).toContain('StitchConsumerShell');
     expect(checkoutLayout).toContain('StitchConsumerShell');
-    expect(search).toContain('text-display-xl');
+    expect(search).toContain('<PageHeading');
+    const heading = readFileSync(join(process.cwd(), 'src/components/premium/StitchPage.tsx'), 'utf8');
+    expect(heading).toMatch(/<h1[^>]*text-display-xl/);
     expect(trips).toContain('text-display-xl');
     expect(checkout).toContain('text-display-xl');
   });

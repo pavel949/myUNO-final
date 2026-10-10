@@ -102,6 +102,12 @@ export async function POST(req: NextRequest) {
       throw createPublicError('invalid payment method', 400);
     }
     const hasCategorySelector = Boolean(inventoryCategoryId || categoryKey);
+    if (requestedUnitId && hasCategorySelector) {
+      throw createPublicError('Choose either an exact unit or an inventory category', 400);
+    }
+    if (requestedInventoryCategoryId && categoryId && requestedInventoryCategoryId !== categoryId) {
+      throw createPublicError('Inventory category selectors disagree', 400);
+    }
 
     if (
       (!requestedUnitId && !hasCategorySelector) ||
@@ -229,7 +235,8 @@ export async function POST(req: NextRequest) {
           resolvedProjectId as string,
           resolvedCategoryKey as string,
           startDate,
-          endDate
+          endDate,
+          resolvedInventoryCategoryId
         );
 
     if (candidates.length === 0) {
@@ -238,78 +245,75 @@ export async function POST(req: NextRequest) {
       throw error;
     }
 
-    let booking!: Awaited<ReturnType<typeof createBookingAttempt>>['booking'];
+    let booking: Awaited<ReturnType<typeof createBookingAttempt>>['booking'] | undefined;
+    let needsRequote = false;
 
-    for (const [index, candidate] of candidates.entries()) {
-      const isLastCandidate = index === candidates.length - 1;
-
-      const candidateBreakdown = await computePriceBreakdown(
-        prisma,
-        candidate.id,
-        startDate,
-        endDate,
-        guestCount,
-        undefined,
-        Number(petsCount)
-      );
-
-      if (candidateBreakdown.total_thb > acceptedTotal) {
-        if (isLastCandidate) {
-          const error = new Error('Available homes now cost more than the amount you accepted.');
-          (error as Error & { code: string }).code = 'REQUOTE_REQUIRED';
-          throw error;
-        }
-        continue;
-      }
-
-      const unit = await prisma.unit.findUnique({
-        where: { id: candidate.id },
-        select: {
-          cancellationPolicyKey: true,
-          instantBook: true,
-          status: true,
-          projectId: true,
-          inventoryCategoryId: true,
-          inventoryCategory: { select: { status: true } },
-        },
-      });
-      if (!unit || unit.status !== 'live' || unit.inventoryCategory?.status !== 'live') {
-        throw createPublicError('not found', 404);
-      }
-
-      const bookingProjectId = unit.projectId;
-      if (projectId && projectId !== bookingProjectId) {
-        throw createPublicError('unit does not belong to the given project', 400);
-      }
-      if (
-        resolvedInventoryCategoryId &&
-        unit.inventoryCategoryId &&
-        unit.inventoryCategoryId !== resolvedInventoryCategoryId
-      ) {
-        throw createPublicError('assigned unit does not belong to the requested inventory category', 409);
-      }
-
-      // Read the actual asset's project, never a client-selected scope. Manual
-      // rails reserve capacity without a card timeout, so an enum check alone
-      // would let a caller create untimed holds on a card-only property.
-      const enabledMethods = await getConfig(prisma, 'booking.payment.methods_enabled', {
-        projectId: bookingProjectId, fresh: true,
-      }) ?? ['cash', 'bank_transfer'];
-      if (!Array.isArray(enabledMethods) || !enabledMethods.includes(paymentMethod)) {
-        return NextResponse.json({
-          error: 'This payment method is unavailable for this property. Review the available payment options.',
-          code: 'PAYMENT_METHOD_UNAVAILABLE',
-        }, { status: 400 });
-      }
-
-      // The same resolver the unit and review pages show the guest: the
-      // snapshot is the policy they consented to (BAR plan > category > unit).
-      // Season ladder from the quoted source terms when the stay has one
-      // (ruling 2026-10-06), else the configured policy.
-      const policy = sourceSeasonCancellationPolicy(candidateBreakdown.commercialTerms)
-        ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
-
+    for (const candidate of candidates) {
       try {
+        const candidateBreakdown = await computePriceBreakdown(
+          prisma,
+          candidate.id,
+          startDate,
+          endDate,
+          guestCount,
+          undefined,
+          Number(petsCount)
+        );
+
+        if (candidateBreakdown.total_thb > acceptedTotal) {
+          throw Object.assign(new Error('Available homes now cost more than the amount you accepted.'), {
+            code: 'REQUOTE_REQUIRED',
+          });
+        }
+
+        const unit = await prisma.unit.findUnique({
+          where: { id: candidate.id },
+          select: {
+            cancellationPolicyKey: true,
+            instantBook: true,
+            status: true,
+            assetStatus: true,
+            projectId: true,
+            inventoryCategoryId: true,
+            inventoryCategory: { select: { status: true } },
+          },
+        });
+        if (!unit || unit.status !== 'live' || unit.assetStatus === 'suspended' || unit.inventoryCategory?.status !== 'live') {
+          if (requestedUnitId) throw createPublicError('not found', 404);
+          throw Object.assign(new Error('Category candidate is no longer available'), { code: 'DOUBLE_BOOK' });
+        }
+
+        const bookingProjectId = unit.projectId;
+        if (projectId && projectId !== bookingProjectId) {
+          throw createPublicError('unit does not belong to the given project', 400);
+        }
+        if (
+          resolvedInventoryCategoryId &&
+          unit.inventoryCategoryId !== resolvedInventoryCategoryId
+        ) {
+          throw Object.assign(new Error('Category candidate changed category'), { code: 'DOUBLE_BOOK' });
+        }
+
+        // Read the actual asset's project, never a client-selected scope. Manual
+        // rails reserve capacity without a card timeout, so an enum check alone
+        // would let a caller create untimed holds on a card-only property.
+        const enabledMethods = await getConfig(prisma, 'booking.payment.methods_enabled', {
+          projectId: bookingProjectId, fresh: true,
+        }) ?? ['cash', 'bank_transfer'];
+        if (!Array.isArray(enabledMethods) || !enabledMethods.includes(paymentMethod)) {
+          return NextResponse.json({
+            error: 'This payment method is unavailable for this property. Review the available payment options.',
+            code: 'PAYMENT_METHOD_UNAVAILABLE',
+          }, { status: 400 });
+        }
+
+        // The same resolver the unit and review pages show the guest: the
+        // snapshot is the policy they consented to (BAR plan > category > unit).
+        // Season ladder from the quoted source terms when the stay has one
+        // (ruling 2026-10-06), else the configured policy.
+        const policy = sourceSeasonCancellationPolicy(candidateBreakdown.commercialTerms)
+          ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
+
         const attempt = await createBookingAttempt(prisma, {
           unitId: candidate.id,
           projectId: bookingProjectId,
@@ -327,25 +331,34 @@ export async function POST(req: NextRequest) {
           instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
           paymentMethod,
           creationIntent,
+          inventoryCategoryId: resolvedInventoryCategoryId,
           guestNote,
-          priceBreakdown: {
-            ...candidateBreakdown,
-            ...(resolvedInventoryCategoryId && {
-              inventory_category_id: resolvedInventoryCategoryId,
-            }),
-          },
+          priceBreakdown: { ...candidateBreakdown },
           cancellationPolicySnapshot: { ...policy },
         });
         booking = attempt.booking;
         if (attempt.replayed) return replayResponse(booking);
       } catch (error) {
-        if ((error as { code?: string })?.code === 'DOUBLE_BOOK' && !isLastCandidate) {
+        // Both quote-time eligibility and the locked writer may reject this
+        // physical unit. Category consent permits another eligible sibling;
+        // an exact-unit selection never does. Infrastructure faults propagate.
+        const code = (error as { code?: string })?.code;
+        if (!requestedUnitId && (error instanceof StayUnquotableError || code === 'DOUBLE_BOOK' || code === 'REQUOTE_REQUIRED')) {
+          if (code === 'REQUOTE_REQUIRED') needsRequote = true;
           continue;
         }
         throw error;
       }
 
       break;
+    }
+
+    if (!booking) {
+      throw Object.assign(new Error(needsRequote
+        ? 'Available homes now cost more than the amount you accepted.'
+        : 'No home in this category can accept this stay.'), {
+        code: needsRequote ? 'REQUOTE_REQUIRED' : 'DOUBLE_BOOK',
+      });
     }
 
     const instantBook = booking.status !== 'requested';

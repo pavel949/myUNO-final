@@ -1,3 +1,4 @@
+import { getAuthorizedThreadParticipants, requireThreadAccess } from '@/modules/comms/statement-thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -19,10 +20,8 @@ export async function GET(
     const messages = await getThreadMessages(prisma, params.threadId, user.identityId, 100);
     await markThreadRead(prisma, params.threadId, user.identityId);
 
-    const participants = await prisma.threadParticipant.findMany({
-      where: { threadId: params.threadId },
-      include: { identity: { select: { id: true, firstName: true, lastName: true } } },
-    });
+    const thread = await prisma.thread.findUniqueOrThrow({ where: { id: params.threadId } });
+    const participants = await getAuthorizedThreadParticipants(prisma, thread);
 
     return NextResponse.json({
       thread: {
@@ -54,21 +53,14 @@ export async function POST(
       throw createPublicError('invalid request: message body is required', 400);
     }
 
-    // sendMessage does not guard sender membership itself — verify here
-    const membership = await prisma.threadParticipant.findUnique({
-      where: {
-        threadId_identityId: { threadId: params.threadId, identityId: user.identityId },
-      },
-    });
-    if (!membership) {
-      return NextResponse.json({ error: 'Resource not found.' }, { status: 404 });
-    }
+    await requireThreadAccess(prisma, params.threadId, user.identityId);
 
     const message = await sendMessage(prisma, {
       threadId: params.threadId,
       senderIdentityId: user.identityId,
       body: body.trim(),
     });
+    if (!message) throw createPublicError('not found', 404);
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
     return handleError(error);

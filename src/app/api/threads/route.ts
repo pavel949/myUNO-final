@@ -55,8 +55,8 @@ export async function GET() {
 
 /**
  * POST /api/threads — start (or reuse) a conversation and send the first
- * message. booking context → guest + ops staff + unit owner ("message
- * host"); general context → caller + admins (e.g. sell interest).
+ * message. Booking context → guest + scoped guest-care team; an owner joins
+ * only under an active owner-direct mandate. General context → caller + admins.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -102,7 +102,6 @@ export async function POST(req: NextRequest) {
         select: {
           projectId: true,
           guestIdentityId: true,
-          unit: { select: { ownerIdentityId: true } },
         },
       });
       if (!booking || booking.guestIdentityId !== user.identityId) {
@@ -110,19 +109,8 @@ export async function POST(req: NextRequest) {
       }
       projectId = booking.projectId;
 
-      const staff = await prisma.roleAssignment.findMany({
-        where: { role: 'staff_ops', status: 'active' },
-        select: { identityId: true },
-        distinct: ['identityId'],
-      });
-      for (const member of staff) {
-        participantIds.add(member.identityId);
-        participantRoles[member.identityId] = 'staff_ops';
-      }
-      if (booking.unit?.ownerIdentityId) {
-        participantIds.add(booking.unit.ownerIdentityId);
-        participantRoles[booking.unit.ownerIdentityId] = 'owner';
-      }
+      // The service derives the exact live guest-care audience.
+
     } else {
       if (contextType === 'unit') {
         if (!contextId) {
@@ -157,11 +145,12 @@ export async function POST(req: NextRequest) {
       participantRoles,
     });
 
-    await sendMessage(prisma, {
+    const messageId = await sendMessage(prisma, {
       threadId,
       senderIdentityId: user.identityId,
       body: messageBody.trim(),
     });
+    if (!messageId) throw createPublicError('not found', 404);
 
     if (isSellInterest) {
       await createDirectInquiry(

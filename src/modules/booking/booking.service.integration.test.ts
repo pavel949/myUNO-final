@@ -83,13 +83,14 @@ describe('booking.service — integration tests', () => {
 
     // Requests never block the calendar, so several can target the same
     // villa; the approval is where the conflict must be caught.
-    async function makeRequest(projectId: string, unitId: string) {
+    async function makeRequest(projectId: string, unitId: string, inventoryCategoryId?: string) {
       const guest = await createIdentity();
       return bookingService.createBooking(db, {
         unitId, projectId, guestIdentityId: guest.id,
         bookingType: 'guest_stay', channel: 'direct',
         startDate: RANGE.start, endDate: RANGE.end,
         adults: 2, children: 0, totalThb: 1000, instantBook: false,
+        ...(inventoryCategoryId ? { inventoryCategoryId } : {}),
       });
     }
 
@@ -101,16 +102,29 @@ describe('booking.service — integration tests', () => {
       const unitB = await createUnit({
         projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false,
       });
-      const first = await makeRequest(project.id, unitA.id);
-      const second = await makeRequest(project.id, unitA.id);
+      const first = await makeRequest(project.id, unitA.id, unitA.inventoryCategoryId!);
+      const second = await makeRequest(project.id, unitA.id, unitA.inventoryCategoryId!);
 
-      const approvedFirst = await bookingService.approveBookingRequest(db, { bookingId: first.id });
+      const approvedFirst = await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: first.id });
       expect(approvedFirst.status).toBe('pending_payment');
       expect(approvedFirst.unitId).toBe(unitA.id);
 
-      const approvedSecond = await bookingService.approveBookingRequest(db, { bookingId: second.id });
+      const approvedSecond = await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: second.id });
       expect(approvedSecond.status).toBe('pending_payment');
       expect(approvedSecond.unitId).toBe(unitB.id);
+    });
+
+    it('does not move an exact-unit request to an available sibling', async () => {
+      const project = await createProject({ status: 'live' });
+      const unitA = await createUnit({ projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false });
+      await createUnit({ projectId: project.id, name: 'B-02', categoryKey: 'superior_2br', status: 'live', instantBook: false });
+      const first = await makeRequest(project.id, unitA.id);
+      const second = await makeRequest(project.id, unitA.id);
+      await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: first.id });
+      await expect(bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: second.id }))
+        .rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+      expect(await db.booking.findUniqueOrThrow({ where: { id: second.id } }))
+        .toMatchObject({ unitId: unitA.id, status: 'requested' });
     });
 
     it('refuses approval when the whole category is exhausted', async () => {
@@ -118,12 +132,12 @@ describe('booking.service — integration tests', () => {
       const unitA = await createUnit({
         projectId: project.id, name: 'A-01', categoryKey: 'superior_2br', status: 'live', instantBook: false,
       });
-      const first = await makeRequest(project.id, unitA.id);
-      const second = await makeRequest(project.id, unitA.id);
-      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+      const first = await makeRequest(project.id, unitA.id, unitA.inventoryCategoryId!);
+      const second = await makeRequest(project.id, unitA.id, unitA.inventoryCategoryId!);
+      await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: first.id });
 
       await expect(
-        bookingService.approveBookingRequest(db, { bookingId: second.id })
+        bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: second.id })
       ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
       const stillRequested = await db.booking.findUnique({ where: { id: second.id } });
       expect(stillRequested?.status).toBe('requested');
@@ -136,10 +150,10 @@ describe('booking.service — integration tests', () => {
       });
       const first = await makeRequest(project.id, unit.id);
       const second = await makeRequest(project.id, unit.id);
-      await bookingService.approveBookingRequest(db, { bookingId: first.id });
+      await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: first.id });
 
       await expect(
-        bookingService.approveBookingRequest(db, { bookingId: second.id })
+        bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: second.id })
       ).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
     });
   });
@@ -474,7 +488,7 @@ describe('booking.service — integration tests', () => {
         instantBook: false,
       });
 
-      const approved = await bookingService.approveBookingRequest(db, {
+      const approved = await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true,
         bookingId: booking.id,
       });
 
@@ -503,13 +517,13 @@ describe('booking.service — integration tests', () => {
       });
 
       await expect(
-        bookingService.approveBookingRequest(db, { bookingId: booking.id })
+        bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: booking.id })
       ).rejects.toThrow('Cannot approve booking with status pending_payment');
     });
 
     it('throws error when booking not found', async () => {
       await expect(
-        bookingService.approveBookingRequest(db, { bookingId: 'nonexistent' })
+        bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: 'nonexistent' })
       ).rejects.toThrow('not found');
     });
   });
@@ -667,7 +681,7 @@ describe('booking.service — integration tests', () => {
         instantBook: true,
       });
 
-      await bookingService.confirmBooking(db, { bookingId: booking.id });
+      await bookingService.confirmBooking(db, { bookingId: booking.id, paymentReceivedAt: new Date() });
 
       const preauth = await db.depositPreauth.findUnique({ where: { bookingId: booking.id } });
       expect(preauth).not.toBeNull();
@@ -1246,7 +1260,7 @@ describe('booking.service — integration tests', () => {
       });
 
       // Approve the request
-      await bookingService.approveBookingRequest(db, { bookingId: booking.id });
+      await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: booking.id });
 
       // Try to auto-decline (should not affect pending_payment bookings)
       const declinedCount = await bookingService.autoDeclineRequests(db);
@@ -1300,7 +1314,7 @@ describe('booking.service — integration tests', () => {
       const guest1 = await createIdentity();
       const guest2 = await createIdentity();
 
-      const booking1 = await bookingService.createBooking(db, {
+      await bookingService.createBooking(db, {
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest1.id,
@@ -1314,7 +1328,7 @@ describe('booking.service — integration tests', () => {
         instantBook: true,
       });
 
-      const booking2 = await bookingService.createBooking(db, {
+      await bookingService.createBooking(db, {
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest2.id,
@@ -1386,7 +1400,7 @@ describe('booking.service — integration tests', () => {
       const unit = await createUnit(project.id);
       const guest = await createIdentity();
 
-      const booking1 = await bookingService.createBooking(db, {
+      await bookingService.createBooking(db, {
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,
@@ -1400,7 +1414,7 @@ describe('booking.service — integration tests', () => {
         instantBook: true,
       });
 
-      const booking2 = await bookingService.createBooking(db, {
+      await bookingService.createBooking(db, {
         unitId: unit.id,
         projectId: project.id,
         guestIdentityId: guest.id,

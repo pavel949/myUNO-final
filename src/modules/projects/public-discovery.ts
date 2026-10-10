@@ -1,3 +1,4 @@
+import { PUBLIC_SLEEPING_SPACES_QUERY, publicSleepingSpaces } from './public-sleeping';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { managedImportedInventoryIds } from './public-managed-import';
@@ -28,6 +29,7 @@ export async function listPublicDiscoveryUnits(filters: {
       ...(filters.inventoryCategoryId ? { inventoryCategoryId: filters.inventoryCategoryId } : {}),
     }] },
     select: {
+      sleepingSpaces: PUBLIC_SLEEPING_SPACES_QUERY,
       id: true, name: true, descriptionKey: true, bedrooms: true, bathrooms: true,
       maxGuests: true, sizeSqm: true, grossAreaSqm: true, coverMediaId: true, accommodationType: true,
       project: { select: { id: true, slug: true, name: true, projectType: true, area: { select: { slug: true } } } },
@@ -46,6 +48,7 @@ export async function listPublicDiscoveryUnits(filters: {
       categoryMedia: unit.inventoryCategory?.galleryMedia ?? [],
     });
     return {
+      sleepingSpaces: publicSleepingSpaces(unit.sleepingSpaces),
       id: unit.id, name: unit.name, descriptionKey: unit.descriptionKey,
       bedrooms: unit.bedrooms, bathrooms: unit.bathrooms, maxGuests: unit.maxGuests,
       sizeSqm: unit.grossAreaSqm === null ? unit.sizeSqm : Number(unit.grossAreaSqm),

@@ -99,3 +99,17 @@ describe('getPublicUnitById — what the public may see (T-035)', () => {
     expect(JSON.stringify(result)).not.toContain(owner.id);
   });
 });
+
+
+it('publishes only scoped sleeping facts for a visible bookable unit', async () => {
+  await resetDb();
+  const project = await createProject({ status: 'live' });
+  const unit = await createUnit({ projectId: project.id, status: 'live' });
+  const room = await db.sleepingSpace.create({ data: { unitId: unit.id, name: 'Private room label', spaceType: 'bedroom', sortOrder: 0, beds: { create: [{ bedType: 'double', count: 1 }] } } });
+  const result = await getPublicUnitById(unit.id);
+  expect(result?.sleepingSpaces).toEqual([{ spaceType: 'bedroom', sortOrder: 0, beds: [{ bedType: 'double', count: 1 }] }]);
+  expect(JSON.stringify(result)).not.toContain(room.id);
+  expect(JSON.stringify(result)).not.toContain('Private room label');
+  await db.unit.update({ where: { id: unit.id }, data: { status: 'draft' } });
+  expect(await getPublicUnitById(unit.id)).toBeNull();
+});

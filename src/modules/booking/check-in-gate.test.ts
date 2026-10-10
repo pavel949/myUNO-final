@@ -16,6 +16,25 @@ const stay = (overrides: Partial<CheckInCandidate> = {}): CheckInCandidate => ({
 });
 
 describe('assessCheckIn — the TM30-safe check-in rule', () => {
+
+  it.each([
+    { adults: 0, children: 0, infants: 0, guests: [] },
+    { adults: -1 }, { adults: 1.5 }, { adults: Number.NaN },
+    { adults: Number.POSITIVE_INFINITY }, { children: -1 },
+    { children: 0.5 }, { infants: -1 }, { infants: Number.NaN },
+  ])('refuses unknown or invalid party counts: %j', overrides => {
+    expect(assessCheckIn(stay(overrides), '2026-11-10')).toBe('party_unknown');
+  });
+
+  it('refuses explicit source uncertainty despite complete registered guests and positive counts', () => {
+    expect(assessCheckIn(stay({ priceBreakdown: { partyUnknown: true } }), '2026-11-10'))
+      .toBe('party_unknown');
+  });
+
+  it('does not treat ordinary price snapshots as unknown party evidence', () => {
+    expect(assessCheckIn(stay({ priceBreakdown: { total_thb: 10000 } }), '2026-11-10')).toBeNull();
+    expect(assessCheckIn(stay({ priceBreakdown: { partyUnknown: false } }), '2026-11-10')).toBeNull();
+  });
   it('allows a confirmed, fully registered party on the arrival day', () => {
     expect(assessCheckIn(stay(), '2026-11-10')).toBeNull();
   });

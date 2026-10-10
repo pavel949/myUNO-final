@@ -1,3 +1,6 @@
+import { PublicSleepingSummary } from '@/components/units/PublicSleepingSummary';
+import { publicSleepingLabelsForLocale } from '@/modules/content/public-sleeping';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { Suspense } from 'react';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import Link from 'next/link';
@@ -81,6 +84,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
   const jsonLd = 'bookable' in unit ? unitJsonLd({ ...unit, description }) : null;
 
   const labels = await getLabels({
+    ...publicSleepingLabelsForLocale(getRequestLocale()),
     'units.breadcrumb_home': 'Home',
     'units.breadcrumb_detail': 'Unit Details',
     'listing.loading': 'Loading unit details…',
@@ -181,12 +185,12 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
       <Breadcrumb items={breadcrumbs} />
       <div className="stitch-page space-y-24">
         <Link href={`/search${context ? `?${context}` : ''}`} className="text-brand-andaman hover:underline">{labels['listing.back_to_results']}</Link>
-        <h1 className="font-display text-display-xl font-semibold">{unit.name}</h1>
-        <Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>
+        <PageHeading title={unit.name} subtitle={<Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>} />
         <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
         <p>{[unit.bedrooms > 0 ? `${unit.bedrooms} ${copy.bedrooms}` : null, unit.maxGuests > 0 ? `${unit.maxGuests} ${copy.guests}` : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
         {unit.photoScope === 'room_type' && <p className="text-small text-text-secondary">{copy.representative}</p>}
         {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
+        <PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />
         <aside className="stitch-panel p-24"><p>{copy.pending}</p><a href="#lead-form" className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">{copy.ask}</a></aside>
       </div>
       <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} initialMessage={`${unit.project.name} — ${unit.name} (${unit.id})`} />
@@ -202,6 +206,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
       />
       <UnitDetailClient
         unitId={params.id}
+        sleepingSummary={<PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />}
         labels={{
           loading: labels['listing.loading'],
           notFound: labels['listing.not_found'],

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
-import { hasProjectDepartmentAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { canApproveBookingCandidate, resolveBookingOperationsAccess } from '@/app/libs/bookingOperationsAccess';
 import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
@@ -57,8 +57,7 @@ export async function POST(
       action: 'stays:approve_decline_booking_requests',
       resource: { projectId: booking.projectId, unitId: booking.unitId },
     });
-    if (!allowed || (hasProjectStaffAccess(user,booking.projectId) && !user.isAdmin &&
-      !(await hasProjectDepartmentAccess(user,booking.projectId,'reservations')))) {
+    if (!allowed || !(await resolveBookingOperationsAccess(user, booking)).canManageReservations) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -101,9 +100,13 @@ export async function POST(
       try {
         updated = await approveBookingRequest(prisma, {
           bookingId: booking.id,
+          authorizeCandidate: (db, scope) => canApproveBookingCandidate(db, user.identityId, scope),
           holdMinutes: typeof holdMinutes === 'number' ? holdMinutes : 30,
         });
       } catch (error) {
+        if ((error as { code?: string })?.code === 'BOOKING_FORBIDDEN') {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
         // The approval re-check found the villa taken and no free villa of
         // the same category — the request stays open, the admin sees why.
         if ((error as any)?.code === 'DOUBLE_BOOK') {

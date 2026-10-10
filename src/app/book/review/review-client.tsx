@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { Select } from '@/components/Select';
 
 type PaymentMethod = 'cash' | 'bank_transfer' | 'card_provider';
@@ -310,33 +311,30 @@ export default function BookingReviewClient({
   }));
 
   return (
-    <main className="stitch-workspace px-20 py-32 md:px-32 md:py-48">
+    <main className="stitch-workspace px-20 py-24 md:px-32 md:py-32">
       <div className="mx-auto max-w-content">
         <p className="mb-16">
           <Link href={backHref} className="font-semibold text-brand-andaman hover:underline">
             {labels.back}
           </Link>
         </p>
-        <h1 className="mb-8 font-display text-display-hero font-semibold text-brand-andaman md:text-display-hero-lg">
-          {labels.title}
-        </h1>
-        {headline && <p className="mb-32 text-body text-text-secondary md:text-subtitle">{headline}</p>}
+        <PageHeading title={labels.title} subtitle={headline || undefined} />
 
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div>
         <section className="mb-24 stitch-panel p-24">
           <h2 className="mb-16 font-display text-heading-3 text-text-ink">{labels.recap}</h2>
-          <dl className="space-y-12 text-body">
-            <div className="flex justify-between gap-16">
-              <dt className="text-text-stone">{labels.checkIn}</dt>
+          <dl className="grid gap-12 rounded-md bg-surface-sand p-16 text-body sm:grid-cols-3">
+            <div className="min-w-0 space-y-4">
+              <dt className="text-small text-text-stone">{labels.checkIn}</dt>
               <dd className="tabular-nums text-text-ink">{startDate}</dd>
             </div>
-            <div className="flex justify-between gap-16">
-              <dt className="text-text-stone">{labels.checkOut}</dt>
+            <div className="min-w-0 space-y-4">
+              <dt className="text-small text-text-stone">{labels.checkOut}</dt>
               <dd className="tabular-nums text-text-ink">{endDate}</dd>
             </div>
-            <div className="flex justify-between gap-16">
-              <dt className="text-text-stone">{labels.guests}</dt>
+            <div className="min-w-0 space-y-4">
+              <dt className="text-small text-text-stone">{labels.guests}</dt>
               <dd className="text-text-ink">{adults + children}</dd>
             </div>
           </dl>

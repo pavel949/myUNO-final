@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { PageHeading } from '@/components/premium/StitchPage';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -133,9 +134,11 @@ function fill(template: string, params: Record<string, string | number>): string
 export default function UnitDetailClient({
   unitId,
   labels,
+  sleepingSummary,
 }: {
   unitId: string;
   labels: UnitDetailLabels;
+  sleepingSummary?: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -282,7 +285,7 @@ export default function UnitDetailClient({
   return (
     <div className="stitch-workspace p-16 pb-[160px] md:p-32 lg:pb-32">
       <div className="mx-auto max-w-content">
-        <p className="mb-20 inline-flex rounded-full border border-border-line bg-surface-paper px-16 py-8 shadow-card">
+        <p className="mb-16">
           <Link
             href={backToSearch}
             className="text-brand-andaman font-semibold hover:underline"
@@ -290,7 +293,18 @@ export default function UnitDetailClient({
             {labels.backToResults}
           </Link>
         </p>
-        <div className="grid grid-cols-1 gap-32 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-48">
+        <PageHeading
+          title={unit.name}
+          subtitle={<>
+            {unit.marketingTitle ? <p className="font-medium text-brand-andaman">{unit.marketingTitle}</p> : null}
+            {unit.project?.name ? <p className="mt-4 text-small">
+              {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
+              {unit.project.slug ? <Link href={`/projects/${unit.project.slug}?${searchParams?.toString() || ''}`} className="text-brand-andaman hover:underline">{unit.project.name}</Link> : unit.project.name}{' '}
+              <span>· {labels.onMyUno}</span>
+            </p> : null}
+          </>}
+        />
+        <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-32">
           <div className="lg:col-span-2">
             <UnitPhotoMosaic
               images={unit.images ?? []}
@@ -304,22 +318,7 @@ export default function UnitDetailClient({
               </p>
             ) : null}
           </div>
-          <div className="stitch-panel p-20 md:p-32">
-              <h1 className="font-display text-display font-semibold tracking-[-0.02em] text-brand-deep mb-4">
-                {unit.name}
-              </h1>
-              {unit.marketingTitle ? (
-                <p className="mb-12 max-w-3xl font-display text-heading-3 font-semibold text-brand-andaman">
-                  {unit.marketingTitle}
-                </p>
-              ) : null}
-              {unit.project?.name && (
-                <p className="text-body text-text-stone mb-20">
-                  {unit.inventoryCategory?.name ? <><span className="font-medium text-text-ink">{unit.inventoryCategory.name}</span>{' · '}</> : null}
-                  {unit.project.slug ? <Link href={`/projects/${unit.project.slug}?${searchParams?.toString() || ''}`} className="text-brand-andaman hover:underline">{unit.project.name}</Link> : unit.project.name}{' '}
-                  <span className="text-text-stone-2">· {labels.onMyUno}</span>
-                </p>
-              )}
+          <div className="min-w-0">
               <div className="flex flex-wrap gap-12 mb-20">
                 <Chip variant="neutral">
                   {fill(labels.guestsCount, { count: unit.maxGuests || 2 })}
@@ -353,6 +352,7 @@ export default function UnitDetailClient({
                   {unit.description}
                 </p>
               ) : null}
+              {sleepingSummary}
               {unit.amenityKeys && unit.amenityKeys.length > 0 && (
                 <div className="stitch-panel-soft mb-32 p-20">
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
@@ -382,7 +382,7 @@ export default function UnitDetailClient({
           </div>
 
           <div className="lg:col-span-1">
-            <div className="stitch-panel sticky top-96 p-24 shadow-float">
+            <div className="stitch-panel lg:sticky lg:top-96 p-20 md:p-24 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
                     with dates it is the average night of the live quote

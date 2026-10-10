@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { UnitPhotoMosaic } from './UnitPhotoMosaic';
 
 const photos = (n: number) => Array.from({ length: n }, (_, i) => `/p${i + 1}.jpg`);
@@ -58,5 +58,33 @@ describe('a home with no published photos', () => {
     render(<UnitPhotoMosaic images={[]} alt="Villa" showAllLabel="Show all" emptyLabel="Photos are being prepared." />);
     expect(screen.getByRole('img', { name: 'Photos are being prepared.' })).toBeTruthy();
     expect(screen.getByText('Photos are being prepared.')).toBeTruthy();
+  });
+});
+
+
+describe('shared property gallery composition', () => {
+  it.each([1, 2, 3, 4, 5])('adapts its desktop layout to %i real images', (count) => {
+    const { container } = render(<UnitPhotoMosaic images={photos(count)} alt="Residence" showAllLabel="View photos" />);
+    const mosaic = container.querySelector('.md\\:grid')!;
+    expect(mosaic.children).toHaveLength(count);
+    expect(mosaic).toHaveClass(count === 1 ? 'grid-cols-1' : count === 2 ? 'grid-cols-2' : 'grid-cols-4');
+    expect(mosaic).toHaveClass('overflow-hidden', 'rounded-lg');
+  });
+
+  it('makes the native mobile carousel keyboard reachable', () => {
+    render(<UnitPhotoMosaic images={photos(3)} alt="Residence" showAllLabel="View photos" />);
+    expect(screen.getByRole('region', { name: 'Residence' })).toHaveAttribute('tabindex', '0');
+  });
+
+  it('opens and closes additional desktop images through its linked control', () => {
+    render(<UnitPhotoMosaic images={photos(7)} alt="Residence" showAllLabel="View photos" />);
+    const button = screen.getByRole('button', { name: 'View photos' });
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    const overflow = document.getElementById(button.getAttribute('aria-controls')!);
+    expect(overflow?.querySelectorAll('img')).toHaveLength(2);
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById(button.getAttribute('aria-controls')!)).toBeNull();
   });
 });

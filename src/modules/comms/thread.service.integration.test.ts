@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
+import { db, resetDb, createIdentity, createProject, createUnit, createBooking, createRoleAssignment } from '@/test/util';
 import * as threadService from './thread.service';
 
 describe('thread.service — integration tests', () => {
@@ -15,10 +15,12 @@ describe('thread.service — integration tests', () => {
     it('creates a thread for a booking context', async () => {
       const project = await createProject();
       const guest = await createIdentity();
+      const unit = await createUnit({ projectId: project.id });
+      const booking = await createBooking({ projectId: project.id, unitId: unit.id, guestIdentityId: guest.id });
 
       const result = await threadService.findOrCreateThread(db, {
         contextType: 'booking',
-        contextId: 'booking-123',
+        contextId: booking.id,
         projectId: project.id,
         participantIdentityIds: [guest.id],
       });
@@ -33,7 +35,7 @@ describe('thread.service — integration tests', () => {
       });
 
       expect(thread?.contextType).toBe('booking');
-      expect(thread?.contextId).toBe('booking-123');
+      expect(thread?.contextId).toBe(booking.id);
       expect(thread?.projectId).toBe(project.id);
       expect(thread?.participants).toHaveLength(1);
       expect(thread?.participants[0]?.identityId).toBe(guest.id);
@@ -42,7 +44,9 @@ describe('thread.service — integration tests', () => {
     it('is idempotent: returns existing thread', async () => {
       const project = await createProject();
       const guest = await createIdentity();
-      const bookingId = 'booking-456';
+      const unit = await createUnit({ projectId: project.id });
+      const booking = await createBooking({ projectId: project.id, unitId: unit.id, guestIdentityId: guest.id });
+      const bookingId = booking.id;
 
       // First call creates thread
       const result1 = await threadService.findOrCreateThread(db, {
@@ -66,14 +70,17 @@ describe('thread.service — integration tests', () => {
       expect(result2.id).toBe(result1.id);
     });
 
-    it('sets participant roles from input', async () => {
+    it('derives booking roles from scoped authority rather than caller-provided labels', async () => {
       const project = await createProject();
       const guest = await createIdentity();
       const host = await createIdentity();
+      const unit = await createUnit({ projectId: project.id });
+      const booking = await createBooking({ projectId: project.id, unitId: unit.id, guestIdentityId: guest.id });
+      await createRoleAssignment({ identityId: host.id, role: 'onsite_host', scopeType: 'project', projectId: project.id });
 
       const thread = await threadService.findOrCreateThread(db, {
         contextType: 'booking',
-        contextId: 'booking-789',
+        contextId: booking.id,
         projectId: project.id,
         participantIdentityIds: [guest.id, host.id],
         participantRoles: {
@@ -90,7 +97,7 @@ describe('thread.service — integration tests', () => {
       const hostParticipant = participants.find((p) => p.identityId === host.id);
 
       expect(guestParticipant?.participantRole).toBe('guest');
-      expect(hostParticipant?.participantRole).toBe('host');
+      expect(hostParticipant?.participantRole).toBe('onsite_host');
     });
   });
 
@@ -101,7 +108,7 @@ describe('thread.service — integration tests', () => {
       const recipient = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-msg',
         projectId: project.id,
         participantIdentityIds: [sender.id, recipient.id],
@@ -143,7 +150,7 @@ describe('thread.service — integration tests', () => {
       const nonParticipant = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-auth',
         projectId: project.id,
         participantIdentityIds: [participant.id],
@@ -164,7 +171,7 @@ describe('thread.service — integration tests', () => {
       const guest = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-anon',
         projectId: project.id,
         participantIdentityIds: [guest.id],
@@ -192,7 +199,7 @@ describe('thread.service — integration tests', () => {
       const nonParticipant = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-msgs',
         projectId: project.id,
         participantIdentityIds: [participant.id],
@@ -233,7 +240,7 @@ describe('thread.service — integration tests', () => {
       const sender = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-detail',
         projectId: project.id,
         participantIdentityIds: [sender.id],
@@ -262,7 +269,7 @@ describe('thread.service — integration tests', () => {
       const participant = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-read',
         projectId: project.id,
         participantIdentityIds: [participant.id],
@@ -296,7 +303,7 @@ describe('thread.service — integration tests', () => {
       const guest = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-sys',
         projectId: project.id,
         participantIdentityIds: [guest.id],
@@ -327,7 +334,7 @@ describe('thread.service — integration tests', () => {
       const receiver = await createIdentity();
 
       const thread = await threadService.findOrCreateThread(db, {
-        contextType: 'booking',
+        contextType: 'general',
         contextId: 'booking-unread',
         projectId: project.id,
         participantIdentityIds: [sender.id, receiver.id],
@@ -375,5 +382,45 @@ describe('thread.service — integration tests', () => {
 
       expect(counts).toEqual({});
     });
+  });
+});
+
+
+describe('booking thread authority — PostgreSQL regressions', () => {
+  beforeEach(async () => { await resetDb(); });
+  afterEach(async () => { await resetDb(); });
+
+  it('serializes concurrent creation and denies a historical foreign-project participant', async () => {
+    const project = await createProject();
+    const foreignProject = await createProject();
+    const guest = await createIdentity();
+    const staff = await createIdentity();
+    const foreignStaff = await createIdentity();
+    const admin = await createIdentity({ isAdmin: true });
+    const unit = await createUnit({ projectId: project.id });
+    const booking = await createBooking({ projectId: project.id, unitId: unit.id, guestIdentityId: guest.id });
+    await createRoleAssignment({ identityId: staff.id, role: 'staff_ops', scopeType: 'project', projectId: project.id });
+    const foreignRole = await createRoleAssignment({ identityId: foreignStaff.id, role: 'staff_ops', scopeType: 'project', projectId: foreignProject.id });
+    const input = { contextType: 'booking' as const, contextId: booking.id, participantIdentityIds: [guest.id, foreignStaff.id] };
+    const created = await Promise.all([
+      threadService.findOrCreateThread(db, input),
+      threadService.findOrCreateThread(db, input),
+    ]);
+    expect(created[0].id).toBe(created[1].id);
+    expect(created.filter(result => result.created)).toHaveLength(1);
+    const threadId = created[0].id;
+    const participants = await db.threadParticipant.findMany({ where: { threadId } });
+    expect(participants.map(participant => participant.identityId).sort()).toEqual([guest.id, staff.id, admin.id].sort());
+    await db.threadParticipant.create({ data: { threadId, identityId: foreignStaff.id, participantRole: 'staff_ops' } });
+    expect(await threadService.getThreadsForIdentity(db, foreignStaff.id)).toEqual([]);
+    await expect(threadService.getThreadMessages(db, threadId, foreignStaff.id)).rejects.toThrow('participant');
+    expect(await threadService.sendMessage(db, { threadId, senderIdentityId: foreignStaff.id, body: 'Denied' })).toBeNull();
+    expect(await threadService.sendMessage(db, { threadId, senderIdentityId: staff.id, body: 'Scoped reply' })).toBeTruthy();
+    // Reassignment into the project activates the already enrolled identity;
+    // a subsequent revoke removes access again without deleting its history.
+    await db.roleAssignment.update({ where: { id: foreignRole.id }, data: { projectId: project.id } });
+    expect(await threadService.getThreadMessages(db, threadId, foreignStaff.id)).toHaveLength(1);
+    await db.roleAssignment.update({ where: { id: foreignRole.id }, data: { status: 'revoked' } });
+    await expect(threadService.getThreadMessages(db, threadId, foreignStaff.id)).rejects.toThrow('participant');
   });
 });

@@ -7,13 +7,35 @@ import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from '
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { calendarDayIn, toCalendarDay, DEFAULT_TIME_ZONE } from '@/lib/date';
 import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
 } from './request-decline-reasons';
+
+/** Versioned selection evidence is issued only by this writer, after the
+ * category API validates its signed quote and this transaction verifies scope.
+ * The legacy category ID alone is ambiguous: older clients could send it with
+ * an exact unit, so it never authorizes a historical request to switch villas. */
+function categorySelectionSnapshot(inventoryCategoryId: string) {
+  return {
+    inventory_category_id: inventoryCategoryId,
+    inventory_selection: { version: 1, kind: 'category', inventoryCategoryId },
+  } as const;
+}
+
+function selectedInventoryCategoryId(priceBreakdown: unknown): string | null {
+  if (!priceBreakdown || typeof priceBreakdown !== 'object' || Array.isArray(priceBreakdown)) return null;
+  const snapshot = priceBreakdown as Record<string, unknown>;
+  const id = snapshot.inventory_category_id;
+  const selection = snapshot.inventory_selection;
+  if (!selection || typeof selection !== 'object' || Array.isArray(selection)) return null;
+  const intent = selection as Record<string, unknown>;
+  return typeof id === 'string' && id.trim().length > 0 && id === id.trim() &&
+    intent.version === 1 && intent.kind === 'category' && intent.inventoryCategoryId === id ? id : null;
+}
 
 export interface CreateBookingInput {
   unitId: string;
@@ -37,6 +59,9 @@ export interface CreateBookingInput {
    */
   acceptedMaxTotalThb?: number;
   priceBreakdown?: Record<string, unknown>;
+  /** Explicit server-side category selection, never inferred from a unit or
+   * client-provided priceBreakdown. Public callers require a signed quote. */
+  inventoryCategoryId?: string;
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
   paymentMethod?: PaymentMethod;
@@ -48,6 +73,8 @@ export interface CreateBookingInput {
 
 export interface ApproveBookingRequestInput {
   bookingId: string;
+  /** Trusted server authorization, rechecked for every candidate under its inventory lock. */
+  authorizeCandidate: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
   holdMinutes?: number;
 }
 
@@ -209,7 +236,8 @@ export async function findAvailableUnitsForCategory(
   projectId: string,
   categoryKey: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  inventoryCategoryId?: string
 ): Promise<Array<{ id: string; instantBook: boolean }>> {
   const now = new Date();
   const overlaps = { startDate: { lt: endDate }, endDate: { gt: startDate } };
@@ -217,20 +245,18 @@ export async function findAvailableUnitsForCategory(
   const candidates = await db.unit.findMany({
     where: {
       projectId,
-      categoryKey,
+      ...(inventoryCategoryId ? { inventoryCategoryId } : { categoryKey }),
+      inventoryCategory: { status: 'live' },
+      assetStatus: { not: 'suspended' },
       status: 'live',
       // A live unit inside an archived or draft project is not sellable. The
       // unit status alone said it was, so archiving a project stopped its
       // pages without stopping its sales.
       project: { status: 'live' },
-      // Explicit commercial eligibility for typed projects. Untyped legacy
-      // supply keeps its original behavior until onboarding migration.
-      AND: [{ OR: [
-        { project: { projectType: null } },
-        { commercialOfferings: { some: {
-          offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
-        } } },
-      ] }],
+      // Same sale eligibility as canonical pricing, including legacy projects.
+      commercialOfferings: { some: {
+        offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+      } },
       bookings: {
         none: {
           ...overlaps,
@@ -291,6 +317,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     totalThb: suppliedTotalThb,
     acceptedMaxTotalThb,
     priceBreakdown: suppliedPriceBreakdown,
+    inventoryCategoryId,
     cancellationPolicySnapshot,
     instantBook,
     paymentMethod,
@@ -299,6 +326,11 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     requestHours = 24,
     guestNote,
   } = input;
+
+  if (inventoryCategoryId !== undefined && (
+    bookingType !== 'guest_stay' || typeof inventoryCategoryId !== 'string' ||
+    !inventoryCategoryId.trim() || inventoryCategoryId !== inventoryCategoryId.trim()
+  )) throw new Error('Invalid category booking selection');
 
   if (creationIntent) {
     if (!isBookingCreationKey(creationIntent.key) || !/^[0-9a-f]{64}$/.test(creationIntent.fingerprint)) {
@@ -347,8 +379,9 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
       totalThb = authoritative.total_thb;
       priceBreakdown = {
         ...authoritative,
-        ...(suppliedPriceBreakdown && 'inventory_category_id' in suppliedPriceBreakdown
-          ? { inventory_category_id: suppliedPriceBreakdown.inventory_category_id } : {}),
+        ...(inventoryCategoryId
+          ? categorySelectionSnapshot(inventoryCategoryId)
+          : { inventory_selection: { version: 1, kind: 'unit', unitId } }),
       };
     }
 
@@ -356,9 +389,22 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     // Read the current unit again at the writer, including category fallbacks.
     const unit = await tx.unit.findUnique({
       where: { id: unitId },
-      select: { instantBook: true, projectId: true },
+      select: {
+        instantBook: true, projectId: true, status: true, assetStatus: true,
+        inventoryCategoryId: true,
+        inventoryCategory: { select: { status: true, projectId: true } },
+        project: { select: { status: true } },
+      },
     });
     if (!unit || unit.projectId !== projectId) throw new Error('Booking unit not found');
+    const selectedCategoryId = inventoryCategoryId;
+    if ((bookingType === 'guest_stay' && unit.assetStatus === 'suspended') || (selectedCategoryId && (
+      unit.inventoryCategoryId !== selectedCategoryId || unit.status !== 'live' ||
+      unit.inventoryCategory?.status !== 'live' || unit.inventoryCategory.projectId !== projectId ||
+      unit.project.status !== 'live'
+    ))) {
+      throw Object.assign(new Error('The selected category candidate is no longer available'), { code: 'DOUBLE_BOOK' });
+    }
     const canInstantBook = instantBook === true && unit.instantBook;
     const initialStatus: BookingStatus = canInstantBook ? 'pending_payment' : 'requested';
 
@@ -497,7 +543,7 @@ export async function approveBookingRequest(
   // the same per-unit lock used by bookings, manual blocks and iCal imports.
   // Separate transactions avoid holding two unit locks in opposite orders when
   // simultaneous approvals need different category replacements.
-  const claimCandidate = (unitId: string, categoryKey?: string) => db.$transaction(async (tx) => {
+  const claimCandidate = (unitId: string, categoryId?: string) => db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unitId}))`;
 
     const current = await tx.booking.findUnique({ where: { id: bookingId } });
@@ -506,6 +552,16 @@ export async function approveBookingRequest(
       const err = new Error(`Cannot approve booking with status ${current.status}`);
       (err as Error & { code: string }).code = 'BOOKING_STATE_CHANGED';
       throw err;
+    }
+    if ((categoryId && selectedInventoryCategoryId(current.priceBreakdown) !== categoryId) || (unitId !== current.unitId && !categoryId)) {
+      throw Object.assign(new Error('Booking inventory selection changed'), { code: 'BOOKING_STATE_CHANGED' });
+    }
+    if (!input.authorizeCandidate ||
+      !(await input.authorizeCandidate(tx as PrismaClient, { projectId: current.projectId, unitId: current.unitId }))) {
+      throw Object.assign(new Error('No current authority for this booking inventory'), { code: 'BOOKING_FORBIDDEN' });
+    }
+    if (unitId !== current.unitId && !(await input.authorizeCandidate(tx as PrismaClient, { projectId: current.projectId, unitId }))) {
+      throw Object.assign(new Error('No current authority for this replacement inventory'), { code: 'CANDIDATE_FORBIDDEN' });
     }
     const now = new Date();
     // The scheduler may run late. Its pending status is not authority to
@@ -521,14 +577,13 @@ export async function approveBookingRequest(
         projectId: current.projectId,
         status: 'live',
         project: { status: 'live' },
-        ...(categoryKey !== undefined ? { categoryKey } : {}),
+        assetStatus: { not: 'suspended' },
+        ...(current.bookingType === 'guest_stay' ? { inventoryCategory: { status: 'live' } } : {}),
+        ...(categoryId ? { inventoryCategoryId: categoryId } : {}),
         ...(current.bookingType === 'guest_stay' ? {
-          AND: [{ OR: [
-            { project: { projectType: null } },
-            { commercialOfferings: { some: {
-              offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
-            } } },
-          ] }],
+          commercialOfferings: { some: {
+            offeringType: { in: ['short_term_stay', 'short_stay'] }, status: 'active',
+          } },
         } : {}),
       },
       select: { id: true },
@@ -582,7 +637,9 @@ export async function approveBookingRequest(
       where: { id: bookingId, status: 'requested' },
       data: {
         unitId,
-        ...(repriced ? { totalThb: repriced.total_thb, priceBreakdown: repriced as any } : {}),
+        ...(repriced ? { totalThb: repriced.total_thb, priceBreakdown: {
+          ...repriced, ...categorySelectionSnapshot(categoryId!),
+        } as unknown as Prisma.InputJsonObject } : {}),
         status: 'pending_payment',
         holdExpiresAt: paymentHoldExpiry(current.paymentMethod, now, holdMinutes),
         requestExpiresAt: null,
@@ -598,27 +655,28 @@ export async function approveBookingRequest(
     });
   }).catch(rethrowAsDoubleBook);
 
+  const selectedCategoryId = selectedInventoryCategoryId(booking.priceBreakdown);
   try {
-    return await claimCandidate(booking.unitId);
+    return await claimCandidate(booking.unitId, selectedCategoryId ?? undefined);
   } catch (originalError) {
     if ((originalError as { code?: string })?.code !== 'DOUBLE_BOOK') throw originalError;
 
-    const unit = await db.unit.findUnique({
-      where: { id: booking.unitId }, select: { categoryKey: true },
-    });
-    if (!unit?.categoryKey) throw originalError;
+    const categoryId = selectedCategoryId;
+    if (!categoryId || booking.bookingType !== 'guest_stay') throw originalError;
+    const category = await db.inventoryCategory.findUnique({ where: { id: categoryId } });
+    if (!category || category.status !== 'live' || category.projectId !== booking.projectId) throw originalError;
     const replacements = await findAvailableUnitsForCategory(
-      db, booking.projectId, unit.categoryKey, booking.startDate, booking.endDate
+      db, booking.projectId, category.categoryKey, booking.startDate, booking.endDate, category.id
     );
     let needsRequote = false;
     for (const replacement of replacements) {
       if (replacement.id === booking.unitId) continue;
       try {
-        return await claimCandidate(replacement.id, unit.categoryKey);
+        return await claimCandidate(replacement.id, category.id);
       } catch (error) {
         const code = (error as { code?: string })?.code;
         if (code === 'REQUOTE_REQUIRED') needsRequote = true;
-        else if (code !== 'DOUBLE_BOOK') throw error;
+        else if (code !== 'DOUBLE_BOOK' && code !== 'CANDIDATE_FORBIDDEN' && !(error instanceof StayUnquotableError)) throw error;
       }
     }
     if (needsRequote) {
@@ -782,6 +840,7 @@ export type CheckInBlockCode =
   | 'not_confirmed'
   | 'before_arrival'
   | 'after_departure'
+  | 'party_unknown'
   | 'guests_incomplete'
   | 'passport_missing';
 
@@ -793,6 +852,7 @@ export class CheckInBlockedError extends Error {
 }
 
 export interface CheckInCandidate {
+  priceBreakdown?: unknown;
   status: BookingStatus;
   startDate: Date;
   endDate: Date;
@@ -821,6 +881,14 @@ export function assessCheckIn(booking: CheckInCandidate, today: string): CheckIn
   if (booking.status !== 'confirmed') return 'not_confirmed';
   if (today < toCalendarDay(booking.startDate)) return 'before_arrival';
   if (today >= toCalendarDay(booking.endDate)) return 'after_departure';
+  // Fail closed on imported uncertainty, even when placeholder counts and
+  // registered guest rows exist. Only a separately audited confirmation
+  // workflow may resolve source uncertainty; this guard never invents counts.
+  const counts = [booking.adults, booking.children, booking.infants];
+  const terms = booking.priceBreakdown;
+  if (booking.adults < 1 || counts.some(count => !Number.isSafeInteger(count) || count < 0) ||
+      (terms !== null && typeof terms === 'object' && !Array.isArray(terms) &&
+        (terms as Record<string, unknown>).partyUnknown === true)) return 'party_unknown';
   const partySize = booking.adults + booking.children + booking.infants;
   const registered = booking.guests.filter(guest => guest.nationality?.trim());
   if (registered.length < partySize) return 'guests_incomplete';

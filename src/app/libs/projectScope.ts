@@ -1,5 +1,6 @@
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
+import type { PrismaClient } from '@prisma/client';
 import { currentEngagementWhere } from '@/modules/projects/engagement-scope';
 
 const STAFF_ROLES = new Set(['staff_ops', 'onsite_host']);
@@ -62,7 +63,8 @@ export function getMCOrganizationIdsForProject(
 
 export async function hasManagedUnitMcAccess(
   user: CurrentUser,
-  input: { projectId: string | null; unitId: string }
+  input: { projectId: string | null; unitId: string },
+  db: PrismaClient = prisma,
 ): Promise<boolean> {
   if (user.isAdmin) {
     return true;
@@ -78,7 +80,7 @@ export async function hasManagedUnitMcAccess(
     return false;
   }
 
-  const engagement = await prisma.unitEngagement.findFirst({
+  const engagement = await db.unitEngagement.findFirst({
     where: {
       unitId: input.unitId,
       unit: { projectId: input.projectId },
@@ -152,10 +154,11 @@ export async function hasProjectDepartmentAccess(
   user: CurrentUser,
   projectId: string | null,
   department: string,
+  db: PrismaClient = prisma,
 ): Promise<boolean> {
   if (user.isAdmin) return true;
   if (!projectId || !hasProjectStaffAccess(user, projectId)) return false;
-  const grant = await prisma.projectStaffPermission.findUnique({
+  const grant = await db.projectStaffPermission.findUnique({
     where: { projectId_identityId: { projectId, identityId: user.identityId } },
     select: { departments: true },
   });

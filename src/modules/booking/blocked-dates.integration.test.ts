@@ -132,7 +132,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     });
     await block(unit.id, 'owner_hold');
 
-    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+    await expect(bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }))
       .rejects.toMatchObject({ code: 'DOUBLE_BOOK', blockReason: 'owner_hold' });
     expect((await db.booking.findUniqueOrThrow({ where: { id: request.id } })).status)
       .toBe('requested');
@@ -145,7 +145,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     });
     await db.unit.update({ where: { id: unit.id }, data: { status: 'draft' } });
 
-    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+    await expect(bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }))
       .rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
     expect((await db.booking.findUniqueOrThrow({ where: { id: request.id } })).status)
       .toBe('requested');
@@ -161,7 +161,7 @@ describe('blocked dates block a booking (P0-4)', () => {
       data: { requestExpiresAt: new Date(Date.now() - 60_000) },
     });
 
-    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+    await expect(bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }))
       .rejects.toMatchObject({ code: 'BOOKING_REQUEST_EXPIRED' });
     const current = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
     expect(current.status).toBe('requested');
@@ -181,10 +181,11 @@ describe('blocked dates block a booking (P0-4)', () => {
     const guest = await createIdentity();
     const request = await bookingService.createBooking(db, {
       ...bookingFor(project.id, original.id, guest.id), instantBook: false,
+      inventoryCategoryId: original.inventoryCategoryId!,
     });
     await block(original.id, 'maintenance');
 
-    const approved = await bookingService.approveBookingRequest(db, { bookingId: request.id });
+    const approved = await bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id });
     expect(approved.status).toBe('pending_payment');
     expect(approved.unitId).toBe(replacement.id);
     expect(await db.blockedDate.count({ where: { unitId: original.id } })).toBe(1);
@@ -203,6 +204,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     const guest = await createIdentity();
     const request = await bookingService.createBooking(db, {
       ...bookingFor(project.id, original.id, guest.id), instantBook: false,
+      inventoryCategoryId: original.inventoryCategoryId!,
     });
     await db.pricingRule.create({
       data: {
@@ -212,7 +214,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     });
     await block(original.id, 'maintenance');
 
-    await expect(bookingService.approveBookingRequest(db, { bookingId: request.id }))
+    await expect(bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }))
       .rejects.toMatchObject({ code: 'REQUOTE_REQUIRED' });
     const current = await db.booking.findUniqueOrThrow({ where: { id: request.id } });
     expect(current.status).toBe('requested');
@@ -227,7 +229,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     });
 
     const [approval, manualBlock] = await Promise.allSettled([
-      bookingService.approveBookingRequest(db, { bookingId: request.id }),
+      bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }),
       createManualBlock(db, {
         unitId: unit.id, startDate: RANGE.start, endDate: RANGE.end,
         reason: 'maintenance', createdByIdentityId: guest.id,
@@ -255,7 +257,7 @@ describe('blocked dates block a booking (P0-4)', () => {
     });
 
     const [approval, decline] = await Promise.allSettled([
-      bookingService.approveBookingRequest(db, { bookingId: request.id }),
+      bookingService.approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id }),
       bookingService.declineBookingRequest(db, {
         bookingId: request.id, declinedByIdentityId: guest.id,
       }),

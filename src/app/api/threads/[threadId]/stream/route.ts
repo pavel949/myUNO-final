@@ -1,13 +1,12 @@
+import { canAccessThread } from '@/modules/comms/statement-thread-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { subscribeThread as subscribe } from '@/modules/comms';
+import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
-/**
- * GET /api/threads/[id]/stream
- * Server-Sent Events stream of new messages in a thread.
- * Participant-only access (verified at subscription).
- * Client reconnection is the responsibility of the SSE client (exponential backoff).
+/** SSE authorizes at subscription and before every event, so an open stream
+ * rechecks financial-statement authority before emitting any message.
  */
 export async function GET(
   _req: NextRequest,
@@ -15,66 +14,51 @@ export async function GET(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+    if (!user) throw createPublicError('unauthorized', 401);
     const threadId = params.threadId;
-
-    // Verify participant access
-    const isParticipant = await prisma.threadParticipant.findUnique({
-      where: {
-        threadId_identityId: {
-          threadId,
-          identityId: user.identityId,
-        },
-      },
-    });
-
-    if (!isParticipant) {
-      return NextResponse.json(
-        { error: 'Not a participant in this thread' },
-        { status: 403 }
-      );
+    if (!(await canAccessThread(prisma, threadId, user.identityId))) {
+      throw createPublicError('not found', 404);
     }
 
-    // Set up SSE response
     const encoder = new TextEncoder();
     let unsubscribe: (() => void) | null = null;
-
+    let closed = false;
+    let pending = Promise.resolve();
     const stream = new ReadableStream({
       start(controller) {
-        // Send initial heartbeat
         controller.enqueue(encoder.encode(':heartbeat\n\n'));
-
-        // Subscribe to new messages
-        unsubscribe = subscribe(threadId, (message) => {
-          const data = JSON.stringify(message);
-          controller.enqueue(
-            encoder.encode(`data: ${data}\n\n`)
-          );
+        const close = () => {
+          if (closed) return;
+          closed = true;
+          unsubscribe?.();
+          controller.close();
+        };
+        unsubscribe = subscribe(threadId, message => {
+          // Serialize asynchronous checks to preserve event order. Errors fail
+          // closed and are caught here because the in-memory bus is synchronous.
+          pending = pending.then(async () => {
+            if (closed) return;
+            if (!(await canAccessThread(prisma, threadId, user.identityId))) {
+              close();
+              return;
+            }
+            if (!closed) controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
+          }).catch(close);
         });
       },
       cancel() {
-        if (unsubscribe) {
-          unsubscribe();
-        }
+        closed = true;
+        unsubscribe?.();
       },
     });
-
     return new NextResponse(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'private, no-store',
         'Connection': 'keep-alive',
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Thread stream error:', message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleError(error);
   }
 }

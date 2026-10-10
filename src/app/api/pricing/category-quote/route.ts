@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { computePriceBreakdown } from '@/modules/core';
+import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { findAvailableUnitsForCategory } from '@/modules/booking';
 import {
   createCategoryStayQuoteToken,
@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
       category.projectId,
       category.categoryKey,
       startDate,
-      endDate
+      endDate,
+      category.id
     );
     if (candidates.length === 0) {
       throw createPublicError('no home in this category is available for these dates', 409);
@@ -122,7 +123,8 @@ export async function POST(req: NextRequest) {
           breakdown,
         };
         break;
-      } catch {
+      } catch (error) {
+        if (!(error instanceof StayUnquotableError)) throw error;
         // One physical unit can have a stricter occupancy/rate rule than its
         // siblings. A category quote uses the first actually bookable unit in
         // the same stable order as allocation rather than failing the category.
@@ -172,6 +174,7 @@ export async function POST(req: NextRequest) {
         expiresAt: new Date(expiresAtMs).toISOString(),
         acceptedTotalSatang,
         instantBook: selected.instantBook,
+        isAvailable: true,
         breakdown: {
           nights,
           subtotal: toBaht(engine.subtotal_thb),

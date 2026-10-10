@@ -157,6 +157,7 @@ export async function getOwnerDashboard(
         orderBy: { createdAt: 'desc' },
       },
       statements: {
+        where: { ownerIdentityId, status: { in: OWNER_VISIBLE_STATEMENT_STATUSES } },
         select: {
           id: true,
           createdAt: true,
@@ -638,18 +639,10 @@ export async function getOwnerStatements(
   db: PrismaClient,
   ownerIdentityId: string
 ): Promise<OwnerStatement[]> {
-  const units = await db.unit.findMany({
-    where: { ownerIdentityId },
-    select: { id: true },
-  });
-
-  if (units.length === 0) {
-    return [];
-  }
-
+  // Statements preserve the historical beneficiary, independently of the
+  // current unit owner or operational/offboarding state.
   const allStatements = await db.ownerStatement.findMany({
     where: {
-      unitId: { in: units.map((u) => u.id) },
       ownerIdentityId,
       status: { in: OWNER_VISIBLE_STATEMENT_STATUSES },
     },

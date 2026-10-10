@@ -1,3 +1,4 @@
+import { PUBLIC_SLEEPING_SPACES_QUERY, publicSleepingSpaces, type PublicSleepingSpace } from './public-sleeping';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { allExcludedSourceControlledUnitIds } from '@/modules/booking/source-authority';
@@ -561,6 +562,7 @@ async function buildPublicReviews(projectId: string): Promise<PublicProjectRevie
 }
 
 export interface PublicUnitDetail extends PublicProjectUnit {
+  sleepingSpaces?: PublicSleepingSpace[];
   descriptionKey: string | null;
   minNights: number;
   galleryUrls: string[];
@@ -586,6 +588,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
       project: { status: 'live' },
     },
     include: {
+      sleepingSpaces: PUBLIC_SLEEPING_SPACES_QUERY,
       coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
       media: {
         orderBy: { sort: 'asc' },
@@ -639,6 +642,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
   if (!media.ready) return null;
 
   return {
+    sleepingSpaces: publicSleepingSpaces(unit.sleepingSpaces),
     id: unit.id,
     name: unit.name,
     titleKey: unit.descriptionKey ? unit.descriptionKey.replace(/\.description$/, '.title') : null,

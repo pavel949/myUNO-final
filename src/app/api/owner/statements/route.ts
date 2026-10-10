@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
+import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance/statement-signoff.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +17,9 @@ export async function GET(_req: NextRequest) {
     const statements = await prisma.ownerStatement.findMany({
       where: {
         ownerIdentityId: currentUser.identityId,
-        unit: {
-          status: { not: 'offboarded' },
-        },
+        // Financial entitlement belongs to the recorded beneficiary, including
+        // after ownership transfer or unit offboarding. Drafts remain private.
+        status: { in: OWNER_VISIBLE_STATEMENT_STATUSES },
       },
       include: {
         unit: {

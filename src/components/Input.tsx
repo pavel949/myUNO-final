@@ -48,6 +48,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             type={currentType}
+            required={required}
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helpText ? messageId : undefined}
             className={`${fieldControlWithError(error, className)} h-48 ${isPassword ? 'pr-48' : ''}`}

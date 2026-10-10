@@ -63,7 +63,7 @@ describe('manual payment reservations occupy canonical inventory', () => {
     const staff = await createIdentity();
     const request = await createBooking(db, { ...input, instantBook: false, paymentMethod });
     expect(await checkAvailability(db, input.unitId, dates.startDate, dates.endDate)).toBe(true);
-    const booking = await approveBookingRequest(db, { bookingId: request.id });
+    const booking = await approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id });
     expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod, holdExpiresAt: null });
     expect(await db.payment.count()).toBe(0);
     const receipt = { purpose: 'stay' as const, bookingId: booking.id, payerIdentityId: guest.id, amountThb: booking.totalThb };
@@ -89,7 +89,7 @@ describe('manual payment reservations occupy canonical inventory', () => {
     const { project, input } = await fixture();
     const request = await createBooking(db, { ...input, instantBook: false, paymentMethod: 'cash' });
     await db.project.update({ where: { id: project.id }, data: { status: 'archived' } });
-    await expect(approveBookingRequest(db, { bookingId: request.id })).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    await expect(approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id })).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
     expect(await db.booking.findUniqueOrThrow({ where: { id: request.id } })).toMatchObject({ status: 'requested' });
   });
 });

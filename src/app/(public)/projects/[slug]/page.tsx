@@ -1,3 +1,5 @@
+import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
@@ -24,8 +26,6 @@ import { publicPageAlternates, serializeJsonLd } from '@/lib/seo';
 import { listPublicCommercialHomes } from '@/modules/projects/commercial-discovery';
 import { LocalDate } from '@/components/LocalDate';
 import { getDestination } from '@/modules/destinations';
-
-const HERO_IMAGE_SIZES = '(max-width: 1080px) 100vw, 1080px';
 
 export const dynamic = 'force-dynamic';
 
@@ -323,6 +323,9 @@ export default async function ProjectLandingPage({
     { href: '#lead-form', label: labels['project_page.nav.contact'] },
   ];
 
+  // Only project-scoped media belongs in this gallery; never borrow unit images.
+  const projectPhotos = [...new Set([project.coverUrl, ...project.galleryUrls].filter((url): url is string => Boolean(url)))];
+
   return (
     <main className="stitch-workspace">
       <script
@@ -330,58 +333,26 @@ export default async function ProjectLandingPage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="mx-auto max-w-content px-20 pt-24 md:px-32 md:pt-40">
-        <div className="relative isolate overflow-hidden rounded-lg bg-brand-deep shadow-float">
-          {project.coverUrl ? (
-            <Image
-              src={project.coverUrl}
-              alt={project.name}
-              fill
-              priority
-              sizes={HERO_IMAGE_SIZES}
-              className="absolute inset-0 -z-10 object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-          <div className="flex min-h-[320px] flex-col justify-end p-24 text-white md:min-h-[440px] md:p-40">
-            <div className="flex flex-wrap gap-8">
-              {areaLabel ? (
-                <span className="rounded-full bg-surface-paper/20 px-12 py-4 text-small font-semibold text-surface-paper backdrop-blur">{areaLabel}</span>
-              ) : null}
-              {editorial.eyebrow ? (
-                <span className="rounded-full bg-brand-sun px-12 py-4 text-small font-semibold text-brand-deep">{editorial.eyebrow}</span>
-              ) : null}
-            </div>
-            <h1 className="mt-12 max-w-4xl font-display text-display-xl font-semibold tracking-[-0.03em] text-white md:text-display-hero-lg">{project.name}</h1>
-            {editorial.headline && <p className="mt-12 max-w-3xl text-body text-white/90">{editorial.headline}</p>}
-            <p className="mt-8 text-small text-white/75">{project.address}</p>
-          </div>
-        </div>
+      <section className="mx-auto max-w-content px-20 pt-24 md:px-32 md:pt-32">
+        <PageHeading
+          kicker={[areaLabel, editorial.eyebrow].filter(Boolean).join(' · ')}
+          title={project.name}
+          subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
+        />
+        {projectPhotos.length > 0 ? (
+          <UnitPhotoMosaic
+            images={projectPhotos}
+            alt={project.name}
+            showAllLabel={`${labels['project_page.gallery.view_all']} · ${labels['project_page.gallery.count'].replace('{count}', String(projectPhotos.length))}`}
+          />
+        ) : null}
       </section>
 
-      {/* Project-level editorial gallery. Unit galleries remain separate. */}
-      {project.galleryUrls.length > 0 ? (
-        <section className="mx-auto max-w-content px-20 py-24 md:px-32 md:py-40" aria-label={project.name}>
-          <div className="grid grid-cols-2 gap-8 overflow-hidden rounded-lg bg-surface-sand p-8 shadow-card md:grid-cols-4 md:gap-12">
-            {project.galleryUrls.slice(0, 5).map((url, index) => (
-              <div key={url + index} className={`relative overflow-hidden rounded-md bg-surface-ivory ${index === 0 ? 'col-span-2 row-span-2 min-h-[260px] md:min-h-[420px]' : 'min-h-[126px] md:min-h-[204px]'}`}>
-                <Image src={url} alt={`${project.name} — photo ${index + 1}`} fill sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'} className="object-cover" />
-              </div>
-            ))}
-          </div>
-          {project.galleryUrls.length > 5 ? <details className="mt-16 rounded-lg border border-border-line p-16"><summary className="cursor-pointer font-semibold text-brand-andaman">{labels['project_page.gallery.view_all']} · {labels['project_page.gallery.count'].replace('{count}', String(project.galleryUrls.length))}</summary><div className="mt-16 grid grid-cols-2 gap-12 md:grid-cols-3">{project.galleryUrls.map((url, index) => <div key={url + index} className="overflow-hidden rounded-lg"><Image src={url} alt={`${project.name} — photo ${index + 1}`} width={640} height={400} className="h-44 w-full object-cover" /></div>)}</div></details> : null}
-        </section>
-      ) : null}
-
-      <ProjectPortalNav items={portalNavItems} />
-
-      <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
-      {bookableStayCount > 0 && <section id="availability" className="px-20 py-40 md:px-32">
-        <div className="mx-auto max-w-content rounded-lg border border-border-line bg-surface-paper p-20 shadow-card md:p-32">
-          <h2 className="mb-24 font-display text-heading-2 font-semibold text-text-ink">
+      {bookableStayCount > 0 && <section id="availability" className="mx-auto max-w-content px-20 py-24 md:px-32">
+        <div className="rounded-lg border border-border-line bg-surface-paper p-16 shadow-card md:p-20">
+          <h2 className="mb-16 font-display text-heading-3 font-semibold text-text-ink">
             {labels['project_page.availability.title']}
           </h2>
           <SearchBar
@@ -400,6 +371,9 @@ export default async function ProjectLandingPage({
           />
         </div>
       </section>}
+
+      <ProjectPortalNav items={portalNavItems} />
+      <ProjectEditorialSections editorial={editorial} projectId={project.id} />
 
       {(buyHomeCount > 0 || rentHomeCount > 0) ? (
         <section id="homes" className="mx-auto max-w-content px-20 py-40 md:px-32">

@@ -21,6 +21,7 @@ import { createNotification } from '@/modules/comms';
 import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 const CHECK_IN_BLOCK_LABELS = {
+  'booking.checkin.blocked.party_unknown': 'Guest counts are unknown. Check-in is blocked until the party has been verified.',
   'booking.checkin.blocked.not_confirmed': 'Only a confirmed booking can be checked in.',
   'booking.checkin.blocked.before_arrival': 'Check-in opens on the arrival date.',
   'booking.checkin.blocked.after_departure': 'The stay has ended; this booking can no longer be checked in.',
@@ -86,7 +87,13 @@ export async function POST(
       });
     } catch (error) {
       if (error instanceof CheckInBlockedError) {
-        const labels = await getLabels(CHECK_IN_BLOCK_LABELS);
+        const labels = await getLabels(CHECK_IN_BLOCK_LABELS, undefined, {
+          'booking.checkin.blocked.party_unknown': {
+            en: 'Guest counts are unknown. Check-in is blocked until the party has been verified.',
+            ru: 'Количество гостей неизвестно. Заселение недоступно до проверки состава гостей.',
+            th: 'ยังไม่ทราบจำนวนผู้เข้าพัก ไม่สามารถเช็คอินได้จนกว่าจะตรวจสอบจำนวนผู้เข้าพักแล้ว',
+          },
+        });
         return NextResponse.json(
           { error: labels[`booking.checkin.blocked.${error.code}`], code: error.code },
           { status: 409 }

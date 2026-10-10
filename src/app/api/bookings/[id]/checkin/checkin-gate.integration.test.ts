@@ -68,6 +68,28 @@ describe('POST /api/bookings/[id]/checkin — TM30-safe check-in', () => {
     expect(await db.tm30Filing.count({ where: { bookingId } })).toBe(0);
   });
 
+
+  it('blocks explicit imported-party uncertainty without changing the stay or creating filings', async () => {
+    const sourceTerms = { partyUnknown: true, source: 'layantara', importedFrom: 'operator_workbook' };
+    await db.booking.update({ where: { id: bookingId }, data: { priceBreakdown: sourceTerms } });
+    await db.bookingGuest.createMany({ data: [
+      { bookingId, fullName: 'enc:A', nationality: 'RU', passportNumber: 'enc:P1', isLead: true },
+      { bookingId, fullName: 'enc:B', nationality: 'TH', passportNumber: '' },
+    ] });
+
+    const response = await checkIn(postRequest(), { params: { id: bookingId } });
+    expect(response.status).toBe(409);
+    const body = await response.json();
+    expect(body.code).toBe('party_unknown');
+    expect(typeof body.error).toBe('string');
+    expect(body.error.length).toBeGreaterThan(0);
+    const booking = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+    expect(booking.status).toBe('confirmed');
+    expect(booking.checkedInAt).toBeNull();
+    expect(booking.priceBreakdown).toEqual(sourceTerms);
+    expect(await db.tm30Filing.count({ where: { bookingId } })).toBe(0);
+  });
+
   it('refuses a foreign guest without a passport', async () => {
     await db.bookingGuest.createMany({
       data: [

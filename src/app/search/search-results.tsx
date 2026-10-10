@@ -7,6 +7,7 @@ import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { PageHeading } from '@/components/premium/StitchPage';
 import { SearchBar } from '@/components/SearchBar';
 import { SearchResultsMap, type SearchMapProject } from '@/components/search/SearchResultsMap';
 
@@ -316,10 +317,12 @@ export default function SearchResults({
   };
 
   return (
-    <div className="stitch-workspace p-20 md:p-32">
+    // Without dates, DiscoveryHomes follows this section in SearchPage.
+    // Keep the form content-height instead of inserting a full empty viewport.
+    <div className={`${hasDates ? 'stitch-workspace' : 'bg-surface-mint text-text-ink'} p-20 md:p-32`}>
       <div className="mx-auto max-w-content">
         <div className="mb-24">
-          <h1 className="font-display text-display-xl font-semibold text-text-ink mb-16">{labels.title}</h1>
+          <PageHeading title={labels.title} />
           <SearchBar
             projectId={projectId ?? undefined}
             areaSlug={areaSlug ?? undefined}

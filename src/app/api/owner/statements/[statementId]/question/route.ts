@@ -47,29 +47,8 @@ export async function POST(
       [user.identityId]: 'owner',
     };
 
-    const staff = await prisma.roleAssignment.findMany({
-      where: {
-        role: 'staff_ops',
-        status: 'active',
-        projectId: statement.unit.projectId,
-      },
-      select: { identityId: true },
-      distinct: ['identityId'],
-    });
-    for (const member of staff) {
-      participantIds.add(member.identityId);
-      participantRoles[member.identityId] = 'staff_ops';
-    }
-
-    const admins = await prisma.identity.findMany({
-      where: { isAdmin: true, status: 'active' },
-      select: { id: true },
-    });
-    for (const admin of admins) {
-      participantIds.add(admin.id);
-      participantRoles[admin.id] = 'admin';
-    }
-
+    // The thread service derives the live financial audience from this
+    // statement; caller-provided participants cannot grant extra access.
     const { id: threadId } = await findOrCreateThread(prisma, {
       contextType: 'statement',
       contextId: statement.id,

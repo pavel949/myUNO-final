@@ -37,3 +37,15 @@ describe('public discovery visibility separate from booking', () => {
     ]);
   });
 });
+
+
+it('projects sleeping facts only after the existing public visibility filter', async () => {
+  mocks.findMany.mockResolvedValue([{ ...unit, sleepingSpaces: [{ spaceType: 'bedroom', sortOrder: 0, name: 'private-room', notes: 'private-note', beds: [{ bedType: 'double', count: 1, accessCode: 'private-code' }] }] }]);
+  const [result] = await listPublicDiscoveryUnits({ unitId: 'visible' });
+  expect(mocks.findMany.mock.lastCall?.[0].where.AND).toEqual([
+    discoveryVisibility({ unitIds: ['imported'], projectIds: ['imported-project'] }), { id: 'visible' },
+  ]);
+  expect(result.sleepingSpaces).toEqual([{ spaceType: 'bedroom', sortOrder: 0, beds: [{ bedType: 'double', count: 1 }] }]);
+  expect(JSON.stringify(result)).not.toContain('private-');
+  expect(result).not.toHaveProperty('bookable');
+});

@@ -20,6 +20,8 @@ vi.mock('@/lib/prisma', async () => {
   return { prisma: util.db };
 });
 
+import { approveBookingRequest } from '@/modules/booking';
+import { canApproveBookingCandidate } from '@/app/libs/bookingOperationsAccess';
 import { POST as checkIn } from './checkin/route';
 import { POST as checkOut } from './check-out/route';
 
@@ -139,4 +141,30 @@ describe('booking ops route authorization for management company scope', () => {
     const response = await checkOut(postRequest(), { params: { id: checkOutBookingId } });
     expect(response.status).toBe(403);
   });
+
+  it('never substitutes another MCs same-category villa during request approval', async () => {
+    const original = await db.unit.findUniqueOrThrow({ where: { id: unitId } });
+    const foreignUnit = await createUnit({ projectId, ownerIdentityId: owner.id, status: 'live', categoryKey: original.categoryKey ?? undefined, name: 'Other MC villa' });
+    expect(foreignUnit.inventoryCategoryId).toBe(original.inventoryCategoryId);
+    await db.unitEngagement.create({ data: { unitId: foreignUnit.id, ownerIdentityId: owner.id, engagementType: 'via_management_company', managementOrgId: otherOrgId, status: 'active' } });
+    await db.roleAssignment.create({ data: { identityId: operator.id, role: 'mc_member', scopeType: 'project', projectId, organizationId: managementOrgId, status: 'active' } });
+    const request = await createBooking({ unitId, projectId, guestIdentityId: guest.id, status: 'requested', startDate: new Date('2030-01-10'), endDate: new Date('2030-01-12') });
+    await db.booking.update({ where: { id: request.id }, data: { priceBreakdown: {
+      inventory_category_id: original.inventoryCategoryId,
+      inventory_selection: { version: 1, kind: 'category', inventoryCategoryId: original.inventoryCategoryId },
+    } } });
+    await db.blockedDate.create({ data: { unitId, startDate: request.startDate, endDate: request.endDate, reason: 'maintenance' } });
+    await expect(approveBookingRequest(db, {
+      bookingId: request.id,
+      authorizeCandidate: (tx, scope) => canApproveBookingCandidate(tx, operator.id, scope),
+    })).rejects.toMatchObject({ code: 'DOUBLE_BOOK' });
+    expect(await db.booking.findUniqueOrThrow({ where: { id: request.id } })).toMatchObject({ unitId, status: 'requested' });
+    expect(await db.booking.count({ where: { unitId: foreignUnit.id } })).toBe(0);
+    await db.roleAssignment.updateMany({ where: { identityId: operator.id }, data: { status: 'revoked' } });
+    await expect(approveBookingRequest(db, {
+      bookingId: request.id,
+      authorizeCandidate: (tx, scope) => canApproveBookingCandidate(tx, operator.id, scope),
+    })).rejects.toMatchObject({ code: 'BOOKING_FORBIDDEN' });
+  });
+
 });

@@ -41,7 +41,7 @@ describe('POST /api/owner/statements/[statementId]/question', () => {
     const engagement = await createUnitEngagement({
       unitId: unit.id,
       ownerIdentityId: owner.id,
-      engagementType: 'direct_managed',
+      type: 'direct_managed',
       status: 'active',
     });
 

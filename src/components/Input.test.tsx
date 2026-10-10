@@ -24,6 +24,29 @@ describe('Input component', () => {
     });
   });
 
+  describe('native required validation', () => {
+    it('forwards required while preserving the label and help association', async () => {
+      render(<Input label="Contact" required helpText="Email or phone" />);
+      const input = screen.getByRole('textbox', { name: /Contact/ }) as HTMLInputElement;
+
+      expect(screen.getByText('*')).toBeInTheDocument();
+      expect(input).toBeRequired();
+      expect(input.validity.valueMissing).toBe(true);
+      expect(input.checkValidity()).toBe(false);
+      expect(input).toHaveAccessibleDescription('Email or phone');
+
+      await userEvent.type(input, 'guest@example.com');
+      expect(input.checkValidity()).toBe(true);
+    });
+
+    it('keeps optional inputs optional', () => {
+      const { rerender } = render(<Input label="Note" />);
+      expect(screen.getByRole('textbox', { name: 'Note' })).not.toBeRequired();
+      rerender(<Input label="Note" required={false} />);
+      expect(screen.getByRole('textbox', { name: 'Note' })).not.toBeRequired();
+    });
+  });
+
   describe('placeholder and value', () => {
     it('renders with placeholder', () => {
       render(<Input placeholder="Enter text" />);

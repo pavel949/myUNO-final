@@ -1,3 +1,5 @@
+import { getBookingThreadParticipants } from './booking-thread-access';
+import { canAccessThread, getAuthorizedThreadParticipants, getStatementThreadParticipants, requireThreadAccess } from './statement-thread-access';
 import { PrismaClient, ThreadContextType, MessageKind } from '@prisma/client';
 import { publishMessage } from './thread.bus';
 import { track } from '@/modules/analytics';
@@ -28,7 +30,33 @@ export async function findOrCreateThread(
   db: PrismaClient,
   input: CreateThreadInput
 ): Promise<{ id: string; created: boolean }> {
-  const { contextType, contextId, projectId, participantIdentityIds, participantRoles = {} } = input;
+  const { contextType, contextId } = input;
+  let { projectId, participantIdentityIds, participantRoles = {} } = input;
+  if (contextType === 'booking') {
+    if (!contextId) throw new Error('Booking not found');
+    const audience = await getBookingThreadParticipants(db, contextId);
+    const result = await db.$transaction(async tx => {
+      const lockKey = JSON.stringify(['booking', contextId]);
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+      const existing = await tx.thread.findFirst({ where: { contextType, contextId } });
+      const thread = existing ?? await tx.thread.create({ data: { contextType, contextId, projectId: audience.projectId } });
+      for (const identityId of audience.participantIdentityIds) {
+        await tx.threadParticipant.upsert({
+          where: { threadId_identityId: { threadId: thread.id, identityId } },
+          create: { threadId: thread.id, identityId, participantRole: audience.participantRoles[identityId] },
+          update: { participantRole: audience.participantRoles[identityId] },
+        });
+      }
+      return { id: thread.id, created: !existing };
+    });
+    if (result.created) await track(db, 'message_thread_started', { projectId: audience.projectId, contextType }).catch(() => null);
+    return result;
+  }
+  if (contextType === 'statement') {
+    const audience = contextId ? await getStatementThreadParticipants(db, contextId) : null;
+    if (!audience) throw new Error('Statement not found');
+    ({ projectId, participantIdentityIds, participantRoles } = audience);
+  }
 
   // Check if thread exists for this context
   const existingThread = await db.thread.findFirst({
@@ -86,19 +114,7 @@ export async function sendMessage(
 
     // Verify sender is a participant (if authenticated)
     if (senderIdentityId) {
-      const isParticipant = await db.threadParticipant.findUnique({
-        where: {
-          threadId_identityId: {
-            threadId,
-            identityId: senderIdentityId,
-          },
-        },
-      });
-
-      if (!isParticipant) {
-        console.error(`Identity ${senderIdentityId} is not a participant in thread ${threadId}`);
-        return null;
-      }
+      if (!(await canAccessThread(db, threadId, senderIdentityId))) return null;
     }
 
     // Create the message
@@ -146,6 +162,7 @@ export async function markThreadRead(
   threadId: string,
   identityId: string
 ): Promise<void> {
+  await requireThreadAccess(db, threadId, identityId);
   await db.threadParticipant.update({
     where: {
       threadId_identityId: {
@@ -168,7 +185,7 @@ export async function getThreadsForIdentity(
   identityId: string,
   limit: number = 50
 ) {
-  return db.thread.findMany({
+  const threads = await db.thread.findMany({
     where: {
       participants: {
         some: {
@@ -186,6 +203,14 @@ export async function getThreadsForIdentity(
     orderBy: { lastMessageAt: 'desc' },
     take: limit,
   });
+  const visible = await Promise.all(threads.map(async thread => {
+    if (thread.contextType !== 'statement' && thread.contextType !== 'booking') return thread;
+    const allowed = await getAuthorizedThreadParticipants(db, thread);
+    if (!allowed.some(participant => participant.identityId === identityId)) return null;
+    return { ...thread, participants: thread.participants.filter(participant =>
+      allowed.some(current => current.identityId === participant.identityId)) };
+  }));
+  return visible.filter((thread): thread is NonNullable<typeof thread> => thread !== null);
 }
 
 /**
@@ -198,19 +223,7 @@ export async function getThreadMessages(
   limit: number = 50,
   offset: number = 0
 ) {
-  // Verify participant access
-  const isParticipant = await db.threadParticipant.findUnique({
-    where: {
-      threadId_identityId: {
-        threadId,
-        identityId,
-      },
-    },
-  });
-
-  if (!isParticipant) {
-    throw new Error('Not a participant in this thread');
-  }
+  await requireThreadAccess(db, threadId, identityId);
 
   return db.message.findMany({
     where: { threadId },
@@ -305,6 +318,7 @@ export async function getUnreadCounts(
   const counts: Record<string, number> = {};
 
   for (const thread of threads) {
+    if ((thread.contextType === 'statement' || thread.contextType === 'booking') && !(await canAccessThread(db, thread.id, identityId))) continue;
     const participant = thread.participants[0];
     const lastRead = participant?.lastReadAt;
 

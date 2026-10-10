@@ -6,14 +6,13 @@ import { excludedSourceControlledUnits } from '@/modules/booking/source-authorit
 import { resolveStayCancellationPolicy, resolveStayCancellationPolicyForDates } from '@/modules/booking';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { assessUnitMediaReadiness } from '@/modules/media/public-readiness';
-import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
 import { tMany } from '@/modules/content';
 import { getRequestLocale } from '@/lib/i18n';
 
 /**
  * GET /api/units/[unitId]
  * Public unit detail for the guest-facing unit page (S4).
- * Live units and provenance-backed imported managed drafts can be visible;
+ * Live units only; imported drafts use the separate inquiry-only discovery reader.
  * returns the guest-safe subset of fields
  * (no owner identity, no engagement economics, no internal status detail).
  *
@@ -123,26 +122,17 @@ export async function GET(
       },
     });
 
-    const [managedImported, sourceBlockedIds] = await Promise.all([
-      managedImportedInventoryIds(prisma),
-      excludedSourceControlledUnits(prisma, [params.unitId]),
-    ]);
+    const sourceBlockedIds = await excludedSourceControlledUnits(prisma, [params.unitId]);
     const sourceBlocked = sourceBlockedIds.includes(params.unitId);
-    const unitPublished =
-      unit?.status === 'live' ||
-      (unit?.status === 'draft' && managedImported.unitIds.includes(unit.id));
-    const projectPublished =
-      unit?.project.status === 'live' ||
-      (unit?.project.status === 'draft' && managedImported.projectIds.includes(unit.project.id));
 
-    // Legacy imported managed rows can be public before their old draft bit is
-    // reconciled, but they still pass the complete stay-readiness gates below.
+    // This endpoint supplies the priced booking widget. Import provenance
+    // grants discovery visibility, never permission to quote or book a draft.
     if (
       !unit ||
-      !unitPublished ||
+      unit.status !== 'live' ||
       sourceBlocked ||
       unit.assetStatus === 'suspended' ||
-      !projectPublished ||
+      unit.project.status !== 'live' ||
       unit.inventoryCategory?.status !== 'live' ||
       (Boolean(unit.project.projectType) && !unit.commercialOfferings.some(offer =>
         ['short_term_stay', 'short_stay'].includes(offer.offeringType) && offer.status === 'active'))

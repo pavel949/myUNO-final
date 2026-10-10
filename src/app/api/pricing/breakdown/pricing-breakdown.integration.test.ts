@@ -23,10 +23,11 @@ describe('POST /api/pricing/breakdown — satang-to-baht display boundary (Q47)'
   });
 
   it('quotes the guest in baht, not the satang the engine computes internally', async () => {
-    const project = await createProject();
+    const project = await createProject({ status: 'live' });
     // 1000 satang/night stored — the quote for 3 nights must read ฿30, not ฿3000.
     const unit = await createUnit({
       projectId: project.id,
+      status: 'live',
       baseNightlyThb: 1000,
       minNights: 1,
       maxGuests: 2,
@@ -50,5 +51,17 @@ describe('POST /api/pricing/breakdown — satang-to-baht display boundary (Q47)'
     expect(data.nightlyRate).toBe(10);
     expect(data.lines).toHaveLength(3);
     expect(data.lines[0].nightly_thb).toBe(10);
+  });
+
+  it('does not expose a checkout quote for an unpublished unit with saved rates', async () => {
+    const project = await createProject({ status: 'live' });
+    const unit = await createUnit({ projectId: project.id, status: 'draft', baseNightlyThb: 1000 });
+    const response = await POST(makeRequest({
+      unitId: unit.id, startDate: '2027-01-15', endDate: '2027-01-18', guestCount: 1,
+    }));
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body).not.toHaveProperty('total');
+    expect(body).not.toHaveProperty('lines');
   });
 });

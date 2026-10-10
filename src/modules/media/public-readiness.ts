@@ -1,3 +1,4 @@
+import { isAllowedVideoType, MAX_VIDEO_UPLOAD_BYTES } from './video-policy';
 export const MIN_PUBLIC_GALLERY_PHOTOS = 3;
 export const RECOMMENDED_PUBLIC_GALLERY_PHOTOS = 5;
 
@@ -34,6 +35,7 @@ export type GalleryReadiness = {
   blockers: string[];
   warnings: string[];
   urls: string[];
+  videoUrls: string[];
 };
 
 export type UnitMediaReadiness = GalleryReadiness & {
@@ -65,6 +67,7 @@ export function assessGalleryReadiness(input: {
   const seen = new Set<string>();
   const invalidMediaIds: string[] = [];
   const valid: GalleryLinkLike[] = [];
+  const videoUrls: string[] = [];
 
   for (const link of input.links) {
     if (seen.has(link.mediaId)) {
@@ -72,6 +75,12 @@ export function assessGalleryReadiness(input: {
       continue;
     }
     seen.add(link.mediaId);
+    if (link.media.kind === 'video' && !link.media.encrypted &&
+        isAllowedVideoType(link.media.mimeType) && link.media.sizeBytes > 0 &&
+        link.media.sizeBytes <= MAX_VIDEO_UPLOAD_BYTES && link.media.storageKey?.trim()) {
+      videoUrls.push(link.media.storageKey);
+      continue;
+    }
     if (!validPublicPhoto(link.media)) {
       invalidMediaIds.push(link.mediaId);
       continue;
@@ -105,6 +114,7 @@ export function assessGalleryReadiness(input: {
     invalidMediaIds,
     blockers,
     warnings,
+    videoUrls,
     urls: valid.map((link) => link.media.storageKey),
   };
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import { assertCommercialOfferingReadyForActivation } from '@/modules/onboarding';
+import { saveSleepingSpace, SleepingSpaceRequestConflict } from '@/modules/projects/sleeping-space-write';
 
 /**
  * A mapped Layantara home remains source-owned until independently verified
@@ -62,19 +63,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   try {
     const body = await req.json();
     if (body.action === 'sleeping_space') {
-      const space = await prisma.sleepingSpace.create({
-        data: {
-          unitId: params.id,
-          spaceType: body.spaceType || 'bedroom',
-          name: body.name || null,
-          sortOrder: Number(body.sortOrder) || 0,
-          beds: {
-            create: (body.beds || []).filter((bed: { count?: number }) => Number(bed.count) > 0).map((bed: { bedType: string; count: number }) => ({ bedType: bed.bedType, count: Number(bed.count) })),
-          },
-        },
-        include: { beds: true },
-      });
-      return NextResponse.json(space, { status: 201 });
+      try {
+        const { space, created } = await saveSleepingSpace(prisma, params.id, body);
+        return NextResponse.json(space, { status: created ? 201 : 200 });
+      } catch (error) {
+        if (error instanceof SleepingSpaceRequestConflict) {
+          return NextResponse.json({ error: error.message }, { status: 409 });
+        }
+        throw error;
+      }
     }
     if (body.action === 'stay_offering') {
       const unit = await prisma.unit.findUnique({

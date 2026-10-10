@@ -1,13 +1,15 @@
+import { ownerEvidenceLabelsForLocale, OWNER_EVIDENCE_LOCALE_DRAFTS } from '@/modules/content/owner-evidence.seed';
+import { sleepingSpaceLabelsForLocale, SLEEPING_SPACE_LOCALE_DRAFTS } from '@/modules/content/sleeping-space.seed';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getPropertyReadiness } from '@/modules/projects';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import PropertyOnboardingClient from './property-onboarding-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PropertyOnboardingPage({ params, searchParams }: { params: { id: string }; searchParams?: { gallery?: string } }) {
-  const [project, readiness, galleryLabels] = await Promise.all([
+  const [project, readiness, galleryLabels, ownerEvidenceLabels, sleepingLabels] = await Promise.all([
     prisma.project.findUnique({
       where: { id: params.id },
       include: {
@@ -39,7 +41,9 @@ export default async function PropertyOnboardingPage({ params, searchParams }: {
       'admin.gallery.safe_remove': 'Removing a photo only detaches it from this gallery.',
       'admin.gallery.saved': 'Gallery saved.',
     }),
+    getLabels(ownerEvidenceLabelsForLocale('en'), getRequestLocale(), OWNER_EVIDENCE_LOCALE_DRAFTS),
+    getLabels(sleepingSpaceLabelsForLocale('en'), getRequestLocale(), SLEEPING_SPACE_LOCALE_DRAFTS),
   ]);
   if (!project || !readiness) notFound();
-  return <PropertyOnboardingClient initialProject={JSON.parse(JSON.stringify(project))} initialReadiness={readiness} initialGallery={searchParams?.gallery} galleryLabels={galleryLabels} />;
+  return <PropertyOnboardingClient initialProject={JSON.parse(JSON.stringify(project))} initialReadiness={readiness} initialGallery={searchParams?.gallery} galleryLabels={galleryLabels} ownerEvidenceLabels={ownerEvidenceLabels} sleepingLabels={sleepingLabels} />;
 }

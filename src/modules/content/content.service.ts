@@ -113,7 +113,8 @@ function formatPlaceholders(template: string, params?: TranslationParams): strin
 export async function tMany(
   db: PrismaClient,
   keys: string[],
-  locale: Locale = DEFAULT_LOCALE
+  locale: Locale = DEFAULT_LOCALE,
+  options: { requestedLocaleFallbacks?: Record<string, string> } = {}
 ): Promise<Record<string, string | null>> {
   const chain = getLocaleFallbackChain(locale);
   const resolved: Record<string, string | null> = {};
@@ -131,6 +132,14 @@ export async function tMany(
       if (cached === undefined) break;
       if (cached !== null) {
         resolved[key] = cached;
+        decided = true;
+        break;
+      }
+      // A screen may supply its registered draft in the selected locale.
+      // Keep it out of the cache: drafts must never shadow a later CMS row or
+      // leak into callers that use the normal cross-locale fallback policy.
+      if (tryLocale === locale && options.requestedLocaleFallbacks?.[key]) {
+        resolved[key] = options.requestedLocaleFallbacks[key];
         decided = true;
         break;
       }
@@ -178,6 +187,9 @@ export async function tMany(
         // each miss above it.
         cache.set(getCacheKey(key, tryLocale), found ?? null);
         if (found && value === null) value = found;
+        if (tryLocale === locale && value === null) {
+          value = options.requestedLocaleFallbacks?.[key] || null;
+        }
       }
       resolved[key] = value;
       if (value === null) warnMissingOnce(key, locale);

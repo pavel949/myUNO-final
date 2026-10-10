@@ -27,28 +27,37 @@ export function getRequestLocale(): Locale {
  * legible when the key is not yet translated or the DB is unreachable.
  * New keys used here must also be added to the content seed as
  * `needs_review` drafts (doc 05 §1).
+ * Bounded static UI surfaces can supply the same registered locale drafts:
+ * selected-locale CMS copy wins, then that locale's draft, then the usual
+ * cross-locale fallback. This never changes review status or edits CMS rows.
  */
 export async function getLabels<K extends string>(
   keys: Record<K, string>,
-  locale?: Locale
+  locale?: Locale,
+  localeDrafts?: Partial<Record<K, Partial<Record<Locale, string>>>>
 ): Promise<Record<K, string>> {
   const resolvedLocale = locale || getRequestLocale();
   const keyList = Object.keys(keys) as K[];
   const labels = {} as Record<K, string>;
+  const requestedLocaleFallbacks = Object.fromEntries(keyList.flatMap(key => {
+    const draft = localeDrafts?.[key]?.[resolvedLocale];
+    return draft ? [[key, draft]] : [];
+  }));
 
   let resolved: Record<string, string | null> = {};
   try {
     // One query for the whole batch (see content.service.tMany). Previously
     // this fired a query per key, so a page's labels alone cost ~120 round
     // trips before anything rendered.
-    resolved = await tMany(prisma, keyList, resolvedLocale);
+    resolved = await tMany(prisma, keyList, resolvedLocale, { requestedLocaleFallbacks });
   } catch {
-    // DB unreachable — every key falls through to its EN draft below.
+    // DB unreachable — use the registered locale draft, or the usual EN fallback.
   }
 
   for (const key of keyList) {
     const value = resolved[key];
-    labels[key] = value && value !== key && value !== '\u2014' ? value : keys[key];
+    labels[key] = value && value !== key && value !== '\u2014'
+      ? value : requestedLocaleFallbacks[key] || keys[key];
   }
 
   return labels;

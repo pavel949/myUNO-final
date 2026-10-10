@@ -15,7 +15,6 @@ import {
   boundsWhere,
 } from '@/modules/browse';
 import { listAreas, collectDescendantIds } from '@/modules/projects';
-import { managedImportedInventoryIds } from '@/modules/projects/public-managed-import';
 import { getDestination } from '@/modules/destinations';
 import {
   assessGalleryReadiness,
@@ -163,25 +162,14 @@ export async function GET(req: NextRequest) {
           ? { projectId: effectiveProjectId }
           : {};
 
-    const [sourceExcludedUnitIds, managedImported] = await Promise.all([
-      allExcludedSourceControlledUnitIds(prisma),
-      managedImportedInventoryIds(prisma),
-    ]);
+    const sourceExcludedUnitIds = await allExcludedSourceControlledUnitIds(prisma);
     const projectFilter: any = {
-      ...(managedImported.projectIds.length
-        ? {
-            OR: [
-              { status: 'live' },
-              { status: 'draft', id: { in: managedImported.projectIds } },
-            ],
-          }
-        : { status: 'live' }),
+      status: 'live',
       ...(parsedBounds.bounds ? boundsWhere(parsedBounds.bounds).project : {}),
     };
 
-    // Source-controlled units must be absent from *all* public search modes
-    // until authority is cut over. Imported managed draft rows are eligible
-    // only for the same downstream category/offering/media/pricing gates.
+    // Priced stay results must match booking's live unit/project gates.
+    // Imported drafts remain visible in the separate inquiry-only discovery.
     const where: any = {
       ...(sourceExcludedUnitIds.length > 0 && { id: { notIn: sourceExcludedUnitIds } }),
       assetStatus: { not: 'suspended' },
@@ -190,15 +178,8 @@ export async function GET(req: NextRequest) {
       ...projectScope,
       // A sale-only or lease-only physical unit is not a guest stay. The
       // legacy untyped portfolio remains readable during staged migration.
+      status: 'live',
       AND: [
-        {
-          OR: [
-            { status: 'live' },
-            ...(managedImported.unitIds.length
-              ? [{ status: 'draft', id: { in: managedImported.unitIds } }]
-              : []),
-          ],
-        },
         { OR: [
           { project: { projectType: null } },
           { commercialOfferings: { some: {

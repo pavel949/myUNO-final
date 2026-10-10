@@ -57,8 +57,7 @@ export async function POST(req: NextRequest) {
     // A quote is informative, not an inventory hold. Its availability flag
     // must nevertheless use the same booking/blocked-date and source-authority
     // inputs as the unit detail. Booking re-checks under its transaction lock.
-    const [engine, unit, calendarAvailable, sourceExcluded] = await Promise.all([
-      computePriceBreakdown(prisma, unitId, startDate, endDate, Number(guestCount) || 1),
+    const [unit, sourceExcluded] = await Promise.all([
       prisma.unit.findUnique({
         where: { id: unitId },
         select: {
@@ -70,14 +69,20 @@ export async function POST(req: NextRequest) {
           project: { select: { status: true } },
         },
       }),
-      checkAvailability(prisma, unitId, startDate, endDate),
       excludedSourceControlledUnits(prisma, [unitId]),
     ]);
-    const isAvailable = Boolean(
-      unit && unit.status === 'live' && unit.assetStatus !== 'suspended' &&
-      unit.inventoryCategory?.status === 'live' && unit.project.status === 'live' &&
-      calendarAvailable && sourceExcluded.length === 0
-    );
+    // Internal tariff previews may calculate draft prices; this public seam
+    // must not advertise those drafts as a guest quote or checkout offer.
+    if (!unit || unit.status !== 'live' || unit.assetStatus === 'suspended' ||
+        unit.inventoryCategory?.status !== 'live' || unit.project.status !== 'live' ||
+        sourceExcluded.length > 0) {
+      throw createPublicError('This stay is not available', 404);
+    }
+    const [engine, calendarAvailable] = await Promise.all([
+      computePriceBreakdown(prisma, unitId, startDate, endDate, Number(guestCount) || 1),
+      checkAvailability(prisma, unitId, startDate, endDate),
+    ]);
+    const isAvailable = calendarAvailable;
 
     const nights = engine.lines.length;
 

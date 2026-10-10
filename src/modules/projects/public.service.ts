@@ -65,6 +65,7 @@ export interface PublicProjectCategory {
   monthlyFromThb: number | null;
   coverUrl: string | null;
   galleryUrls: string[];
+  videoUrls?: string[];
 }
 
 export interface PublicProjectReview {
@@ -117,6 +118,7 @@ export interface PublicProjectUnit {
   instantBook: boolean;
   coverUrl: string | null;
   galleryUrls: string[];
+  videoUrls?: string[];
   photoScope?: 'exact_unit' | 'room_type';
   /** Visible catalogue fact is independent from whether online stay booking is ready. */
   mediaReady: boolean;
@@ -139,6 +141,7 @@ export interface PublicProjectDetail {
   areaDescriptionKey: string | null;
   coverUrl: string | null;
   galleryUrls: string[];
+  videoUrls?: string[];
   units: PublicProjectUnit[];
   categories: PublicProjectCategory[];
   reviews: PublicProjectReviews;
@@ -192,6 +195,8 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
         },
         select: {
           id: true,
+          status: true,
+          assetStatus: true,
           project: { select: { projectType: true } },
           accommodationType: true,
           coverMediaId: true,
@@ -258,7 +263,10 @@ export async function listPublicProjects(locale: Locale = 'en'): Promise<PublicP
       const hasStayOffering = p.projectType === null || unit.commercialOfferings.some(
         offering => ['short_term_stay', 'short_stay'].includes(offering.offeringType)
       );
-      return mediaReady &&
+      return p.status === 'live' &&
+        unit.status === 'live' &&
+        unit.assetStatus !== 'suspended' &&
+        mediaReady &&
         hasStayOffering &&
         unit.inventoryCategory?.status === 'live' &&
         !excludedIds.includes(unit.id);
@@ -369,7 +377,10 @@ export async function getPublicProjectBySlug(
     const hasStayOffering = project.projectType === null || unit.commercialOfferings.some(
       offering => ['short_term_stay', 'short_stay'].includes(offering.offeringType)
     );
-    const bookable = media.ready &&
+    const bookable = project.status === 'live' &&
+      unit.status === 'live' &&
+      unit.assetStatus !== 'suspended' &&
+      media.ready &&
       hasStayOffering &&
       unit.inventoryCategory?.status === 'live' &&
       !excludedIds.includes(unit.id) &&
@@ -382,7 +393,7 @@ export async function getPublicProjectBySlug(
   });
 
   const [categories, reviews, amenities, nearbyPlaces] = await Promise.all([
-    buildPublicCategories(project.id, project.slug, project.units),
+    buildPublicCategories(project.id, project.slug, publicUnits.map(({ unit, bookable }) => ({ ...unit, bookable }))),
     buildPublicReviews(project.id),
     listPublicProjectAmenities(prisma, project.id, locale),
     listProjectNearbyPlaces(prisma, project.id, Number(project.latitude), Number(project.longitude))
@@ -408,6 +419,7 @@ export async function getPublicProjectBySlug(
     areaDescriptionKey: project.area?.descriptionKey ?? null,
     coverUrl: projectMedia.ready ? projectMedia.coverUrl : null,
     galleryUrls: projectMedia.ready ? projectMedia.urls : [],
+    videoUrls: projectMedia.ready ? projectMedia.videoUrls : [],
     units: publicUnits.map(({ unit: u, media, bookable }) => ({
       id: u.id,
       name: u.name,
@@ -429,6 +441,7 @@ export async function getPublicProjectBySlug(
       instantBook: bookable && u.instantBook,
       coverUrl: media.ready ? media.coverUrl : null,
       galleryUrls: media.ready ? media.urls : [],
+      videoUrls: media.ready ? media.videoUrls : [],
       photoScope: media.ready ? (media.photoScope === 'room_type' ? 'room_type' : 'exact_unit') : undefined,
       mediaReady: media.ready,
       bookable,
@@ -449,7 +462,8 @@ export async function getPublicProjectBySlug(
 async function buildPublicCategories(
   projectId: string,
   projectSlug: string,
-  liveUnits: {
+  visibleUnits: {
+    bookable: boolean;
     categoryKey: string | null;
     baseNightlyThb: number;
     inventoryCategory: {
@@ -485,7 +499,7 @@ async function buildPublicCategories(
         coverMediaId: category.coverMediaId,
         links: category.galleryMedia,
       });
-      const units = liveUnits.filter(
+      const units = visibleUnits.filter(
         (unit) => (unit.inventoryCategory?.categoryKey ?? unit.categoryKey) === category.categoryKey
       );
       return [{
@@ -496,10 +510,11 @@ async function buildPublicCategories(
         styleKey: null,
         bedrooms: category.bedrooms,
         unitCount: units.length,
-        fromNightlyThb: category.baseNightlyThb > 0 ? category.baseNightlyThb : null,
+        fromNightlyThb: units.some(unit => unit.bookable) && category.baseNightlyThb > 0 ? category.baseNightlyThb : null,
         monthlyFromThb: null,
         coverUrl: categoryMedia.ready ? categoryMedia.coverUrl : null,
         galleryUrls: categoryMedia.ready ? categoryMedia.urls : [],
+        videoUrls: categoryMedia.ready ? categoryMedia.videoUrls : [],
       }];
     })
     .filter((category) => category.unitCount > 0);
@@ -549,6 +564,7 @@ export interface PublicUnitDetail extends PublicProjectUnit {
   descriptionKey: string | null;
   minNights: number;
   galleryUrls: string[];
+  videoUrls?: string[];
   amenityKeys: string[];
   project: {
     slug: string;
@@ -560,22 +576,14 @@ export interface PublicUnitDetail extends PublicProjectUnit {
 }
 
 export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | null> {
-  const [excludedIds, managedImported] = await Promise.all([
-    allExcludedSourceControlledUnitIds(prisma),
-    managedImportedInventoryIds(prisma),
-  ]);
+  // Inquiry-only inventory is served by listPublicDiscoveryUnits on the unit page.
+  // This reader powers the priced booking widget and must retain strict live gates.
+  const excludedIds = await allExcludedSourceControlledUnitIds(prisma);
   const unit = await prisma.unit.findFirst({
     where: {
-      id,
-      ...publicStayUnitWhere(excludedIds, managedImported.unitIds),
-      project: {
-        OR: [
-          { status: 'live' },
-          ...(managedImported.projectIds.length
-            ? [{ status: 'draft' as const, id: { in: managedImported.projectIds } }]
-            : []),
-        ],
-      },
+      ...publicStayUnitWhere(excludedIds),
+      id: { equals: id, ...(excludedIds.length ? { notIn: excludedIds } : {}) },
+      project: { status: 'live' },
     },
     include: {
       coverMedia: { select: { id: true, storageKey: true, kind: true, mimeType: true, encrypted: true, sizeBytes: true } },
@@ -614,8 +622,9 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
 
   if (
     !unit ||
-    (unit.status !== 'live' && !managedImported.unitIds.includes(unit.id)) ||
-    (unit.project.status !== 'live' && !managedImported.projectIds.includes(unit.project.id)) ||
+    unit.status !== 'live' ||
+    unit.assetStatus === 'suspended' ||
+    unit.project.status !== 'live' ||
     unit.inventoryCategory?.status !== 'live'
   ) return null;
 
@@ -650,6 +659,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     instantBook: unit.instantBook,
     coverUrl: media.coverUrl,
     galleryUrls: media.urls,
+    videoUrls: media.videoUrls,
     photoScope: media.photoScope === 'room_type' ? 'room_type' : 'exact_unit',
     mediaReady: true,
     bookable: true,

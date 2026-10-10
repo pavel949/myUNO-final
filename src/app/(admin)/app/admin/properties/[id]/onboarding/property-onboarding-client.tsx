@@ -1,15 +1,19 @@
 'use client';
+import OwnerEvidenceDraftEditor from '@/components/OwnerEvidenceDraftEditor';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { FormEvent, createContext, useContext, useState } from 'react';
+import { FormEvent, createContext, useContext, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
 import ScopedGalleryEditor from '@/components/property/ScopedGalleryEditor';
 import type { PropertyReadinessReport } from '@/modules/projects';
+import { SLEEPING_BED_TYPES } from '@/modules/projects/sleeping-space-input';
+import { useLocale } from '@/components/LocaleProvider';
+import { sleepingSpaceLabelsForLocale } from '@/modules/content/sleeping-space.seed';
 
 type Category = { id: string; name: string; categoryKey: string; baseNightlyThb: number; minNights: number; status: string; ratePlans: Array<{ id: string; code: string; name: string; minNights: number | null }> };
-type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ beds: unknown[] }>; commercialOfferings: Array<{ offeringType: string; status: string; channelMappings: Array<{ channel: string; syncState: string }> }> };
+type Unit = { id: string; name: string; ownerIdentityId: string | null; inventoryCategory?: Category | null; media: unknown[]; sleepingSpaces: Array<{ id: string; name: string | null; spaceType: string; sortOrder: number; beds: Array<{ bedType: string; count: number }> }>; commercialOfferings: Array<{ offeringType: string; status: string; channelMappings: Array<{ channel: string; syncState: string }> }> };
 type Project = { id: string; name: string; status: string; coverMediaId: string | null; galleryMedia: unknown[]; inventoryCategories: Category[]; ratePlans: Array<{ id: string; name: string; code: string }>; structureNodes: Array<{ id: string; name: string; kind: string }>; units: Unit[] };
 
 const StepContext = createContext(1);
@@ -17,8 +21,10 @@ const steps = ['Project', 'Categories & homes', 'Owner & contract', 'Compliance'
 const input = 'h-40 rounded-sm border border-border-line bg-surface-paper px-12';
 function unitPropertyDetailsPath(unitId: string) { return `/api/admin/units/${unitId}/property-details`; }
 
-export default function PropertyOnboardingClient({ initialProject, initialReadiness, initialGallery, galleryLabels }: { initialProject: Project; initialReadiness: PropertyReadinessReport; initialGallery?: string; galleryLabels: Record<string,string> }) {
+export default function PropertyOnboardingClient({ initialProject, initialReadiness, initialGallery, galleryLabels, sleepingLabels, ownerEvidenceLabels }: { initialProject: Project; initialReadiness: PropertyReadinessReport; initialGallery?: string; galleryLabels: Record<string,string>; sleepingLabels?: Record<string,string>; ownerEvidenceLabels?: Record<string,string> }) {
   const router = useRouter();
+  const sleepingCopy = { ...sleepingSpaceLabelsForLocale(useLocale()), ...sleepingLabels };
+  const sleepingLabel = (key: string) => sleepingCopy[`admin.sleeping_space.${key}`];
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
@@ -26,6 +32,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
     if (busy) return null;
     setBusy(true);
     setMessage(null);
+    const isSleeping = (body as { action?: string }).action === 'sleeping_space';
     try {
       const response = await fetch(url, {
         method,
@@ -34,13 +41,13 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload) {
-        throw new Error(payload?.error || 'Could not save. Please try again.');
+        throw new Error(isSleeping ? sleepingLabel(response.status === 409 ? 'conflict' : 'error') : payload?.error || 'Could not save. Please try again.');
       }
-      setMessage('Saved. Readiness report refreshed.');
+      setMessage(isSleeping ? sleepingLabel('saved') : 'Saved. Readiness report refreshed.');
       router.refresh();
       return payload;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not save. Please try again.');
+      setMessage(isSleeping ? (error instanceof Error && error.message === sleepingLabel('conflict') ? sleepingLabel('conflict') : sleepingLabel('error')) : error instanceof Error ? error.message : 'Could not save. Please try again.');
       return null;
     } finally {
       setBusy(false);
@@ -88,8 +95,8 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
       <form className="grid md:grid-cols-6 gap-8 mt-20" onSubmit={form(async d => { await submit('/api/admin/units', { projectId: initialProject.id, inventoryCategoryId: d.get('category'), structureNodeId: d.get('structureNode')||null, name: d.get('name'), unitType: d.get('unitType'), bedrooms: Number(d.get('bedrooms')), bathrooms: Number(d.get('bathrooms')), maxGuests: Number(d.get('maxGuests')), addressSupplement: String(d.get('name')), descriptionKey: `unit.${String(d.get('name')).toLowerCase().replace(/ /g, '_')}.description`, baseNightlyThb: 0, status: 'draft' }); })}><input className={input} name="name" placeholder="Home name / number" required/><select className={input} name="category" required><option value="">Select category</option>{initialProject.inventoryCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select className={input} name="unitType" defaultValue="villa"><option value="villa">Villa</option><option value="condo">Condo</option><option value="townhouse">Townhouse</option></select><select className={input} name="structureNode"><option value="">Location not assigned</option>{(initialProject.structureNodes ?? []).map(node => <option key={node.id} value={node.id}>{node.kind} · {node.name}</option>)}</select><input className={input} name="bedrooms" type="number" min="0" placeholder="Bedrooms" required/><input className={input} name="bathrooms" type="number" min="0" step="1" placeholder="Bathrooms" required/><input className={input} name="maxGuests" type="number" min="1" placeholder="Max guests" required/><Button type="submit" disabled={busy}>Add home</Button></form>
     </Section>
 
-    <Section id="step-3" title="3. Owner, invitation and contract"><OwnerInvite units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Open owner and contract workspace"/></Section>
-    <Section id="step-4" title="4. Compliance, mobilization and sleeping arrangements"><p>Permitted-use evidence, all seven mobilization steps and a bed-level sleeping layout are activation blockers.</p><SleepingForm units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
+    <Section id="step-3" title="3. Owner, invitation and contract"><OwnerEvidenceDraftEditor projectId={initialProject.id} labels={ownerEvidenceLabels}/><OwnerInvite units={initialProject.units} submit={submit}/><UnitLinks units={initialProject.units} label="Open owner and contract workspace"/></Section>
+    <Section id="step-4" title="4. Compliance, mobilization and sleeping arrangements"><p>Permitted-use evidence, all seven mobilization steps and a bed-level sleeping layout are activation blockers.</p><SleepingForm units={initialProject.units} submit={submit} labels={sleepingCopy}/><UnitLinks units={initialProject.units} label="Complete compliance checklist"/></Section>
     <Section id="step-5" title="5. Stay offering"><p className="mb-12">Enable a short-stay commercial offering for each home. The physical home is not the commercial offering; keep its facts on Project / Category / Unit.</p><StayOfferingForm units={initialProject.units} submit={submit}/></Section>
     <Section id="step-6" title="6. Pricing and rate plans">
       <p className="rounded-md bg-surface-subtle p-12 mb-16">The category base nightly rate is the master amount. BAR is the canonical rate plan; a unit-level dated rule is an explicit exception.</p>
@@ -144,5 +151,44 @@ function StayOfferingForm({ units, submit }: { units: Unit[]; submit: (url: stri
   </div>;
 }
 function ChannelForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'channel_mapping', channel: d.get('channel'), externalListingId: d.get('listing'), syncState: d.get('sync') }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><input className={input} name="channel" placeholder="Channel" required/><input className={input} name="listing" placeholder="Listing ID"/><select className={input} name="sync"><option value="ical_only">iCal only</option><option value="manual">Manual</option></select><Button>Save mapping</Button></form>; }
-function SleepingForm({ units, submit }: { units: Unit[]; submit: (url: string, body: object, method?: string) => Promise<any> }) { return <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => { e.preventDefault(); const d = new FormData(e.currentTarget); await submit(unitPropertyDetailsPath(String(d.get('unit') || '')), { action: 'sleeping_space', spaceType: d.get('spaceType'), name: d.get('name'), beds: [{ bedType: d.get('bedType'), count: Number(d.get('count')) }] }); }}><select className={input} name="unit" required><option value="">Unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select><select className={input} name="spaceType"><option value="bedroom">Bedroom</option><option value="living_room">Living room</option></select><input className={input} name="name" placeholder="Room name"/><select className={input} name="bedType"><option value="king">King bed</option><option value="queen">Queen bed</option><option value="single">Single bed</option><option value="sofa_bed">Sofa bed</option></select><input className={input} name="count" type="number" min="1" defaultValue="1"/><Button>Save sleeping space</Button></form>; }
+export function SleepingForm({ units, submit, labels }: { units: Unit[]; labels: Record<string, string>; submit: (url: string, body: object, method?: string) => Promise<any> }) {
+  const label = (key: string) => labels[`admin.sleeping_space.${key}`];
+  const [unitId, setUnitId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inFlight = useRef(false);
+  // Retain keys after an uncertain response; identical retries cannot append another room.
+  const pendingRequests = useRef(new Map<string, string>());
+  const selected = units.find(unit => unit.id === unitId);
+  return <div>
+    <form className="flex flex-wrap gap-8 my-12" onSubmit={async e => {
+      e.preventDefault();
+      if (inFlight.current) return;
+      inFlight.current = true;
+      setSaving(true);
+      try {
+        const data = new FormData(e.currentTarget);
+        const body = { action: 'sleeping_space', spaceType: data.get('spaceType'), name: data.get('name'),
+          sortOrder: Number(data.get('sortOrder')), beds: [{ bedType: data.get('bedType'), count: Number(data.get('count')) }] };
+        const fingerprint = JSON.stringify([unitId, body]);
+        const requestId = pendingRequests.current.get(fingerprint) || crypto.randomUUID();
+        pendingRequests.current.set(fingerprint, requestId);
+        const saved = await submit(unitPropertyDetailsPath(unitId), { ...body, requestId });
+        if (saved) pendingRequests.current.delete(fingerprint);
+      } finally {
+        inFlight.current = false;
+        setSaving(false);
+      }
+    }}>
+      <select className={input} name="unit" required aria-label={label('unit')} value={unitId} onChange={e => setUnitId(e.target.value)} disabled={saving}><option value="">{label('unit')}</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
+      <select className={input} name="spaceType" aria-label={label('space_type')} disabled={saving}><option value="bedroom">{label('bedroom')}</option><option value="living_room">{label('living_room')}</option></select>
+      <input className={input} name="name" placeholder={label('room_name_optional')} aria-label={label('room_name')} maxLength={200} disabled={saving}/>
+      <input className={input} name="sortOrder" aria-label={label('room_order')} type="number" min="0" step="1" defaultValue="0" required disabled={saving}/>
+      <select className={input} name="bedType" aria-label={label('bed_type')} disabled={saving}>{SLEEPING_BED_TYPES.map(type => <option key={type} value={type}>{label(type)}</option>)}</select>
+      <input className={input} name="count" aria-label={label('bed_count')} type="number" min="1" step="1" defaultValue="1" required disabled={saving}/>
+      <Button disabled={saving}>{label(saving ? 'saving' : 'save')}</Button>
+    </form>
+    <p className="text-small text-text-secondary">{label('hint')}</p>
+    {selected && <ul className="mt-12 space-y-8">{[...selected.sleepingSpaces].sort((a, b) => a.sortOrder - b.sortOrder).map((space, index) => <li key={space.id}>{space.name || `${label(space.spaceType === 'bedroom' ? 'bedroom' : 'living_room')} ${index + 1}`}: {space.beds.map(bed => `${bed.count} × ${label(bed.bedType) || bed.bedType}`).join(', ')}</li>)}{selected.sleepingSpaces.length === 0 && <li>{label('empty')}</li>}</ul>}
+  </div>;
+}
 function Readiness({ report }: { report: PropertyReadinessReport }) { return <div className="mb-16"><p className="mb-8"><strong>{report.blockers.length}</strong> blockers · <strong>{report.warnings.length}</strong> warnings</p><ul className="space-y-8">{[...report.blockers, ...report.warnings].map(item => <li key={`${item.key}-${item.unitId || ''}`} className={item.severity === 'blocker' ? 'text-state-error' : 'text-state-warning'}>{item.severity === 'blocker' ? 'Blocker' : 'Warning'}: {item.unitName ? `${item.unitName} — ` : ''}{item.message}</li>)}</ul></div>; }

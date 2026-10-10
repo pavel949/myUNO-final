@@ -55,6 +55,7 @@ export async function listPublicDiscoveryUnits(filters: {
       categoryName: unit.inventoryCategory?.name ?? null,
       coverUrl: media.ready ? media.coverUrl : null,
       galleryUrls: media.ready ? media.urls : [],
+      videoUrls: media.ready ? media.videoUrls : [],
       photoScope: media.photoScope,
     };
   }).sort((a, b) => Number(Boolean(b.coverUrl)) - Number(Boolean(a.coverUrl)));

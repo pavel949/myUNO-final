@@ -1,3 +1,4 @@
+import UnitPublicationPanel from '@/components/units/UnitPublicationPanel';
 import { UI_LOCALE } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -242,6 +243,8 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         className="inline-block mb-24 rounded-md border border-border-line px-16 py-12 text-brand-andaman">
         {labels['admin.gallery.manage']} →
       </Link>
+
+      <UnitPublicationPanel unitId={unit.id} />
 
       <section className="bg-surface-paper border border-border-line rounded-lg shadow-card p-24 mb-24">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 mb-16">

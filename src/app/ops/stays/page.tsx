@@ -3,6 +3,7 @@ import OpsStatusPill, { opsStateTone } from '@/components/ops/OpsStatusPill';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds } from '@/app/libs/projectScope';
+import { opsHref } from '@/app/libs/opsProjectContext';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { formatDate } from '@/lib/date';
@@ -107,10 +108,14 @@ export default async function StayOperationsPage({
     ...(dept?{department:dept}:{}),...(p?{projectId:p}:{}),
     ...(requestedSpaceId?{spaceId:requestedSpaceId}:{})
   }).toString();
+  const calendarHref=opsHref(
+    '/ops/calendar/board'+(requestedSpaceId?'?'+new URLSearchParams({spaceId:requestedSpaceId}).toString():''),
+    projectId,
+  );
   return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-6xl space-y-24">
       <header>
-        <Link href="/ops/calendar/board" className="text-small text-brand-andaman font-semibold">
+        <Link href={calendarHref} className="text-small text-brand-andaman font-semibold">
           {labels['staff.stay_queue.back']}
         </Link>
         <p className="mt-16 stitch-kicker">

@@ -31,9 +31,10 @@ export function SearchResultsMap({
   fitToProjects?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<import('maplibre-gl').Map | null>(null);
   const libRef = useRef<MapLibre | null>(null);
   const markerRefs = useRef<Map<string, { marker: any; element: HTMLElement }>>(new Map());
+  const onBoundsChangeRef = useRef(onBoundsChange);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -48,13 +49,65 @@ export function SearchResultsMap({
     [projects]
   );
 
+  // Updating filters must not recreate the map or retain an old callback.
+  useEffect(() => {
+    onBoundsChangeRef.current = onBoundsChange;
+  }, [onBoundsChange]);
+
   useEffect(() => {
     let cancelled = false;
+    let map: import('maplibre-gl').Map | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const markers = markerRefs.current;
+    const onMoveEnd = () => {
+      if (cancelled || !map) return;
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        if (cancelled || !map) return;
+        const bounds = map.getBounds();
+        onBoundsChangeRef.current({
+          swLat: Number(bounds.getSouth().toFixed(6)),
+          swLng: Number(bounds.getWest().toFixed(6)),
+          neLat: Number(bounds.getNorth().toFixed(6)),
+          neLng: Number(bounds.getEast().toFixed(6)),
+        });
+      }, 350);
+    };
+    const onLoad = () => {
+      if (!cancelled) setReady(true);
+    };
+    const dispose = () => {
+      if (cancelled) return;
+      cancelled = true;
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      for (const entry of markers.values()) {
+        entry.element.onclick = null;
+        entry.marker.remove();
+      }
+      markers.clear();
+      if (map) {
+        map.off('moveend', onMoveEnd);
+        map.off('load', onLoad);
+        map.off('error', onError);
+        mapRef.current = null;
+        map.remove();
+        map = null;
+      }
+      libRef.current = null;
+    };
+    const onError = () => {
+      if (cancelled) return;
+      // Preserve the existing unavailable fallback, releasing its hidden map.
+      dispose();
+      setFailed(true);
+    };
     const start = (maplibregl: MapLibre) => {
       if (cancelled || !containerRef.current || mapRef.current) return;
       libRef.current = maplibregl;
 
-      const map = new maplibregl.Map({
+      map = new maplibregl.Map({
         container: containerRef.current,
         center: [98.32, 7.95],
         zoom: 10.2,
@@ -75,43 +128,34 @@ export function SearchResultsMap({
         },
       });
 
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-      let timer: ReturnType<typeof setTimeout> | null = null;
-      map.on('moveend', () => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
-          const bounds = map.getBounds();
-          onBoundsChange({
-            swLat: Number(bounds.getSouth().toFixed(6)),
-            swLng: Number(bounds.getWest().toFixed(6)),
-            neLat: Number(bounds.getNorth().toFixed(6)),
-            neLng: Number(bounds.getEast().toFixed(6)),
-          });
-        }, 350);
-      });
-      map.on('load', () => setReady(true));
-      map.on('error', () => setFailed(true));
       mapRef.current = map;
+      map.on('moveend', onMoveEnd);
+      map.on('load', onLoad);
+      map.on('error', onError);
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     };
 
     import('maplibre-gl')
       .then((mod) => start((mod.default ?? mod) as MapLibre))
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
+      .catch(onError);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [onBoundsChange]);
+    return dispose;
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     const maplibregl = libRef.current;
     if (!ready || !map || !maplibregl) return;
 
-    for (const entry of markerRefs.current.values()) entry.marker.remove();
-    markerRefs.current.clear();
+    const markers = markerRefs.current;
+    const clearMarkers = () => {
+      for (const entry of markers.values()) {
+        entry.element.onclick = null;
+        entry.marker.remove();
+      }
+      markers.clear();
+    };
+    clearMarkers();
 
     for (const project of validProjects) {
       const button = document.createElement('button');
@@ -120,7 +164,9 @@ export function SearchResultsMap({
       button.className =
         'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
       button.textContent = project.unitCount > 1 ? String(project.unitCount) : '1';
-      button.onclick = () => onSelectProject(project.id);
+      button.onclick = () => {
+        if (mapRef.current === map) onSelectProject(project.id);
+      };
 
       const marker = new maplibregl.Marker({ element: button, anchor: 'bottom' })
         .setLngLat([project.longitude, project.latitude])
@@ -143,6 +189,7 @@ export function SearchResultsMap({
       validProjects.forEach((project) => bounds.extend([project.longitude, project.latitude]));
       if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 56, maxZoom: 13, duration: 0 });
     }
+    return clearMarkers;
   }, [ready, validProjects, onSelectProject, fitToProjects, labels.homes]);
 
   useEffect(() => {

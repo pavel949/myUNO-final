@@ -1,4 +1,5 @@
 import { discoveryCopy } from '@/components/DiscoveryHomes';
+import { PROPERTY_CATEGORY_UI_DRAFTS } from '@/modules/content/property-category-ui-drafts';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
@@ -43,19 +44,19 @@ export default async function ProjectCategoryPage({
   );
   const labels = await getLabels({
     'project_category.back': 'Back to project',
-    'project_category.available': '{count} homes in this category',
-    'project_category.bedrooms': '{count} bedrooms',
+    'project_category.available': 'Homes in this category: {count}',
+    'project_category.bedrooms': 'Bedrooms: {count}',
     'project_category.from': 'from ฿{price} / night',
     'project_category.search': 'Check availability',
     'project_category.units': 'Exact homes in this category',
-    'project_category.guests': 'Up to {count} guests',
+    'project_category.guests': 'Maximum guests: {count}',
     'project_category.size': '{count} sqm',
     'project_category.view_unit': 'View exact home →',
     'project_category.inquiry_unit': 'Ask about this home →',
     'project_category.pending': 'Exact photos or online booking terms are still being completed.',
     'project_category.gallery': 'Category gallery',
     'project_category.representative_media': 'Representative category photos',
-  });
+  }, locale, PROPERTY_CATEGORY_UI_DRAFTS);
 
   return <main className="stitch-workspace">
     <div className="stitch-page space-y-24">

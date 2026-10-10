@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { formatDate } from '@/lib/date';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getOpsBoard, getOpsMobilizationQueue } from '@/modules/ops';
@@ -48,8 +49,10 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     projects.map((project) => project.id)
   );
 
+  // Keep the queried operating day and its heading aligned across midnight.
+  const renderNow = new Date();
   const { arrivals, departures, pendingRequests, pendingPayment, pendingServiceOrders, openTickets, slaMetrics } =
-    await getOpsBoard(prisma, new Date(), opsBoardScope(opsContext, validActiveProjectId));
+    await getOpsBoard(prisma, renderNow, opsBoardScope(opsContext, validActiveProjectId));
 
   const mobilizationUnits = await getOpsMobilizationQueue(
     prisma,
@@ -258,7 +261,8 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     }));
 
   const boardSubtitle = fill(labels['staff.ops.subtitle'], {
-    date: new Date().toLocaleDateString(locale),
+    // No project timezone is loaded here; use the shared operating-zone fallback.
+    date: formatDate(renderNow, locale),
     arrivals: arrivals.length,
     departures: departures.length,
     unpaid: pendingPayment.length,

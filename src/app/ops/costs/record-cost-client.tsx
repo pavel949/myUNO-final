@@ -2,6 +2,7 @@
 
 
 import { UI_LOCALE } from '@/lib/format';
+import { calendarDayIn } from '@/lib/date';
 import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -43,7 +44,8 @@ export default function RecordCostClient({
   const [unitId, setUnitId] = useState(units[0]?.id ?? '');
   const [entryType, setEntryType] = useState<string>(COST_TYPES[0]);
   const [amount, setAmount] = useState('');
-  const [occurredOn, setOccurredOn] = useState(new Date().toISOString().slice(0, 10));
+  // Units do not carry a timezone here; default once to the operating day.
+  const [occurredOn, setOccurredOn] = useState(() => calendarDayIn(new Date()));
   const [description, setDescription] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);

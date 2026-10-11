@@ -199,6 +199,27 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        // Distinct date ranges for the same unit must not overlap. The exact
+        // period above is handled by the explicit regenerate/supersede policy.
+        // This check runs under the unit ledger lock, serializing generators.
+        const overlappingPeriod = await tx.ownerStatement.findFirst({
+          where: {
+            unitId: unit.id,
+            status: { not: 'superseded' },
+            periodStart: { lte: endDate },
+            periodEnd: { gte: startDate },
+            NOT: { periodStart: startDate, periodEnd: endDate },
+          },
+          select: { id: true, periodStart: true, periodEnd: true },
+        })
+        if (overlappingPeriod) {
+          throw new StatementConflict(409, {
+            error: 'Overlapping statement period for this unit',
+            code: 'statement_period_overlap',
+            statementId: overlappingPeriod.id,
+          })
+        }
+
         const inPlace =
           body.regenerate === true &&
           existing?.status === 'draft' &&

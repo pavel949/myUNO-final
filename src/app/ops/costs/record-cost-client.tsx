@@ -42,7 +42,8 @@ interface Entry {
 }
 
 /** Satang in, baht on screen — the ledger stores integers to avoid float drift. */
-const baht = (satang: number) => (satang / 100).toLocaleString(UI_LOCALE);
+const baht = (satang: number) =>
+  (satang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /**
  * "1250.50" → 125050 satang, by string arithmetic. Float multiplication is not
@@ -390,16 +391,16 @@ export default function RecordCostClient({
                   if (chosen && target) void attachToRow(target, chosen);
                 }}
               />
-              <table className="w-full text-small">
-                <tbody>
+              <table className="w-full text-small block md:table">
+                <tbody className="block md:table-row-group">
                   {entries.map((e) => (
-                    <tr key={e.id} className="border-t border-border-line align-top">
+                    <tr key={e.id} className="border-t border-border-line align-top flex flex-wrap gap-x-16 md:table-row">
                       <td className="py-12 pr-16 text-text-secondary whitespace-nowrap">{e.occurredOn}</td>
                       <td className="py-12 pr-16 text-text-ink">{e.unitName}</td>
                       <td className="py-12 pr-16 text-text-secondary">
                         {labels[`catalog.ledger_entry_types.${e.entryType}.label`] ?? e.entryType}
                       </td>
-                      <td className="py-12 pr-16 text-text-ink">{e.description}</td>
+                      <td className="py-12 pr-16 text-text-ink basis-full order-last md:basis-auto md:order-none">{e.description}</td>
                       <td className="py-12 pr-16 text-text-ink font-semibold whitespace-nowrap">
                         ฿{baht(Math.abs(e.amountThb))}
                       </td>

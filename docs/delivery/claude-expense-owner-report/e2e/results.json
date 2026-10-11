@@ -1,0 +1,97 @@
+[
+ {
+  "name": "network drop: error shown, fields kept",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "network drop: nothing written",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "retry: exactly one cost recorded",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "retry: stored negative satang on business date",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "receipt stored encrypted, one current",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "keyboard Enter submits",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "success text comes from server impact, no promise of a specific report",
+  "ok": true,
+  "detail": "Recorded. It will be counted when the owner report for this period is prepared."
+ },
+ {
+  "name": "admin generates July report",
+  "ok": true,
+  "detail": "175050"
+ },
+ {
+  "name": "draft report is not visible to owner (not-found page, no figures)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "operator signs → pending owner review",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "owner downloads receipt through checked route",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "receipt link is not a storage URL",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "another owner gets 404 for the receipt",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "anonymous gets 401",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "another owner cannot open the report",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "owner signs → signed_off",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "RU receipt label rendered",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "TH receipt label rendered",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "mobile 390px: no horizontal page scroll",
+  "ok": true,
+  "detail": ""
+ }
+]

@@ -75,7 +75,9 @@ export async function PUT(
     const updated = await recordStatementSignOff(
       prisma,
       params.statementId,
-      'owner'
+      'owner',
+      new Date(),
+      currentUser.identityId
     )
 
     return NextResponse.json({
@@ -89,6 +91,14 @@ export async function PUT(
       if (error.reason === 'already_signed') {
         return NextResponse.json(
           { error: 'The owner has already signed off this statement' },
+          { status: 409 }
+        )
+      }
+      // The statement is theirs and visible; it simply no longer matches the
+      // facts it was prepared from. Say so — a 404 here would read as "gone".
+      if (error.reason === 'stale' || error.reason === 'snapshot_mismatch') {
+        return NextResponse.json(
+          { error: error.message, code: `statement_${error.reason}` },
           { status: 409 }
         )
       }

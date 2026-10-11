@@ -113,7 +113,9 @@ export async function PUT(
     const updated = await recordStatementSignOff(
       prisma,
       params.statementId,
-      body.actor
+      body.actor,
+      new Date(),
+      currentUser.identityId
     )
 
     return NextResponse.json({
@@ -129,7 +131,12 @@ export async function PUT(
           { status: 404 }
         )
       }
-      return NextResponse.json({ error: error.message }, { status: 409 })
+      // 'stale' / 'snapshot_mismatch' carry a code the screen can act on
+      // (regenerate the draft) instead of showing a generic failure.
+      return NextResponse.json(
+        { error: error.message, code: `statement_${error.reason}` },
+        { status: 409 }
+      )
     }
     console.error('[STATEMENT SIGN OFF]', error)
     return NextResponse.json(

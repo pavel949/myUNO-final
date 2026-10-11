@@ -12,6 +12,10 @@ interface LineItemView {
   amountThb: number;
   bookingId: string | null;
   supportingDocumentId: string | null;
+  /** The ledger row this line was built from. */
+  ledgerEntryId: string | null;
+  /** The private receipt that was current for it when the statement was issued. */
+  expenseReceiptId: string | null;
   createdAt: string;
 }
 
@@ -44,6 +48,8 @@ export async function GET(
       amountThb: item.amountTh,
       bookingId: item.bookingId,
       supportingDocumentId: item.supportingDocumentId,
+      ledgerEntryId: item.ledgerEntryId,
+      expenseReceiptId: item.expenseReceiptId,
       createdAt: item.createdAt.toISOString(),
     }));
 

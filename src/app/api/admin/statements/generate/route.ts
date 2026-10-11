@@ -4,8 +4,17 @@ import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
 import { getConfig } from '@/modules/config'
 import {
-  BookingStatus,
-  LedgerEntryType,
+  REVENUE_BOOKING_STATUSES,
+  buildLedgerLines,
+  collectSnapshotSources,
+  dayAfter,
+  lockUnitLedgerExclusive,
+  snapshotHash,
+  sourceFingerprint,
+  sumByType,
+  sumOperatingExpenses,
+} from '@/modules/finance'
+import {
   LineItemCategory,
   OwnerStatementStatus,
   Prisma,
@@ -17,27 +26,40 @@ interface GenerateStatementRequest {
   unitId: string
   periodStart: string // ISO date YYYY-MM-DD
   periodEnd: string   // ISO date YYYY-MM-DD
+  /**
+   * Rebuild the report for this unit and period from current facts — the way
+   * out of a stale snapshot, and the founder-approved way to correct an issued
+   * report:
+   *  - an unsigned DRAFT is rebuilt in place (never seen by the owner);
+   *  - a `published` / `pending_owner_review` report the owner has NOT signed is
+   *    REPLACED: it becomes `superseded` (kept, and visible to its owner as
+   *    replaced) and a new draft is prepared, which needs the operator's
+   *    signature again.
+   * Anything the owner has signed, and every closed report (`signed_off`,
+   * `distributed`), is refused: those are never rewritten.
+   */
+  regenerate?: boolean
 }
 
-// A stay counts towards the period's gross bookings once it is confirmed and
-// for as long as it stays in a "this stay happened" state. Requested, pending,
-// declined and cancelled bookings carry no owner revenue.
-const REVENUE_BOOKING_STATUSES: BookingStatus[] = [
-  'confirmed',
-  'checked_in',
-  'checked_out',
-  'completed',
-]
+const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/
 
-// Ledger entry types that make up the itemised expense block of a statement.
-const OPERATING_EXPENSE_ENTRY_TYPES: LedgerEntryType[] = [
-  'cleaning_cost',
-  'maintenance_cost',
-  'consumables_cost',
-  'utilities_cost',
-  'setup_fee',
-  'ota_commission_cost',
-]
+/** `YYYY-MM-DD` only, and a real day: an instant would silently shift the period by up to a day. */
+function parseCalendarDay(value: unknown): Date | null {
+  if (typeof value !== 'string' || !CALENDAR_DAY.test(value)) return null
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
+    ? null
+    : parsed
+}
+
+class StatementConflict extends Error {
+  constructor(
+    readonly status: number,
+    readonly body: Record<string, unknown>
+  ) {
+    super(String(body.error))
+  }
+}
 
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin()
@@ -54,10 +76,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate date format and order
-    const startDate = new Date(body.periodStart)
-    const endDate = new Date(body.periodEnd)
+    const startDate = parseCalendarDay(body.periodStart)
+    const endDate = parseCalendarDay(body.periodEnd)
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (!startDate || !endDate) {
       return NextResponse.json(
         { error: 'Invalid date format. Use YYYY-MM-DD' },
         { status: 400 }
@@ -112,126 +134,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // One statement per unit per period — a re-run must supersede an existing
-    // statement explicitly, never silently produce a second set of numbers.
-    const existing = await prisma.ownerStatement.findFirst({
-      where: {
-        unitId: body.unitId,
-        periodStart: startDate,
-        periodEnd: endDate,
-      },
-      select: { id: true },
-    })
-
-    if (existing) {
-      return NextResponse.json(
-        {
-          error: 'A statement for this unit and period already exists',
-          statementId: existing.id,
-        },
-        { status: 409 }
-      )
-    }
-
-    // Period end is an inclusive calendar day for statements. A stay that
-    // crosses the boundary cannot be silently omitted: allocation must be
-    // explicitly defined before financial close for that period.
-    const nextPeriodDay = new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
-    const crossingStay = await prisma.booking.findFirst({
-      where: {
-        unitId: body.unitId,
-        status: { in: REVENUE_BOOKING_STATUSES },
-        startDate: { lt: nextPeriodDay },
-        endDate: { gt: startDate },
-        OR: [
-          { startDate: { lt: startDate } },
-          { endDate: { gt: nextPeriodDay } },
-        ],
-      },
-      select: { id: true },
-    })
-    if (crossingStay) {
-      return NextResponse.json(
-        { error: 'A stay crosses this accounting period. Resolve the stay allocation policy before generating a statement.', bookingId: crossingStay.id },
-        { status: 409 }
-      )
-    }
-
-    // --- Sources of the statement's figures -------------------------------
-    // Every figure below is computed on the server from stored rows; nothing
-    // is taken from the request body beyond the unit and the period.
-
-    const bookings = await prisma.booking.findMany({
-      where: {
-        unitId: body.unitId,
-        startDate: { gte: startDate },
-        endDate: { lte: nextPeriodDay },
-        status: { in: REVENUE_BOOKING_STATUSES },
-      },
-      orderBy: { startDate: 'asc' },
-      select: {
-        id: true,
-        startDate: true,
-        endDate: true,
-        totalThb: true,
-      },
-    })
-
-    const bookingIds = bookings.map((b) => b.id)
-
-    const grossBookingsThb = bookings.reduce(
-      (sum, booking) => sum + (booking.totalThb || 0),
-      0
-    )
-
-    // Cash actually collected from guests against those stays.
-    const guestPayments = bookingIds.length
-      ? await prisma.payment.aggregate({
-          where: {
-            bookingId: { in: bookingIds },
-            status: 'succeeded',
-            reconciliationReason: null,
-            purpose: { in: ['stay', 'stay_balance'] },
-          },
-          _sum: { amountThb: true },
-        })
-      : { _sum: { amountThb: 0 } }
-
-    const guestPaymentsReceivedThb = guestPayments._sum.amountThb || 0
-
-    // The append-only ledger is the source for refunds, expenses and taxes.
-    const ledgerEntries = await prisma.ledgerEntry.findMany({
-      where: {
-        unitId: body.unitId,
-        occurredOn: { gte: startDate, lt: nextPeriodDay },
-        entryType: {
-          in: [
-            'refund_out',
-            'tax_collected',
-            ...OPERATING_EXPENSE_ENTRY_TYPES,
-          ],
-        },
-      },
-      orderBy: { occurredOn: 'asc' },
-      select: {
-        id: true,
-        entryType: true,
-        amountThb: true,
-        description: true,
-        bookingId: true,
-        occurredOn: true,
-      },
-    })
-
-    const sumEntries = (types: LedgerEntryType[]) =>
-      ledgerEntries
-        .filter((entry) => types.includes(entry.entryType))
-        .reduce((sum, entry) => sum + Math.abs(entry.amountThb), 0)
-
-    const refundsThb = sumEntries(['refund_out'])
-    const operatingExpensesThb = sumEntries(OPERATING_EXPENSE_ENTRY_TYPES)
-    const taxesThb = sumEntries(['tax_collected'])
-
     // The service fee rate is a business rule, never a literal (doc 04
     // `finance.statement.service_fee_pct`), and is scoped unit → project → global.
     const serviceFeePct =
@@ -239,15 +141,6 @@ export async function POST(req: NextRequest) {
         unitId: unit.id,
         projectId: unit.projectId,
       })) ?? 0
-
-    const serviceFeesThb = Math.round((grossBookingsThb * serviceFeePct) / 100)
-
-    const adjustedNoiThb =
-      grossBookingsThb -
-      refundsThb -
-      serviceFeesThb -
-      operatingExpensesThb -
-      taxesThb
 
     // Performance fee: only when the unit's active management contract enables
     // one; its basis and rate come from the contract, never from a default.
@@ -260,154 +153,338 @@ export async function POST(req: NextRequest) {
       orderBy: { contractStartDate: 'desc' },
     })
 
-    let performanceFeeThb = 0
-    let performanceFeeBasisText: string | null = null
-
-    if (contract?.performanceFeeRate) {
-      const baseline = contract.performanceFeeBaseline ?? 0
-      const excess = Math.max(0, adjustedNoiThb - baseline)
-      const rate = Number(contract.performanceFeeRate)
-      performanceFeeThb = Math.round(excess * rate)
-      performanceFeeBasisText = `${contract.performanceFeeBasis ?? 'adjusted_noi'} above baseline ${baseline} THB at rate ${rate} (contract ${contract.id})`
-    }
-
-    const distributableCashThb = adjustedNoiThb - performanceFeeThb
-
-    // --- Owner / estate split per engagement type -------------------------
-    let ownerShareThb = 0
-    let estateShareThb = 0
-    let capApplied = false
-
-    if (engagement.engagementType === 'direct_managed') {
-      // Owner receives MIN(NOI, annual cap pro-rated over the period). Both
-      // endpoints are inclusive, so July 1–31 is 31 days.
-      const daysInPeriod =
-        Math.round(
-          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1
-      const capProRataThb = Math.round(
-        (engagement.noiCapAnnualThb! * daysInPeriod) / 365
-      )
-      ownerShareThb = Math.min(distributableCashThb, capProRataThb)
-      estateShareThb =
-        serviceFeesThb +
-        performanceFeeThb +
-        Math.max(0, distributableCashThb - capProRataThb)
-      capApplied = capProRataThb < distributableCashThb
-    } else if (engagement.engagementType === 'via_management_company') {
-      const mcFeePct =
+    let engagementFeePct = 0
+    if (engagement.engagementType === 'via_management_company') {
+      engagementFeePct =
         (await getConfig(prisma, 'engagement.via_mc.platform_fee_pct', {
           unitId: unit.id,
           projectId: unit.projectId,
         })) ?? 0
-      const mcFeeThb = Math.round((distributableCashThb * mcFeePct) / 100)
-      ownerShareThb = distributableCashThb - mcFeeThb
-      estateShareThb = serviceFeesThb + performanceFeeThb + mcFeeThb
-    } else {
-      const bookingFeePct =
+    } else if (engagement.engagementType !== 'direct_managed') {
+      engagementFeePct =
         (await getConfig(prisma, 'engagement.owner_direct.booking_fee_pct', {
           unitId: unit.id,
           projectId: unit.projectId,
         })) ?? 0
-      const bookingFeeThb = Math.round(
-        (distributableCashThb * bookingFeePct) / 100
-      )
-      ownerShareThb = distributableCashThb - bookingFeeThb
-      estateShareThb = serviceFeesThb + performanceFeeThb + bookingFeeThb
     }
 
-    const totalCostsThb =
-      refundsThb + serviceFeesThb + operatingExpensesThb + taxesThb
+    const period = { unitId: unit.id, periodStart: startDate, periodEnd: endDate }
+    // Period end is an inclusive calendar day for statements.
+    const nextPeriodDay = dayAfter(endDate)
 
-    // --- Line items: every figure traces to its source row ----------------
-    const lineItems: Prisma.StatementLineItemCreateManyStatementInput[] = []
+    // One transaction under the unit's EXCLUSIVE ledger lock. No cost, reversal
+    // or receipt can commit while the figures are read and the statement is
+    // written, and two simultaneous generations for one unit run one after the
+    // other — the second finds the first's statement and answers 409.
+    const outcome = await prisma.$transaction(
+      async (tx) => {
+        await lockUnitLedgerExclusive(tx, unit.id)
 
-    for (const booking of bookings) {
-      lineItems.push({
-        category: 'booking_revenue' as LineItemCategory,
-        description: `Booking ${booking.id} (${booking.startDate
-          .toISOString()
-          .slice(0, 10)} → ${booking.endDate.toISOString().slice(0, 10)})`,
-        amountTh: booking.totalThb || 0,
-        bookingId: booking.id,
-      })
-    }
-
-    for (const entry of ledgerEntries) {
-      const category: LineItemCategory =
-        entry.entryType === 'refund_out'
-          ? 'refund'
-          : entry.entryType === 'tax_collected'
-            ? 'tax'
-            : 'operating_expense'
-
-      lineItems.push({
-        category,
-        description: `${entry.entryType}: ${entry.description}`,
-        amountTh: Math.abs(entry.amountThb),
-        bookingId: entry.bookingId,
-      })
-    }
-
-    if (serviceFeesThb !== 0) {
-      lineItems.push({
-        category: 'service_fee' as LineItemCategory,
-        description: `myUNO service fee ${serviceFeePct}% of gross bookings ${grossBookingsThb} THB`,
-        amountTh: serviceFeesThb,
-      })
-    }
-
-    if (performanceFeeThb !== 0 && performanceFeeBasisText) {
-      lineItems.push({
-        category: 'performance_fee' as LineItemCategory,
-        description: performanceFeeBasisText,
-        amountTh: performanceFeeThb,
-      })
-    }
-
-    const statement = await prisma.ownerStatement.create({
-      data: {
-        unitId: body.unitId,
-        ownerIdentityId: engagement.ownerIdentityId,
-        engagementId: engagement.id,
-        periodStart: startDate,
-        periodEnd: endDate,
-        grossRevenueTh: grossBookingsThb,
-        totalCostsTh: totalCostsThb,
-        noiTh: adjustedNoiThb,
-        ownerShareTh: ownerShareThb,
-        estateShareTh: estateShareThb,
-        capApplied,
-        status: 'draft' as OwnerStatementStatus,
-
-        // Transparency block (CLAUDE.md, "Fee Transparency for Owners")
-        grossBookingsAmountTh: grossBookingsThb,
-        guestPaymentsReceivedTh: guestPaymentsReceivedThb,
-        serviceFeesAmountTh: serviceFeesThb,
-        operatingExpensesAmountTh: operatingExpensesThb,
-        taxesAmountTh: taxesThb,
-        adjustedNoiTh: adjustedNoiThb,
-        distributableCashTh: distributableCashThb,
-        performanceFeeAmountTh: performanceFeeThb,
-        performanceFeeBasisText,
-
-        lineItems: { createMany: { data: lineItems } },
-      },
-      include: {
-        owner: {
+        // One statement per unit per period — a re-run must supersede an
+        // existing statement explicitly, never silently produce a second set of
+        // numbers. Only an unsigned DRAFT may be rebuilt in place.
+        const existing = await tx.ownerStatement.findFirst({
+          where: {
+            unitId: unit.id,
+            periodStart: startDate,
+            periodEnd: endDate,
+            status: { not: 'superseded' },
+          },
+          orderBy: { createdAt: 'desc' },
           select: {
             id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
+            status: true,
+            signedOffByOwnerAt: true,
+            signedOffByOperatorAt: true,
           },
-        },
-        _count: { select: { lineItems: true } },
-      },
-    })
+        })
 
+        const inPlace =
+          body.regenerate === true &&
+          existing?.status === 'draft' &&
+          !existing.signedOffByOwnerAt &&
+          !existing.signedOffByOperatorAt
+        const replace =
+          body.regenerate === true &&
+          (existing?.status === 'published' || existing?.status === 'pending_owner_review') &&
+          !existing.signedOffByOwnerAt
+
+        if (existing && !inPlace && !replace) {
+          throw new StatementConflict(409, {
+            error: 'A statement for this unit and period already exists',
+            statementId: existing.id,
+            status: existing.status,
+            ...(body.regenerate === true
+              ? {
+                  code: 'statement_not_regenerable',
+                  hint: 'Only an unsigned draft, or an issued report the owner has not signed, can be regenerated.',
+                }
+              : {}),
+          })
+        }
+
+        // A stay that crosses the boundary cannot be silently omitted:
+        // allocation must be explicitly defined before financial close.
+        const crossingStay = await tx.booking.findFirst({
+          where: {
+            unitId: unit.id,
+            status: { in: REVENUE_BOOKING_STATUSES },
+            startDate: { lt: nextPeriodDay },
+            endDate: { gt: startDate },
+            OR: [
+              { startDate: { lt: startDate } },
+              { endDate: { gt: nextPeriodDay } },
+            ],
+          },
+          select: { id: true },
+        })
+        if (crossingStay) {
+          throw new StatementConflict(409, {
+            error:
+              'A stay crosses this accounting period. Resolve the stay allocation policy before generating a statement.',
+            bookingId: crossingStay.id,
+          })
+        }
+
+        // --- Sources of the statement's figures ---------------------------
+        // Every figure below is computed on the server from stored rows;
+        // nothing is taken from the request body beyond the unit and period.
+        const sources = await collectSnapshotSources(tx, period, existing?.id)
+
+        const grossBookingsThb = sources.bookings.reduce(
+          (sum, booking) => sum + (booking.totalThb || 0),
+          0
+        )
+        const guestPaymentsReceivedThb = sources.guestPaymentsReceivedThb
+
+        const refundsThb = sumByType(sources.ledgerRows, 'refund_out')
+        // Costs net of their reversals; a reversal is a credit, not a cost.
+        const operatingExpensesThb = sumOperatingExpenses(sources.ledgerRows)
+        const taxesThb = sumByType(sources.ledgerRows, 'tax_collected')
+
+        const serviceFeesThb = Math.round((grossBookingsThb * serviceFeePct) / 100)
+
+        const adjustedNoiThb =
+          grossBookingsThb -
+          refundsThb -
+          serviceFeesThb -
+          operatingExpensesThb -
+          taxesThb
+
+        let performanceFeeThb = 0
+        let performanceFeeBasisText: string | null = null
+
+        if (contract?.performanceFeeRate) {
+          const baseline = contract.performanceFeeBaseline ?? 0
+          const excess = Math.max(0, adjustedNoiThb - baseline)
+          const rate = Number(contract.performanceFeeRate)
+          performanceFeeThb = Math.round(excess * rate)
+          performanceFeeBasisText = `${contract.performanceFeeBasis ?? 'adjusted_noi'} above baseline ${baseline} THB at rate ${rate} (contract ${contract.id})`
+        }
+
+        const distributableCashThb = adjustedNoiThb - performanceFeeThb
+
+        // --- Owner / estate split per engagement type ---------------------
+        let ownerShareThb = 0
+        let estateShareThb = 0
+        let capApplied = false
+
+        if (engagement.engagementType === 'direct_managed') {
+          // Owner receives MIN(NOI, annual cap pro-rated over the period). Both
+          // endpoints are inclusive, so July 1–31 is 31 days.
+          const daysInPeriod =
+            Math.round(
+              (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+            ) + 1
+          const capProRataThb = Math.round(
+            (engagement.noiCapAnnualThb! * daysInPeriod) / 365
+          )
+          ownerShareThb = Math.min(distributableCashThb, capProRataThb)
+          estateShareThb =
+            serviceFeesThb +
+            performanceFeeThb +
+            Math.max(0, distributableCashThb - capProRataThb)
+          capApplied = capProRataThb < distributableCashThb
+        } else {
+          // via_management_company: the MC platform fee; owner_direct: the
+          // booking fee. Both come from configuration resolved above.
+          const feeThb = Math.round((distributableCashThb * engagementFeePct) / 100)
+          ownerShareThb = distributableCashThb - feeThb
+          estateShareThb = serviceFeesThb + performanceFeeThb + feeThb
+        }
+
+        const totalCostsThb =
+          refundsThb + serviceFeesThb + operatingExpensesThb + taxesThb
+
+        // --- Line items: every figure traces to its source row ------------
+        const lineItems: Prisma.StatementLineItemCreateManyStatementInput[] = []
+
+        for (const booking of sources.bookings) {
+          lineItems.push({
+            category: 'booking_revenue' as LineItemCategory,
+            description: `Booking ${booking.id} (${booking.startDate
+              .toISOString()
+              .slice(0, 10)} → ${booking.endDate.toISOString().slice(0, 10)})`,
+            amountTh: booking.totalThb || 0,
+            bookingId: booking.id,
+          })
+        }
+
+        const ledgerLines = buildLedgerLines(
+          sources.ledgerRows,
+          sources.currentReceiptByEntryId,
+          startDate
+        )
+        for (const line of ledgerLines) {
+          lineItems.push({
+            category: line.category as LineItemCategory,
+            description: line.description,
+            amountTh: line.amountTh,
+            bookingId: line.bookingId,
+            ledgerEntryId: line.ledgerEntryId,
+            expenseReceiptId: line.expenseReceiptId,
+          })
+        }
+
+        if (serviceFeesThb !== 0) {
+          lineItems.push({
+            category: 'service_fee' as LineItemCategory,
+            description: `myUNO service fee ${serviceFeePct}% of gross bookings ${grossBookingsThb} THB`,
+            amountTh: serviceFeesThb,
+          })
+        }
+
+        if (performanceFeeThb !== 0 && performanceFeeBasisText) {
+          lineItems.push({
+            category: 'performance_fee' as LineItemCategory,
+            description: performanceFeeBasisText,
+            amountTh: performanceFeeThb,
+          })
+        }
+
+        const figures = {
+          grossRevenueTh: grossBookingsThb,
+          totalCostsTh: totalCostsThb,
+          noiTh: adjustedNoiThb,
+          ownerShareTh: ownerShareThb,
+          estateShareTh: estateShareThb,
+          capApplied,
+
+          // Transparency block (CLAUDE.md, "Fee Transparency for Owners")
+          grossBookingsAmountTh: grossBookingsThb,
+          guestPaymentsReceivedTh: guestPaymentsReceivedThb,
+          serviceFeesAmountTh: serviceFeesThb,
+          operatingExpensesAmountTh: operatingExpensesThb,
+          taxesAmountTh: taxesThb,
+          adjustedNoiTh: adjustedNoiThb,
+          distributableCashTh: distributableCashThb,
+          performanceFeeAmountTh: performanceFeeThb,
+          performanceFeeBasisText,
+        }
+
+        // The verified snapshot: what the figures were built from, and what was
+        // issued. Sign-off re-checks both under the same lock.
+        const fingerprint = sourceFingerprint(
+          period,
+          { ownerIdentityId: engagement.ownerIdentityId, engagementId: engagement.id },
+          sources
+        )
+        const hash = snapshotHash(
+          figures,
+          lineItems.map((l) => ({
+            category: l.category,
+            description: l.description,
+            amountTh: l.amountTh,
+            bookingId: l.bookingId ?? null,
+            ledgerEntryId: l.ledgerEntryId ?? null,
+            expenseReceiptId: l.expenseReceiptId ?? null,
+          }))
+        )
+
+        if (existing && inPlace) {
+          // Rebuilding an unsigned draft in place: release its ledger links and
+          // lines, then lay the fresh ones down. Its id (and anything pointing
+          // at it) stays.
+          await tx.statementLineItem.deleteMany({ where: { statementId: existing.id } })
+          await tx.ledgerEntry.updateMany({
+            where: { statementId: existing.id },
+            data: { statementId: null },
+          })
+        } else if (existing && replace) {
+          // Replacing an issued report: it is kept as it was issued (lines and
+          // figures untouched) but marked superseded, and releases its ledger
+          // rows so the new report can take them.
+          await tx.ownerStatement.update({
+            where: { id: existing.id },
+            data: { status: 'superseded' as OwnerStatementStatus },
+          })
+          await tx.ledgerEntry.updateMany({
+            where: { statementId: existing.id },
+            data: { statementId: null },
+          })
+        }
+
+        const data = {
+          ownerIdentityId: engagement.ownerIdentityId,
+          engagementId: engagement.id,
+          ...figures,
+          status: 'draft' as OwnerStatementStatus,
+          sourceFingerprint: fingerprint,
+          snapshotHash: hash,
+          lineItems: { createMany: { data: lineItems } },
+        }
+        const include = {
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          _count: { select: { lineItems: true } },
+        } satisfies Prisma.OwnerStatementInclude
+
+        const statement = existing && inPlace
+          ? await tx.ownerStatement.update({ where: { id: existing.id }, data, include })
+          : await tx.ownerStatement.create({
+              data: { unitId: unit.id, periodStart: startDate, periodEnd: endDate, ...data },
+              include,
+            })
+
+        // Each swept ledger row now belongs to this statement (once).
+        const swept = sources.ledgerRows.map((row) => row.id)
+        if (swept.length > 0) {
+          await tx.ledgerEntry.updateMany({
+            where: { id: { in: swept }, statementId: null },
+            data: { statementId: statement.id },
+          })
+        }
+
+        await tx.auditLog.create({
+          data: {
+            action: existing ? 'statement_regenerated' : 'statement_generated',
+            entityType: 'owner_statement',
+            entityId: statement.id,
+            actorIdentityId: guard.actorIdentityId,
+            data: {
+              unitId: unit.id,
+              snapshotHash: hash,
+              ...(replace && existing ? { supersededStatementId: existing.id } : {}),
+            },
+          },
+        })
+
+        return { statement, regenerated: Boolean(existing), supersededStatementId: replace && existing ? existing.id : null }
+      },
+      { timeout: 30_000 }
+    )
+
+    const { statement } = outcome
     return NextResponse.json({
       success: true,
+      regenerated: outcome.regenerated,
+      supersededStatementId: outcome.supersededStatementId,
       statement: {
         id: statement.id,
         unitId: statement.unitId,
@@ -431,6 +508,9 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
+    if (error instanceof StatementConflict) {
+      return NextResponse.json(error.body, { status: error.status })
+    }
     return handleError(error)
   }
 }

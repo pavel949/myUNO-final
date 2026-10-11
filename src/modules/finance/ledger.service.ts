@@ -1,4 +1,6 @@
-import { PrismaClient, LedgerEntry, LedgerEntryType } from '@prisma/client';
+import { Prisma, PrismaClient, LedgerEntry, LedgerEntryType } from '@prisma/client';
+import { calendarDayIn, DEFAULT_TIME_ZONE, startOfCalendarDayUtc } from '@/lib/date';
+import { MANUAL_COST_TYPES } from './manual-cost-input';
 
 export interface RecordCostInput {
   unitId: string;
@@ -17,8 +19,12 @@ export interface LedgerEntryWithRelations extends LedgerEntry {
 }
 
 /**
- * Record a cost entry in the ledger (manual entry by staff).
+ * Record a cost entry in the ledger.
  * Append-only: creates a new LedgerEntry row, never updates.
+ *
+ * This is the SYSTEM writer (dispute outcomes, owner-stay turnover). It does no
+ * authorisation and has no replay key. A person recording a cost goes through
+ * `recordManualCost` (manual-cost.service), which has both.
  */
 export async function recordCost(db: PrismaClient, input: RecordCostInput): Promise<LedgerEntry> {
   const entry = await db.ledgerEntry.create({
@@ -138,6 +144,9 @@ export async function recordServiceCommission(
 /**
  * Reverse a ledger entry via an admin-only reversal entry.
  * Append-only: creates a new negative entry instead of updating the original.
+ *
+ * Generic and unlinked: it carries no `reversesEntryId`, so it cannot stop a
+ * second reversal. The HTTP route uses `reverseManualCost` below instead.
  */
 export async function reverseLedgerEntry(
   db: PrismaClient,
@@ -287,4 +296,173 @@ export async function computeUnitLedgerTotals(
     totalCostsTh: totalCosts,
     netTh: net,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Manual costs: per-unit ledger lock and linked reversal
+// ---------------------------------------------------------------------------
+
+type LockClient = Pick<Prisma.TransactionClient, '$executeRaw'>;
+
+/**
+ * A writer of ledger facts that feed a unit's owner statement takes this
+ * SHARED lock; whoever freezes a statement (generate, sign-off) takes the
+ * EXCLUSIVE one. Writers do not block each other, but none can commit between a
+ * statement's snapshot check and its signature, and a statement cannot be
+ * frozen while a cost is half-written. Transaction-scoped: released on commit
+ * or rollback, so a crashed request never holds it.
+ *
+ * Lock order everywhere: unit ledger lock first, then the statement row.
+ */
+export async function lockUnitLedgerShared(tx: LockClient, unitId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtextextended(${'unit-ledger:' + unitId}, 0))`;
+}
+
+export async function lockUnitLedgerExclusive(tx: LockClient, unitId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'unit-ledger:' + unitId}, 0))`;
+}
+
+export type LedgerCorrectionCode =
+  | 'not_found'
+  | 'not_reversible'
+  | 'already_reversed'
+  | 'invalid_reason';
+
+export class LedgerCorrectionError extends Error {
+  readonly code: LedgerCorrectionCode;
+  constructor(code: LedgerCorrectionCode, message: string) {
+    super(message);
+    this.name = 'LedgerCorrectionError';
+    this.code = code;
+  }
+}
+
+export const REVERSAL_REASON_MIN = 3;
+export const REVERSAL_REASON_MAX = 500;
+
+/** Statuses at which an owner statement has been issued and must not be rewritten. */
+const ISSUED_STATEMENT_STATUSES = ['published', 'pending_owner_review', 'signed_off', 'distributed'] as const;
+
+export interface ManualCostReversal {
+  reversal: LedgerEntry;
+  original: LedgerEntry;
+  /**
+   * `same_period`: the reversal carries the original's date and nets inside the
+   * original's statement. `current_period`: that statement was already issued,
+   * so the correction is dated today and lands in the open period instead — the
+   * issued statement is never rewritten, and the correction is not lost.
+   */
+  dating: 'same_period' | 'current_period';
+}
+
+/**
+ * Reverse a manual cost. Admin authority is the caller's to establish.
+ *
+ * One original has at most one reversal: the UNIQUE index on
+ * `reverses_entry_id` is the guarantee, and a second attempt — concurrent or
+ * later — is `already_reversed`, never a second row. Only the four manual cost
+ * kinds are reversible here; revenue, refunds and payouts have their own
+ * correction processes and must not be erasable through a cost screen.
+ */
+export async function reverseManualCost(
+  db: PrismaClient,
+  input: { entryId: string; reason: string; actorIdentityId: string; now?: Date }
+): Promise<ManualCostReversal> {
+  const reason = input.reason.normalize('NFC').replace(/\s+/g, ' ').trim();
+  if (reason.length < REVERSAL_REASON_MIN || reason.length > REVERSAL_REASON_MAX) {
+    throw new LedgerCorrectionError(
+      'invalid_reason',
+      `A reason of ${REVERSAL_REASON_MIN}–${REVERSAL_REASON_MAX} characters is required.`
+    );
+  }
+  const now = input.now ?? new Date();
+
+  try {
+    return await db.$transaction(
+      async (tx) => {
+        const original = await tx.ledgerEntry.findUnique({
+          where: { id: input.entryId },
+          include: { unit: { select: { project: { select: { timezone: true } } } } },
+        });
+        if (!original) {
+          throw new LedgerCorrectionError('not_found', `Ledger entry ${input.entryId} not found`);
+        }
+        if (
+          !original.unitId ||
+          original.reversesEntryId !== null ||
+          !(MANUAL_COST_TYPES as readonly string[]).includes(original.entryType)
+        ) {
+          throw new LedgerCorrectionError(
+            'not_reversible',
+            'Only a manually recorded cost can be reversed here.'
+          );
+        }
+
+        await lockUnitLedgerShared(tx, original.unitId);
+
+        // Friendly answer for the common case; the UNIQUE index below is the
+        // guarantee for the concurrent one.
+        const already = await tx.ledgerEntry.findUnique({
+          where: { reversesEntryId: original.id },
+          select: { id: true },
+        });
+        if (already) {
+          throw new LedgerCorrectionError('already_reversed', 'This cost has already been reversed.');
+        }
+
+        const issued = await tx.ownerStatement.findFirst({
+          where: {
+            unitId: original.unitId,
+            periodStart: { lte: original.occurredOn },
+            periodEnd: { gte: original.occurredOn },
+            status: { in: [...ISSUED_STATEMENT_STATUSES] },
+          },
+          select: { id: true },
+        });
+
+        const zone = original.unit?.project?.timezone ?? DEFAULT_TIME_ZONE;
+        const occurredOn = issued
+          ? startOfCalendarDayUtc(calendarDayIn(now, zone))
+          : original.occurredOn;
+
+        const reversal = await tx.ledgerEntry.create({
+          data: {
+            entryType: 'adjustment',
+            amountThb: -original.amountThb,
+            unitId: original.unitId,
+            projectId: original.projectId,
+            occurredOn,
+            description: `Reversal of ${original.description}: ${reason}`,
+            createdByIdentityId: input.actorIdentityId,
+            reversesEntryId: original.id,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            action: 'ledger_entry_reversed',
+            entityType: 'ledger_entry',
+            entityId: original.id,
+            actorIdentityId: input.actorIdentityId,
+            data: {
+              reversalEntryId: reversal.id,
+              dating: issued ? 'current_period' : 'same_period',
+            },
+          },
+        });
+
+        return {
+          reversal,
+          original,
+          dating: issued ? ('current_period' as const) : ('same_period' as const),
+        };
+      },
+      { timeout: 15_000 }
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new LedgerCorrectionError('already_reversed', 'This cost has already been reversed.');
+    }
+    throw error;
+  }
 }

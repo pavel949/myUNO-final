@@ -1,0 +1,18 @@
+diff --git a/src/modules/projects/ownership.service.ts b/src/modules/projects/ownership.service.ts
+index cd59460..b33a352 100644
+--- a/src/modules/projects/ownership.service.ts
++++ b/src/modules/projects/ownership.service.ts
+@@ -1,4 +1,5 @@
+ import { PrismaClient, type Prisma } from '@prisma/client';
++import { lockUnitLedgerExclusive } from '@/modules/finance';
+ 
+ /**
+  * Ownership history for a unit.
+@@ -41,6 +42,7 @@ export async function setUnitOwnerTx(
+   input: SetUnitOwnerInput,
+ ) {
+   const { unitId, ownerIdentityId, recordedByIdentityId, note } = input;
++  await lockUnitLedgerExclusive(tx, unitId);
+   const effectiveFrom = asDate(input.effectiveFrom ?? new Date());
+ 
+   const unit = await tx.unit.findUnique({

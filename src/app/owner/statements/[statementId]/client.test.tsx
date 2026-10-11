@@ -44,6 +44,7 @@ const baseStatement: StatementDetail = {
   lines: [],
   payout: null,
   questionThreadId: null,
+  ownerMaySign: true,
 };
 
 const labels: Record<string, string> = {

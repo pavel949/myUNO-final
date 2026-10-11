@@ -521,7 +521,7 @@ The single source for NOI, statements, and reconciliation. Append-only; correcti
 
 | Field | Type | Meaning |
 |---|---|---|
-| `entry_type` | enum `rental_revenue, service_commission, ota_commission_cost, cleaning_cost, maintenance_cost, consumables_cost, utilities_cost, mc_platform_fee, owner_direct_fee, setup_fee, tax_collected, payout_owner, payout_provider, refund_out, adjustment` | The chart of entry kinds (extensible via migration only — money types are **not** free config). |
+| `entry_type` | enum `rental_revenue, service_commission, ota_commission_cost, cleaning_cost, maintenance_cost, consumables_cost, utilities_cost, mc_platform_fee, owner_direct_fee, setup_fee, tax_collected, payout_owner, payout_provider, refund_out, payment_unallocated, adjustment` | The chart of entry kinds (extensible via migration only — money types are **not** free config). |
 | `amount_thb` | int, signed | + = income to the scope, − = cost/outflow. |
 | `unit_id` | FK→Unit, nullable | The unit it belongs to (null for platform-level entries). |
 | `project_id` | FK→Project, nullable | Denorm/scope. |
@@ -530,6 +530,14 @@ The single source for NOI, statements, and reconciliation. Append-only; correcti
 | `occurred_on` | date | Accrual date (which month's statement it lands in). |
 | `description` | text | Human line ("Deep clean after B-707 #1234"). |
 | `created_by_identity_id` | FK→Identity, nullable | Null = system-generated; set for manually recorded costs. |
+| `manual_cost_key` / `manual_cost_fingerprint` | varchar(36) / varchar(64), nullable (both or neither) | Replay key per recorder + content hash for a manually recorded cost; UNIQUE(`created_by_identity_id`, `manual_cost_key`). Same key + same content = same row; same key + different content = conflict. |
+| `reverses_entry_id` | FK→LedgerEntry, nullable, UNIQUE | A reversal names the single cost it cancels. Keyed costs and reversals are immutable and undeletable (trigger). |
+
+#### 5.3a `ExpenseReceipt` — private evidence for a manual cost
+
+`ledger_entry_id` FK, `uploaded_by_identity_id` FK, `upload_key`, `mime_type` (PDF/JPEG/PNG/WebP), `size_bytes` (1..4 MB), `sha256`, `ciphertext` (AES-256-GCM, never a public URL), `superseded_at`. One current receipt per entry and one current use per file (partial UNIQUE). RLS on, no Data API grants; server-only. Receipts may contain personal data — retention/erasure follows doc 12.
+
+`OwnerStatement` additionally carries `source_fingerprint` / `snapshot_hash` (verified snapshot, nullable for legacy statements) and `StatementLineItem` carries `ledger_entry_id` / `expense_receipt_id` for traceability.
 
 ### 5.4 `OwnerStatement` — the monthly truth for one unit
 

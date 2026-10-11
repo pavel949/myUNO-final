@@ -194,13 +194,11 @@ describe('owner change vs statement approval', () => {
   /**
    * The statement approval holds the unit ledger lock exclusively. An ownership
    * transfer is a source fact of that statement (the ownership chain is in its
-   * fingerprint) — but `setUnitOwnerTx` does not take the lock, so nothing
-   * orders it against an approval. These tests make that precise.
+   * fingerprint), so `setUnitOwnerTx` takes the same lock: a transfer and an
+   * approval of the same unit are ordered, never interleaved.
    *
-   * They are written to behave in BOTH worlds — `ownership.service` as it is in
-   * main, and with the one-line hunk applied — and never to hang in either:
-   * every held transaction is released in a `finally`, and nothing awaits a
-   * writer that may legitimately be waiting.
+   * Every held transaction is released in a `finally`, and nothing awaits a
+   * writer that is legitimately waiting.
    */
   const transfer = () =>
     setUnitOwner(db, { unitId: world.unit.id, ownerIdentityId: world.newOwner.id, effectiveFrom: new Date('2026-07-15') });
@@ -227,23 +225,7 @@ describe('owner change vs statement approval', () => {
     return overtook;
   }
 
-  it('GAP in main: the transfer is not ordered against an approval, so it can overtake it', async () => {
-    const overtook = await transferDuringApproval();
-    // Passes only while ownership.service ignores the lock. Once the hunk lands
-    // this fails — delete this test then; the two below carry the acceptance.
-    expect(overtook).toBe(true);
-
-    // The consequence: a signature sits on a statement whose sources moved
-    // under it. A fresh look at the facts no longer matches what was verified.
-    const row = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
-    expect(row.signedOffByOperatorAt).not.toBeNull();
-    const sources = await collectSnapshotSources(db, world.period);
-    expect(
-      sourceFingerprint(world.period, { ownerIdentityId: row.ownerIdentityId, engagementId: row.engagementId }, sources)
-    ).not.toBe(row.sourceFingerprint);
-  });
-
-  it.fails('ACCEPTANCE: a transfer waits for an approval in flight (fails in main; passes with the hunk)', async () => {
+  it('a transfer waits for an approval in flight, because ownership.service takes the unit ledger lock', async () => {
     expect(await transferDuringApproval()).toBe(false);
   });
 

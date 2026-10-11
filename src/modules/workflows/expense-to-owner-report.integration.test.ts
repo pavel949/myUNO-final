@@ -468,20 +468,97 @@ describe('expense → private receipt → owner report → approval', () => {
     });
   });
 
+  describe('an issued report is replaced, not edited', () => {
+    async function issued() {
+      const cost = await recordCost(w.staff);
+      const { body: gen } = await generate();
+      await signOperator(gen.statement.id);
+      return { cost, oldId: gen.statement.id as string };
+    }
+
+    it('supersedes the issued report, keeps it as issued, and prepares a new draft that includes what was missing', async () => {
+      const { oldId } = await issued();
+      const late = await recordCost(w.staff, { description: 'Found after issue', occurredOn: '2026-07-28', amountThb: 70_000 });
+      const before = await lines(oldId);
+
+      const replaced = await generate({ regenerate: true });
+      expect(replaced.res.status).toBe(200);
+      expect(replaced.body.supersededStatementId).toBe(oldId);
+      const newId = replaced.body.statement.id as string;
+      expect(newId).not.toBe(oldId);
+      expect(replaced.body.statement.status).toBe('draft');
+      expect(replaced.body.statement.operatingExpensesAmountThb).toBe(250_000 + 70_000);
+
+      // The old report is exactly as it was issued — only its status moved.
+      const old = await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } });
+      expect(old.status).toBe('superseded');
+      expect(await lines(oldId)).toEqual(before);
+      expect(old.operatingExpensesAmountTh).toBe(250_000);
+      // Ledger rows now belong to the new report, once.
+      expect((await db.ledgerEntry.findUniqueOrThrow({ where: { id: late.body.id } })).statementId).toBe(newId);
+      expect(await db.ownerStatement.count({ where: { unitId: w.unitA.id, status: { not: 'superseded' } } })).toBe(1);
+      expect((await db.auditLog.findFirstOrThrow({ where: { action: 'statement_regenerated', entityId: newId } })).data).toMatchObject({ supersededStatementId: oldId });
+    });
+
+    it('shows the owner the replaced report as replaced, hides the new draft, and needs the operator to sign it again', async () => {
+      const { oldId } = await issued();
+      await recordCost(w.staff, { description: 'Found after issue', occurredOn: '2026-07-28' });
+      const { body } = await generate({ regenerate: true });
+      const newId = body.statement.id as string;
+
+      as(w.ownerA);
+      const listed = (await (await ownerStatementsRoute(json('/x', 'GET'))).json()).statements as Array<{ id: string; status: string }>;
+      expect(listed.map((s) => [s.id, s.status])).toEqual([[oldId, 'superseded']]);
+
+      expect((await signOwner(w.ownerA, oldId)).res.status).toBe(404); // a replaced report cannot be signed
+      expect((await signOperator(oldId)).res.status).toBe(409);
+      expect((await signOwner(w.ownerA, newId)).res.status).toBe(404); // draft: not the owner's yet
+      expect((await signOperator(newId)).res.status).toBe(200);
+      expect((await signOwner(w.ownerA, newId)).res.status).toBe(200);
+      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: newId } })).status).toBe('signed_off');
+    });
+
+    it('keeps receipts reachable for the owner through both the replaced and the new report', async () => {
+      const cost = await recordCost(w.staff);
+      const receiptId = (await upload(w.staff, cost.body.id)).body.receipt.id as string;
+      const { body: gen } = await generate();
+      await signOperator(gen.statement.id);
+      await generate({ regenerate: true });
+      expect((await download(w.ownerA, receiptId)).status).toBe(200); // cited by the superseded report, still visible to its recipient
+    });
+
+    it('also replaces a report awaiting the operator after the owner viewed it, but never one the owner signed', async () => {
+      const { oldId } = await issued();
+      await db.ownerStatement.update({ where: { id: oldId }, data: { signedOffByOwnerAt: new Date() } });
+      const refused = await generate({ regenerate: true });
+      expect([refused.res.status, refused.body.code]).toEqual([409, 'statement_not_regenerable']);
+      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } })).status).not.toBe('superseded');
+    });
+
+    it('never replaces a closed report, and two simultaneous replacements leave one live report', async () => {
+      const { oldId } = await issued();
+      const [a, b] = await Promise.all([generate({ regenerate: true }), generate({ regenerate: true })]);
+      expect([a.res.status, b.res.status]).toEqual([200, 200]);
+      expect(await db.ownerStatement.count({ where: { unitId: w.unitA.id, status: { not: 'superseded' } } })).toBe(1);
+      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } })).status).toBe('superseded');
+
+      await db.ownerStatement.updateMany({ where: { unitId: w.unitA.id, status: { not: 'superseded' } }, data: { status: 'signed_off' } });
+      expect((await generate({ regenerate: true })).res.status).toBe(409);
+    });
+  });
+
   describe('closed reports stay closed', () => {
-    it('refuses to regenerate, regenerate over a signature, or generate a second report for the period', async () => {
+    it('refuses to regenerate once the owner has signed, to generate a second report, or to touch a closed one', async () => {
       await recordCost(w.staff);
       const { body: gen } = await generate();
       const id = gen.statement.id as string;
 
       expect((await generate()).res.status).toBe(409); // one report per unit and period
       await signOperator(id);
+      await signOwner(w.ownerA, id);
       const refused = await generate({ regenerate: true });
       expect(refused.res.status).toBe(409);
       expect(refused.body.code).toBe('statement_not_regenerable');
-
-      await signOwner(w.ownerA, id);
-      expect((await generate({ regenerate: true })).res.status).toBe(409);
       expect((await signOperator(id)).res.status).toBe(409);
       expect((await signOwner(w.ownerA, id)).res.status).toBe(409);
       expect((await db.ownerStatement.findUniqueOrThrow({ where: { id } })).status).toBe('signed_off');

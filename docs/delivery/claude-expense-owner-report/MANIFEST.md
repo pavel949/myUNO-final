@@ -4,7 +4,7 @@
 
 ## SHA-256 пакета
 ```
-03febeaeef257db55b6a88e11e0756621273ae01cc8ebc0821bd55c099e4ba57  01-code-and-tests.patch
+f8bd8a2eb547fa687e093da8ab4d2e16362f3c61e6d054b58de01a7d568ec178  01-code-and-tests.patch
 7b4ade4fd1b41cca64719663da17ddd4f9f54b0907b32267bdce6b645e23ff77  02-schema-and-migrations.patch
 679eb9df7a7e5c2ec46009dd77e3aaec1ce64790f6f12cd3e2d0d30eee2a6882  03-external-hunk-ownership-service.patch
 cf10a5d21fe13d6ccd9ad6b26ef30f99694b40089645d62940fde55bc0cdbeca  04-external-hunk-content-seed.md

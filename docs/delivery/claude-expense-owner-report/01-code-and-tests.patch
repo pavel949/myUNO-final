@@ -135,7 +135,7 @@ index da1c9ca..9bebb82 100644
      console.error('[STATEMENT SIGN OFF]', error)
      return NextResponse.json(
 diff --git a/src/app/api/admin/statements/generate/route.ts b/src/app/api/admin/statements/generate/route.ts
-index 64796c0..9e10a73 100644
+index 64796c0..af22978 100644
 --- a/src/app/api/admin/statements/generate/route.ts
 +++ b/src/app/api/admin/statements/generate/route.ts
 @@ -4,8 +4,17 @@ import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -158,14 +158,21 @@ index 64796c0..9e10a73 100644
    LineItemCategory,
    OwnerStatementStatus,
    Prisma,
-@@ -17,27 +26,33 @@ interface GenerateStatementRequest {
+@@ -17,27 +26,40 @@ interface GenerateStatementRequest {
    unitId: string
    periodStart: string // ISO date YYYY-MM-DD
    periodEnd: string   // ISO date YYYY-MM-DD
 +  /**
-+   * Rebuild an existing DRAFT for this unit and period from current facts —
-+   * the way out of a stale snapshot. Refused for anything past draft or
-+   * carrying a signature: an issued statement is corrected, never rewritten.
++   * Rebuild the report for this unit and period from current facts — the way
++   * out of a stale snapshot, and the founder-approved way to correct an issued
++   * report:
++   *  - an unsigned DRAFT is rebuilt in place (never seen by the owner);
++   *  - a `published` / `pending_owner_review` report the owner has NOT signed is
++   *    REPLACED: it becomes `superseded` (kept, and visible to its owner as
++   *    replaced) and a new draft is prepared, which needs the operator's
++   *    signature again.
++   * Anything the owner has signed, and every closed report (`signed_off`,
++   * `distributed`), is refused: those are never rewritten.
 +   */
 +  regenerate?: boolean
  }
@@ -211,7 +218,7 @@ index 64796c0..9e10a73 100644
  
  export async function POST(req: NextRequest) {
    const guard = await requireAdmin()
-@@ -54,10 +69,10 @@ export async function POST(req: NextRequest) {
+@@ -54,10 +76,10 @@ export async function POST(req: NextRequest) {
      }
  
      // Validate date format and order
@@ -225,7 +232,7 @@ index 64796c0..9e10a73 100644
        return NextResponse.json(
          { error: 'Invalid date format. Use YYYY-MM-DD' },
          { status: 400 }
-@@ -112,126 +127,6 @@ export async function POST(req: NextRequest) {
+@@ -112,126 +134,6 @@ export async function POST(req: NextRequest) {
        )
      }
  
@@ -352,7 +359,7 @@ index 64796c0..9e10a73 100644
      // The service fee rate is a business rule, never a literal (doc 04
      // `finance.statement.service_fee_pct`), and is scoped unit → project → global.
      const serviceFeePct =
-@@ -240,15 +135,6 @@ export async function POST(req: NextRequest) {
+@@ -240,15 +142,6 @@ export async function POST(req: NextRequest) {
          projectId: unit.projectId,
        })) ?? 0
  
@@ -368,7 +375,7 @@ index 64796c0..9e10a73 100644
      // Performance fee: only when the unit's active management contract enables
      // one; its basis and rate come from the contract, never from a default.
      const contract = await prisma.managementContract.findFirst({
-@@ -260,154 +146,311 @@ export async function POST(req: NextRequest) {
+@@ -260,154 +153,338 @@ export async function POST(req: NextRequest) {
        orderBy: { contractStartDate: 'desc' },
      })
  
@@ -431,8 +438,8 @@ index 64796c0..9e10a73 100644
 -      )
 -      ownerShareThb = distributableCashThb - bookingFeeThb
 -      estateShareThb = serviceFeesThb + performanceFeeThb + bookingFeeThb
-     }
- 
+-    }
+-
 -    const totalCostsThb =
 -      refundsThb + serviceFeesThb + operatingExpensesThb + taxesThb
 -
@@ -472,8 +479,8 @@ index 64796c0..9e10a73 100644
 -        description: `myUNO service fee ${serviceFeePct}% of gross bookings ${grossBookingsThb} THB`,
 -        amountTh: serviceFeesThb,
 -      })
--    }
--
+     }
+ 
 -    if (performanceFeeThb !== 0 && performanceFeeBasisText) {
 -      lineItems.push({
 -        category: 'performance_fee' as LineItemCategory,
@@ -528,7 +535,13 @@ index 64796c0..9e10a73 100644
 +        // existing statement explicitly, never silently produce a second set of
 +        // numbers. Only an unsigned DRAFT may be rebuilt in place.
 +        const existing = await tx.ownerStatement.findFirst({
-+          where: { unitId: unit.id, periodStart: startDate, periodEnd: endDate },
++          where: {
++            unitId: unit.id,
++            periodStart: startDate,
++            periodEnd: endDate,
++            status: { not: 'superseded' },
++          },
++          orderBy: { createdAt: 'desc' },
            select: {
              id: true,
 -            email: true,
@@ -542,13 +555,17 @@ index 64796c0..9e10a73 100644
 -        _count: { select: { lineItems: true } },
 +        })
 +
-+        const rebuildable =
++        const inPlace =
 +          body.regenerate === true &&
 +          existing?.status === 'draft' &&
 +          !existing.signedOffByOwnerAt &&
 +          !existing.signedOffByOperatorAt
++        const replace =
++          body.regenerate === true &&
++          (existing?.status === 'published' || existing?.status === 'pending_owner_review') &&
++          !existing.signedOffByOwnerAt
 +
-+        if (existing && !rebuildable) {
++        if (existing && !inPlace && !replace) {
 +          throw new StatementConflict(409, {
 +            error: 'A statement for this unit and period already exists',
 +            statementId: existing.id,
@@ -556,7 +573,7 @@ index 64796c0..9e10a73 100644
 +            ...(body.regenerate === true
 +              ? {
 +                  code: 'statement_not_regenerable',
-+                  hint: 'Only an unsigned draft can be regenerated.',
++                  hint: 'Only an unsigned draft, or an issued report the owner has not signed, can be regenerated.',
 +                }
 +              : {}),
 +          })
@@ -740,11 +757,23 @@ index 64796c0..9e10a73 100644
 +          }))
 +        )
 +
-+        if (existing) {
++        if (existing && inPlace) {
 +          // Rebuilding an unsigned draft in place: release its ledger links and
 +          // lines, then lay the fresh ones down. Its id (and anything pointing
 +          // at it) stays.
 +          await tx.statementLineItem.deleteMany({ where: { statementId: existing.id } })
++          await tx.ledgerEntry.updateMany({
++            where: { statementId: existing.id },
++            data: { statementId: null },
++          })
++        } else if (existing && replace) {
++          // Replacing an issued report: it is kept as it was issued (lines and
++          // figures untouched) but marked superseded, and releases its ledger
++          // rows so the new report can take them.
++          await tx.ownerStatement.update({
++            where: { id: existing.id },
++            data: { status: 'superseded' as OwnerStatementStatus },
++          })
 +          await tx.ledgerEntry.updateMany({
 +            where: { statementId: existing.id },
 +            data: { statementId: null },
@@ -772,7 +801,7 @@ index 64796c0..9e10a73 100644
 +          _count: { select: { lineItems: true } },
 +        } satisfies Prisma.OwnerStatementInclude
 +
-+        const statement = existing
++        const statement = existing && inPlace
 +          ? await tx.ownerStatement.update({ where: { id: existing.id }, data, include })
 +          : await tx.ownerStatement.create({
 +              data: { unitId: unit.id, periodStart: startDate, periodEnd: endDate, ...data },
@@ -794,11 +823,15 @@ index 64796c0..9e10a73 100644
 +            entityType: 'owner_statement',
 +            entityId: statement.id,
 +            actorIdentityId: guard.actorIdentityId,
-+            data: { unitId: unit.id, snapshotHash: hash },
++            data: {
++              unitId: unit.id,
++              snapshotHash: hash,
++              ...(replace && existing ? { supersededStatementId: existing.id } : {}),
++            },
 +          },
 +        })
 +
-+        return { statement, regenerated: Boolean(existing) }
++        return { statement, regenerated: Boolean(existing), supersededStatementId: replace && existing ? existing.id : null }
        },
 -    })
 +      { timeout: 30_000 }
@@ -808,10 +841,11 @@ index 64796c0..9e10a73 100644
      return NextResponse.json({
        success: true,
 +      regenerated: outcome.regenerated,
++      supersededStatementId: outcome.supersededStatementId,
        statement: {
          id: statement.id,
          unitId: statement.unitId,
-@@ -431,6 +474,9 @@ export async function POST(req: NextRequest) {
+@@ -431,6 +508,9 @@ export async function POST(req: NextRequest) {
        },
      })
    } catch (error) {
@@ -5876,10 +5910,10 @@ index 0000000..04056c4
 +}
 diff --git a/src/modules/workflows/expense-to-owner-report.integration.test.ts b/src/modules/workflows/expense-to-owner-report.integration.test.ts
 new file mode 100644
-index 0000000..a6e5ea4
+index 0000000..648ba37
 --- /dev/null
 +++ b/src/modules/workflows/expense-to-owner-report.integration.test.ts
-@@ -0,0 +1,731 @@
+@@ -0,0 +1,808 @@
 +/* eslint-disable no-restricted-imports */
 +import { beforeEach, describe, expect, it, vi } from 'vitest';
 +import { NextRequest } from 'next/server';
@@ -6350,20 +6384,97 @@ index 0000000..a6e5ea4
 +    });
 +  });
 +
++  describe('an issued report is replaced, not edited', () => {
++    async function issued() {
++      const cost = await recordCost(w.staff);
++      const { body: gen } = await generate();
++      await signOperator(gen.statement.id);
++      return { cost, oldId: gen.statement.id as string };
++    }
++
++    it('supersedes the issued report, keeps it as issued, and prepares a new draft that includes what was missing', async () => {
++      const { oldId } = await issued();
++      const late = await recordCost(w.staff, { description: 'Found after issue', occurredOn: '2026-07-28', amountThb: 70_000 });
++      const before = await lines(oldId);
++
++      const replaced = await generate({ regenerate: true });
++      expect(replaced.res.status).toBe(200);
++      expect(replaced.body.supersededStatementId).toBe(oldId);
++      const newId = replaced.body.statement.id as string;
++      expect(newId).not.toBe(oldId);
++      expect(replaced.body.statement.status).toBe('draft');
++      expect(replaced.body.statement.operatingExpensesAmountThb).toBe(250_000 + 70_000);
++
++      // The old report is exactly as it was issued — only its status moved.
++      const old = await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } });
++      expect(old.status).toBe('superseded');
++      expect(await lines(oldId)).toEqual(before);
++      expect(old.operatingExpensesAmountTh).toBe(250_000);
++      // Ledger rows now belong to the new report, once.
++      expect((await db.ledgerEntry.findUniqueOrThrow({ where: { id: late.body.id } })).statementId).toBe(newId);
++      expect(await db.ownerStatement.count({ where: { unitId: w.unitA.id, status: { not: 'superseded' } } })).toBe(1);
++      expect((await db.auditLog.findFirstOrThrow({ where: { action: 'statement_regenerated', entityId: newId } })).data).toMatchObject({ supersededStatementId: oldId });
++    });
++
++    it('shows the owner the replaced report as replaced, hides the new draft, and needs the operator to sign it again', async () => {
++      const { oldId } = await issued();
++      await recordCost(w.staff, { description: 'Found after issue', occurredOn: '2026-07-28' });
++      const { body } = await generate({ regenerate: true });
++      const newId = body.statement.id as string;
++
++      as(w.ownerA);
++      const listed = (await (await ownerStatementsRoute(json('/x', 'GET'))).json()).statements as Array<{ id: string; status: string }>;
++      expect(listed.map((s) => [s.id, s.status])).toEqual([[oldId, 'superseded']]);
++
++      expect((await signOwner(w.ownerA, oldId)).res.status).toBe(404); // a replaced report cannot be signed
++      expect((await signOperator(oldId)).res.status).toBe(409);
++      expect((await signOwner(w.ownerA, newId)).res.status).toBe(404); // draft: not the owner's yet
++      expect((await signOperator(newId)).res.status).toBe(200);
++      expect((await signOwner(w.ownerA, newId)).res.status).toBe(200);
++      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: newId } })).status).toBe('signed_off');
++    });
++
++    it('keeps receipts reachable for the owner through both the replaced and the new report', async () => {
++      const cost = await recordCost(w.staff);
++      const receiptId = (await upload(w.staff, cost.body.id)).body.receipt.id as string;
++      const { body: gen } = await generate();
++      await signOperator(gen.statement.id);
++      await generate({ regenerate: true });
++      expect((await download(w.ownerA, receiptId)).status).toBe(200); // cited by the superseded report, still visible to its recipient
++    });
++
++    it('also replaces a report awaiting the operator after the owner viewed it, but never one the owner signed', async () => {
++      const { oldId } = await issued();
++      await db.ownerStatement.update({ where: { id: oldId }, data: { signedOffByOwnerAt: new Date() } });
++      const refused = await generate({ regenerate: true });
++      expect([refused.res.status, refused.body.code]).toEqual([409, 'statement_not_regenerable']);
++      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } })).status).not.toBe('superseded');
++    });
++
++    it('never replaces a closed report, and two simultaneous replacements leave one live report', async () => {
++      const { oldId } = await issued();
++      const [a, b] = await Promise.all([generate({ regenerate: true }), generate({ regenerate: true })]);
++      expect([a.res.status, b.res.status]).toEqual([200, 200]);
++      expect(await db.ownerStatement.count({ where: { unitId: w.unitA.id, status: { not: 'superseded' } } })).toBe(1);
++      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: oldId } })).status).toBe('superseded');
++
++      await db.ownerStatement.updateMany({ where: { unitId: w.unitA.id, status: { not: 'superseded' } }, data: { status: 'signed_off' } });
++      expect((await generate({ regenerate: true })).res.status).toBe(409);
++    });
++  });
++
 +  describe('closed reports stay closed', () => {
-+    it('refuses to regenerate, regenerate over a signature, or generate a second report for the period', async () => {
++    it('refuses to regenerate once the owner has signed, to generate a second report, or to touch a closed one', async () => {
 +      await recordCost(w.staff);
 +      const { body: gen } = await generate();
 +      const id = gen.statement.id as string;
 +
 +      expect((await generate()).res.status).toBe(409); // one report per unit and period
 +      await signOperator(id);
++      await signOwner(w.ownerA, id);
 +      const refused = await generate({ regenerate: true });
 +      expect(refused.res.status).toBe(409);
 +      expect(refused.body.code).toBe('statement_not_regenerable');
-+
-+      await signOwner(w.ownerA, id);
-+      expect((await generate({ regenerate: true })).res.status).toBe(409);
 +      expect((await signOperator(id)).res.status).toBe(409);
 +      expect((await signOwner(w.ownerA, id)).res.status).toBe(409);
 +      expect((await db.ownerStatement.findUniqueOrThrow({ where: { id } })).status).toBe('signed_off');

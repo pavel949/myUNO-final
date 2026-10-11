@@ -27,9 +27,16 @@ interface GenerateStatementRequest {
   periodStart: string // ISO date YYYY-MM-DD
   periodEnd: string   // ISO date YYYY-MM-DD
   /**
-   * Rebuild an existing DRAFT for this unit and period from current facts —
-   * the way out of a stale snapshot. Refused for anything past draft or
-   * carrying a signature: an issued statement is corrected, never rewritten.
+   * Rebuild the report for this unit and period from current facts — the way
+   * out of a stale snapshot, and the founder-approved way to correct an issued
+   * report:
+   *  - an unsigned DRAFT is rebuilt in place (never seen by the owner);
+   *  - a `published` / `pending_owner_review` report the owner has NOT signed is
+   *    REPLACED: it becomes `superseded` (kept, and visible to its owner as
+   *    replaced) and a new draft is prepared, which needs the operator's
+   *    signature again.
+   * Anything the owner has signed, and every closed report (`signed_off`,
+   * `distributed`), is refused: those are never rewritten.
    */
   regenerate?: boolean
 }
@@ -177,7 +184,13 @@ export async function POST(req: NextRequest) {
         // existing statement explicitly, never silently produce a second set of
         // numbers. Only an unsigned DRAFT may be rebuilt in place.
         const existing = await tx.ownerStatement.findFirst({
-          where: { unitId: unit.id, periodStart: startDate, periodEnd: endDate },
+          where: {
+            unitId: unit.id,
+            periodStart: startDate,
+            periodEnd: endDate,
+            status: { not: 'superseded' },
+          },
+          orderBy: { createdAt: 'desc' },
           select: {
             id: true,
             status: true,
@@ -186,13 +199,17 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        const rebuildable =
+        const inPlace =
           body.regenerate === true &&
           existing?.status === 'draft' &&
           !existing.signedOffByOwnerAt &&
           !existing.signedOffByOperatorAt
+        const replace =
+          body.regenerate === true &&
+          (existing?.status === 'published' || existing?.status === 'pending_owner_review') &&
+          !existing.signedOffByOwnerAt
 
-        if (existing && !rebuildable) {
+        if (existing && !inPlace && !replace) {
           throw new StatementConflict(409, {
             error: 'A statement for this unit and period already exists',
             statementId: existing.id,
@@ -200,7 +217,7 @@ export async function POST(req: NextRequest) {
             ...(body.regenerate === true
               ? {
                   code: 'statement_not_regenerable',
-                  hint: 'Only an unsigned draft can be regenerated.',
+                  hint: 'Only an unsigned draft, or an issued report the owner has not signed, can be regenerated.',
                 }
               : {}),
           })
@@ -384,11 +401,23 @@ export async function POST(req: NextRequest) {
           }))
         )
 
-        if (existing) {
+        if (existing && inPlace) {
           // Rebuilding an unsigned draft in place: release its ledger links and
           // lines, then lay the fresh ones down. Its id (and anything pointing
           // at it) stays.
           await tx.statementLineItem.deleteMany({ where: { statementId: existing.id } })
+          await tx.ledgerEntry.updateMany({
+            where: { statementId: existing.id },
+            data: { statementId: null },
+          })
+        } else if (existing && replace) {
+          // Replacing an issued report: it is kept as it was issued (lines and
+          // figures untouched) but marked superseded, and releases its ledger
+          // rows so the new report can take them.
+          await tx.ownerStatement.update({
+            where: { id: existing.id },
+            data: { status: 'superseded' as OwnerStatementStatus },
+          })
           await tx.ledgerEntry.updateMany({
             where: { statementId: existing.id },
             data: { statementId: null },
@@ -416,7 +445,7 @@ export async function POST(req: NextRequest) {
           _count: { select: { lineItems: true } },
         } satisfies Prisma.OwnerStatementInclude
 
-        const statement = existing
+        const statement = existing && inPlace
           ? await tx.ownerStatement.update({ where: { id: existing.id }, data, include })
           : await tx.ownerStatement.create({
               data: { unitId: unit.id, periodStart: startDate, periodEnd: endDate, ...data },
@@ -438,11 +467,15 @@ export async function POST(req: NextRequest) {
             entityType: 'owner_statement',
             entityId: statement.id,
             actorIdentityId: guard.actorIdentityId,
-            data: { unitId: unit.id, snapshotHash: hash },
+            data: {
+              unitId: unit.id,
+              snapshotHash: hash,
+              ...(replace && existing ? { supersededStatementId: existing.id } : {}),
+            },
           },
         })
 
-        return { statement, regenerated: Boolean(existing) }
+        return { statement, regenerated: Boolean(existing), supersededStatementId: replace && existing ? existing.id : null }
       },
       { timeout: 30_000 }
     )
@@ -451,6 +484,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       regenerated: outcome.regenerated,
+      supersededStatementId: outcome.supersededStatementId,
       statement: {
         id: statement.id,
         unitId: statement.unitId,

@@ -326,7 +326,7 @@ export async function can(context: CanContext): Promise<boolean> {
   const resolvedAction = resolvePermissionAction(action);
 
   // Rule 1: Blocked identities cannot do anything
-  if (identity.status === 'blocked') {
+  if (identity.status !== 'active') {
     return false;
   }
 

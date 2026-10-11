@@ -225,7 +225,7 @@ export function sourceFingerprint(
     ownership: sources.ownership
       .map((o) => [o.ownerIdentityId, o.from, o.to])
       .sort(byJson),
-    bookings: sources.bookings.map((b) => [b.id, b.totalThb ?? 0]).sort(byJson),
+    bookings: sources.bookings.map((b) => [b.id, toCalendarDay(b.startDate), toCalendarDay(b.endDate), b.totalThb ?? 0]).sort(byJson),
     guestPayments: sources.guestPaymentsReceivedThb,
     ledger: sources.ledgerRows
       .map((r) => [r.id, r.entryType, r.amountThb, toCalendarDay(r.occurredOn), r.reversesEntryId])

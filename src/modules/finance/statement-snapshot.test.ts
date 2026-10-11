@@ -40,6 +40,18 @@ describe('sourceFingerprint', () => {
     expect(fp(a)).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it('invalidates a statement when booked stay dates change without a price change', () => {
+    const original = sources();
+    const rescheduled = sources({
+      bookings: [{
+        ...original.bookings[0],
+        startDate: new Date('2026-07-03'),
+        endDate: new Date('2026-07-06'),
+      }],
+    });
+    expect(fp(rescheduled)).not.toBe(fp(original));
+  });
+
   it('changes when a cost is added, reversed, or its amount differs', () => {
     const base = fp(sources());
     const extra = sources({

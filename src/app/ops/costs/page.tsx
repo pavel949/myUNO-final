@@ -133,7 +133,7 @@ export default async function RecordCostPage({ searchParams }: RecordCostPagePro
     'ops.costs.impact.draft_stale':
       'Recorded. The draft owner report for {start} – {end} was prepared before this cost, so it does not include it yet. An administrator can regenerate the draft.',
     'ops.costs.impact.issued':
-      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. Ask an administrator to handle the correction.',
+      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. It will be carried into the next owner report prepared for this unit.',
     'ops.costs.replayed':
       'This cost was already recorded; nothing was added twice.',
     'ops.costs.error.conflict':

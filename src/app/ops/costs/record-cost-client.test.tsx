@@ -31,7 +31,7 @@ const labels: Record<string, string> = {
   'ops.costs.receipt_error.locked': 'This cost is on an issued owner report.',
   'ops.costs.impact.no_statement': 'Recorded. It will be counted when the owner report for this period is prepared.',
   'ops.costs.impact.draft_stale': 'Recorded. The draft report for {start} – {end} does not include it yet.',
-  'ops.costs.impact.issued': 'Recorded. The report for {start} – {end} is already issued and does not include this cost.',
+  'ops.costs.impact.issued': 'Recorded. The report for {start} – {end} is already issued and does not include this cost. It will be carried into the next owner report prepared for this unit.',
   'ops.costs.replayed': 'This cost was already recorded; nothing was added twice.',
   'ops.costs.error.conflict': 'This attempt was already used for a different cost.',
   'ops.costs.error.network': 'No connection. Your entry is kept.',
@@ -154,7 +154,7 @@ describe('RecordCostClient', () => {
 
   it.each([
     ['a draft report that cannot include it yet', { state: 'draft_regeneration_required', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'does not include it yet', 'will be counted'],
-    ['an already issued report', { state: 'period_already_issued', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'already issued and does not include this cost', 'will be counted'],
+    ['an already issued report', { state: 'period_already_issued', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'carried into the next owner report', 'will be counted when'],
   ])('does not promise inclusion for %s', async (_what, reportImpact, shown, notShown) => {
     fetchMock.mockReturnValueOnce(ok(201, saved({ reportImpact })));
     const { user, type } = setup();

@@ -95,7 +95,8 @@ export function sumByType(rows: StatementLedgerRow[], type: LedgerEntryType): nu
  */
 export function buildLedgerLines(
   rows: StatementLedgerRow[],
-  currentReceiptByEntryId: ReadonlyMap<string, string>
+  currentReceiptByEntryId: ReadonlyMap<string, string>,
+  periodStart?: Date
 ): StatementLedgerLine[] {
   const lines: StatementLedgerLine[] = [];
   for (const row of rows) {
@@ -122,7 +123,11 @@ export function buildLedgerLines(
 
     lines.push({
       category,
-      description: `${row.entryType}: ${row.description}`,
+      // A cost carried forward from an issued period says when it really happened.
+      description:
+        periodStart && row.occurredOn < periodStart
+          ? `${row.entryType}: ${row.description} (dated ${row.occurredOn.toISOString().slice(0, 10)})`
+          : `${row.entryType}: ${row.description}`,
       amountTh: Math.abs(row.amountThb),
       bookingId: row.bookingId,
       ledgerEntryId: row.id,

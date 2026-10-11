@@ -135,7 +135,7 @@ index da1c9ca..9bebb82 100644
      console.error('[STATEMENT SIGN OFF]', error)
      return NextResponse.json(
 diff --git a/src/app/api/admin/statements/generate/route.ts b/src/app/api/admin/statements/generate/route.ts
-index 64796c0..7ae34b5 100644
+index 64796c0..9e10a73 100644
 --- a/src/app/api/admin/statements/generate/route.ts
 +++ b/src/app/api/admin/statements/generate/route.ts
 @@ -4,8 +4,17 @@ import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -368,7 +368,7 @@ index 64796c0..7ae34b5 100644
      // Performance fee: only when the unit's active management contract enables
      // one; its basis and rate come from the contract, never from a default.
      const contract = await prisma.managementContract.findFirst({
-@@ -260,154 +146,310 @@ export async function POST(req: NextRequest) {
+@@ -260,154 +146,311 @@ export async function POST(req: NextRequest) {
        orderBy: { contractStartDate: 'desc' },
      })
  
@@ -588,7 +588,7 @@ index 64796c0..7ae34b5 100644
 +        // --- Sources of the statement's figures ---------------------------
 +        // Every figure below is computed on the server from stored rows;
 +        // nothing is taken from the request body beyond the unit and period.
-+        const sources = await collectSnapshotSources(tx, period)
++        const sources = await collectSnapshotSources(tx, period, existing?.id)
 +
 +        const grossBookingsThb = sources.bookings.reduce(
 +          (sum, booking) => sum + (booking.totalThb || 0),
@@ -671,7 +671,8 @@ index 64796c0..7ae34b5 100644
 +
 +        const ledgerLines = buildLedgerLines(
 +          sources.ledgerRows,
-+          sources.currentReceiptByEntryId
++          sources.currentReceiptByEntryId,
++          startDate
 +        )
 +        for (const line of ledgerLines) {
 +          lineItems.push({
@@ -810,7 +811,7 @@ index 64796c0..7ae34b5 100644
        statement: {
          id: statement.id,
          unitId: statement.unitId,
-@@ -431,6 +473,9 @@ export async function POST(req: NextRequest) {
+@@ -431,6 +474,9 @@ export async function POST(req: NextRequest) {
        },
      })
    } catch (error) {
@@ -1241,7 +1242,7 @@ index 04f30f3..8eb74ea 100644
      }
      console.error('[OWNER STATEMENT SIGN OFF]', error)
 diff --git a/src/app/mc/costs/page.tsx b/src/app/mc/costs/page.tsx
-index 157bf3b..7f62794 100644
+index 157bf3b..0df15d4 100644
 --- a/src/app/mc/costs/page.tsx
 +++ b/src/app/mc/costs/page.tsx
 @@ -97,6 +97,7 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
@@ -1314,7 +1315,7 @@ index 157bf3b..7f62794 100644
 +    'ops.costs.impact.draft_stale':
 +      'Recorded. The draft owner report for {start} – {end} was prepared before this cost, so it does not include it yet. An administrator can regenerate the draft.',
 +    'ops.costs.impact.issued':
-+      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. Ask an administrator to handle the correction.',
++      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. It will be carried into the next owner report prepared for this unit.',
 +    'ops.costs.replayed':
 +      'This cost was already recorded; nothing was added twice.',
 +    'ops.costs.error.conflict':
@@ -1357,7 +1358,7 @@ index 157bf3b..7f62794 100644
              description: e.description ?? '',
              unitName: e.unit?.name ?? '—',
 diff --git a/src/app/ops/costs/page.tsx b/src/app/ops/costs/page.tsx
-index 7c25cb0..f1f2797 100644
+index 7c25cb0..d6ed041 100644
 --- a/src/app/ops/costs/page.tsx
 +++ b/src/app/ops/costs/page.tsx
 @@ -72,13 +72,15 @@ export default async function RecordCostPage({ searchParams }: RecordCostPagePro
@@ -1429,7 +1430,7 @@ index 7c25cb0..f1f2797 100644
 +    'ops.costs.impact.draft_stale':
 +      'Recorded. The draft owner report for {start} – {end} was prepared before this cost, so it does not include it yet. An administrator can regenerate the draft.',
 +    'ops.costs.impact.issued':
-+      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. Ask an administrator to handle the correction.',
++      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. It will be carried into the next owner report prepared for this unit.',
 +    'ops.costs.replayed':
 +      'This cost was already recorded; nothing was added twice.',
 +    'ops.costs.error.conflict':
@@ -1473,7 +1474,7 @@ index 7c25cb0..f1f2797 100644
              unitName: e.unit?.name ?? '—',
 diff --git a/src/app/ops/costs/record-cost-client.test.tsx b/src/app/ops/costs/record-cost-client.test.tsx
 new file mode 100644
-index 0000000..4bd13b1
+index 0000000..d17f08c
 --- /dev/null
 +++ b/src/app/ops/costs/record-cost-client.test.tsx
 @@ -0,0 +1,326 @@
@@ -1510,7 +1511,7 @@ index 0000000..4bd13b1
 +  'ops.costs.receipt_error.locked': 'This cost is on an issued owner report.',
 +  'ops.costs.impact.no_statement': 'Recorded. It will be counted when the owner report for this period is prepared.',
 +  'ops.costs.impact.draft_stale': 'Recorded. The draft report for {start} – {end} does not include it yet.',
-+  'ops.costs.impact.issued': 'Recorded. The report for {start} – {end} is already issued and does not include this cost.',
++  'ops.costs.impact.issued': 'Recorded. The report for {start} – {end} is already issued and does not include this cost. It will be carried into the next owner report prepared for this unit.',
 +  'ops.costs.replayed': 'This cost was already recorded; nothing was added twice.',
 +  'ops.costs.error.conflict': 'This attempt was already used for a different cost.',
 +  'ops.costs.error.network': 'No connection. Your entry is kept.',
@@ -1633,7 +1634,7 @@ index 0000000..4bd13b1
 +
 +  it.each([
 +    ['a draft report that cannot include it yet', { state: 'draft_regeneration_required', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'does not include it yet', 'will be counted'],
-+    ['an already issued report', { state: 'period_already_issued', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'already issued and does not include this cost', 'will be counted'],
++    ['an already issued report', { state: 'period_already_issued', period: { start: '2026-10-01', end: '2026-10-31' }, statementId: 's' }, 'carried into the next owner report', 'will be counted when'],
 +  ])('does not promise inclusion for %s', async (_what, reportImpact, shown, notShown) => {
 +    fetchMock.mockReturnValueOnce(ok(201, saved({ reportImpact })));
 +    const { user, type } = setup();
@@ -2559,7 +2560,7 @@ index 4de446b..150478e 100644
      'owner.statement.signoff_title': 'Sign-off',
 diff --git a/src/modules/content/expense-safety.seed.ts b/src/modules/content/expense-safety.seed.ts
 new file mode 100644
-index 0000000..b30a3c1
+index 0000000..01a742c
 --- /dev/null
 +++ b/src/modules/content/expense-safety.seed.ts
 @@ -0,0 +1,34 @@
@@ -2583,7 +2584,7 @@ index 0000000..b30a3c1
 +  { key: 'ops.costs.receipt_error.generic', namespace: 'ops', description: 'Receipt upload failed', en: 'Could not upload the receipt. Try again.', ru: 'Не удалось загрузить чек. Попробуйте ещё раз.', th: 'อัปโหลดใบเสร็จไม่สำเร็จ กรุณาลองอีกครั้ง', status: 'needs_review' as const },
 +  { key: 'ops.costs.impact.no_statement', namespace: 'ops', description: 'After saving a cost: no report prepared for the period', en: 'Recorded. It will be counted when the owner report for this period is prepared.', ru: 'Записано. Расход будет учтён, когда подготовят отчёт собственника за этот период.', th: 'บันทึกแล้ว จะถูกนับเมื่อจัดทำรายงานเจ้าของสำหรับช่วงเวลานี้', status: 'needs_review' as const },
 +  { key: 'ops.costs.impact.draft_stale', namespace: 'ops', description: 'After saving a cost: draft report already prepared', en: 'Recorded. The draft owner report for {start} – {end} was prepared before this cost, so it does not include it yet. An administrator can regenerate the draft.', ru: 'Записано. Черновик отчёта собственника за {start} – {end} подготовлен раньше этого расхода и пока его не включает. Администратор может пересобрать черновик.', th: 'บันทึกแล้ว ร่างรายงานเจ้าของช่วง {start} – {end} จัดทำก่อนค่าใช้จ่ายนี้ จึงยังไม่รวม ผู้ดูแลสามารถสร้างร่างใหม่ได้', status: 'needs_review' as const },
-+  { key: 'ops.costs.impact.issued', namespace: 'ops', description: 'After saving a cost: report already issued', en: 'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. Ask an administrator to handle the correction.', ru: 'Записано. Отчёт собственника за {start} – {end} уже выпущен и этот расход не включает. Попросите администратора оформить корректировку.', th: 'บันทึกแล้ว รายงานเจ้าของช่วง {start} – {end} ออกไปแล้วและไม่รวมค่าใช้จ่ายนี้ โปรดแจ้งผู้ดูแลเพื่อดำเนินการแก้ไข', status: 'needs_review' as const },
++  { key: 'ops.costs.impact.issued', namespace: 'ops', description: 'After saving a cost: report already issued', en: 'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. It will be carried into the next owner report prepared for this unit.', ru: 'Записано. Отчёт собственника за {start} – {end} уже выпущен и этот расход не включает. Он будет перенесён в следующий отчёт собственника по этому объекту.', th: 'บันทึกแล้ว รายงานเจ้าของช่วง {start} – {end} ออกไปแล้วและไม่รวมค่าใช้จ่ายนี้ ค่าใช้จ่ายจะถูกยกไปรวมในรายงานเจ้าของฉบับถัดไปของยูนิตนี้', status: 'needs_review' as const },
 +  { key: 'ops.costs.replayed', namespace: 'ops', description: 'Retry recognised as already recorded', en: 'This cost was already recorded; nothing was added twice.', ru: 'Этот расход уже был записан; повторно ничего не добавлено.', th: 'ค่าใช้จ่ายนี้บันทึกไว้แล้ว ไม่มีการเพิ่มซ้ำ', status: 'needs_review' as const },
 +  { key: 'ops.costs.error.conflict', namespace: 'ops', description: 'Idempotency key reused with different content', en: 'This attempt was already used for a different cost. Check the list below, then record again if needed.', ru: 'Эта попытка уже использована для другого расхода. Проверьте список ниже и при необходимости запишите заново.', th: 'ความพยายามนี้ถูกใช้กับค่าใช้จ่ายอื่นแล้ว ตรวจสอบรายการด้านล่างแล้วบันทึกใหม่หากจำเป็น', status: 'needs_review' as const },
 +  { key: 'ops.costs.error.network', namespace: 'ops', description: 'No connection', en: 'No connection to the server. Your entry is kept, and retrying will not add a second cost.', ru: 'Нет связи с сервером. Введённые данные сохранены, повтор не создаст второй расход.', th: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ข้อมูลที่กรอกยังอยู่ การลองใหม่จะไม่สร้างค่าใช้จ่ายซ้ำ', status: 'needs_review' as const },
@@ -4754,10 +4755,10 @@ index 0000000..a7a79a1
 +}
 diff --git a/src/modules/finance/statement-expense.test.ts b/src/modules/finance/statement-expense.test.ts
 new file mode 100644
-index 0000000..8d1173a
+index 0000000..9a433f3
 --- /dev/null
 +++ b/src/modules/finance/statement-expense.test.ts
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,93 @@
 +import { describe, expect, it } from 'vitest';
 +import {
 +  buildLedgerLines,
@@ -4824,6 +4825,16 @@ index 0000000..8d1173a
 +  });
 +});
 +
++describe('costs carried forward', () => {
++  it('says when a carried cost really happened, and leaves in-period lines alone', () => {
++    const carried = row({ id: 'c1', occurredOn: new Date('2026-07-28') });
++    const inPeriod = row({ id: 'c2', occurredOn: new Date('2026-08-03') });
++    const lines = buildLedgerLines([carried, inPeriod], new Map(), new Date('2026-08-01'));
++    expect(lines[0].description).toBe('cleaning_cost: Deep clean (dated 2026-07-28)');
++    expect(lines[1].description).toBe('cleaning_cost: Deep clean');
++  });
++});
++
 +describe('statement lines', () => {
 +  it('traces each line to its ledger row and cites the current receipt for an expense', () => {
 +    const cost = row({ id: 'c1' });
@@ -4843,10 +4854,10 @@ index 0000000..8d1173a
 +});
 diff --git a/src/modules/finance/statement-expense.ts b/src/modules/finance/statement-expense.ts
 new file mode 100644
-index 0000000..87fc791
+index 0000000..0bf15a6
 --- /dev/null
 +++ b/src/modules/finance/statement-expense.ts
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,139 @@
 +import type { LedgerEntryType } from '@prisma/client';
 +
 +/**
@@ -4944,7 +4955,8 @@ index 0000000..87fc791
 + */
 +export function buildLedgerLines(
 +  rows: StatementLedgerRow[],
-+  currentReceiptByEntryId: ReadonlyMap<string, string>
++  currentReceiptByEntryId: ReadonlyMap<string, string>,
++  periodStart?: Date
 +): StatementLedgerLine[] {
 +  const lines: StatementLedgerLine[] = [];
 +  for (const row of rows) {
@@ -4971,7 +4983,11 @@ index 0000000..87fc791
 +
 +    lines.push({
 +      category,
-+      description: `${row.entryType}: ${row.description}`,
++      // A cost carried forward from an issued period says when it really happened.
++      description:
++        periodStart && row.occurredOn < periodStart
++          ? `${row.entryType}: ${row.description} (dated ${row.occurredOn.toISOString().slice(0, 10)})`
++          : `${row.entryType}: ${row.description}`,
 +      amountTh: Math.abs(row.amountThb),
 +      bookingId: row.bookingId,
 +      ledgerEntryId: row.id,
@@ -5497,13 +5513,14 @@ index 0000000..a7bf809
 +});
 diff --git a/src/modules/finance/statement-snapshot.ts b/src/modules/finance/statement-snapshot.ts
 new file mode 100644
-index 0000000..c2a3333
+index 0000000..04056c4
 --- /dev/null
 +++ b/src/modules/finance/statement-snapshot.ts
-@@ -0,0 +1,310 @@
+@@ -0,0 +1,357 @@
 +import { createHash } from 'crypto'; // unprefixed on purpose: this file is reachable from the finance barrel, which a client component imports (see CLAUDE.md, module rule 2 exception)
 +import type { BookingStatus, PrismaClient } from '@prisma/client';
 +import { toCalendarDay } from '@/lib/date';
++import { MANUAL_COST_TYPES } from './manual-cost-input';
 +import {
 +  NON_EXPENSE_STATEMENT_ENTRY_TYPES,
 +  OPERATING_EXPENSE_ENTRY_TYPES,
@@ -5546,7 +5563,7 @@ index 0000000..c2a3333
 +
 +type SnapshotDb = Pick<
 +  PrismaClient,
-+  'booking' | 'payment' | 'ledgerEntry' | 'expenseReceipt' | 'ownershipPeriod' | 'statementLineItem'
++  'booking' | 'payment' | 'ledgerEntry' | 'expenseReceipt' | 'ownershipPeriod' | 'statementLineItem' | 'ownerStatement'
 +>;
 +
 +export interface SnapshotPeriod {
@@ -5572,9 +5589,17 @@ index 0000000..c2a3333
 +  return new Date(day.getTime() + MS_PER_DAY);
 +}
 +
++/** Statuses at which a statement has been issued and is never rewritten. */
++const ISSUED_STATEMENT_STATUSES = ['published', 'pending_owner_review', 'signed_off', 'distributed'] as const;
++
++/**
++ * `ownStatementId` is the statement being rebuilt or re-verified: carried rows
++ * already linked to it still belong to it.
++ */
 +export async function collectSnapshotSources(
 +  db: SnapshotDb,
-+  period: SnapshotPeriod
++  period: SnapshotPeriod,
++  ownStatementId?: string
 +): Promise<SnapshotSources> {
 +  const nextPeriodDay = dayAfter(period.periodEnd);
 +
@@ -5625,7 +5650,45 @@ index 0000000..c2a3333
 +      reversesEntryId: true,
 +    },
 +  });
-+  const ledgerRows = swept.filter(isStatementLedgerRow);
++  // Costs carried forward. A cost recorded AFTER its own period's statement was
++  // issued keeps its true business date and cannot enter that statement; it
++  // is carried into the next statement prepared for the unit, exactly once
++  // (its `statement_id` is set the moment it is included). A cost in a period
++  // that never had an issued statement is not carried: nothing was closed on
++  // it, and what to do with a gap in the reporting is not decided here.
++  const issuedBefore = await db.ownerStatement.findMany({
++    where: {
++      unitId: period.unitId,
++      status: { in: [...ISSUED_STATEMENT_STATUSES] },
++      periodEnd: { lt: period.periodStart },
++    },
++    select: { periodStart: true, periodEnd: true },
++  });
++  const orphans = issuedBefore.length
++    ? await db.ledgerEntry.findMany({
++        where: {
++          unitId: period.unitId,
++          occurredOn: { lt: period.periodStart },
++          entryType: { in: [...MANUAL_COST_TYPES] },
++          manualCostKey: { not: null },
++          OR: [{ statementId: null }, { statementId: ownStatementId ?? '' }],
++        },
++        orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
++        select: {
++          id: true,
++          entryType: true,
++          amountThb: true,
++          description: true,
++          bookingId: true,
++          occurredOn: true,
++          reversesEntryId: true,
++        },
++      })
++    : [];
++  const carried = orphans.filter((row) =>
++    issuedBefore.some((s) => s.periodStart <= row.occurredOn && row.occurredOn <= s.periodEnd)
++  );
++  const ledgerRows = [...carried, ...swept.filter(isStatementLedgerRow)];
 +
 +  const receipts = ledgerRows.length
 +    ? await db.expenseReceipt.findMany({
@@ -5801,7 +5864,7 @@ index 0000000..c2a3333
 +    periodStart: statement.periodStart,
 +    periodEnd: statement.periodEnd,
 +  };
-+  const sources = await collectSnapshotSources(db, period);
++  const sources = await collectSnapshotSources(db, period, statement.id);
 +  const live = sourceFingerprint(
 +    period,
 +    { ownerIdentityId: statement.ownerIdentityId, engagementId: statement.engagementId },
@@ -5813,10 +5876,10 @@ index 0000000..c2a3333
 +}
 diff --git a/src/modules/workflows/expense-to-owner-report.integration.test.ts b/src/modules/workflows/expense-to-owner-report.integration.test.ts
 new file mode 100644
-index 0000000..bc19df5
+index 0000000..a6e5ea4
 --- /dev/null
 +++ b/src/modules/workflows/expense-to-owner-report.integration.test.ts
-@@ -0,0 +1,674 @@
+@@ -0,0 +1,731 @@
 +/* eslint-disable no-restricted-imports */
 +import { beforeEach, describe, expect, it, vi } from 'vitest';
 +import { NextRequest } from 'next/server';
@@ -6227,6 +6290,63 @@ index 0000000..bc19df5
 +      expect(body.dating).toBe('current_period');
 +      expect(String(body.occurredOn)).not.toContain('2026-07');
 +      expect(await expenseLines(gen.statement.id)).toHaveLength(1); // untouched
++    });
++  });
++
++  describe('a late cost is carried into the next report, once', () => {
++    async function issuedJuly() {
++      await recordCost(w.staff);
++      const { body: gen } = await generate();
++      await signOperator(gen.statement.id);
++      return gen.statement.id as string;
++    }
++    const august = (extra: Record<string, unknown> = {}) => generate(extra, w.unitA.id, ['2026-08-01', '2026-08-31']);
++
++    it('keeps its true date, stays out of the issued report, and lands in the next one with its date shown', async () => {
++      const july = await issuedJuly();
++      const late = await recordCost(w.staff, { description: 'Invoice arrived after issue', occurredOn: '2026-07-28', amountThb: 70_000 });
++      expect(late.body.reportImpact.state).toBe('period_already_issued');
++      expect(late.body.occurredOn).toBe('2026-07-28');
++
++      const aug = await august();
++      expect(aug.res.status).toBe(200);
++      expect(aug.body.statement.operatingExpensesAmountThb).toBe(70_000);
++      const [line] = await expenseLines(aug.body.statement.id);
++      expect(line).toMatchObject({ ledgerEntryId: late.body.id, amountTh: 70_000 });
++      expect(line.description).toContain('(dated 2026-07-28)');
++      expect(await expenseLines(july)).toHaveLength(1); // the issued report is untouched
++      expect((await db.ledgerEntry.findUniqueOrThrow({ where: { id: late.body.id } })).statementId).toBe(aug.body.statement.id);
++    });
++
++    it('is counted exactly once: a rebuilt draft keeps it, and a later report does not repeat it', async () => {
++      await issuedJuly();
++      const late = await recordCost(w.staff, { description: 'Late one', occurredOn: '2026-07-29' });
++      const aug = await august();
++      const rebuilt = await august({ regenerate: true });
++      expect(rebuilt.body.statement.operatingExpensesAmountThb).toBe(aug.body.statement.operatingExpensesAmountThb);
++      expect((await expenseLines(aug.body.statement.id)).filter((l) => l.ledgerEntryId === late.body.id)).toHaveLength(1);
++
++      await signOperator(aug.body.statement.id);
++      const sept = await generate({}, w.unitA.id, ['2026-09-01', '2026-09-30']);
++      expect(await expenseLines(sept.body.statement.id)).toHaveLength(0);
++    });
++
++    it('makes the next report stale — not silently different — when another late cost arrives before it is signed', async () => {
++      await issuedJuly();
++      await recordCost(w.staff, { description: 'Late one', occurredOn: '2026-07-29' });
++      const aug = await august();
++      await recordCost(w.staff, { description: 'Later still', occurredOn: '2026-07-30' });
++      const refused = await signOperator(aug.body.statement.id);
++      expect([refused.res.status, refused.body.code]).toEqual([409, 'statement_stale']);
++      const rebuilt = await august({ regenerate: true });
++      expect(await expenseLines(rebuilt.body.statement.id)).toHaveLength(2);
++      expect((await signOperator(aug.body.statement.id)).res.status).toBe(200);
++    });
++
++    it('does not carry a cost from a period that never had an issued report', async () => {
++      await recordCost(w.staff, { occurredOn: '2026-06-15', description: 'June, never reported' });
++      const jul = await generate();
++      expect(await expenseLines(jul.body.statement.id)).toHaveLength(0);
 +    });
 +  });
 +

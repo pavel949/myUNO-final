@@ -411,6 +411,63 @@ describe('expense → private receipt → owner report → approval', () => {
     });
   });
 
+  describe('a late cost is carried into the next report, once', () => {
+    async function issuedJuly() {
+      await recordCost(w.staff);
+      const { body: gen } = await generate();
+      await signOperator(gen.statement.id);
+      return gen.statement.id as string;
+    }
+    const august = (extra: Record<string, unknown> = {}) => generate(extra, w.unitA.id, ['2026-08-01', '2026-08-31']);
+
+    it('keeps its true date, stays out of the issued report, and lands in the next one with its date shown', async () => {
+      const july = await issuedJuly();
+      const late = await recordCost(w.staff, { description: 'Invoice arrived after issue', occurredOn: '2026-07-28', amountThb: 70_000 });
+      expect(late.body.reportImpact.state).toBe('period_already_issued');
+      expect(late.body.occurredOn).toBe('2026-07-28');
+
+      const aug = await august();
+      expect(aug.res.status).toBe(200);
+      expect(aug.body.statement.operatingExpensesAmountThb).toBe(70_000);
+      const [line] = await expenseLines(aug.body.statement.id);
+      expect(line).toMatchObject({ ledgerEntryId: late.body.id, amountTh: 70_000 });
+      expect(line.description).toContain('(dated 2026-07-28)');
+      expect(await expenseLines(july)).toHaveLength(1); // the issued report is untouched
+      expect((await db.ledgerEntry.findUniqueOrThrow({ where: { id: late.body.id } })).statementId).toBe(aug.body.statement.id);
+    });
+
+    it('is counted exactly once: a rebuilt draft keeps it, and a later report does not repeat it', async () => {
+      await issuedJuly();
+      const late = await recordCost(w.staff, { description: 'Late one', occurredOn: '2026-07-29' });
+      const aug = await august();
+      const rebuilt = await august({ regenerate: true });
+      expect(rebuilt.body.statement.operatingExpensesAmountThb).toBe(aug.body.statement.operatingExpensesAmountThb);
+      expect((await expenseLines(aug.body.statement.id)).filter((l) => l.ledgerEntryId === late.body.id)).toHaveLength(1);
+
+      await signOperator(aug.body.statement.id);
+      const sept = await generate({}, w.unitA.id, ['2026-09-01', '2026-09-30']);
+      expect(await expenseLines(sept.body.statement.id)).toHaveLength(0);
+    });
+
+    it('makes the next report stale — not silently different — when another late cost arrives before it is signed', async () => {
+      await issuedJuly();
+      await recordCost(w.staff, { description: 'Late one', occurredOn: '2026-07-29' });
+      const aug = await august();
+      await recordCost(w.staff, { description: 'Later still', occurredOn: '2026-07-30' });
+      const refused = await signOperator(aug.body.statement.id);
+      expect([refused.res.status, refused.body.code]).toEqual([409, 'statement_stale']);
+      const rebuilt = await august({ regenerate: true });
+      expect(await expenseLines(rebuilt.body.statement.id)).toHaveLength(2);
+      expect((await signOperator(aug.body.statement.id)).res.status).toBe(200);
+    });
+
+    it('does not carry a cost from a period that never had an issued report', async () => {
+      await recordCost(w.staff, { occurredOn: '2026-06-15', description: 'June, never reported' });
+      const jul = await generate();
+      expect(await expenseLines(jul.body.statement.id)).toHaveLength(0);
+    });
+  });
+
   describe('closed reports stay closed', () => {
     it('refuses to regenerate, regenerate over a signature, or generate a second report for the period', async () => {
       await recordCost(w.staff);

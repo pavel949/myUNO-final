@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'; // unprefixed on purpose: this file is reachable from the finance barrel, which a client component imports (see CLAUDE.md, module rule 2 exception)
 import type { BookingStatus, PrismaClient } from '@prisma/client';
 import { toCalendarDay } from '@/lib/date';
+import { MANUAL_COST_TYPES } from './manual-cost-input';
 import {
   NON_EXPENSE_STATEMENT_ENTRY_TYPES,
   OPERATING_EXPENSE_ENTRY_TYPES,
@@ -43,7 +44,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type SnapshotDb = Pick<
   PrismaClient,
-  'booking' | 'payment' | 'ledgerEntry' | 'expenseReceipt' | 'ownershipPeriod' | 'statementLineItem'
+  'booking' | 'payment' | 'ledgerEntry' | 'expenseReceipt' | 'ownershipPeriod' | 'statementLineItem' | 'ownerStatement'
 >;
 
 export interface SnapshotPeriod {
@@ -69,9 +70,17 @@ export function dayAfter(day: Date): Date {
   return new Date(day.getTime() + MS_PER_DAY);
 }
 
+/** Statuses at which a statement has been issued and is never rewritten. */
+const ISSUED_STATEMENT_STATUSES = ['published', 'pending_owner_review', 'signed_off', 'distributed'] as const;
+
+/**
+ * `ownStatementId` is the statement being rebuilt or re-verified: carried rows
+ * already linked to it still belong to it.
+ */
 export async function collectSnapshotSources(
   db: SnapshotDb,
-  period: SnapshotPeriod
+  period: SnapshotPeriod,
+  ownStatementId?: string
 ): Promise<SnapshotSources> {
   const nextPeriodDay = dayAfter(period.periodEnd);
 
@@ -122,7 +131,45 @@ export async function collectSnapshotSources(
       reversesEntryId: true,
     },
   });
-  const ledgerRows = swept.filter(isStatementLedgerRow);
+  // Costs carried forward. A cost recorded AFTER its own period's statement was
+  // issued keeps its true business date and cannot enter that statement; it
+  // is carried into the next statement prepared for the unit, exactly once
+  // (its `statement_id` is set the moment it is included). A cost in a period
+  // that never had an issued statement is not carried: nothing was closed on
+  // it, and what to do with a gap in the reporting is not decided here.
+  const issuedBefore = await db.ownerStatement.findMany({
+    where: {
+      unitId: period.unitId,
+      status: { in: [...ISSUED_STATEMENT_STATUSES] },
+      periodEnd: { lt: period.periodStart },
+    },
+    select: { periodStart: true, periodEnd: true },
+  });
+  const orphans = issuedBefore.length
+    ? await db.ledgerEntry.findMany({
+        where: {
+          unitId: period.unitId,
+          occurredOn: { lt: period.periodStart },
+          entryType: { in: [...MANUAL_COST_TYPES] },
+          manualCostKey: { not: null },
+          OR: [{ statementId: null }, { statementId: ownStatementId ?? '' }],
+        },
+        orderBy: [{ occurredOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          entryType: true,
+          amountThb: true,
+          description: true,
+          bookingId: true,
+          occurredOn: true,
+          reversesEntryId: true,
+        },
+      })
+    : [];
+  const carried = orphans.filter((row) =>
+    issuedBefore.some((s) => s.periodStart <= row.occurredOn && row.occurredOn <= s.periodEnd)
+  );
+  const ledgerRows = [...carried, ...swept.filter(isStatementLedgerRow)];
 
   const receipts = ledgerRows.length
     ? await db.expenseReceipt.findMany({
@@ -298,7 +345,7 @@ export async function verifyStatementSnapshot(
     periodStart: statement.periodStart,
     periodEnd: statement.periodEnd,
   };
-  const sources = await collectSnapshotSources(db, period);
+  const sources = await collectSnapshotSources(db, period, statement.id);
   const live = sourceFingerprint(
     period,
     { ownerIdentityId: statement.ownerIdentityId, engagementId: statement.engagementId },

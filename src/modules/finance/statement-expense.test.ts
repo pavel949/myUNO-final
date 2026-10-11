@@ -64,6 +64,16 @@ describe('operating expenses on a statement', () => {
   });
 });
 
+describe('costs carried forward', () => {
+  it('says when a carried cost really happened, and leaves in-period lines alone', () => {
+    const carried = row({ id: 'c1', occurredOn: new Date('2026-07-28') });
+    const inPeriod = row({ id: 'c2', occurredOn: new Date('2026-08-03') });
+    const lines = buildLedgerLines([carried, inPeriod], new Map(), new Date('2026-08-01'));
+    expect(lines[0].description).toBe('cleaning_cost: Deep clean (dated 2026-07-28)');
+    expect(lines[1].description).toBe('cleaning_cost: Deep clean');
+  });
+});
+
 describe('statement lines', () => {
   it('traces each line to its ledger row and cites the current receipt for an expense', () => {
     const cost = row({ id: 'c1' });

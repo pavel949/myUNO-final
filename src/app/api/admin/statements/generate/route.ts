@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
         // --- Sources of the statement's figures ---------------------------
         // Every figure below is computed on the server from stored rows;
         // nothing is taken from the request body beyond the unit and period.
-        const sources = await collectSnapshotSources(tx, period)
+        const sources = await collectSnapshotSources(tx, period, existing?.id)
 
         const grossBookingsThb = sources.bookings.reduce(
           (sum, booking) => sum + (booking.totalThb || 0),
@@ -315,7 +315,8 @@ export async function POST(req: NextRequest) {
 
         const ledgerLines = buildLedgerLines(
           sources.ledgerRows,
-          sources.currentReceiptByEntryId
+          sources.currentReceiptByEntryId,
+          startDate
         )
         for (const line of ledgerLines) {
           lineItems.push({

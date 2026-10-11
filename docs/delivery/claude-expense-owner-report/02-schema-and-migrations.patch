@@ -1,0 +1,304 @@
+diff --git a/prisma/migrations/20261010070000_manual_cost_integrity/migration.sql b/prisma/migrations/20261010070000_manual_cost_integrity/migration.sql
+new file mode 100644
+index 0000000..3a400d7
+--- /dev/null
++++ b/prisma/migrations/20261010070000_manual_cost_integrity/migration.sql
+@@ -0,0 +1,70 @@
++-- Manual cost integrity (expand-only; every column is nullable, nothing is backfilled).
++--
++-- 1. A replay key per recorder: the same person retrying the same cost lands on
++--    the same row; a reused key with different content is a conflict (decided in
++--    the service by comparing fingerprints, enforced here by the UNIQUE index).
++-- 2. A reversal names its original, once: two concurrent reversals of one cost
++--    cannot both insert (UNIQUE on reverses_entry_id).
++-- 3. A manual cost is a financial fact: after insert only the statement link may
++--    change, and it can never be deleted. Legacy rows (no key) are untouched.
++ALTER TABLE "ledger_entry"
++  ADD COLUMN "manual_cost_key" VARCHAR(36),
++  ADD COLUMN "manual_cost_fingerprint" VARCHAR(64),
++  ADD COLUMN "reverses_entry_id" TEXT;
++
++CREATE UNIQUE INDEX "ledger_entry_created_by_identity_id_manual_cost_key_key"
++  ON "ledger_entry"("created_by_identity_id", "manual_cost_key");
++CREATE UNIQUE INDEX "ledger_entry_reverses_entry_id_key"
++  ON "ledger_entry"("reverses_entry_id");
++
++ALTER TABLE "ledger_entry"
++  ADD CONSTRAINT "ledger_entry_reverses_entry_id_fkey"
++  FOREIGN KEY ("reverses_entry_id") REFERENCES "ledger_entry"("id")
++  ON DELETE RESTRICT ON UPDATE CASCADE;
++
++ALTER TABLE "ledger_entry"
++  ADD CONSTRAINT "ledger_entry_manual_cost_pair"
++  CHECK (("manual_cost_key" IS NULL) = ("manual_cost_fingerprint" IS NULL)),
++  ADD CONSTRAINT "ledger_entry_no_self_reversal"
++  CHECK ("reverses_entry_id" IS NULL OR "reverses_entry_id" <> "id"),
++  -- A recognition date is a calendar day, never an instant.
++  ADD CONSTRAINT "ledger_entry_manual_cost_business_date"
++  CHECK (("manual_cost_key" IS NULL AND "reverses_entry_id" IS NULL)
++         OR "occurred_on" = date_trunc('day', "occurred_on")),
++  -- Doc 02 §5.3: negative = cost/outflow.
++  ADD CONSTRAINT "ledger_entry_manual_cost_is_outflow"
++  CHECK ("manual_cost_key" IS NULL OR "amount_thb" < 0);
++
++CREATE OR REPLACE FUNCTION ledger_entry_manual_cost_immutable() RETURNS trigger AS $$
++BEGIN
++  IF TG_OP = 'DELETE' THEN
++    RAISE EXCEPTION 'ledger_entry % is immutable: a recorded cost is corrected by a reversal, never deleted', OLD.id
++      USING ERRCODE = 'restrict_violation';
++  END IF;
++  -- statement_id, booking/payment links and FK SET NULL actions stay possible;
++  -- the financial fact itself does not move.
++  IF NEW.entry_type IS DISTINCT FROM OLD.entry_type
++     OR NEW.amount_thb IS DISTINCT FROM OLD.amount_thb
++     OR NEW.occurred_on IS DISTINCT FROM OLD.occurred_on
++     OR NEW.description IS DISTINCT FROM OLD.description
++     OR NEW.created_at IS DISTINCT FROM OLD.created_at
++     OR NEW.manual_cost_key IS DISTINCT FROM OLD.manual_cost_key
++     OR NEW.manual_cost_fingerprint IS DISTINCT FROM OLD.manual_cost_fingerprint
++     OR NEW.reverses_entry_id IS DISTINCT FROM OLD.reverses_entry_id
++     OR (NEW.created_by_identity_id IS DISTINCT FROM OLD.created_by_identity_id AND NEW.created_by_identity_id IS NOT NULL)
++     OR (NEW.unit_id IS DISTINCT FROM OLD.unit_id AND NEW.unit_id IS NOT NULL)
++     OR (NEW.project_id IS DISTINCT FROM OLD.project_id AND NEW.project_id IS NOT NULL)
++  THEN
++    RAISE EXCEPTION 'ledger_entry % is immutable: a recorded cost is corrected by a reversal, never edited', OLD.id
++      USING ERRCODE = 'restrict_violation';
++  END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++
++DROP TRIGGER IF EXISTS ledger_entry_manual_cost_immutable ON "ledger_entry";
++CREATE TRIGGER ledger_entry_manual_cost_immutable
++  BEFORE UPDATE OR DELETE ON "ledger_entry"
++  FOR EACH ROW
++  WHEN (OLD."manual_cost_key" IS NOT NULL OR OLD."reverses_entry_id" IS NOT NULL)
++  EXECUTE FUNCTION ledger_entry_manual_cost_immutable();
+diff --git a/prisma/migrations/20261010102000_private_expense_receipts/migration.sql b/prisma/migrations/20261010102000_private_expense_receipts/migration.sql
+new file mode 100644
+index 0000000..50d2295
+--- /dev/null
++++ b/prisma/migrations/20261010102000_private_expense_receipts/migration.sql
+@@ -0,0 +1,76 @@
++-- Private expense receipts. Table and protection ship as ONE unit: the table is
++-- created, row-level security is switched on and every Data API grant is revoked
++-- in this file, so there is no moment at which it is open.
++--
++-- The file lives encrypted (lib/encryption AES-256-GCM over base64) in
++-- "ciphertext". There is no public URL and no media_asset row.
++CREATE TABLE "expense_receipt" (
++  "id" TEXT NOT NULL,
++  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
++  "ledger_entry_id" TEXT NOT NULL,
++  "uploaded_by_identity_id" TEXT NOT NULL,
++  "upload_key" VARCHAR(36) NOT NULL,
++  "mime_type" TEXT NOT NULL,
++  "size_bytes" INTEGER NOT NULL,
++  "sha256" VARCHAR(64) NOT NULL,
++  "ciphertext" TEXT NOT NULL,
++  "superseded_at" TIMESTAMP(3),
++  CONSTRAINT "expense_receipt_pkey" PRIMARY KEY ("id"),
++  CONSTRAINT "expense_receipt_mime_type_check"
++    CHECK ("mime_type" IN ('application/pdf', 'image/jpeg', 'image/png', 'image/webp')),
++  CONSTRAINT "expense_receipt_size_check" CHECK ("size_bytes" BETWEEN 1 AND 4194304),
++  CONSTRAINT "expense_receipt_sha256_check" CHECK ("sha256" ~ '^[0-9a-f]{64}$')
++);
++
++CREATE UNIQUE INDEX "expense_receipt_uploaded_by_identity_id_upload_key_key"
++  ON "expense_receipt"("uploaded_by_identity_id", "upload_key");
++CREATE INDEX "expense_receipt_ledger_entry_id_idx" ON "expense_receipt"("ledger_entry_id");
++-- One current receipt per expense, and one current use per file: the same bytes
++-- cannot evidence two different expenses at once.
++CREATE UNIQUE INDEX "expense_receipt_current_per_entry"
++  ON "expense_receipt"("ledger_entry_id") WHERE "superseded_at" IS NULL;
++CREATE UNIQUE INDEX "expense_receipt_current_sha256"
++  ON "expense_receipt"("sha256") WHERE "superseded_at" IS NULL;
++
++ALTER TABLE "expense_receipt"
++  ADD CONSTRAINT "expense_receipt_ledger_entry_id_fkey"
++  FOREIGN KEY ("ledger_entry_id") REFERENCES "ledger_entry"("id")
++  ON DELETE RESTRICT ON UPDATE CASCADE,
++  ADD CONSTRAINT "expense_receipt_uploaded_by_identity_id_fkey"
++  FOREIGN KEY ("uploaded_by_identity_id") REFERENCES "identity"("id")
++  ON DELETE RESTRICT ON UPDATE CASCADE;
++
++-- Evidence is replaced by superseding, never edited: only "superseded_at" may
++-- move, and only from NULL to a timestamp.
++CREATE OR REPLACE FUNCTION expense_receipt_immutable() RETURNS trigger AS $$
++BEGIN
++  IF TG_OP = 'DELETE' THEN
++    RAISE EXCEPTION 'expense_receipt % is immutable: supersede it with a new receipt', OLD.id
++      USING ERRCODE = 'restrict_violation';
++  END IF;
++  IF NEW.id IS DISTINCT FROM OLD.id
++     OR NEW.created_at IS DISTINCT FROM OLD.created_at
++     OR NEW.ledger_entry_id IS DISTINCT FROM OLD.ledger_entry_id
++     OR NEW.uploaded_by_identity_id IS DISTINCT FROM OLD.uploaded_by_identity_id
++     OR NEW.upload_key IS DISTINCT FROM OLD.upload_key
++     OR NEW.mime_type IS DISTINCT FROM OLD.mime_type
++     OR NEW.size_bytes IS DISTINCT FROM OLD.size_bytes
++     OR NEW.sha256 IS DISTINCT FROM OLD.sha256
++     OR NEW.ciphertext IS DISTINCT FROM OLD.ciphertext
++     OR (OLD.superseded_at IS NOT NULL AND NEW.superseded_at IS DISTINCT FROM OLD.superseded_at)
++  THEN
++    RAISE EXCEPTION 'expense_receipt % is immutable: supersede it with a new receipt', OLD.id
++      USING ERRCODE = 'restrict_violation';
++  END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++
++DROP TRIGGER IF EXISTS expense_receipt_immutable ON "expense_receipt";
++CREATE TRIGGER expense_receipt_immutable
++  BEFORE UPDATE OR DELETE ON "expense_receipt"
++  FOR EACH ROW EXECUTE FUNCTION expense_receipt_immutable();
++
++-- Closed by default (same pattern as 20261005170000_stitch_additive_gaps).
++ALTER TABLE "expense_receipt" ENABLE ROW LEVEL SECURITY;
++REVOKE ALL ON TABLE "expense_receipt" FROM PUBLIC, anon, authenticated;
+diff --git a/prisma/migrations/20261010103000_statement_snapshot_lines/migration.sql b/prisma/migrations/20261010103000_statement_snapshot_lines/migration.sql
+new file mode 100644
+index 0000000..e97a037
+--- /dev/null
++++ b/prisma/migrations/20261010103000_statement_snapshot_lines/migration.sql
+@@ -0,0 +1,23 @@
++-- Verified statement snapshot + traceable expense lines (expand-only, nullable).
++-- Statements generated before this migration keep NULLs and are treated as
++-- "unverifiable" by sign-off, never as stale.
++ALTER TABLE "owner_statement"
++  ADD COLUMN "source_fingerprint" VARCHAR(64),
++  ADD COLUMN "snapshot_hash" VARCHAR(64);
++
++ALTER TABLE "statement_line_item"
++  ADD COLUMN "ledger_entry_id" TEXT,
++  ADD COLUMN "expense_receipt_id" TEXT;
++
++CREATE UNIQUE INDEX "statement_line_item_statement_id_ledger_entry_id_key"
++  ON "statement_line_item"("statement_id", "ledger_entry_id");
++CREATE INDEX "statement_line_item_ledger_entry_id_idx" ON "statement_line_item"("ledger_entry_id");
++CREATE INDEX "statement_line_item_expense_receipt_id_idx" ON "statement_line_item"("expense_receipt_id");
++
++ALTER TABLE "statement_line_item"
++  ADD CONSTRAINT "statement_line_item_ledger_entry_id_fkey"
++  FOREIGN KEY ("ledger_entry_id") REFERENCES "ledger_entry"("id")
++  ON DELETE RESTRICT ON UPDATE CASCADE,
++  ADD CONSTRAINT "statement_line_item_expense_receipt_id_fkey"
++  FOREIGN KEY ("expense_receipt_id") REFERENCES "expense_receipt"("id")
++  ON DELETE RESTRICT ON UPDATE CASCADE;
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index f90ad48..3d11882 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -827,6 +827,7 @@ model Identity {
+   refundsPaidBy                 Refund[]                      @relation("refundPaidBy")
+   refundsInitiatedBy            Refund[]                      @relation("refundInitiatedBy")
+   ledgerEntriesCreated          LedgerEntry[]                 @relation("ledgerEntryCreator")
++  expenseReceiptsUploaded       ExpenseReceipt[]              @relation("expenseReceiptUploader")
+   disputesDecided               Dispute[]                     @relation("disputeDecidedBy")
+   notifications                 Notification[]
+   notificationPreferences       NotificationPreference[]
+@@ -1412,6 +1413,17 @@ model LedgerEntry {
+   description         String
+   createdByIdentityId String?         @map("created_by_identity_id")
+ 
++  // Manual cost integrity. A replay key belongs to the person who recorded the
++  // cost; the fingerprint is the normalised content it was recorded with, so a
++  // retry is recognised as the same cost and a reused key with different
++  // content is a conflict, not a second row. Both are set together or not at
++  // all (CHECK). Null on every system-written and legacy row.
++  manualCostKey         String? @map("manual_cost_key") @db.VarChar(36)
++  manualCostFingerprint String? @map("manual_cost_fingerprint") @db.VarChar(64)
++  // A reversal points at exactly one original, and an original has at most one
++  // reversal (UNIQUE) — two concurrent reversals cannot both land.
++  reversesEntryId       String? @unique @map("reverses_entry_id")
++
+   // Relations
+   unit      Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
+   project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+@@ -1422,7 +1434,12 @@ model LedgerEntry {
+   createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
+   payout    Payout?         @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+   disputes  Dispute[]
++  reverses  LedgerEntry?    @relation(name: "ledgerReversal", fields: [reversesEntryId], references: [id], onDelete: Restrict)
++  reversal  LedgerEntry?    @relation(name: "ledgerReversal")
++  receipts  ExpenseReceipt[]
++  statementLines StatementLineItem[]
+ 
++  @@unique([createdByIdentityId, manualCostKey])
+   @@index([unitId, occurredOn])
+   @@index([projectId, occurredOn])
+   @@index([bookingId])
+@@ -1431,6 +1448,34 @@ model LedgerEntry {
+   @@map("ledger_entry")
+ }
+ 
++// A private receipt for one manual cost. The file never leaves this table in
++// the clear: `ciphertext` is the existing AES-256-GCM contract (lib/encryption)
++// over the base64 bytes, there is no public URL, and the table is closed to the
++// Data API (RLS on, all grants revoked) in the same migration that creates it.
++// At most one receipt is current per expense; a replacement supersedes the old
++// row rather than overwriting it, so what an issued statement cites survives.
++model ExpenseReceipt {
++  id        String   @id @default(uuid())
++  createdAt DateTime @default(now()) @map("created_at")
++
++  ledgerEntryId        String    @map("ledger_entry_id")
++  uploadedByIdentityId String    @map("uploaded_by_identity_id")
++  uploadKey            String    @map("upload_key") @db.VarChar(36)
++  mimeType             String    @map("mime_type")
++  sizeBytes            Int       @map("size_bytes")
++  sha256               String    @db.VarChar(64)
++  ciphertext           String
++  supersededAt         DateTime? @map("superseded_at")
++
++  ledgerEntry    LedgerEntry         @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
++  uploadedBy     Identity            @relation(name: "expenseReceiptUploader", fields: [uploadedByIdentityId], references: [id])
++  statementLines StatementLineItem[]
++
++  @@unique([uploadedByIdentityId, uploadKey])
++  @@index([ledgerEntryId])
++  @@map("expense_receipt")
++}
++
+ model OwnerStatement {
+   id        String   @id @default(uuid())
+   createdAt DateTime @default(now()) @map("created_at")
+@@ -1469,6 +1514,13 @@ model OwnerStatement {
+   signedOffByOperatorAt     DateTime? @map("signed_off_by_operator_at")
+   approvedAt                DateTime? @map("approved_at")
+ 
++  // The verified snapshot. `sourceFingerprint` hashes every source fact the
++  // figures were computed from (stays, guest payments, ledger rows, current
++  // receipts, ownership chain); `snapshotHash` hashes the figures and line
++  // items as issued. Null on statements generated before these existed.
++  sourceFingerprint         String?   @map("source_fingerprint") @db.VarChar(64)
++  snapshotHash              String?   @map("snapshot_hash") @db.VarChar(64)
++
+   // Relations
+   unit          Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
+   owner         Identity            @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
+@@ -1502,10 +1554,20 @@ model StatementLineItem {
+   // management contract, which the statement already identifies.
+   bookingId            String? @map("booking_id")
+   supportingDocumentId String? @map("supporting_document_id")
+-
+-  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+-  booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+-
++  // The ledger row an expense line was built from, and the private receipt that
++  // was current for it when the statement was generated. A ledger row appears
++  // at most once per statement (UNIQUE).
++  ledgerEntryId        String? @map("ledger_entry_id")
++  expenseReceiptId     String? @map("expense_receipt_id")
++
++  statement      OwnerStatement  @relation(fields: [statementId], references: [id], onDelete: Cascade)
++  booking        Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
++  ledgerEntry    LedgerEntry?    @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
++  expenseReceipt ExpenseReceipt? @relation(fields: [expenseReceiptId], references: [id], onDelete: Restrict)
++
++  @@unique([statementId, ledgerEntryId])
++  @@index([ledgerEntryId])
++  @@index([expenseReceiptId])
+   @@index([statementId, category])
+   @@index([bookingId])
+   @@map("statement_line_item")

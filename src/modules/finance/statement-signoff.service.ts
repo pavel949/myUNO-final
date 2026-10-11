@@ -1,4 +1,6 @@
 import type { OwnerStatementStatus, Prisma, PrismaClient } from '@prisma/client';
+import { lockUnitLedgerExclusive } from './ledger.service';
+import { verifyStatementSnapshot } from './statement-snapshot';
 
 /**
  * Statement sign-off — the one place the two signatures are recorded.
@@ -90,7 +92,12 @@ export interface StatementSignOffView {
 export type StatementSignOffFailure =
   | 'not_found'
   | 'not_signable'
-  | 'already_signed';
+  | 'already_signed'
+  // The facts the statement was built from changed after it was generated
+  // (a cost, a reversal, a receipt, the ownership chain). Regenerate it.
+  | 'stale'
+  // The issued figures/lines no longer match the snapshot taken at generation.
+  | 'snapshot_mismatch';
 
 /**
  * A refused sign-off. Carries the reason as data so each route can choose its
@@ -157,15 +164,35 @@ export function hasSignedOff(
  * The caller authorizes (whose statement this is); this function owns the state
  * machine and re-checks status and duplicate signature inside the lock, throwing
  * `StatementSignOffError` rather than trusting the caller's earlier read.
+ *
+ * Lock order is fixed across the module: the unit's ledger lock (exclusive —
+ * no cost, reversal or receipt can commit while a statement is being frozen),
+ * then the statement row. The snapshot is verified under both, so "fresh" means
+ * fresh at the instant of signing.
  */
 export async function recordStatementSignOff(
   db: PrismaClient,
   statementId: string,
   actor: StatementSignOffActor,
-  now: Date = new Date()
+  now: Date = new Date(),
+  actorIdentityId?: string
 ): Promise<StatementSignOffView> {
   return db.$transaction(async (tx) => {
-    // Take the row lock first. A concurrent sign-off blocks here and, once the
+    // The unit never changes for a statement, so reading it before the locks is
+    // safe; it is what the lock order needs to start from.
+    const head = await tx.ownerStatement.findUnique({
+      where: { id: statementId },
+      select: { unitId: true },
+    });
+    if (!head) {
+      throw new StatementSignOffError(
+        'not_found',
+        `Statement ${statementId} not found`
+      );
+    }
+    await lockUnitLedgerExclusive(tx, head.unitId);
+
+    // Take the row lock next. A concurrent sign-off blocks here and, once the
     // first commits, reads the row it wrote — never the stale pre-write copy.
     const locked = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM owner_statement WHERE id = ${statementId} FOR UPDATE
@@ -180,11 +207,6 @@ export async function recordStatementSignOff(
 
     const fresh = await tx.ownerStatement.findUniqueOrThrow({
       where: { id: statementId },
-      select: {
-        status: true,
-        signedOffByOwnerAt: true,
-        signedOffByOperatorAt: true,
-      },
     });
 
     // Duplicate before closed, because the two overlap: a signed_off statement
@@ -204,6 +226,19 @@ export async function recordStatementSignOff(
       throw new StatementSignOffError(
         'not_signable',
         `Statement ${statementId} is ${fresh.status} and can no longer be signed`
+      );
+    }
+
+    const verdict = await verifyStatementSnapshot(tx, {
+      ...fresh,
+      engagementId: fresh.engagementId,
+    });
+    if (!verdict.ok) {
+      throw new StatementSignOffError(
+        verdict.reason,
+        verdict.reason === 'stale'
+          ? 'The statement is out of date: costs, receipts or ownership changed after it was prepared. Regenerate it before signing.'
+          : 'The statement no longer matches the snapshot it was prepared with.'
       );
     }
 
@@ -227,6 +262,21 @@ export async function recordStatementSignOff(
     const updated = await tx.ownerStatement.update({
       where: { id: statementId },
       data,
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: 'statement_signed',
+        entityType: 'owner_statement',
+        entityId: statementId,
+        actorIdentityId: actorIdentityId ?? null,
+        data: {
+          signer: actor,
+          status: updated.status,
+          snapshotHash: fresh.snapshotHash,
+          verified: verdict.verified,
+        },
+      },
     });
 
     return {

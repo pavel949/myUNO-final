@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button, StatTile, EmptyState, MoneyAmount } from '@/components';
-import { SIGNABLE_STATEMENT_STATUSES } from '@/modules/finance';
 import type { LineItemCategory, OwnerStatementStatus } from '@prisma/client';
 import { formatDate as formatDateIn } from '@/lib/date';
 import { useLocale } from '@/components/LocaleProvider';
@@ -16,6 +15,8 @@ export interface StatementLine {
   bookingId: string | null;
   bookingStartDate: string | null;
   bookingEndDate: string | null;
+  /** Private receipt for an expense line; absent on lines without one. */
+  receiptId?: string | null;
 }
 
 export interface StatementPayout {
@@ -61,6 +62,14 @@ export interface StatementDetail {
   lines: StatementLine[];
   payout: StatementPayout | null;
   questionThreadId: string | null;
+
+  /**
+   * Whether a signature can still be written onto this statement in its
+   * current status — decided by the server page from the finance module.
+   * The client must not import the finance barrel for it: the barrel carries
+   * server-only code, and a client bundle that pulls it in fails to build.
+   */
+  ownerMaySign: boolean;
 }
 
 interface OwnerStatementDetailClientProps {
@@ -268,7 +277,13 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
       const data = await response.json().catch(() => null);
 
       if (response.status === 409) {
-        setSignOffError(labels['owner.statement.signoff_already_signed'] || labels['owner.statement.signoff_error']);
+        // 409 means different things: already signed, or the statement no longer
+        // matches the facts it was prepared from. Say which one it is.
+        setSignOffError(
+          data?.code === 'statement_stale' || data?.code === 'statement_snapshot_mismatch'
+            ? labels['owner.statement.signoff_stale'] || labels['owner.statement.signoff_error']
+            : labels['owner.statement.signoff_already_signed'] || labels['owner.statement.signoff_error']
+        );
         return;
       }
 
@@ -534,6 +549,17 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                                 <p className="text-body text-text-ink break-words">
                                   {line.description}
                                 </p>
+                                {line.receiptId && (
+                                  <p className="text-small mt-4">
+                                    <a
+                                      href={`/api/ledger/receipts/${line.receiptId}`}
+                                      className="text-brand-andaman hover:underline"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {labels['owner.statement.receipt_view']}
+                                    </a>
+                                  </p>
+                                )}
                                 {line.bookingId && (
                                   <p className="text-small text-text-stone mt-4">
                                     {labels['owner.statement.booking_ref']}:{' '}
@@ -645,7 +671,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
               )}
             </div>
 
-            {!ownerSignedAt && SIGNABLE_STATEMENT_STATUSES.includes(status) && (
+            {!ownerSignedAt && statement.ownerMaySign && (
               <>
                 <p className="text-body text-text-secondary mb-16">
                   {labels['owner.statement.signoff_description']}

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { track } from '@/modules/analytics';
-import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
+import { OWNER_VISIBLE_STATEMENT_STATUSES, isSignableStatementStatus } from '@/modules/finance';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { OwnerStatementDetailClient, type StatementDetail } from './client';
 
@@ -117,6 +117,9 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
       bookingId: line.bookingId,
       bookingStartDate: line.booking?.startDate.toISOString() ?? null,
       bookingEndDate: line.booking?.endDate.toISOString() ?? null,
+      // The private receipt that was current when this statement was prepared.
+      // Opened through /api/ledger/receipts, which re-checks the viewer each time.
+      receiptId: line.expenseReceiptId,
     })),
     payout: statement.payouts[0]
       ? {
@@ -129,6 +132,7 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
         }
       : null,
     questionThreadId: questionThread?.id ?? null,
+    ownerMaySign: isSignableStatementStatus(statement.status),
   };
 
   const labels = await getLabels({
@@ -170,6 +174,9 @@ export default async function OwnerStatementDetailPage({ params }: PageProps) {
     'owner.statement.lines_empty_all':
       'This statement has no source lines yet. Message us and we will trace every figure for you.',
     'owner.statement.booking_ref': 'Booking',
+    'owner.statement.receipt_view': 'View receipt',
+    'owner.statement.signoff_stale':
+      'This statement changed after it was prepared and cannot be signed as it stands. The operator needs to reissue it.',
     'owner.statement.legacy_notice':
       'This statement predates the itemised breakdown. The figures recorded at the time are shown below.',
     'owner.statement.signoff_title': 'Sign-off',

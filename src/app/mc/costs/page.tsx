@@ -97,6 +97,7 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
       occurredOn: true,
       description: true,
       unit: { select: { name: true } },
+      receipts: { where: { supersededAt: null }, select: { id: true }, take: 1 },
     },
   });
 
@@ -109,7 +110,8 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
     'mc.costs.back': '← MC portal',
     'mc.costs.context': 'Portfolio context',
     'ops.costs.title': 'Record a cost',
-    'ops.costs.intro': 'Costs recorded here appear on the owner statement for that unit.',
+    'ops.costs.intro_v2':
+      'Costs recorded here are counted in the owner report for the period they belong to, once that report is prepared.',
     'ops.costs.unit': 'Unit',
     'ops.costs.type': 'Type',
     'ops.costs.amount': 'Amount (฿)',
@@ -117,17 +119,70 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
     'ops.costs.description': 'What it was for',
     'ops.costs.submit': 'Record cost',
     'ops.costs.saving': 'Recording…',
-    'ops.costs.saved': 'Recorded. It will appear on the next statement.',
     'ops.costs.error': 'Could not record that cost.',
     'ops.costs.recent': 'Recorded by you, most recent first',
     'ops.costs.none': 'You have not recorded any costs yet.',
-    'ops.costs.immutable':
-      'A recorded cost cannot be edited or deleted — the ledger is append-only. A mistake is corrected by recording an adjustment.',
     'catalog.ledger_entry_types.cleaning_cost.label': 'Cleaning',
     'catalog.ledger_entry_types.maintenance_cost.label': 'Maintenance',
     'catalog.ledger_entry_types.consumables_cost.label': 'Consumables',
     'catalog.ledger_entry_types.utilities_cost.label': 'Utilities',
     'catalog.ledger_entry_types.adjustment.label': 'Adjustment',
+    'ops.costs.receipt':
+      'Receipt (optional)',
+    'ops.costs.receipt_hint':
+      'PDF, JPEG, PNG or WebP, up to 4 MB. Stored privately and never shown publicly.',
+    'ops.costs.receipt_attach':
+      'Attach receipt',
+    'ops.costs.receipt_view':
+      'View receipt',
+    'ops.costs.receipt_none':
+      'No receipt',
+    'ops.costs.receipt_uploading':
+      'Uploading receipt…',
+    'ops.costs.receipt_saved':
+      'Receipt attached.',
+    'ops.costs.receipt_retry':
+      'Retry upload',
+    'ops.costs.receipt_pending':
+      'The cost is recorded, but its receipt did not upload. Your file is kept; retrying will not add a second cost.',
+    'ops.costs.receipt_error.unsupported_type':
+      'Only PDF, JPEG, PNG and WebP files are accepted.',
+    'ops.costs.receipt_error.too_large':
+      'The file is larger than 4 MB.',
+    'ops.costs.receipt_error.empty':
+      'The file is empty.',
+    'ops.costs.receipt_error.reused':
+      'This file is already attached to another cost.',
+    'ops.costs.receipt_error.locked':
+      'This cost is on an issued owner report, so its receipt can no longer change.',
+    'ops.costs.receipt_error.forbidden':
+      'You cannot attach a receipt to this cost.',
+    'ops.costs.receipt_error.generic':
+      'Could not upload the receipt. Try again.',
+    'ops.costs.impact.no_statement':
+      'Recorded. It will be counted when the owner report for this period is prepared.',
+    'ops.costs.impact.draft_stale':
+      'Recorded. The draft owner report for {start} – {end} was prepared before this cost, so it does not include it yet. An administrator can regenerate the draft.',
+    'ops.costs.impact.issued':
+      'Recorded. The owner report for {start} – {end} has already been issued and does not include this cost. Ask an administrator to handle the correction.',
+    'ops.costs.replayed':
+      'This cost was already recorded; nothing was added twice.',
+    'ops.costs.error.conflict':
+      'This attempt was already used for a different cost. Check the list below, then record again if needed.',
+    'ops.costs.error.network':
+      'No connection to the server. Your entry is kept, and retrying will not add a second cost.',
+    'ops.costs.error.forbidden':
+      'You are not allowed to record costs on this unit.',
+    'ops.costs.error.future_date':
+      'The date must be a real day that is not in the future.',
+    'ops.costs.error.invalid_amount':
+      'Enter an amount greater than zero.',
+    'ops.costs.error.invalid_description':
+      'Describe what the cost was for (3 to 500 characters).',
+    'ops.costs.correction_note':
+      'A recorded cost cannot be edited or deleted. A mistake is corrected by an administrator with a reversal that stays visible in the history.',
+    'ops.costs.no_units':
+      'There are no units you can record costs on.',
   });
 
   return (
@@ -139,7 +194,7 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
           </Link>
         </p>
         <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">{labels['mc.costs.title']}</h1>
-        <p className="text-body text-text-secondary mb-16">{labels['ops.costs.intro']}</p>
+        <p className="text-body text-text-secondary mb-16">{labels['ops.costs.intro_v2']}</p>
 
         {contexts.length > 1 ? (
           <div className="mb-24">
@@ -172,7 +227,9 @@ export default async function McCostsPage({ searchParams }: McCostsPageProps) {
           recent={recent.map((e) => ({
             id: e.id,
             entryType: e.entryType,
-            amountThb: e.amountThb,
+            // Stored negative (an outflow); the screen shows the magnitude.
+            amountThb: Math.abs(e.amountThb),
+            receiptId: e.receipts[0]?.id ?? null,
             occurredOn: e.occurredOn.toISOString().slice(0, 10),
             description: e.description ?? '',
             unitName: e.unit?.name ?? '—',

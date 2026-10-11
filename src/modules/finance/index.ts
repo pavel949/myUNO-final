@@ -26,13 +26,73 @@ export {
   recordRefundOut,
   recordServiceCommission,
   reverseLedgerEntry,
+  reverseManualCost,
+  lockUnitLedgerShared,
+  lockUnitLedgerExclusive,
+  LedgerCorrectionError,
   getUnitLedgerEntries,
   getProjectLedgerEntries,
   getLedgerEntry,
   computeUnitLedgerTotals,
   type RecordCostInput,
   type LedgerEntryWithRelations,
+  type LedgerCorrectionCode,
+  type ManualCostReversal,
 } from './ledger.service';
+
+export {
+  MANUAL_COST_TYPES,
+  ManualCostInputError,
+  parseManualCostRequest,
+  manualCostFingerprint,
+  isIdempotencyKey,
+  type ManualCostRequest,
+  type ManualCostType,
+  type ManualCostErrorCode,
+} from './manual-cost-input';
+
+export {
+  recordManualCost,
+  reportImpactFor,
+  ManualCostError,
+  type ManualCostView,
+  type RecordManualCostResult,
+  type ReportImpact,
+} from './manual-cost.service';
+
+export { canWriteUnitExpenses, resolveReceiptReader, type ReceiptReader } from './expense-access';
+
+export {
+  attachExpenseReceipt,
+  readExpenseReceipt,
+  ReceiptError,
+  type AttachReceiptResult,
+  type ReceiptDownload,
+  type ReceiptView,
+} from './expense-receipt.service';
+
+export {
+  MAX_RECEIPT_BYTES,
+  RECEIPT_MIME_TYPES,
+  ReceiptFileError,
+  ReceiptIntegrityError,
+} from './expense-receipt-file';
+
+export {
+  OPERATING_EXPENSE_ENTRY_TYPES,
+  buildLedgerLines,
+  sumByType,
+  sumOperatingExpenses,
+} from './statement-expense';
+
+export {
+  REVENUE_BOOKING_STATUSES,
+  collectSnapshotSources,
+  dayAfter,
+  snapshotHash,
+  sourceFingerprint,
+  verifyStatementSnapshot,
+} from './statement-snapshot';
 
 export {
   getStatementSignOffState,

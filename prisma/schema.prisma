@@ -827,6 +827,7 @@ model Identity {
   refundsPaidBy                 Refund[]                      @relation("refundPaidBy")
   refundsInitiatedBy            Refund[]                      @relation("refundInitiatedBy")
   ledgerEntriesCreated          LedgerEntry[]                 @relation("ledgerEntryCreator")
+  expenseReceiptsUploaded       ExpenseReceipt[]              @relation("expenseReceiptUploader")
   disputesDecided               Dispute[]                     @relation("disputeDecidedBy")
   notifications                 Notification[]
   notificationPreferences       NotificationPreference[]
@@ -1412,6 +1413,17 @@ model LedgerEntry {
   description         String
   createdByIdentityId String?         @map("created_by_identity_id")
 
+  // Manual cost integrity. A replay key belongs to the person who recorded the
+  // cost; the fingerprint is the normalised content it was recorded with, so a
+  // retry is recognised as the same cost and a reused key with different
+  // content is a conflict, not a second row. Both are set together or not at
+  // all (CHECK). Null on every system-written and legacy row.
+  manualCostKey         String? @map("manual_cost_key") @db.VarChar(36)
+  manualCostFingerprint String? @map("manual_cost_fingerprint") @db.VarChar(64)
+  // A reversal points at exactly one original, and an original has at most one
+  // reversal (UNIQUE) — two concurrent reversals cannot both land.
+  reversesEntryId       String? @unique @map("reverses_entry_id")
+
   // Relations
   unit      Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
   project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -1422,13 +1434,46 @@ model LedgerEntry {
   createdBy Identity?       @relation(name: "ledgerEntryCreator", fields: [createdByIdentityId], references: [id])
   payout    Payout?         @relation(fields: [payoutId], references: [id], onDelete: Restrict)
   disputes  Dispute[]
+  reverses  LedgerEntry?    @relation(name: "ledgerReversal", fields: [reversesEntryId], references: [id], onDelete: Restrict)
+  reversal  LedgerEntry?    @relation(name: "ledgerReversal")
+  receipts  ExpenseReceipt[]
+  statementLines StatementLineItem[]
 
+  @@unique([createdByIdentityId, manualCostKey])
   @@index([unitId, occurredOn])
   @@index([projectId, occurredOn])
   @@index([bookingId])
   @@index([paymentId])
   @@index([refundId])
   @@map("ledger_entry")
+}
+
+// A private receipt for one manual cost. The file never leaves this table in
+// the clear: `ciphertext` is the existing AES-256-GCM contract (lib/encryption)
+// over the base64 bytes, there is no public URL, and the table is closed to the
+// Data API (RLS on, all grants revoked) in the same migration that creates it.
+// At most one receipt is current per expense; a replacement supersedes the old
+// row rather than overwriting it, so what an issued statement cites survives.
+model ExpenseReceipt {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ledgerEntryId        String    @map("ledger_entry_id")
+  uploadedByIdentityId String    @map("uploaded_by_identity_id")
+  uploadKey            String    @map("upload_key") @db.VarChar(36)
+  mimeType             String    @map("mime_type")
+  sizeBytes            Int       @map("size_bytes")
+  sha256               String    @db.VarChar(64)
+  ciphertext           String
+  supersededAt         DateTime? @map("superseded_at")
+
+  ledgerEntry    LedgerEntry         @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  uploadedBy     Identity            @relation(name: "expenseReceiptUploader", fields: [uploadedByIdentityId], references: [id])
+  statementLines StatementLineItem[]
+
+  @@unique([uploadedByIdentityId, uploadKey])
+  @@index([ledgerEntryId])
+  @@map("expense_receipt")
 }
 
 model OwnerStatement {
@@ -1469,6 +1514,13 @@ model OwnerStatement {
   signedOffByOperatorAt     DateTime? @map("signed_off_by_operator_at")
   approvedAt                DateTime? @map("approved_at")
 
+  // The verified snapshot. `sourceFingerprint` hashes every source fact the
+  // figures were computed from (stays, guest payments, ledger rows, current
+  // receipts, ownership chain); `snapshotHash` hashes the figures and line
+  // items as issued. Null on statements generated before these existed.
+  sourceFingerprint         String?   @map("source_fingerprint") @db.VarChar(64)
+  snapshotHash              String?   @map("snapshot_hash") @db.VarChar(64)
+
   // Relations
   unit          Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner         Identity            @relation(name: "statementOwner", fields: [ownerIdentityId], references: [id])
@@ -1502,10 +1554,20 @@ model StatementLineItem {
   // management contract, which the statement already identifies.
   bookingId            String? @map("booking_id")
   supportingDocumentId String? @map("supporting_document_id")
+  // The ledger row an expense line was built from, and the private receipt that
+  // was current for it when the statement was generated. A ledger row appears
+  // at most once per statement (UNIQUE).
+  ledgerEntryId        String? @map("ledger_entry_id")
+  expenseReceiptId     String? @map("expense_receipt_id")
 
-  statement OwnerStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
-  booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  statement      OwnerStatement  @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  booking        Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  ledgerEntry    LedgerEntry?    @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  expenseReceipt ExpenseReceipt? @relation(fields: [expenseReceiptId], references: [id], onDelete: Restrict)
 
+  @@unique([statementId, ledgerEntryId])
+  @@index([ledgerEntryId])
+  @@index([expenseReceiptId])
   @@index([statementId, category])
   @@index([bookingId])
   @@map("statement_line_item")

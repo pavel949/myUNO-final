@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import {
   db,
   resetDb,
@@ -79,7 +80,7 @@ describe('POST /api/ledger/record-cost', () => {
     const res = await POST(
       new NextRequest('http://localhost/api/ledger/record-cost', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': randomUUID() },
         body: JSON.stringify({
           unitId: unit.id,
           entryType: 'cleaning_cost',
@@ -92,7 +93,40 @@ describe('POST /api/ledger/record-cost', () => {
 
     expect(res.status).toBe(201);
     const body = await res.json();
+    // The response echoes the magnitude the caller sent; the ledger stores the outflow negative.
     expect(body.amountThb).toBe(50000);
+    expect(
+      (await db.ledgerEntry.findUniqueOrThrow({ where: { id: body.id } })).amountThb
+    ).toBe(-50000);
+  });
+
+  it('rejects a request without an Idempotency-Key and writes nothing', async () => {
+    const project = await createProject({ status: 'live' });
+    const owner = await createIdentity();
+    const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
+    const staff = await createIdentity();
+    await db.roleAssignment.create({
+      data: { identityId: staff.id, role: 'staff_ops', scopeType: 'project', projectId: project.id, status: 'active' },
+    });
+    mockGetCurrentUser.mockResolvedValue(userSession(staff));
+
+    const res = await POST(
+      new NextRequest('http://localhost/api/ledger/record-cost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          unitId: unit.id,
+          entryType: 'cleaning_cost',
+          amountThb: 10000,
+          occurredOn: '2026-09-01',
+          description: 'No key',
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe('missing_idempotency_key');
+    expect(await db.ledgerEntry.count({ where: { entryType: 'cleaning_cost' } })).toBe(0);
   });
 
   it('returns 403 for unrelated identities', async () => {
@@ -106,7 +140,7 @@ describe('POST /api/ledger/record-cost', () => {
     const res = await POST(
       new NextRequest('http://localhost/api/ledger/record-cost', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': randomUUID() },
         body: JSON.stringify({
           unitId: unit.id,
           entryType: 'cleaning_cost',

@@ -1,4 +1,5 @@
 import { PrismaClient, type Prisma } from '@prisma/client';
+import { lockUnitLedgerExclusive } from '@/modules/finance';
 
 /**
  * Ownership history for a unit.
@@ -41,6 +42,7 @@ export async function setUnitOwnerTx(
   input: SetUnitOwnerInput,
 ) {
   const { unitId, ownerIdentityId, recordedByIdentityId, note } = input;
+  await lockUnitLedgerExclusive(tx, unitId);
   const effectiveFrom = asDate(input.effectiveFrom ?? new Date());
 
   const unit = await tx.unit.findUnique({

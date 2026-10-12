@@ -153,10 +153,7 @@ export default function PassportsClient({
               />
               <Input
                 label={labels['checkin.passports.dob']}
-                type="text"
-                inputMode="numeric"
-                placeholder="YYYY-MM-DD"
-                pattern="\\d{4}-\\d{2}-\\d{2}"
+                type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
               />

@@ -1,14 +1,30 @@
 import type { PrismaClient } from '@prisma/client';
 import { decrypt, encrypt } from '@/lib/encryption';
 import { SECRET_NAME_PATTERN } from '@/lib/secret-catalog';
-import { logAudit } from '@/modules/audit';
 
 /**
  * Founder's key register. Storage only — nothing at runtime reads these values.
  * The value is encrypted with lib/encryption; listings expose only `last4`.
  * Every write and every reveal is audited, and the audit data never carries
  * the value itself.
+ *
+ * Audit rows are written through the caller's `db` rather than `@/modules/audit`:
+ * that module imports the prisma singleton, and pulling it into the config
+ * barrel creates an import cycle that deadlocks every test which mocks
+ * `@/lib/prisma` with a factory importing the test utilities.
  */
+
+async function audit(
+  db: PrismaClient,
+  actorIdentityId: string,
+  action: string,
+  name: string,
+  data: Record<string, boolean>
+) {
+  await db.auditLog.create({
+    data: { actorIdentityId, action, entityType: 'SecretVaultEntry', entityId: name, data },
+  });
+}
 
 export interface VaultEntryView {
   name: string;
@@ -54,13 +70,7 @@ export async function saveVaultEntry(
     create: { name: input.name, ...data },
     update: data,
   });
-  await logAudit({
-    actorIdentityId: input.actorIdentityId,
-    action: 'secret_vault:saved',
-    entityType: 'SecretVaultEntry',
-    entityId: input.name,
-    data: { valueChanged: typeof input.value === 'string' && input.value.length > 0 },
-  });
+  await audit(db, input.actorIdentityId, 'secret_vault:saved', input.name, { valueChanged: typeof input.value === 'string' && input.value.length > 0 });
 }
 
 export async function revealVaultEntry(
@@ -69,13 +79,7 @@ export async function revealVaultEntry(
 ): Promise<string | null> {
   assertName(input.name);
   const row = await db.secretVaultEntry.findUnique({ where: { name: input.name } });
-  await logAudit({
-    actorIdentityId: input.actorIdentityId,
-    action: 'secret_vault:revealed',
-    entityType: 'SecretVaultEntry',
-    entityId: input.name,
-    data: { found: Boolean(row?.valueEncrypted) },
-  });
+  await audit(db, input.actorIdentityId, 'secret_vault:revealed', input.name, { found: Boolean(row?.valueEncrypted) });
   return row?.valueEncrypted ? decrypt(row.valueEncrypted) : null;
 }
 
@@ -88,11 +92,5 @@ export async function clearVaultValue(
     where: { name: input.name },
     data: { valueEncrypted: null, last4: null, updatedByIdentityId: input.actorIdentityId },
   });
-  await logAudit({
-    actorIdentityId: input.actorIdentityId,
-    action: 'secret_vault:cleared',
-    entityType: 'SecretVaultEntry',
-    entityId: input.name,
-    data: {},
-  });
+  await audit(db, input.actorIdentityId, 'secret_vault:cleared', input.name, {});
 }

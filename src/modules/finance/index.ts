@@ -11,6 +11,7 @@ export {
   refund,
   markRefundFailed,
   markRefundSucceeded,
+  settleManualRefund,
   getBookingRefundDisplayState,
   markPaymentFailed,
   type BookingRefundDisplayState,

@@ -782,6 +782,34 @@ export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
   });
 }
 
+/**
+ * Settle a cash / bank-transfer refund that cancellation left as `requested`:
+ * staff hand the money back and record who did it. Writes the refund_out
+ * ledger line and updates the booking's refund state through the same path
+ * as a provider refund. Card refunds are settled by the provider, never here.
+ */
+export async function settleManualRefund(
+  db: PrismaClient,
+  input: { refundId: string; paidBackByIdentityId: string }
+) {
+  const refund = await db.refund.findUniqueOrThrow({
+    where: { id: input.refundId },
+    include: { payment: { select: { method: true } } },
+  });
+  if (refund.payment.method === 'card_provider') {
+    throw new Error('Card refunds are settled by the payment provider');
+  }
+  if (refund.status === 'succeeded') return refund;
+  if (refund.status !== 'requested') {
+    throw new Error(`Cannot settle refund with status ${refund.status}`);
+  }
+  await db.refund.update({
+    where: { id: refund.id },
+    data: { paidBackByIdentityId: input.paidBackByIdentityId },
+  });
+  return markRefundSucceeded(db, refund.id);
+}
+
 /** Guest-facing refund state on a cancelled booking (doc 07 F-GUEST-8). */
 export type BookingRefundDisplayState = 'none' | 'processing' | 'completed';
 

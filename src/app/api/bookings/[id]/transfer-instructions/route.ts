@@ -26,6 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       totalThb: true,
       balanceDueThb: true,
       status: true,
+      holdExpiresAt: true,
     },
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
@@ -59,9 +60,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       projectId: booking.projectId,
     });
 
+    // The dates are only held until holdExpiresAt, so the transfer deadline
+    // shown to the guest can never run past it.
+    const deadline = booking.holdExpiresAt && booking.holdExpiresAt < instructions.expiresAt
+      ? booking.holdExpiresAt
+      : instructions.expiresAt;
     return NextResponse.json({
       ...instructions,
-      expiresAt: instructions.expiresAt.toISOString(),
+      expiresAt: deadline.toISOString(),
     });
   } catch (error) {
     const code = (error as { code?: string }).code;

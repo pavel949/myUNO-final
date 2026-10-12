@@ -20,6 +20,7 @@ interface BookingDetail {
   children: number;
   totalThb: number;
   holdExpiresAt?: string | null;
+  paymentMethod?: string | null;
   refundAccruedThb?: number | null;
   guestNote?: string | null;
   verificationStatus?: string | null;
@@ -658,13 +659,20 @@ export default function BookingDetailClient({
                   />
                 </p>
               ) : null}
-              <Button onClick={handlePayCard} isLoading={busy} size="sm">
-                {labels['booking.detail.pay_card']}
-              </Button>
-              <BankTransferInstructions bookingId={booking.id} labels={labels} />
-              <p className="text-small text-text-secondary mt-12">
-                {labels['booking.detail.pay_cash_note']}
-              </p>
+              {/* Only the rail the guest chose. A null method (older bookings) keeps every rail. */}
+              {(!booking.paymentMethod || booking.paymentMethod === 'card_provider') && (
+                <Button onClick={handlePayCard} isLoading={busy} size="sm">
+                  {labels['booking.detail.pay_card']}
+                </Button>
+              )}
+              {(!booking.paymentMethod || booking.paymentMethod === 'bank_transfer') && (
+                <BankTransferInstructions bookingId={booking.id} labels={labels} />
+              )}
+              {(!booking.paymentMethod || booking.paymentMethod === 'cash') && (
+                <p className="text-small text-text-secondary mt-12">
+                  {labels['booking.detail.pay_cash_note']}
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-body text-text-secondary">{statusLabel}</p>
@@ -905,8 +913,8 @@ export default function BookingDetailClient({
           </div>
         )}
 
-        {/* Dispute */}
-        {booking.viewer.isGuest && (
+        {/* Dispute: only once the guest has actually been charged */}
+        {booking.viewer.isGuest && booking.payments.some((payment) => payment.status === 'succeeded') && (
           <div className="stitch-panel p-24 mb-24">
             <h2 className="text-heading-3 font-bold text-text-ink mb-12">
               {labels['booking.detail.dispute_title']}
@@ -981,7 +989,9 @@ export default function BookingDetailClient({
                   {labels['booking.detail.refund_processing_title']}
                 </h2>
                 <p className="text-body text-text-secondary mb-12">
-                  {labels['booking.detail.refund_processing_body']}
+                  {booking.payments.some((payment) => payment.status === 'succeeded' && payment.method === 'card_provider')
+                    ? labels['booking.detail.refund_processing_body']
+                    : labels['booking.detail.refund_processing_body_manual']}
                 </p>
                 {supportTicketHref(booking) ? (
                   <Link href={supportTicketHref(booking)!}>

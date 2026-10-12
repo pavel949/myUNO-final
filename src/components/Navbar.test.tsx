@@ -92,3 +92,30 @@ describe('Navbar', () => {
     expect(owner).toHaveClass('stitch-list-row');
   });
 });
+
+describe('dropdown menus close like users expect', () => {
+  it('closes an open menu on Escape and returns focus to its summary', () => {
+    const { container } = renderNavbar();
+    const details = container.querySelector('header details') as HTMLDetailsElement;
+    details.setAttribute('open', '');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(details.hasAttribute('open')).toBe(false);
+    expect(document.activeElement).toBe(details.querySelector('summary'));
+  });
+
+  it('closes an open menu on an outside click but not on a click inside it', () => {
+    const { container } = renderNavbar();
+    const details = container.querySelector('header details') as HTMLDetailsElement;
+    details.setAttribute('open', '');
+    fireEvent.pointerDown(details.querySelector('summary') as HTMLElement);
+    expect(details.hasAttribute('open')).toBe(true);
+    fireEvent.pointerDown(document.body);
+    expect(details.hasAttribute('open')).toBe(false);
+  });
+
+  it('shows the user name, not the brand, on the account button', () => {
+    renderNavbar();
+    expect(screen.getAllByText('Pavel').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Pavel · My UNO')).toBeNull();
+  });
+});

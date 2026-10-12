@@ -75,10 +75,37 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setMenuOpen(false);
+    headerRef.current?.querySelectorAll('details[open]').forEach((el) => el.removeAttribute('open'));
   }, [pathname]);
+
+  // Native <details> menus stay open until their own summary is clicked again.
+  // Users expect a dropdown to close on an outside click or Escape, and only one at a time.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const onPointerDown = (event: PointerEvent) => {
+      header.querySelectorAll('details[open]').forEach((el) => {
+        if (!el.contains(event.target as Node)) el.removeAttribute('open');
+      });
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      const open = header.querySelector('details[open]');
+      if (!open) return;
+      open.removeAttribute('open');
+      open.querySelector('summary')?.focus();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -149,14 +176,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
 
   if (isStitchWorkspace(pathname)) {
     return (
-      <header className="sticky top-0 z-50 border-b border-border-line bg-surface-ivory/95 backdrop-blur-xl">
+      <header ref={headerRef} className="sticky top-0 z-50 border-b border-border-line bg-surface-ivory/95 backdrop-blur-xl">
         <nav aria-label={labels.myUno} className="flex h-64 items-center justify-between gap-12 px-16 md:px-24">
           <Link href="/" className="font-sans text-title font-bold tracking-tight text-brand-andaman">myUNO</Link>
           <div className="flex min-w-0 items-center gap-8 md:gap-12">
             <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
             {user ? <>
               <details className="relative">
-                <summary className="max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName} · {labels.myUno}</summary>
+                <summary className="max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName}</summary>
                 <div className="absolute right-0 top-full z-50 mt-8 flex max-h-[70vh] min-w-[240px] flex-col gap-4 overflow-y-auto rounded-lg border border-border-line bg-surface-paper p-12 shadow-float">
                   {userLinks.map(link => <Link key={link.href} href={link.href} className="stitch-list-row text-small">{link.label}</Link>)}
                   <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>{labels.logout}</Button>
@@ -171,7 +198,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-line bg-surface-ivory/85 backdrop-blur-xl">
+    <header ref={headerRef} className="sticky top-0 z-40 border-b border-border-line bg-surface-ivory/85 backdrop-blur-xl">
       <nav className="mx-auto flex min-h-64 max-w-7xl items-center justify-between gap-16 px-20 py-8 md:px-32">
         <div className="flex min-w-0 items-center gap-32 xl:gap-40">
           <Link
@@ -252,7 +279,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             <>
               <details className="relative">
                 <summary className="cursor-pointer list-none rounded-full border border-border-line px-16 py-12 text-small font-semibold text-brand-andaman hover:border-border-line-2">
-                  {user.firstName} · {labels.myUno}
+                  {user.firstName}
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-md border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (

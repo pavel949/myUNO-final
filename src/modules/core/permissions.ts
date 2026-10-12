@@ -376,12 +376,56 @@ export async function can(
       continue;
     }
 
+    // A management-company member holds a PROJECT-scoped assignment, which
+    // `scopeMatches` accepts for every unit in the project. Doc 03 gives them
+    // 'their_units' only: the units whose current via-management-company
+    // engagement belongs to their organization. Without this, a member of one
+    // company could act on a unit managed by another company, or on an
+    // owner-direct unit, in the same project.
+    if (
+      assignment.role === 'mc_member' &&
+      matchingPermission.scope?.startsWith('their_units') &&
+      resource?.unitId &&
+      !(await mcMemberManagesUnit(db, assignment, resource.unitId))
+    ) {
+      continue;
+    }
+
     // If we reach here, this role/scope combo allows the action
     return true;
   }
 
   // No matching role/scope combo was found
   return false;
+}
+
+/**
+ * True when the unit's CURRENT engagement is a via-management-company mandate
+ * held by the member's own organization. Mirrors `currentEngagementWhere`
+ * (projects/engagement-scope): half-open mandate period, status active. Kept
+ * here because core must not import a module that depends on it.
+ */
+async function mcMemberManagesUnit(
+  db: PrismaClient | Prisma.TransactionClient,
+  assignment: RoleAssignment,
+  unitId: string,
+  now: Date = new Date(),
+): Promise<boolean> {
+  if (!assignment.organizationId) return false;
+  const engagement = await db.unitEngagement.findFirst({
+    where: {
+      unitId,
+      engagementType: 'via_management_company',
+      managementOrgId: assignment.organizationId,
+      status: 'active',
+      AND: [
+        { OR: [{ startsOn: null }, { startsOn: { lte: now } }] },
+        { OR: [{ endsOn: null }, { endsOn: { gt: now } }] },
+      ],
+    },
+    select: { id: true },
+  });
+  return Boolean(engagement);
 }
 
 /**

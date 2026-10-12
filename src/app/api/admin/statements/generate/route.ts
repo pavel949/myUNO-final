@@ -251,8 +251,10 @@ export async function POST(req: NextRequest) {
         // nothing is taken from the request body beyond the unit and period.
         const sources = await collectSnapshotSources(tx, period, existing?.id)
 
+        // Gross counts a cancelled stay at what the guest paid; the refund is
+        // deducted below, so the owner keeps exactly the retained amount.
         const grossBookingsThb = sources.bookings.reduce(
-          (sum, booking) => sum + (booking.totalThb || 0),
+          (sum, booking) => sum + booking.recognisedThb,
           0
         )
         const guestPaymentsReceivedThb = sources.guestPaymentsReceivedThb
@@ -262,7 +264,16 @@ export async function POST(req: NextRequest) {
         const operatingExpensesThb = sumOperatingExpenses(sources.ledgerRows)
         const taxesThb = sumByType(sources.ledgerRows, 'tax_collected')
 
-        const serviceFeesThb = Math.round((grossBookingsThb * serviceFeePct) / 100)
+        // The service fee is charged on revenue the owner actually keeps: the
+        // refunded part of a cancelled stay is not revenue and bears no fee.
+        const cancelledIds = new Set(
+          sources.bookings.filter((b) => b.status === 'cancelled').map((b) => b.id)
+        )
+        const refundedOnCancelledThb = sources.ledgerRows
+          .filter((r) => r.entryType === 'refund_out' && r.bookingId && cancelledIds.has(r.bookingId))
+          .reduce((sum, r) => sum + Math.abs(r.amountThb), 0)
+        const serviceFeeBaseThb = Math.max(0, grossBookingsThb - refundedOnCancelledThb)
+        const serviceFeesThb = Math.round((serviceFeeBaseThb * serviceFeePct) / 100)
 
         const adjustedNoiThb =
           grossBookingsThb -
@@ -324,8 +335,10 @@ export async function POST(req: NextRequest) {
             category: 'booking_revenue' as LineItemCategory,
             description: `Booking ${booking.id} (${booking.startDate
               .toISOString()
-              .slice(0, 10)} → ${booking.endDate.toISOString().slice(0, 10)})`,
-            amountTh: booking.totalThb || 0,
+              .slice(0, 10)} → ${booking.endDate.toISOString().slice(0, 10)})${
+              booking.status === 'cancelled' ? ' - cancelled, guest payments before refund' : ''
+            }`,
+            amountTh: booking.recognisedThb,
             bookingId: booking.id,
           })
         }
@@ -349,7 +362,7 @@ export async function POST(req: NextRequest) {
         if (serviceFeesThb !== 0) {
           lineItems.push({
             category: 'service_fee' as LineItemCategory,
-            description: `myUNO service fee ${serviceFeePct}% of gross bookings ${grossBookingsThb} THB`,
+            description: `myUNO service fee ${serviceFeePct}% of gross bookings ${serviceFeeBaseThb} THB`,
             amountTh: serviceFeesThb,
           })
         }

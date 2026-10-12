@@ -17,7 +17,7 @@ const recipient = { ownerIdentityId: 'owner-a', engagementId: 'eng-1' };
 
 function sources(patch: Partial<SnapshotSources> = {}): SnapshotSources {
   return {
-    bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: 900_000 }],
+    bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: 900_000, status: 'confirmed', recognisedThb: 900_000 }],
     guestPaymentsReceivedThb: 900_000,
     ledgerRows: [
       { id: 'e1', entryType: 'cleaning_cost', amountThb: -5000, description: 'Clean', bookingId: null, occurredOn: new Date('2026-07-10'), reversesEntryId: null },
@@ -76,8 +76,8 @@ describe('sourceFingerprint', () => {
   });
 
   it('does not change for a booking total of null vs 0, nor for booking status (not an input)', () => {
-    const a = sources({ bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: null }] });
-    const b = sources({ bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: 0 }] });
+    const a = sources({ bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: null, status: 'confirmed', recognisedThb: 0 }] });
+    const b = sources({ bookings: [{ id: 'b1', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: 0, status: 'confirmed', recognisedThb: 0 }] });
     expect(fp(a)).toBe(fp(b));
   });
 
@@ -106,5 +106,18 @@ describe('snapshotHash', () => {
     expect(snapshotHash(figures, [{ ...lines[0], amountTh: 5001 }, lines[1]])).not.toBe(base);
     expect(snapshotHash(figures, [{ ...lines[0], expenseReceiptId: 'r2' }, lines[1]])).not.toBe(base);
     expect(snapshotHash(figures, [lines[0]])).not.toBe(base);
+  });
+});
+
+describe('sourceFingerprint — cancelled stays', () => {
+  it('changes when the retained amount of a cancelled stay changes (a later payment or reversal is a new fact)', () => {
+    const cancelled = (recognisedThb: number) =>
+      sources({
+        bookings: [
+          { id: 'b2', startDate: new Date('2026-07-02'), endDate: new Date('2026-07-05'), totalThb: 1_000_000, status: 'cancelled', recognisedThb },
+        ],
+      });
+    expect(fp(cancelled(300_000))).not.toBe(fp(cancelled(400_000)));
+    expect(fp(cancelled(300_000))).toBe(fp(cancelled(300_000)));
   });
 });

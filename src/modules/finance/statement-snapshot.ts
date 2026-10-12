@@ -40,6 +40,14 @@ export const REVENUE_BOOKING_STATUSES: BookingStatus[] = [
   'completed',
 ];
 
+/**
+ * Stays that enter the statement. A cancelled stay is included because the
+ * money the guest paid and the host kept after the refund (the "retained
+ * amount") is owner revenue; the refund itself is deducted from the ledger as
+ * before, so the net of a cancelled stay is exactly paid minus refunded.
+ */
+export const STATEMENT_BOOKING_STATUSES: BookingStatus[] = [...REVENUE_BOOKING_STATUSES, 'cancelled'];
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type SnapshotDb = Pick<
@@ -56,7 +64,15 @@ export interface SnapshotPeriod {
 }
 
 export interface SnapshotSources {
-  bookings: Array<{ id: string; startDate: Date; endDate: Date; totalThb: number | null }>;
+  bookings: Array<{
+    id: string;
+    startDate: Date;
+    endDate: Date;
+    totalThb: number | null;
+    status: BookingStatus;
+    /** Gross this stay contributes: the booking total, or for a cancelled stay what the guest paid. */
+    recognisedThb: number;
+  }>;
   guestPaymentsReceivedThb: number;
   ledgerRows: StatementLedgerRow[];
   /** ledger entry id → id of its CURRENT receipt. */
@@ -84,18 +100,18 @@ export async function collectSnapshotSources(
 ): Promise<SnapshotSources> {
   const nextPeriodDay = dayAfter(period.periodEnd);
 
-  const bookings = await db.booking.findMany({
+  const stays = await db.booking.findMany({
     where: {
       unitId: period.unitId,
       startDate: { gte: period.periodStart },
       endDate: { lte: nextPeriodDay },
-      status: { in: REVENUE_BOOKING_STATUSES },
+      status: { in: STATEMENT_BOOKING_STATUSES },
     },
     orderBy: { startDate: 'asc' },
-    select: { id: true, startDate: true, endDate: true, totalThb: true },
+    select: { id: true, startDate: true, endDate: true, totalThb: true, status: true },
   });
 
-  const bookingIds = bookings.map((b) => b.id);
+  const bookingIds = stays.map((b) => b.id);
   const payments = bookingIds.length
     ? await db.payment.aggregate({
         where: {
@@ -107,6 +123,27 @@ export async function collectSnapshotSources(
         _sum: { amountThb: true },
       })
     : { _sum: { amountThb: 0 } };
+
+  // A cancelled stay contributes what the guest actually paid for it.
+  const cancelledIds = stays.filter((b) => b.status === 'cancelled').map((b) => b.id);
+  const paidByBooking = new Map<string, number>();
+  if (cancelledIds.length) {
+    const paid = await db.payment.groupBy({
+      by: ['bookingId'],
+      where: {
+        bookingId: { in: cancelledIds },
+        status: 'succeeded',
+        reconciliationReason: null,
+        purpose: { in: ['stay', 'stay_balance'] },
+      },
+      _sum: { amountThb: true },
+    });
+    for (const row of paid) if (row.bookingId) paidByBooking.set(row.bookingId, row._sum.amountThb ?? 0);
+  }
+  const bookings = stays.map((b) => ({
+    ...b,
+    recognisedThb: b.status === 'cancelled' ? (paidByBooking.get(b.id) ?? 0) : (b.totalThb ?? 0),
+  }));
 
   // The append-only ledger is the source for refunds, expenses, taxes and the
   // reversals of expenses. Ordered deterministically: equal accrual dates fall
@@ -225,7 +262,7 @@ export function sourceFingerprint(
     ownership: sources.ownership
       .map((o) => [o.ownerIdentityId, o.from, o.to])
       .sort(byJson),
-    bookings: sources.bookings.map((b) => [b.id, b.totalThb ?? 0]).sort(byJson),
+    bookings: sources.bookings.map((b) => [b.id, b.recognisedThb]).sort(byJson),
     guestPayments: sources.guestPaymentsReceivedThb,
     ledger: sources.ledgerRows
       .map((r) => [r.id, r.entryType, r.amountThb, toCalendarDay(r.occurredOn), r.reversesEntryId])

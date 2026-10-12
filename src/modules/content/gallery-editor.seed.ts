@@ -1,5 +1,56 @@
+/** Registered locale drafts; CMS translations remain authoritative. */
+export const GALLERY_COPY_KEYS = [
+  {
+    "key": "admin.gallery.copy_to_project",
+    "namespace": "admin",
+    "description": "Copy an existing unit photo to its parent complex gallery",
+    "en": "Copy to complex gallery",
+    "ru": "Копировать в галерею комплекса",
+    "th": "คัดลอกไปยังแกลเลอรีโครงการ",
+    "zh": "复制到项目图库",
+    "status": "needs_review"
+  },
+  {
+    "key": "admin.gallery.copy_done",
+    "namespace": "admin",
+    "description": "Copy an existing unit photo to its parent complex gallery",
+    "en": "In complex gallery",
+    "ru": "В галерее комплекса",
+    "th": "อยู่ในแกลเลอรีโครงการแล้ว",
+    "zh": "已在项目图库中",
+    "status": "needs_review"
+  },
+  {
+    "key": "admin.gallery.copy_saved",
+    "namespace": "admin",
+    "description": "Copy an existing unit photo to its parent complex gallery",
+    "en": "Confirmed in the complex gallery. You can now remove this photo from the unit gallery; the original file will be kept.",
+    "ru": "Фото подтверждено в галерее комплекса. Теперь его можно убрать из галереи юнита; исходный файл сохранится.",
+    "th": "ยืนยันภาพในแกลเลอรีโครงการแล้ว คุณสามารถนำภาพนี้ออกจากแกลเลอรียูนิตได้ โดยไฟล์ต้นฉบับจะยังคงอยู่",
+    "zh": "已确认照片在项目图库中。现在可以将其从单元图库移除，原始文件会保留。",
+    "status": "needs_review"
+  },
+  {
+    "key": "admin.gallery.copy_failed",
+    "namespace": "admin",
+    "description": "Copy an existing unit photo to its parent complex gallery",
+    "en": "Could not confirm the photo in the complex gallery. Keep it in the unit gallery and retry.",
+    "ru": "Не удалось подтвердить фото в галерее комплекса. Оставьте его в галерее юнита и повторите попытку.",
+    "th": "ไม่สามารถยืนยันภาพในแกลเลอรีโครงการได้ โปรดเก็บภาพไว้ในแกลเลอรียูนิตและลองอีกครั้ง",
+    "zh": "无法确认照片是否在项目图库中。请保留单元图库中的照片并重试。",
+    "status": "needs_review"
+  }
+] as const;
+
+export function galleryCopyLabelsForLocale(locale: string): Record<string, string> {
+  const language = locale === "ru" || locale === "th" || locale === "zh" ? locale : "en";
+  return Object.fromEntries(GALLERY_COPY_KEYS.map(row => [row.key, row[language]]));
+}
+export const GALLERY_COPY_LOCALE_DRAFTS = Object.fromEntries(GALLERY_COPY_KEYS.map(row => [row.key, { en: row.en, ru: row.ru, th: row.th, zh: row.zh }]));
+
 /** Admin gallery editor copy. Locale drafts may be refined in Content Admin. */
 export const GALLERY_EDITOR_KEYS = [
+  ...GALLERY_COPY_KEYS,
   { key: 'admin.gallery.manage', namespace: 'admin', description: 'Gallery entry point', en: 'Manage photos and galleries', ru: 'Управление фотографиями и галереями', th: 'จัดการภาพและแกลเลอรี', status: 'needs_review' as const },
   { key: 'admin.gallery.title', namespace: 'admin', description: 'Gallery onboarding/editor', en: "Which gallery are you editing?", ru: "Какую галерею вы редактируете?", th: "คุณกำลังแก้ไขแกลเลอรีใด", status: 'needs_review' as const },
   { key: 'admin.gallery.scope_hint', namespace: 'admin', description: 'Gallery onboarding/editor', en: "Project photos show the whole property. Category photos show a room or villa type. Unit photos show the exact villa or condo.", ru: "Фотографии проекта показывают весь комплекс, категории — тип номера или виллы, а юнита — конкретную виллу или кондоминиум.", th: "ภาพโครงการแสดงทั้งพื้นที่ ภาพหมวดหมู่แสดงประเภทห้องหรือวิลล่า และภาพยูนิตแสดงยูนิตจริง", status: 'needs_review' as const },

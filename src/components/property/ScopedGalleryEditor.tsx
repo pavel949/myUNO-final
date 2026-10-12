@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   assessGalleryReadiness,
   MIN_PUBLIC_GALLERY_PHOTOS,
@@ -47,11 +47,17 @@ export default function ScopedGalleryEditor({
   const [items, setItems] = useState<Item[]>([]);
   const [cover, setCover] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const operationInFlight = useRef(false);
+  const [copiedMediaIds, setCopiedMediaIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadedGalleryUrl, setLoadedGalleryUrl] = useState<string | null>(null);
+  const loadRequest = useRef(0);
   const [message, setMessage] = useState<string | null>(null);
   const [failedMediaIds, setFailedMediaIds] = useState<Set<string>>(new Set());
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
   const galleryUrl = endpoint(target);
+  const currentGalleryUrl = useRef(galleryUrl);
+  currentGalleryUrl.current = galleryUrl;
   const readiness = useMemo(
     () =>
       assessGalleryReadiness({
@@ -64,7 +70,7 @@ export default function ScopedGalleryEditor({
       }),
     [cover, items]
   );
-  const effectiveReady = readiness.ready && failedMediaIds.size === 0;
+  const effectiveReady = !loading && loadedGalleryUrl === galleryUrl && readiness.ready && failedMediaIds.size === 0;
   const scopeExplanation =
     target.scope === 'project'
       ? 'Shared property spaces: facade, grounds, lobby and common facilities.'
@@ -73,21 +79,33 @@ export default function ScopedGalleryEditor({
         : 'Exact physical home: its real view, fit-out, rooms and distinguishing details.';
 
   const load = useCallback(async () => {
+    const request = ++loadRequest.current;
+    const isCurrent = () => request === loadRequest.current && galleryUrl === currentGalleryUrl.current;
     setLoading(true);
+    setLoadedGalleryUrl(null);
     try {
       const res = await fetch(galleryUrl, { cache: 'no-store' });
       if (!res.ok) throw new Error('Could not load gallery');
       const gallery = await res.json() as Gallery;
+      if (!isCurrent()) return false;
       const links = gallery.galleryMedia ?? gallery.media ?? [];
       setFailedMediaIds(new Set());
       setItems(links.map(link => ({ mediaId: link.mediaId, media: link.media })));
       setCover(gallery.coverMediaId);
+      setLoadedGalleryUrl(galleryUrl);
+      return true;
     } catch (error) {
+      if (!isCurrent()) return false;
       setMessage(error instanceof Error ? error.message : 'Could not load gallery');
-    } finally { setLoading(false); }
+      return false;
+    } finally { if (isCurrent()) setLoading(false); }
   }, [galleryUrl]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    setCopiedMediaIds(new Set());
+    void load();
+    return () => { loadRequest.current += 1; };
+  }, [load]);
 
   async function write(method: 'POST' | 'PATCH' | 'DELETE', payload: object | null, mediaId?: string) {
     const url = galleryUrl + (mediaId ? `?mediaId=${encodeURIComponent(mediaId)}` : '');
@@ -101,12 +119,33 @@ export default function ScopedGalleryEditor({
     }
   }
 
-  async function perform(operation: () => Promise<void>) {
-    if (busy) return;
+  async function perform(operation: () => Promise<void>, successMessage = labels['admin.gallery.saved']) {
+    if (operationInFlight.current) return;
+    operationInFlight.current = true;
     setBusy(true); setMessage(null);
-    try { await operation(); await load(); setMessage(labels['admin.gallery.saved']); }
+    try { await operation(); if (await load()) setMessage(successMessage); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Could not save gallery'); }
-    finally { setBusy(false); }
+    finally { operationInFlight.current = false; setBusy(false); }
+  }
+
+  async function copyToProject(mediaId: string) {
+    // Reuse the canonical attachment writer, restricted to this unit's parent
+    // project. Never unlink the source or upload a duplicate physical file.
+    const destination = endpoint({ scope: 'project', id: projectId, name: projectName });
+    const response = await fetch(destination, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mediaAssetId: mediaId, cover: false }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error || labels['admin.gallery.copy_failed']);
+    }
+    const confirmed = await fetch(destination, { cache: 'no-store' }).catch(() => null);
+    const gallery = confirmed?.ok ? await confirmed.json().catch(() => null) as Gallery | null : null;
+    if (!gallery?.galleryMedia?.some(link => link.mediaId === mediaId)) {
+      throw new Error(labels['admin.gallery.copy_failed']);
+    }
+    setCopiedMediaIds(current => new Set(current).add(mediaId));
   }
 
   async function upload(file: File, makeCover: boolean) {
@@ -129,7 +168,7 @@ export default function ScopedGalleryEditor({
       </p>
       <div className="mt-12 grid gap-8 md:grid-cols-3">
         <label className="text-small">{labels['admin.gallery.level']}
-          <select aria-label={labels['admin.gallery.level']} className="block w-full border rounded-md p-8"
+          <select disabled={busy} aria-label={labels['admin.gallery.level']} className="block w-full border rounded-md p-8"
             value={target.scope}
             onChange={e => {
               const first = targets.find(t => t.scope === e.target.value);
@@ -141,7 +180,7 @@ export default function ScopedGalleryEditor({
           </select>
         </label>
         <label className="text-small md:col-span-2">{labels['admin.gallery.object']}
-          <select aria-label={labels['admin.gallery.object']} className="block w-full border rounded-md p-8"
+          <select disabled={busy} aria-label={labels['admin.gallery.object']} className="block w-full border rounded-md p-8"
             value={selection} onChange={e => { setSelection(e.target.value); setMessage(null); }}>
             {targets.filter(t => t.scope === target.scope).map(t =>
               <option key={`${t.scope}:${t.id}`} value={`${t.scope}:${t.id}`}>{t.name}</option>)}
@@ -193,7 +232,7 @@ export default function ScopedGalleryEditor({
       <label className="inline-flex cursor-pointer rounded-md bg-brand-deep px-16 py-12 text-white text-small font-semibold">
         {busy ? labels['admin.gallery.saving'] : labels['admin.gallery.add']}
         <input className="sr-only" aria-label={labels['admin.gallery.add']} type="file" accept="image/jpeg,image/png,image/webp"
-          multiple disabled={busy} onChange={e => {
+          multiple disabled={busy || loading || loadedGalleryUrl !== galleryUrl} onChange={e => {
             const files = Array.from(e.target.files ?? []);
             e.target.value = '';
             if (files.length) void perform(async () => {
@@ -203,7 +242,7 @@ export default function ScopedGalleryEditor({
       </label>
     </div>
     {message && <p role="status" className="rounded-md bg-surface-subtle p-12 text-small">{message}</p>}
-    {loading ? <p role="status">{labels['admin.gallery.loading']}</p> :
+    {loading ? <p role="status">{labels['admin.gallery.loading']}</p> : loadedGalleryUrl !== galleryUrl ? null :
       items.length === 0 ? <p className="rounded-lg border border-dashed border-border-line p-24 text-center text-text-secondary">
         {labels['admin.gallery.empty']}
       </p> :
@@ -232,6 +271,12 @@ export default function ScopedGalleryEditor({
               {cover === item.mediaId ? <span className="text-small font-semibold text-brand-andaman">{labels['admin.gallery.cover']}</span> : null}
             </div>
             <div className="flex flex-wrap gap-8">
+              {target.scope === 'unit' && item.media.kind === 'photo' && <button type="button"
+                className="rounded-sm border p-8 text-small"
+                disabled={busy || copiedMediaIds.has(item.mediaId)}
+                onClick={() => void perform(() => copyToProject(item.mediaId), labels['admin.gallery.copy_saved'])}>
+                {labels[copiedMediaIds.has(item.mediaId) ? 'admin.gallery.copy_done' : 'admin.gallery.copy_to_project']}
+              </button>}
               <button type="button" className="rounded-sm border p-8 text-small" disabled={busy || cover === item.mediaId}
                 onClick={() => void perform(() => persistOrder(items, item.mediaId))}>{labels['admin.gallery.set_cover']}</button>
               <button type="button" className="rounded-sm border p-8 text-small" disabled={busy || index === 0}

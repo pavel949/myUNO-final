@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatBaht, satangToBaht } from '@/lib/money';
+import { formatBaht, formatBahtExact, satangToBaht } from '@/lib/money';
 
 export interface MoneyAmountProps {
   /**
@@ -19,6 +19,8 @@ export interface MoneyAmountProps {
    * a table cell, a card headline) already uses.
    */
   className?: string;
+  /** Show satang (`฿316.80`) for figures reconciled against a bank line or receipt. */
+  exact?: boolean;
 }
 
 /**
@@ -30,11 +32,11 @@ export interface MoneyAmountProps {
  * local `formatCurrency` — that duplication is exactly how the satang/baht
  * display bug (Q47) kept recurring across the codebase.
  */
-export const MoneyAmount: React.FC<MoneyAmountProps> = ({ satang, className }) => {
+export const MoneyAmount: React.FC<MoneyAmountProps> = ({ satang, className, exact }) => {
   // Formatting lives in src/lib/money.ts so a figure never depends on where it
   // is shown: this component and a notification body render the same amount
   // identically because they call the same function (T-053).
-  const formatted = formatBaht(satang);
+  const formatted = exact ? formatBahtExact(satang) : formatBaht(satang);
   const negative = satangToBaht(satang) < 0;
 
   const classes = [

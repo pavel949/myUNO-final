@@ -1,6 +1,6 @@
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { currentEngagementWhere } from '@/modules/projects/engagement-scope';
 
 const STAFF_ROLES = new Set(['staff_ops', 'onsite_host']);
@@ -64,7 +64,7 @@ export function getMCOrganizationIdsForProject(
 export async function hasManagedUnitMcAccess(
   user: CurrentUser,
   input: { projectId: string | null; unitId: string },
-  db: PrismaClient = prisma,
+  db: PrismaClient | Prisma.TransactionClient = prisma,
 ): Promise<boolean> {
   if (user.isAdmin) {
     return true;

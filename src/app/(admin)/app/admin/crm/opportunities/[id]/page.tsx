@@ -1,9 +1,10 @@
+import { INQUIRY_COPY, inquiryLabels } from '@/modules/content/inquiry-copy';
 import { redirect } from 'next/navigation';
 import { PageHeading } from '@/components/premium/StitchPage';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { OpportunityDetailClient } from '@/app/components/crm/OpportunityDetailClient';
 
@@ -118,6 +119,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
   };
 
   const labels = await getLabels({
+    ...inquiryLabels(getRequestLocale()),
     'admin.crm.opportunities.breadcrumb_home': 'Home',
     'admin.crm.opportunities.breadcrumb_admin': 'Admin',
     'admin.crm.opportunities.breadcrumb_crm': 'CRM',
@@ -131,7 +133,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     'admin.crm.activity.submit': 'Add note',
     'admin.crm.activity.saving': 'Saving…',
     'admin.crm.activity.error': 'Could not save activity.',
-  });
+  }, getRequestLocale(), INQUIRY_COPY);
 
   const breadcrumbs = [
     { label: labels['admin.crm.opportunities.breadcrumb_home'], href: '/' },

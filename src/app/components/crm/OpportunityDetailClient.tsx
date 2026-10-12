@@ -4,6 +4,7 @@ import { FC, FormEvent, useState } from 'react';
 import { formatBahtCompact } from '@/lib/money';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { CrmOpportunity } from '@prisma/client';
 import { formatDate as formatDateIn } from '@/lib/date';
 import { useLocale } from '@/components/LocaleProvider';
@@ -39,6 +40,7 @@ interface SerializedOpportunity extends Omit<CrmOpportunity, 'createdAt' | 'upda
     id: string;
     type: string;
     subject: string;
+    channelReference?: string | null;
     createdAt: string;
     status: string;
     identity?: {
@@ -370,6 +372,10 @@ export const OpportunityDetailClient: FC<OpportunityDetailClientProps> = ({
                 <p className="text-small text-text-secondary mb-4">
                   {activity.subject}
                 </p>
+                {activity.channelReference?.startsWith('thread:') && <Link
+                  href={`/messages/${encodeURIComponent(activity.channelReference.slice(7))}`}
+                  className="inline-flex min-h-48 items-center text-small font-semibold text-brand-andaman hover:underline"
+                >{labels['audience.lead.view_conversation'] || 'View conversation'}</Link>}
                 <div className="flex items-center gap-16 text-small text-text-stone">
                   {activity.identity && (
                     <span>By {activity.identity.name}</span>

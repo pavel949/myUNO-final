@@ -1,4 +1,5 @@
 import { getBookingThreadParticipants } from './booking-thread-access';
+import { materializeInquiryThreadAudience } from './inquiry-thread-access';
 import type { PrismaClient, Thread } from '@prisma/client';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance/statement-signoff.service';
 
@@ -23,13 +24,26 @@ export async function getStatementThreadParticipants(db: PrismaClient, statement
   };
 }
 
-/** Financial and booking conversations use live contextual authority.
+export function hasLiveThreadAuthority(thread: Pick<Thread, 'contextType' | 'contextId'>): boolean {
+  return thread.contextType === 'statement' || thread.contextType === 'booking' ||
+    (thread.contextType === 'general' && Boolean(thread.contextId?.startsWith('lead-')));
+}
+
+/** Financial, inquiry and booking conversations use live contextual authority.
  * Other contexts retain their existing policy until separately reviewed. */
 export async function getAuthorizedThreadParticipants(db: PrismaClient, thread: Pick<Thread, 'id' | 'contextType' | 'contextId'>) {
+  const inquiry = thread.contextType === 'general' && thread.contextId?.startsWith('lead-');
+  const inquiryAudience = inquiry ? await materializeInquiryThreadAudience(db, thread) : null;
   const participants = await db.threadParticipant.findMany({
     where: { threadId: thread.id },
-    include: { identity: { select: { id: true, firstName: true, lastName: true } } },
+    include: { identity: { select: { id: true, firstName: true, lastName: true, status: true, isAdmin: true } } },
   });
+  if (inquiry) {
+    return participants.filter(participant => participant.identity.status === 'active' &&
+      (participant.participantRole === 'inquirer' ||
+        (inquiryAudience ? inquiryAudience.participantIdentityIds.includes(participant.identityId) :
+          participant.participantRole === 'admin' && participant.identity.isAdmin)));
+  }
   if (thread.contextType === 'booking') {
     if (!thread.contextId || !await db.booking.findUnique({ where: { id: thread.contextId }, select: { id: true } })) return [];
     const audience = await getBookingThreadParticipants(db, thread.contextId);
@@ -42,7 +56,7 @@ export async function getAuthorizedThreadParticipants(db: PrismaClient, thread: 
 export async function canAccessThread(db: PrismaClient, threadId: string, identityId: string): Promise<boolean> {
   const thread = await db.thread.findUnique({ where: { id: threadId } });
   if (!thread) return false;
-  if (thread.contextType !== 'statement' && thread.contextType !== 'booking') return Boolean(await db.threadParticipant.findUnique({
+  if (!hasLiveThreadAuthority(thread)) return Boolean(await db.threadParticipant.findUnique({
     where: { threadId_identityId: { threadId, identityId } },
   }));
   return (await getAuthorizedThreadParticipants(db, thread)).some(participant => participant.identityId === identityId);

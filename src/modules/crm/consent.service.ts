@@ -1,4 +1,4 @@
-import { PrismaClient, CrmConsentPurpose, CrmConsentStatus } from '@prisma/client';
+import { Prisma, PrismaClient, CrmConsentPurpose, CrmConsentStatus } from '@prisma/client';
 
 /**
  * Consent, and the withdrawal of it (PDPA — doc 12, doc 17).
@@ -24,6 +24,18 @@ import { PrismaClient, CrmConsentPurpose, CrmConsentStatus } from '@prisma/clien
  * index, not a current-state one. Only the code was missing.
  */
 
+type ConsentDb = PrismaClient | Prisma.TransactionClient;
+
+// Existing millisecond ties have no recoverable append order. Never let a
+// random UUID pick a grant over a refusal/withdrawal or an expired grant.
+// PostgreSQL enum order is granted < withdrawn < denied (schema.prisma).
+const consentOrder: Prisma.CrmConsentOrderByWithRelationInput[] = [
+  { capturedAt: 'desc' },
+  { status: 'desc' },
+  { expiresAt: { sort: 'asc', nulls: 'last' } },
+  { id: 'asc' },
+];
+
 export interface ConsentDecisionInput {
   identityId: string;
   purpose: CrmConsentPurpose;
@@ -37,29 +49,49 @@ export interface ConsentDecisionInput {
 }
 
 async function appendDecision(
-  db: PrismaClient,
+  db: ConsentDb,
   status: CrmConsentStatus,
   input: ConsentDecisionInput
 ) {
-  return db.crmConsent.create({
-    data: {
-      identityId: input.identityId,
-      purpose: input.purpose,
-      status,
-      channel: input.channel,
-      expiresAt: input.expiresAt ?? null,
-      evidence: {
-        ...(input.evidence ?? {}),
-        ...(input.recordedByIdentityId
-          ? { recordedByIdentityId: input.recordedByIdentityId }
-          : {}),
+  const append = async (tx: Prisma.TransactionClient) => {
+    // Every application consent writer uses this transaction-scoped lock.
+    // It also serializes the first decision, when no consent row exists yet.
+    await tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(hashtext(${`crm-consent:${input.identityId}:${input.purpose}`}))
+    `;
+    const latest = await tx.crmConsent.findFirst({
+      where: { identityId: input.identityId, purpose: input.purpose },
+      orderBy: { capturedAt: 'desc' },
+      select: { capturedAt: true },
+    });
+    const [clock] = await tx.$queryRaw<Array<{ now: Date }>>`SELECT clock_timestamp() AS "now"`;
+    // Preserve a strict append order at the schema's millisecond precision,
+    // even within one transaction or when the database clock moves backwards.
+    const capturedAt = new Date(
+      Math.max(clock.now.getTime(), (latest?.capturedAt.getTime() ?? -1) + 1)
+    );
+    return tx.crmConsent.create({
+      data: {
+        capturedAt,
+        identityId: input.identityId,
+        purpose: input.purpose,
+        status,
+        channel: input.channel,
+        expiresAt: input.expiresAt ?? null,
+        evidence: {
+          ...(input.evidence ?? {}),
+          ...(input.recordedByIdentityId
+            ? { recordedByIdentityId: input.recordedByIdentityId }
+            : {}),
+        },
       },
-    },
-  });
+    });
+  };
+  return '$transaction' in db ? db.$transaction(append) : append(db);
 }
 
 /** Record consent given. Appends; never edits an earlier decision. */
-export async function grantConsent(db: PrismaClient, input: ConsentDecisionInput) {
+export async function grantConsent(db: ConsentDb, input: ConsentDecisionInput) {
   return appendDecision(db, 'granted', input);
 }
 
@@ -71,12 +103,12 @@ export async function grantConsent(db: PrismaClient, input: ConsentDecisionInput
  * request was unnecessary, and the record of them asking is itself worth
  * keeping.
  */
-export async function withdrawConsent(db: PrismaClient, input: ConsentDecisionInput) {
+export async function withdrawConsent(db: ConsentDb, input: ConsentDecisionInput) {
   return appendDecision(db, 'withdrawn', input);
 }
 
 /** Record a refusal at the point of asking, which is not the same as withdrawal. */
-export async function denyConsent(db: PrismaClient, input: ConsentDecisionInput) {
+export async function denyConsent(db: ConsentDb, input: ConsentDecisionInput) {
   return appendDecision(db, 'denied', input);
 }
 
@@ -92,7 +124,7 @@ export async function getConsentStatus(
 ): Promise<CrmConsentStatus | null> {
   const latest = await db.crmConsent.findFirst({
     where: { identityId, purpose },
-    orderBy: { capturedAt: 'desc' },
+    orderBy: consentOrder,
   });
   if (!latest) return null;
   if (latest.status === 'granted' && latest.expiresAt && latest.expiresAt <= now) {
@@ -121,7 +153,7 @@ export async function hasConsent(
 export async function getConsentHistory(db: PrismaClient, identityId: string) {
   return db.crmConsent.findMany({
     where: { identityId },
-    orderBy: { capturedAt: 'desc' },
+    orderBy: consentOrder,
   });
 }
 

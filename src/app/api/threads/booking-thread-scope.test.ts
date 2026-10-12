@@ -25,10 +25,12 @@ import { publishMessage, hasSubscribers } from '@/modules/comms/thread.bus';
 function related(table: string, row: any, key: string): [string, any] | null {
   if (table === 'identity' && key === 'threadParticipants') return ['threadParticipant', state.rows.threadParticipant.filter(participant => participant.identityId === row.id)];
   if (table === 'identity' && key === 'roleAssignments') return ['roleAssignment', state.rows.roleAssignment.filter(role => role.identityId === row.id)];
+  if (table === 'roleAssignment' && key === 'organization') return ['organization', state.rows.organization.find(organization => organization.id === row.organizationId)];
   if (table === 'threadParticipant' && key === 'identity') return ['identity', state.rows.identity.find(identity => identity.id === row.identityId)];
   if (table === 'thread' && key === 'participants') return ['threadParticipant', state.rows.threadParticipant.filter(participant => participant.threadId === row.id)];
   if (table === 'thread' && key === 'messages') return ['message', state.rows.message.filter(message => message.threadId === row.id)];
-  if ((table === 'booking' || table === 'unitEngagement') && key === 'unit') return ['unit', state.rows.unit.find(unit => unit.id === row.unitId)];
+  if ((table === 'booking' || table === 'unitEngagement' || table === 'crmOpportunity') && key === 'unit') return ['unit', state.rows.unit.find(unit => unit.id === row.unitId)];
+  if (table === 'unit' && key === 'engagements') return ['unitEngagement', state.rows.unitEngagement.filter(engagement => engagement.unitId === row.id)];
   if (table === 'message' && key === 'sender') return ['identity', state.rows.identity.find(identity => identity.id === row.senderIdentityId)];
   return null;
 }
@@ -44,6 +46,7 @@ function matches(table: string, row: any, where: any = {}): boolean {
       const [target, values] = relation;
       if (Array.isArray(values)) {
         return (!condition.some || values.some(value => matches(target, value, condition.some))) &&
+          (!condition.none || !values.some(value => matches(target, value, condition.none))) &&
           (!condition.every || values.every(value => matches(target, value, condition.every)));
       }
       return matches(target, values, condition);
@@ -51,6 +54,9 @@ function matches(table: string, row: any, where: any = {}): boolean {
     const value = row[key];
     if (condition !== null && typeof condition === 'object' && !(condition instanceof Date)) {
       return (!('in' in condition) || condition.in.includes(value)) &&
+        (!('not' in condition) || value !== condition.not) &&
+        (!('startsWith' in condition) || typeof value === 'string' && value.startsWith(condition.startsWith)) &&
+        (!('lt' in condition) || value < condition.lt) &&
         (!('lte' in condition) || value <= condition.lte) &&
         (!('gt' in condition) || value > condition.gt);
     }
@@ -102,7 +108,7 @@ async function openBooking() {
 }
 
 beforeEach(() => {
-  state.rows = Object.fromEntries(['identity', 'roleAssignment', 'booking', 'unit', 'unitEngagement', 'projectStaffPermission', 'thread', 'threadParticipant', 'message', 'ticket'].map(table => [table, []]));
+  state.rows = Object.fromEntries(['identity', 'roleAssignment', 'organization', 'booking', 'unit', 'unitEngagement', 'projectStaffPermission', 'crmOpportunity', 'thread', 'threadParticipant', 'message', 'ticket'].map(table => [table, []]));
   state.actor = 'guest';
   state.sequence = 0;
   for (const table of Object.keys(state.rows)) {
@@ -118,6 +124,11 @@ beforeEach(() => {
       update: vi.fn(async ({ where, data }: any) => {
         const row = state.rows[table].find(candidate => matches(table, candidate, where));
         if (!row) throw new Error('not found'); Object.assign(row, data); return { ...row };
+      }),
+      updateMany: vi.fn(async ({ where, data }: any) => {
+        const rows = state.rows[table].filter(candidate => matches(table, candidate, where));
+        for (const row of rows) Object.assign(row, data);
+        return { count: rows.length };
       }),
       upsert: vi.fn(async ({ where, create, update }: any) => {
         const row = state.rows[table].find(candidate => matches(table, candidate, where));

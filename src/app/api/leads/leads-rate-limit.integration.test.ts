@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Exercise anonymous HTTP intake without importing Next/React server session machinery.
+vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: vi.fn().mockResolvedValue(null) }));
+
+vi.mock('@/modules/comms/email.seam', () => ({
+  sendEmail: vi.fn().mockResolvedValue('isolated-email'),
+  buildNotificationEmail: vi.fn().mockResolvedValue({ subject: 'Fixture', body: 'Fixture' }),
+}));
 import { NextRequest } from 'next/server';
 import { db, resetDb, createIdentity } from '@/test/util';
 import { seedConfig } from '@/modules/config/seed';

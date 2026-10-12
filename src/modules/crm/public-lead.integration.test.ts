@@ -7,7 +7,7 @@ describe('public owner lead deduplication', () => {
     await resetDb();
   });
 
-  it('links an owner advisor inquiry to an existing property-submission opportunity', async () => {
+  it('links an authenticated owner inquiry to their existing property-submission opportunity', async () => {
     const identity = await createIdentity({ email: 'owner@example.com' });
     const existing = await db.crmOpportunity.create({
       data: {
@@ -24,6 +24,7 @@ describe('public owner lead deduplication', () => {
       audience: 'owners',
       name: 'Owner Example',
       contact: 'owner@example.com',
+      authenticatedIdentityId: identity.id,
       message: 'Please call me about management.',
     });
 

@@ -1001,6 +1001,13 @@ export default function BookingDetailClient({
                   </Link>
                 ) : null}
               </>
+            ) : booking.refundDisplayState === 'completed' ? (
+              <>
+                <h2 className="text-heading-3 font-bold text-text-ink mb-8">
+                  {labels['booking.detail.refund_completed_title']}
+                </h2>
+                <p className="text-body text-text-secondary">{labels['booking.detail.refund_completed_body']}</p>
+              </>
             ) : (booking.refundAccruedThb ?? 0) > 0 ? (
               <p className="text-body text-text-secondary">
                 {fill(labels['booking.detail.cancelled_note'], {

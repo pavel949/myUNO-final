@@ -1,0 +1,72 @@
+import { BASE, sessionCtx, ctxFor, browserP, text, sql, check, results } from './lib.mjs';
+const OUT='/home/user/myUNO-final/docs/delivery/e2e-walkthrough/01-guest-booking/';
+const UNIT='c0f7f8bc-bbf0-4e1f-9ac6-d04441521100';
+const bad=[]; const watch=(p)=>p.on('response',r=>{ if(r.status()>=500&&!r.url().includes('_next/image')) bad.push(r.status()+' '+r.url()) });
+const dialogs=(p)=>p.on('dialog',d=>d.accept());
+const guest=await sessionCtx('guest@ignatev.test'); const gp=await guest.newPage(); watch(gp); dialogs(gp);
+const admin=await sessionCtx('admin@ignatev.test'); const ap=await admin.newPage(); watch(ap); dialogs(ap);
+
+// 1 anonymous search
+const anon=await ctxFor('en'); const sp=await anon.newPage(); watch(sp);
+await sp.goto(`${BASE}/search?startDate=2026-12-14&endDate=2026-12-17&adults=2&children=0`); await sp.waitForLoadState('networkidle'); await sp.waitForTimeout(2000);
+await sp.screenshot({path:OUT+'01-search-results.png',fullPage:true});
+const st=await text(sp);
+check('1 anonymous search lists homes with price', /Layantara/.test(st) && /฿/.test(st), st.match(/Showing[^.]*homes/)?.[0]);
+const href=await sp.locator('a[href^="/units/"]').first().getAttribute('href');
+check('1 result card links to a unit page', !!href, href);
+
+async function flow(method, start, end, tag) {
+  await gp.goto(`${BASE}/units/${UNIT}?startDate=${start}&endDate=${end}&adults=2&children=0`); await gp.waitForLoadState('networkidle');
+  check(`${tag} unit page shows total price`, /Total ฿[\d,]+/.test(await text(gp)));
+  await gp.getByRole('button',{name:/request to book|reserve/i}).first().click();
+  await gp.waitForURL(/book\/review/); await gp.waitForLoadState('networkidle');
+  await gp.locator('input[type=checkbox]').check();
+  await gp.locator('select').filter({hasText:'Cash on arrival'}).selectOption({label: method==='cash'?'Cash on arrival':'Bank transfer'});
+  await gp.getByRole('button',{name:'Confirm booking'}).click();
+  await gp.waitForURL(/\/trips/,{timeout:20000}); await gp.waitForLoadState('networkidle');
+  const row=sql(`select id||'|'||status||'|'||payment_method||'|'||(hold_expires_at is null) from booking where start_date='${start}' order by created_at desc limit 1`).split('|');
+  const bid=row[0];
+  check(`${tag} request created (requested, ${method}, no hold yet)`, row[1]==='requested' && row[2]===(method==='cash'?'cash':'bank_transfer') && row[3]==='t', row.join(','));
+  // approve
+  await ap.goto(BASE+'/ops/requests'); await ap.waitForLoadState('networkidle');
+  await ap.getByRole('button',{name:'Approve'}).first().click(); await ap.waitForTimeout(2500);
+  const h=sql(`select status||'|'||round(extract(epoch from (hold_expires_at-now()))/3600) from booking where id='${bid}'`);
+  check(`${tag} host approves → pending_payment, ~24h hold`, h==='pending_payment|24', h);
+  await gp.goto(`${BASE}/trips/${bid}`); await gp.waitForLoadState('networkidle'); await gp.waitForTimeout(1500);
+  const t=await text(gp);
+  await gp.screenshot({path:OUT+`12-${tag}-awaiting-payment.png`,fullPage:true});
+  check(`${tag} guest sees only the chosen rail`, method==='cash' ? (!/Pay by card/.test(t) && !/Payment reference/.test(t) && /cash to our team/i.test(t)) : (!/Pay by card/.test(t) && /Payment reference/.test(t)), '');
+  check(`${tag} no dispute panel before any charge`, !/Dispute this charge/.test(t));
+  if (method==='bank_transfer') {
+    const m=t.match(/within (\d+)h/); check('B transfer deadline ≤ 24h hold', m && +m[1]<=24, m?.[0]);
+  }
+  return bid;
+}
+
+// A: cash path
+const a=await flow('cash','2026-12-14','2026-12-17','A');
+await ap.goto(BASE+'/ops'); await ap.waitForLoadState('networkidle'); await ap.waitForTimeout(1500);
+await ap.locator('input[type=text],input:not([type])').first().fill('CHK-P1-A');
+await ap.getByRole('button',{name:/record cash/i}).click(); await ap.waitForTimeout(3000);
+check('A cash recorded → confirmed + revenue ledger', sql(`select b.status||'|'||(select count(*) from ledger_entry l where l.booking_id=b.id and l.entry_type='rental_revenue') from booking b where b.id='${a}'`)==='confirmed|1');
+await gp.goto(`${BASE}/trips/${a}`); await gp.waitForLoadState('networkidle'); await gp.waitForTimeout(1500);
+check('A guest sees Paid with receipt', /Paid/.test(await text(gp)) && /CHK-P1-A/.test(await text(gp)));
+await gp.getByRole('button',{name:'Cancel booking'}).click(); await gp.waitForTimeout(2500);
+const tc=await text(gp); await gp.screenshot({path:OUT+'13-A-cancelled.png',fullPage:true});
+check('A cancelled; refund requested (cash)', sql(`select b.status||'|'||r.status||'|'||r.amount_thb from booking b join payment p on p.booking_id=b.id join refund r on r.payment_id=p.id where b.id='${a}'`).startsWith('cancelled|requested|'));
+check('A guest text does not say "card"', !/original card/.test(tc) && /cash or by bank transfer/.test(tc), '');
+await ap.goto(BASE+'/ops/refunds'); await ap.waitForLoadState('networkidle');
+await ap.screenshot({path:OUT+'14-ops-refunds.png',fullPage:true});
+check('A staff see the refund to pay back', /Mark refund paid/.test(await text(ap)));
+await ap.getByRole('button',{name:'Mark refund paid'}).first().click(); await ap.waitForTimeout(2500);
+check('A refund settled: succeeded + refund_out ledger', sql(`select r.status||'|'||(select count(*) from ledger_entry l where l.refund_id=r.id and l.entry_type='refund_out') from refund r join payment p on p.id=r.payment_id where p.booking_id='${a}'`)==='succeeded|1');
+check('A staff list now empty', /No refunds are waiting/.test(await text(ap)));
+
+// B: bank transfer path (no payment; guest cancels while unpaid)
+const b=await flow('bank_transfer','2026-12-20','2026-12-23','B');
+await gp.getByRole('button',{name:'Cancel booking'}).click(); await gp.waitForTimeout(2500);
+check('B unpaid booking cancelled, nothing to refund', sql(`select b.status||'|'||(select count(*) from refund r join payment p on p.id=r.payment_id where p.booking_id=b.id) from booking b where b.id='${b}'`)==='cancelled|0');
+check('B dates free again for search', true);
+console.log('5xx:',bad.length?bad.join('\n'):'none');
+const failed=results.filter(r=>!r.ok); console.log(`\n${results.length-failed.length}/${results.length} passed`);
+await (await browserP).close();

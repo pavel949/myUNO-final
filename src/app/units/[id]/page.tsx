@@ -1,3 +1,4 @@
+import { formatPropertyCount } from '@/lib/property-count';
 import { PublicSleepingSummary } from '@/components/units/PublicSleepingSummary';
 import { publicSleepingLabelsForLocale } from '@/modules/content/public-sleeping';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -187,7 +188,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         <Link href={`/search${context ? `?${context}` : ''}`} className="text-brand-andaman hover:underline">{labels['listing.back_to_results']}</Link>
         <PageHeading title={unit.name} subtitle={<Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>} />
         <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
-        <p>{[unit.bedrooms > 0 ? `${unit.bedrooms} ${copy.bedrooms}` : null, unit.maxGuests > 0 ? `${unit.maxGuests} ${copy.guests}` : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
+        <p>{[unit.bedrooms > 0 ? formatPropertyCount(`{count} ${copy.bedrooms}`, unit.bedrooms, getRequestLocale()) : null, unit.maxGuests > 0 ? formatPropertyCount(`{count} ${copy.guests}`, unit.maxGuests, getRequestLocale()) : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
         {unit.photoScope === 'room_type' && <p className="text-small text-text-secondary">{copy.representative}</p>}
         {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
         <PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />

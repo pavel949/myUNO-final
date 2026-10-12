@@ -1,3 +1,4 @@
+import { formatPropertyCount } from '@/lib/property-count';
 import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { PROPERTY_CATEGORY_UI_DRAFTS } from '@/modules/content/property-category-ui-drafts';
 import { discoveryContext } from '@/lib/discovery-navigation';
@@ -70,7 +71,7 @@ export default async function ProjectCategoryPage({
         {copy[category.descriptionKey] ? <p className="mt-12 max-w-3xl text-body text-text-secondary">{copy[category.descriptionKey]}</p> : null}
         <div className="mt-16 flex flex-wrap gap-8 text-small text-text-secondary">
           {category.bedrooms !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.bedrooms'].replace('{count}', String(category.bedrooms))}</span> : null}
-          <span className="rounded-full bg-surface-ivory px-12 py-4">{labels['project_category.available'].replace('{count}', String(category.unitCount))}</span>
+          <span className="rounded-full bg-surface-ivory px-12 py-4">{formatPropertyCount(labels['project_category.available'], category.unitCount, locale)}</span>
           {category.fromNightlyThb !== null ? <span className="rounded-full bg-surface-ivory px-12 py-4 font-semibold text-text-ink">{labels['project_category.from'].replace('{price}', Math.round(category.fromNightlyThb / 100).toLocaleString(UI_LOCALE))}</span> : null}
         </div>
         {bookableUnits.length > 0 ? (

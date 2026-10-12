@@ -20,3 +20,16 @@ describe('shared localized property count labels', () => {
     expect(formatPropertyCount('Комнат: {count}', 1, 'ru')).toBe('Комнат: 1');
   });
 });
+
+ describe('case-aware property counts', () => {
+  it.each([[1, 'гостя'], [2, 'гостей'], [5, 'гостей'], [11, 'гостей'], [21, 'гостя']] as const)('keeps до genitive for %s', (count, noun) => {
+    expect(formatPropertyCount('до {count} гостей', count, 'ru')).toBe(`до ${count} ${noun}`);
+  });
+  it.each([[1, 'объект'], [2, 'объекта'], [5, 'объектов'], [11, 'объектов'], [21, 'объект']] as const)('inflects %s properties', (count, noun) => {
+    expect(formatPropertyCount('{count} объектов', count, 'ru')).toBe(`${count} ${noun}`);
+  });
+  it('preserves neutral labels and abbreviations', () => {
+    for (const template of ['Гостей: {count}', 'Максимум гостей: {count}', 'Спален: {count}', '{count} сп.', '{count} ванн.'])
+      expect(formatPropertyCount(template, 1, 'ru')).toBe(template.replace('{count}', '1'));
+  });
+});

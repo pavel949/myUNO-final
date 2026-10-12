@@ -1,3 +1,4 @@
+import { formatPropertyCount } from '@/lib/property-count';
 import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -475,10 +476,7 @@ export default async function ProjectLandingPage({
                   </p>
                 ) : null}
                 <p className="text-small text-text-secondary mb-12">
-                  {labels['project_page.categories.homes_count'].replace(
-                    '{count}',
-                    String(category.unitCount)
-                  )}
+                  {formatPropertyCount(labels['project_page.categories.homes_count'], category.unitCount, locale)}
                 </p>
                 {category.fromNightlyThb !== null ? (
                   <p className="text-body text-text-ink font-semibold">
@@ -584,7 +582,7 @@ export default async function ProjectLandingPage({
                       {[
                         unit.bedrooms > 0 ? labels['project_page.units.bedrooms'].replace('{count}', String(unit.bedrooms)) : null,
                         unit.bathrooms > 0 ? labels['project_page.units.bathrooms'].replace('{count}', String(unit.bathrooms)) : null,
-                        unit.maxGuests > 0 ? labels['project_page.units.guests'].replace('{count}', String(unit.maxGuests)) : null,
+                        unit.maxGuests > 0 ? formatPropertyCount(labels['project_page.units.guests'], unit.maxGuests, locale) : null,
                         unit.grossAreaSqm ? `${unit.grossAreaSqm.toLocaleString(UI_LOCALE)} m²` : unit.sizeSqm ? `${unit.sizeSqm.toLocaleString(UI_LOCALE)} m²` : null,
                       ].filter(Boolean).join(' · ')}
                     </p>

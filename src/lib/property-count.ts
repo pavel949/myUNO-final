@@ -11,8 +11,11 @@ export function formatPropertyCount(template: string, count: number, locale: str
       (_match, prefix: string) => prefix + pick('спальня', 'спальни', 'спален'));
     value = value.replace(/(\{count\}\s+)(ванная|ванные|ванных)(?=$|\s|[.,·])/g,
       (_match, prefix: string) => prefix + pick('ванная', 'ванные', 'ванных', 'ванной'));
+    const upTo = /(?:^|\s)[Дд]о\s+\{count\}/.test(value);
+    value = value.replace(/(\{count\}\s+)(объект|объекта|объектов)(?=$|\s|[.,·])/g,
+      (_match, prefix: string) => prefix + pick('объект', 'объекта', 'объектов'));
     value = value.replace(/(\{count\}\s+)(гость|гостя|гостей)(?=$|\s|[.,·])/g,
-      (_match, prefix: string) => prefix + pick('гость', 'гостя', 'гостей'));
+      (_match, prefix: string) => prefix + (upTo ? pick('гостя', 'гостей', 'гостей', 'гостя') : pick('гость', 'гостя', 'гостей')));
     // "От" requires the genitive, unlike a standalone "1 ночь" badge.
     const from = /(?:^|\s)[Оо]т\s+\{count\}/.test(value);
     value = value.replace(/(\{count\}\s+)(ночь|ночи|ночей)(?=$|\s|[.,·])/g,

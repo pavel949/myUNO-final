@@ -51,7 +51,7 @@ export default async function CheckInPage({ params }: { params: { bookingId: str
     'staff.checkin.readiness': 'Property readiness',
     'staff.checkin.confirm': 'Confirm check-in',
     'staff.checkin.working': 'Checking in…',
-    'staff.checkin.note': 'The existing booking state machine, readiness gate, TM30 creation and condition-report writer remain authoritative.',
+    'staff.checkin.note': 'Confirming check-in records the condition report and opens a TM30 filing for each foreign guest, due within 24 hours.',
     'staff.checkin.error': 'Check-in could not be completed.',
   });
 

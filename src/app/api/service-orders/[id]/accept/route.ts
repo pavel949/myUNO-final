@@ -24,7 +24,15 @@ export async function POST(
       throw createPublicError('Access denied.', 403);
     }
 
-    await acceptServiceOrder(prisma, order.id, order.provider_id);
+    try {
+      await acceptServiceOrder(prisma, order.id, order.provider_id);
+    } catch (error) {
+      // A wrong-state order (unpaid, already answered) is the caller's conflict, not a server fault.
+      if (error instanceof Error && error.message.startsWith('Cannot ')) {
+        throw createPublicError(error.message, 409);
+      }
+      throw error;
+    }
 
     return NextResponse.json({ ok: true, status: 'accepted' });
   } catch (error) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from './Button';
+import { Counter } from './Counter';
 import { StayDatePicker } from './StayDatePicker';
 import { useLocale } from './LocaleProvider';
 
@@ -31,11 +32,14 @@ interface SearchBarProps {
   stayMode?: string;
 }
 
-const PICKER_FALLBACKS: Record<string, { previous: string; next: string; close: string; clear: string }> = {
-  ru: { previous: 'Назад', next: 'Вперёд', close: 'Закрыть', clear: 'Очистить' },
-  th: { previous: 'ก่อนหน้า', next: 'ถัดไป', close: 'ปิด', clear: 'ล้าง' },
-  zh: { previous: '上个月', next: '下个月', close: '关闭', clear: '清除' },
-  en: { previous: 'Previous', next: 'Next', close: 'Close', clear: 'Clear' },
+const PICKER_FALLBACKS: Record<
+  string,
+  { previous: string; next: string; close: string; clear: string; fewer: string; more: string }
+> = {
+  ru: { previous: 'Назад', next: 'Вперёд', close: 'Закрыть', clear: 'Очистить', fewer: 'меньше', more: 'больше' },
+  th: { previous: 'ก่อนหน้า', next: 'ถัดไป', close: 'ปิด', clear: 'ล้าง', fewer: 'น้อยลง', more: 'มากขึ้น' },
+  zh: { previous: '上个月', next: '下个月', close: '关闭', clear: '清除', fewer: '减少', more: '增加' },
+  en: { previous: 'Previous', next: 'Next', close: 'Close', clear: 'Clear', fewer: 'fewer', more: 'more' },
 };
 
 export function SearchBar({
@@ -78,10 +82,6 @@ export function SearchBar({
     router.push(`/search?${params.toString()}`);
   };
 
-  const fieldClass =
-    'h-48 px-12 rounded-lg bg-surface-ivory border border-border-line text-text-ink ' +
-    'focus:border-brand-andaman focus:ring-2 focus:ring-brand-andaman focus:outline-none w-full';
-
   const language = locale.toLowerCase().split('-')[0];
   const fallback = PICKER_FALLBACKS[language] || PICKER_FALLBACKS.en;
 
@@ -108,32 +108,32 @@ export function SearchBar({
           setEndDate(end);
         }}
       />
-      <div className="flex flex-col gap-4">
-        <label htmlFor="search-adults" className="text-small text-text-secondary">
+      <div role="group" aria-labelledby="search-adults-label" className="flex flex-col gap-4">
+        <span id="search-adults-label" className="text-small text-text-secondary">
           {labels.adults}
-        </label>
-        <input
-          id="search-adults"
-          type="number"
+        </span>
+        <Counter
+          value={adults}
           min={1}
           max={20}
-          value={adults}
-          onChange={(e) => setAdults(Number(e.target.value))}
-          className={fieldClass}
+          onChange={setAdults}
+          valueLabel={labels.adults}
+          decreaseLabel={`${labels.adults}: ${fallback.fewer}`}
+          increaseLabel={`${labels.adults}: ${fallback.more}`}
         />
       </div>
-      <div className="flex flex-col gap-4">
-        <label htmlFor="search-children" className="text-small text-text-secondary">
+      <div role="group" aria-labelledby="search-children-label" className="flex flex-col gap-4">
+        <span id="search-children-label" className="text-small text-text-secondary">
           {labels.children}
-        </label>
-        <input
-          id="search-children"
-          type="number"
+        </span>
+        <Counter
+          value={children}
           min={0}
           max={20}
-          value={children}
-          onChange={(e) => setChildren(Number(e.target.value))}
-          className={fieldClass}
+          onChange={setChildren}
+          valueLabel={labels.children}
+          decreaseLabel={`${labels.children}: ${fallback.fewer}`}
+          increaseLabel={`${labels.children}: ${fallback.more}`}
         />
       </div>
       <div className="col-span-2 md:col-span-1">

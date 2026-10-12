@@ -237,7 +237,7 @@ export default async function OwnersPage() {
         </div>
       </section>
 
-      <div id="lead-form">
+      <div>
         <LeadFormSection audience="owners" />
       </div>
     </main>

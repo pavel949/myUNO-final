@@ -46,3 +46,13 @@
 - current applicable rate/tax rules by scope.
 
 The architecture must support these choices without inventing them.
+
+## 2026-10-12 — Cancelled stays in owner statements (founder ruling)
+
+The amount a guest paid and the host kept after a cancellation refund (the retained amount) remains **owner revenue**.
+Implementation: a cancelled stay enters the period at what the guest paid (succeeded stay payments); the refund is
+deducted as before, so the owner nets paid minus refunded — never negative for a stay that earned something, never a
+charge for one that earned nothing. The myUNO service fee is charged on revenue the owner keeps (gross minus the
+refunded part of cancelled stays). Open edge: a cancelled stay that crosses a period boundary is not yet blocked from
+silently dropping out (crossing-stay check still covers live statuses only). Cash/transfer holds: 24 h (decided,
+implementation pending).

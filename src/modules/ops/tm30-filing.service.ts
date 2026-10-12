@@ -1,4 +1,4 @@
-import { PrismaClient, Tm30FilingStatus } from '@prisma/client';
+import { Prisma, PrismaClient, Tm30FilingStatus } from '@prisma/client';
 import { safeDecrypt } from './guest-pii';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
@@ -299,10 +299,16 @@ export interface CreateConditionReportInput {
 }
 
 export async function createConditionReport(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: CreateConditionReportInput
 ): Promise<{ id: string }> {
+  const execute = async (db: Prisma.TransactionClient) => {
   const { unitId, bookingId, reportType, notes, createdByIdentityId, photoMediaIds } = input;
+
+  if(bookingId){
+    const booking=await db.booking.findUnique({where:{id:bookingId},select:{unitId:true}});
+    if(!booking||booking.unitId!==unitId)throw new Error('Condition report booking does not belong to unit');
+  }
 
   const report = await db.conditionReport.create({
     data: {
@@ -328,6 +334,8 @@ export async function createConditionReport(
   }
 
   return { id: report.id };
+  };
+  return '$transaction' in db ? db.$transaction(execute) : execute(db);
 }
 
 /**

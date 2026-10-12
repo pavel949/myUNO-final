@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatPropertyCount } from '@/lib/property-count';
 import Image from 'next/image';
 import { discoveryDefaults } from '@/modules/content/discovery.seed';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -11,7 +12,8 @@ export async function discoveryCopy(locale: string) {
 }
 
 export default async function DiscoveryHomes({ units, context = '' }: { units: PublicDiscoveryUnit[]; context?: string }) {
-  const copy = await discoveryCopy(getRequestLocale());
+  const locale = getRequestLocale();
+  const copy = await discoveryCopy(locale);
   return <section className="mx-auto max-w-content px-20 py-32 md:px-32">
     <h2 className="font-display text-heading-2 font-semibold">{copy.browse}</h2>
     <p className="mb-24 mt-8 text-text-secondary">{copy.note}</p>
@@ -25,7 +27,7 @@ export default async function DiscoveryHomes({ units, context = '' }: { units: P
             <div className="p-20">
               <p className="text-small text-text-secondary">{unit.categoryName}</p>
               <h3 className="font-display text-heading-3 font-semibold">{unit.name}</h3>
-              <p className="mt-8 text-small text-text-secondary">{[unit.bedrooms > 0 ? `${unit.bedrooms} ${copy.bedrooms}` : null, unit.maxGuests > 0 ? `${unit.maxGuests} ${copy.guests}` : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
+              <p className="mt-8 text-small text-text-secondary">{[unit.bedrooms > 0 ? formatPropertyCount(`{count} ${copy.bedrooms}`, unit.bedrooms, locale) : null, unit.maxGuests > 0 ? formatPropertyCount(`{count} ${copy.guests}`, unit.maxGuests, locale) : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
               {unit.photoScope === 'room_type' && <p className="mt-8 text-small text-text-secondary">{copy.representative}</p>}
               <p className="mt-16 font-semibold text-brand-andaman">{copy.open} →</p>
             </div>

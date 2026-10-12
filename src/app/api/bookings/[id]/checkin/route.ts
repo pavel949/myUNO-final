@@ -67,6 +67,20 @@ export async function POST(
       );
     }
 
+    // Optional condition report payload from staff check-in flow (F-OPS-1)
+    const body = await req.json().catch(() => ({}));
+    const notesInput = typeof body.notes === 'string' ? body.notes : '';
+    const photoMediaIds = Array.isArray(body.photoMediaIds)
+      ? body.photoMediaIds.filter((id: unknown) => typeof id === 'string')
+      : [];
+    const checklistItems = Array.isArray(body.checklistItems)
+      ? body.checklistItems.filter((item: unknown): item is CheckInChecklistItem =>
+          typeof item === 'string' &&
+          (CHECK_IN_CHECKLIST_ITEMS as readonly string[]).includes(item)
+        )
+      : [];
+
+
     // The transition itself belongs to the booking module, not to this route,
     // and so does the rule deciding whether it may happen (`assessCheckIn`:
     // inside the stay window, full party registered, passports for foreign
@@ -74,15 +88,25 @@ export async function POST(
     // starts the 24h immigration clock, so a check-in whose filings could not
     // be created must not commit (it used to log the failure and carry on).
     let checkedInAt: Date;
+    let tm30FilingsCreated = 0;
     try {
       checkedInAt = await prisma.$transaction(async (tx) => {
         const db = tx as unknown as PrismaClient;
         const checkedIn = await checkInBooking(db, params.id);
-        for (const guest of booking.guests) {
+        // The booking source lock is still held; party writers use the same lock.
+        const currentGuests = await tx.bookingGuest.findMany({ where: { bookingId: checkedIn.id } });
+        for (const guest of currentGuests) {
           if (guest.nationality && guest.nationality.trim().toUpperCase() !== 'TH') {
-            await createTm30Filing(db, { bookingId: booking.id, bookingGuestId: guest.id });
+            await createTm30Filing(db, { bookingId: checkedIn.id, bookingGuestId: guest.id });
+            tm30FilingsCreated++;
           }
         }
+        await createConditionReport(tx, {
+          unitId: checkedIn.unitId, bookingId: checkedIn.id, reportType: 'check_in',
+          notes: formatCheckInChecklistNotes(checklistItems, notesInput),
+          createdByIdentityId: user.identityId,
+          photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
+        });
         return checkedIn.checkedInAt ?? new Date();
       });
     } catch (error) {
@@ -117,33 +141,6 @@ export async function POST(
       );
     }
 
-    // Optional condition report payload from staff check-in flow (F-OPS-1)
-    const body = await req.json().catch(() => ({}));
-    const notesInput = typeof body.notes === 'string' ? body.notes : '';
-    const photoMediaIds = Array.isArray(body.photoMediaIds)
-      ? body.photoMediaIds.filter((id: unknown) => typeof id === 'string')
-      : [];
-    const checklistItems = Array.isArray(body.checklistItems)
-      ? body.checklistItems.filter((item: unknown): item is CheckInChecklistItem =>
-          typeof item === 'string' &&
-          (CHECK_IN_CHECKLIST_ITEMS as readonly string[]).includes(item)
-        )
-      : [];
-
-    // Create baseline condition report
-    try {
-      await createConditionReport(prisma, {
-        unitId: booking.unitId,
-        bookingId: booking.id,
-        reportType: 'check_in',
-        notes: formatCheckInChecklistNotes(checklistItems, notesInput),
-        createdByIdentityId: user.identityId,
-        photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
-      });
-    } catch (error) {
-      console.error(`Failed to create condition report:`, error);
-    }
-
     // Notify guest
     await createNotification(prisma, {
       identityId: booking.guestIdentityId,
@@ -174,9 +171,7 @@ export async function POST(
       {
         success: true,
         checkedInAt,
-        tm30FilingsCreated: booking.guests.filter(
-          (g) => g.nationality && g.nationality.trim().toUpperCase() !== 'TH'
-        ).length,
+        tm30FilingsCreated,
       },
       { status: 200 }
     );

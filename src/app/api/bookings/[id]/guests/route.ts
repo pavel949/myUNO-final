@@ -1,7 +1,9 @@
+import type { PrismaClient } from '@prisma/client';
+import { lockBookingInventory } from '@/modules/core/booking-occupancy';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { capturePassportData, encryptGuestPii, safeDecrypt } from '@/modules/ops';
+import { capturePassportData, createTm30Filing, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
@@ -118,20 +120,31 @@ export async function POST(
       fullName: String(fullName),
       dateOfBirth: dateOfBirth ? String(dateOfBirth) : null,
     });
-    const guest = await prisma.bookingGuest.create({
-      data: {
-        bookingId: params.id,
-        fullName: encrypted.fullName,
-        nationality: String(nationality),
-        passportNumber: '',
-        dateOfBirth: encrypted.dateOfBirth,
-        isLead: Boolean(isLead),
-      },
-    });
-
-    await capturePassportData(prisma, {
-      bookingGuestId: guest.id,
-      passportNumber: String(passportNumber),
+    const guest = await prisma.$transaction(async tx => {
+      const current = await lockBookingInventory(tx, params.id);
+      if (!current) throw createPublicError('not found', 404);
+      const registered = await tx.bookingGuest.create({
+        data: {
+          bookingId: current.id,
+          fullName: encrypted.fullName,
+          nationality: String(nationality),
+          passportNumber: '',
+          dateOfBirth: encrypted.dateOfBirth,
+          isLead: Boolean(isLead),
+        },
+      });
+      await capturePassportData(tx, {
+        bookingGuestId: registered.id,
+        passportNumber: String(passportNumber),
+      });
+      // Existing late registration remains available. Its foreign-guest filing
+      // must commit with the party record, using the unchanged canonical clock.
+      if (current.status === 'checked_in' && registered.nationality?.trim().toUpperCase() !== 'TH') {
+        await createTm30Filing(tx as unknown as PrismaClient, {
+          bookingId: current.id, bookingGuestId: registered.id,
+        });
+      }
+      return registered;
     });
 
     return NextResponse.json(

@@ -1,3 +1,4 @@
+import type { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -46,20 +47,6 @@ export async function POST(
       throw createPublicError('Access denied.', 403);
     }
 
-    // Through the booking module rather than an inline update: the state
-    // machine is the tested definition of this transition, and it also records
-    // `checkedOutAt` and emits `stay_checked_out`, both of which the inline
-    // version dropped.
-    let updated;
-    try {
-      updated = await checkOutBooking(prisma, booking.id);
-    } catch (error) {
-      throw createPublicError(
-        `invalid request: ${error instanceof Error ? error.message : 'booking is not checked in'}`,
-        400
-      );
-    }
-
     const body = await req.json().catch(() => ({}));
     const notesInput = typeof body.notes === 'string' ? body.notes : '';
     const photoMediaIds = Array.isArray(body.photoMediaIds)
@@ -72,19 +59,30 @@ export async function POST(
         )
       : [];
 
-    if (checklistItems.length > 0 || notesInput || photoMediaIds.length > 0) {
-      try {
-        await createConditionReport(prisma, {
-          unitId: booking.unitId,
-          bookingId: booking.id,
-          reportType: 'check_out',
-          notes: formatCheckOutChecklistNotes(checklistItems, notesInput),
-          createdByIdentityId: user.identityId,
-          photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
-        });
-      } catch (error) {
-        console.error('Failed to create check-out condition report:', error);
-      }
+
+    // Through the booking module rather than an inline update: the state
+    // machine is the tested definition of this transition, and it also records
+    // `checkedOutAt` and emits `stay_checked_out`, both of which the inline
+    // version dropped.
+    let updated;
+    try {
+      updated = await prisma.$transaction(async tx => {
+        const departure = await checkOutBooking(tx as unknown as PrismaClient, booking.id);
+        if (checklistItems.length > 0 || notesInput || photoMediaIds.length > 0) {
+          await createConditionReport(tx, {
+            unitId: departure.unitId, bookingId: departure.id, reportType: 'check_out',
+            notes: formatCheckOutChecklistNotes(checklistItems, notesInput),
+            createdByIdentityId: user.identityId,
+            photoMediaIds: photoMediaIds.length > 0 ? photoMediaIds : undefined,
+          });
+        }
+        return departure;
+      });
+    } catch (error) {
+      throw createPublicError(
+        `invalid request: ${error instanceof Error ? error.message : 'booking is not checked in'}`,
+        400
+      );
     }
 
     if (booking.unit?.ownerIdentityId) {

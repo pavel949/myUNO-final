@@ -3,6 +3,7 @@ import { blockingBookingConditions, initialStayConfirmationIssue, lockBookingInv
 import { isBookingCreationKey, type BookingCreationIntent } from './creation-intent';
 import { cancellationQuotesMatch, getCancellationQuote, type CancellationQuote } from './cancellation-quote';
 import { track } from '@/modules/analytics';
+import { assertUnitReadyForCheckIn } from '@/modules/ops/operational-task.service';
 import { assertLayantaraBookingAuthority, excludedSourceControlledUnits } from './source-authority';
 import { createNotification } from '@/modules/comms';
 import { notifyBookingRequested } from './notify-requested';
@@ -943,23 +944,15 @@ export async function checkInBooking(
       ? db.$transaction(fn)
       : fn(db as unknown as Prisma.TransactionClient);
   const checkedIn = await inTransaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
-    const readinessBlockers = await tx.operationalTask.findMany({
-      where: {
-        unitId: booking.unitId,
-        taskType: { in: ['turnover_cleaning', 'turnover_inspection'] },
-        status: { in: ['planned', 'assigned', 'in_progress', 'inspected'] },
-      },
-      select: { id: true, taskType: true, status: true, dueAt: true },
-      orderBy: [{ dueAt: 'asc' }, { taskType: 'asc' }],
-    });
-    if (readinessBlockers.length) {
-      const error = new Error('Unit is not ready for check-in');
-      (error as Error & { code?: string; blockers?: typeof readinessBlockers }).code =
-        'UNIT_NOT_READY';
-      (error as Error & { blockers?: typeof readinessBlockers }).blockers = readinessBlockers;
-      throw error;
-    }
+    const locked = await lockBookingInventory(tx, bookingId);
+    if (!locked) throw new Error(`Booking ${bookingId} not found`);
+    const current = await tx.booking.findUniqueOrThrow({where:{id:bookingId},include:{
+      guests:{select:{nationality:true,passportNumber:true}},project:{select:{timezone:true}},
+    }});
+    const currentBlock = assessCheckIn(current, calendarDayIn(checkedInAt, current.project.timezone ?? DEFAULT_TIME_ZONE));
+    if(currentBlock) throw new CheckInBlockedError(currentBlock,currentBlock==='not_confirmed'
+      ? `Cannot check in booking with status ${current.status}` : `Cannot check in booking ${bookingId}: ${currentBlock}`);
+    await assertUnitReadyForCheckIn(tx as PrismaClient, current.unitId);
 
     return tx.booking.update({
       where: { id: bookingId },
@@ -999,8 +992,10 @@ export async function checkOutBooking(
 
   // State transition and turnover obligations commit atomically. A failed task
   // write must never leave a checked-out stay with no readiness work behind it.
-  const checkedOut = await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
+  const execute = async (tx: Prisma.TransactionClient) => {
+    const current = await lockBookingInventory(tx, bookingId);
+    if(!current) throw new Error(`Booking ${bookingId} not found`);
+    if(current.status!=='checked_in') throw new Error(`Cannot check out booking with status ${current.status}`);
     const updated = await tx.booking.update({
       where: { id: bookingId },
       data: {
@@ -1029,7 +1024,8 @@ export async function checkOutBooking(
       })
     ));
     return updated;
-  });
+  };
+  const checkedOut = '$transaction' in db ? await db.$transaction(execute) : await execute(db as unknown as Prisma.TransactionClient);
 
   await track(db, 'stay_checked_out', {
     bookingId: checkedOut.id,

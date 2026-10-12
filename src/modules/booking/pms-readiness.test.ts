@@ -27,6 +27,8 @@ describe('PMS readiness lifecycle', () => {
       }),
       update: vi.fn(),
     };
+    const originalRead = booking.findUnique;
+    (booking as any).findUniqueOrThrow = originalRead;
     const operationalTask = {
       findMany: vi.fn().mockResolvedValue([{
           id: 'task-clean',
@@ -38,7 +40,7 @@ describe('PMS readiness lifecycle', () => {
     const db: any = {
       booking,
       operationalTask,
-      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn() }),
+      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn(), $queryRaw: vi.fn() }),
     };
 
     await expect(
@@ -61,13 +63,15 @@ describe('PMS readiness lifecycle', () => {
       findUnique: vi.fn().mockResolvedValue({ ...checkedOut, status: 'checked_in' }),
       update: vi.fn().mockResolvedValue(checkedOut),
     };
+    const originalRead = booking.findUnique;
+    (booking as any).findUniqueOrThrow = originalRead;
     const operationalTask = {
       upsert: vi.fn().mockImplementation(({ create }: any) => Promise.resolve(create)),
     };
     const db: any = {
       booking,
       operationalTask,
-      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn() }),
+      $transaction: (fn: any) => fn({ booking, operationalTask, $executeRaw: vi.fn(), $queryRaw: vi.fn() }),
     };
 
     await checkOutBooking(db, 'booking-a', checkedOut.checkedOutAt);

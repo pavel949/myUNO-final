@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPropertyCount } from '@/lib/property-count';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -321,15 +322,15 @@ export default function UnitDetailClient({
           <div className="min-w-0">
               <div className="flex flex-wrap gap-12 mb-20">
                 <Chip variant="neutral">
-                  {fill(labels.guestsCount, { count: unit.maxGuests || 2 })}
+                  {formatPropertyCount(labels.guestsCount, unit.maxGuests || 2, locale)}
                 </Chip>
                 {unit.bedrooms !== undefined && (
                   <Chip variant="neutral">
-                    {fill(labels.bedroomsCount, { count: unit.bedrooms })}
+                    {formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale)}
                   </Chip>
                 )}
                 <Chip variant="neutral">
-                  {fill(labels.minNightsCount, { count: unit.minNights || 1 })}
+                  {formatPropertyCount(labels.minNightsCount, unit.minNights || 1, locale)}
                 </Chip>
                 {(unit.grossAreaSqm || unit.sizeSqm) ? (
                   <Chip variant="neutral">
@@ -432,7 +433,7 @@ export default function UnitDetailClient({
                   </div>
                   <div className="p-12 border-t border-border-line flex items-center justify-between">
                     <p className="text-body font-medium m-0">
-                      {fill(labels.guestsCount, { count: adults + children })}
+                      {formatPropertyCount(labels.guestsCount, adults + children, locale)}
                     </p>
                     <Counter
                       value={adults}

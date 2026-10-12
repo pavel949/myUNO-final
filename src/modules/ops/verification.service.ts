@@ -1,4 +1,5 @@
-import { PrismaClient, VerificationStatus } from '@prisma/client';
+import { Prisma, PrismaClient, VerificationStatus } from '@prisma/client';
+import { lockBookingInventory } from '@/modules/core/booking-occupancy';
 import { encrypt, decrypt } from '@/lib/encryption';
 import { getConfig } from '@/modules/config';
 import { createNotification } from '@/modules/comms';
@@ -21,56 +22,65 @@ export interface VerificationCheckResult {
  * Called by guest or staff during pre-arrival or at check-in door.
  */
 export async function capturePassportData(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: CapturePassportDataInput
 ): Promise<void> {
-  const { bookingGuestId, passportNumber, passportMediaId } = input;
+  const snapshot = await db.bookingGuest.findUnique({ where: { id: input.bookingGuestId }, select: { bookingId: true } });
+  if (!snapshot) throw new Error(`BookingGuest ${input.bookingGuestId} not found`);
+  // Share the booking source lock with arrival and late party registration.
+  const execute = async (db: Prisma.TransactionClient) => {
+    if (!await lockBookingInventory(db, snapshot.bookingId)) throw new Error(`Booking ${snapshot.bookingId} not found`);
+    const { bookingGuestId, passportNumber, passportMediaId } = input;
 
-  const bookingGuest = await db.bookingGuest.findUnique({
-    where: { id: bookingGuestId },
-    include: { booking: true },
-  });
+    const bookingGuest = await db.bookingGuest.findUnique({
+      where: { id: bookingGuestId },
+      include: { booking: true },
+    });
 
-  if (!bookingGuest) {
-    throw new Error(`BookingGuest ${bookingGuestId} not found`);
-  }
+    if (!bookingGuest) {
+      throw new Error(`BookingGuest ${bookingGuestId} not found`);
+    }
 
-  // Encrypt the passport number before storing
-  const encryptedPassport = encrypt(passportNumber);
+    if (bookingGuest.bookingId !== snapshot.bookingId) throw new Error('Guest booking changed; retry');
 
-  await db.bookingGuest.update({
-    where: { id: bookingGuestId },
-    data: {
-      passportNumber: encryptedPassport,
-      passportMediaId: passportMediaId,
-    },
-  });
+    // Encrypt the passport number before storing
+    const encryptedPassport = encrypt(passportNumber);
 
-  // If all guests in the booking have provided passports, mark as passports_received
-  const booking = await db.booking.findUnique({
-    where: { id: bookingGuest.bookingId },
-    include: { guests: true },
-  });
-
-  if (!booking) {
-    throw new Error(`Booking ${bookingGuest.bookingId} not found`);
-  }
-
-  const allGuests = await db.bookingGuest.findMany({
-    where: { bookingId: booking.id },
-  });
-
-  // Check if all guests have passport numbers (not all may be required)
-  const allHavePassports = allGuests.every((g) => g.passportNumber);
-
-  if (allHavePassports && allGuests.length > 0) {
-    await db.booking.update({
-      where: { id: booking.id },
+    await db.bookingGuest.update({
+      where: { id: bookingGuestId },
       data: {
-        verificationStatus: 'passports_received',
+        passportNumber: encryptedPassport,
+        passportMediaId: passportMediaId,
       },
     });
-  }
+
+    // If all guests in the booking have provided passports, mark as passports_received
+    const booking = await db.booking.findUnique({
+      where: { id: bookingGuest.bookingId },
+      include: { guests: true },
+    });
+
+    if (!booking) {
+      throw new Error(`Booking ${bookingGuest.bookingId} not found`);
+    }
+
+    const allGuests = await db.bookingGuest.findMany({
+      where: { bookingId: booking.id },
+    });
+
+    // Check if all guests have passport numbers (not all may be required)
+    const allHavePassports = allGuests.every((g) => g.passportNumber);
+
+    if (allHavePassports && allGuests.length > 0) {
+      await db.booking.update({
+        where: { id: booking.id },
+        data: {
+          verificationStatus: 'passports_received',
+        },
+      });
+    }
+  };
+  return '$transaction' in db ? db.$transaction(execute) : execute(db);
 }
 
 /**

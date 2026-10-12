@@ -48,7 +48,7 @@ export default async function DevelopersPage() {
       cta={{ href: '#lead-form', label: labels['audience.developers.cta'] }}
       values={points}
     >
-      <div id="lead-form">
+      <div>
         <LeadFormSection audience="developers" />
       </div>
     </AudienceLanding>

@@ -25,7 +25,9 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     where: user.isAdmin ? { status: { not: 'archived' } } : { OR: [{ status: 'live' }, { id: { in: scopedIds }, status: 'draft' }] }, orderBy: { name: 'asc' },
     select: { id: true, name: true, address: true },
     take: 500,
-  }), prisma.area.findMany({ where: { status: 'live' }, select: { id: true, slug: true }, orderBy: { sort: 'asc' } })]);
+  }), prisma.area.findMany({ where: { status: 'live' }, select: { id: true, slug: true, nameKey: true }, orderBy: { sort: 'asc' } })]);
+  // Area names are content keys; show the translated name, never the URL slug.
+  const areaNames = await getLabels(Object.fromEntries(areas.map(area => [area.nameKey, area.slug])), locale);
   const initialProjectId = projects.some(project => project.id === searchParams?.projectId) ? searchParams?.projectId : undefined;
   const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
   const initialOffers = (searchParams?.offers || '').split(',').filter((offer) => allowedOffers.has(offer));
@@ -36,7 +38,7 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
   return <PropertySubmissionWizard
     labels={labels}
     projects={projects}
-    areas={areas}
+    areas={areas.map(area => ({ id: area.id, slug: area.slug, name: areaNames[area.nameKey] ?? area.slug }))}
     initialSubmissionId={searchParams?.submissionId}
     initialProjectId={initialProjectId}
     initialOffers={initialOffers}

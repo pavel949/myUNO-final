@@ -145,4 +145,13 @@ describe('GET /api/bookings/[id]/transfer-instructions', () => {
     expect(response.status).toBe(403);
     expect(mockGetTransferInstructions).not.toHaveBeenCalled();
   });
+
+  it('never shows a transfer deadline later than the date hold', async () => {
+    const holdExpiresAt = new Date('2026-09-05T08:00:00Z');
+    await db.booking.update({ where: { id: bookingId }, data: { holdExpiresAt } });
+    mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+    const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+    expect(response.status).toBe(200);
+    expect((await response.json()).expiresAt).toBe(holdExpiresAt.toISOString());
+  });
 });

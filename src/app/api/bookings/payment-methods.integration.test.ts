@@ -70,11 +70,14 @@ describe('public booking payment methods follow the asset project', () => {
     expect(await db.booking.count()).toBe(0);
   });
 
-  it.each(['cash', 'bank_transfer'] as const)('preserves configured %s and its untimed reservation', async (paymentMethod) => {
+  it.each(['cash', 'bank_transfer'] as const)('preserves configured %s and holds the reservation for 24 hours', async (paymentMethod) => {
     const { body } = await fixture([paymentMethod]);
     const response = await POST(request({ ...body, paymentMethod }));
     expect(response.status).toBe(201);
-    expect((await db.booking.findFirstOrThrow())).toMatchObject({ paymentMethod, status: 'pending_payment', holdExpiresAt: null });
+    const stored = await db.booking.findFirstOrThrow();
+    expect(stored).toMatchObject({ paymentMethod, status: 'pending_payment' });
+    expect(stored.holdExpiresAt!.getTime() - Date.now()).toBeGreaterThan(23 * 3_600_000);
+    expect(stored.holdExpiresAt!.getTime() - Date.now()).toBeLessThan(25 * 3_600_000);
   });
 
   it('accepts card only when explicitly enabled, using the local mock provider', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { satangToBaht, bahtToSatang, formatBaht } from './money';
+import { satangToBaht, bahtToSatang, formatBaht, formatBahtExact } from './money';
 
 describe('satangToBaht — the display edge', () => {
   it('converts whole baht', () => {
@@ -63,5 +63,16 @@ describe('formatBaht', () => {
 
   it('shows zero without a sign', () => {
     expect(formatBaht(0)).toBe('฿0');
+  });
+});
+
+describe('formatBahtExact — figures reconciled against a bank line', () => {
+  it('keeps the satang so a ฿316.80 payout never reads ฿317', () => {
+    expect(formatBahtExact(31680)).toBe('฿316.80');
+    expect(formatBahtExact(-91590)).toBe('−฿915.90');
+  });
+  it('leaves whole amounts clean', () => {
+    expect(formatBahtExact(128600)).toBe('฿1,286');
+    expect(formatBahtExact(0)).toBe('฿0');
   });
 });

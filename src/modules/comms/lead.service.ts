@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { createNotification } from './comms.service';
 import { track } from '@/modules/analytics';
-import { capturePublicLead, type PublicLeadInput } from '@/modules/crm';
+import { capturePublicLead, grantConsent, type PublicLeadInput } from '@/modules/crm';
 
 export const LEAD_AUDIENCES = ['owners', 'developers', 'buyers', 'renters', 'mc'] as const;
 export type LeadAudience = (typeof LEAD_AUDIENCES)[number];
@@ -66,6 +66,23 @@ export async function submitLead(
       messages: { create: { body: lines.join('\n'), messageKind: 'system' } },
     } });
     const crm = await capturePublicLead(tx, { ...input, threadId });
+    // The box the person ticked ("store this to respond to my enquiry") is a
+    // PDPA decision: it goes in the append-only consent journal, not only in the
+    // thread text. A person whose latest decision is already "granted" gets no
+    // duplicate row.
+    const latestService = await tx.crmConsent.findFirst({
+      where: { identityId: crm.identityId, purpose: 'service' },
+      orderBy: { capturedAt: 'desc' },
+      select: { status: true },
+    });
+    if (latestService?.status !== 'granted') {
+      await grantConsent(tx, {
+        identityId: crm.identityId,
+        purpose: 'service',
+        channel: 'website',
+        evidence: { form: 'lead', audience, ...(input.sourceMedium ? { sourceMedium: input.sourceMedium } : {}) },
+      });
+    }
     const opportunity = await tx.crmOpportunity.findUniqueOrThrow({ where: { id: crm.opportunityId }, select: { projectId: true, unitId: true } });
     const recipients = await getInquiryThreadRecipients(tx, opportunity);
     if (!recipients.participantIdentityIds.length) throw new Error('no_admin_available');

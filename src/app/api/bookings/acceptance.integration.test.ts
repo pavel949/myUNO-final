@@ -60,6 +60,9 @@ describe('direct-unit booking acceptance with PostgreSQL', () => {
     expect(booking.totalThb).toBe(body.acceptedTotalSatang);
     expect(booking.status).toBe('pending_payment');
     expect(booking.paymentMethod).toBe('cash');
-    expect(booking.holdExpiresAt).toBeNull();
+    // Cash holds the dates for 24 hours (config booking.manual_payment_hold_hours), not forever.
+    expect(booking.holdExpiresAt).toBeInstanceOf(Date);
+    expect(booking.holdExpiresAt!.getTime() - Date.now()).toBeGreaterThan(23 * 3_600_000);
+    expect(booking.holdExpiresAt!.getTime() - Date.now()).toBeLessThan(25 * 3_600_000);
   });
 });

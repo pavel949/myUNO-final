@@ -98,6 +98,22 @@ export function formatBaht(satang: number): string {
 }
 
 /**
+ * Satang → baht to the satang: `฿316.80`, whole amounts stay `฿1,286`.
+ *
+ * For figures somebody reconciles against a bank line or a receipt — owner
+ * statements and payouts. `formatBaht` rounds to whole baht, which makes a
+ * ฿316.80 transfer read as ฿317 on one screen and ฿316.80 on another.
+ */
+export function formatBahtExact(satang: number): string {
+  assertFinite(satang, 'satang');
+  const whole = Math.abs(satang) % SATANG_PER_BAHT === 0;
+  const formatted = `฿${(Math.abs(satang) / SATANG_PER_BAHT).toLocaleString('en-US', whole
+    ? { maximumFractionDigits: 0 }
+    : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return satang < 0 ? `−${formatted}` : formatted;
+}
+
+/**
  * Satang → an abbreviated baht string: `฿1.2M`, `฿45.0K`, `฿800`.
  *
  * For dense surfaces where a full figure would crowd the layout — pipeline

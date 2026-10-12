@@ -95,6 +95,8 @@ function getSafeErrorMessage(statusCode: number, isPublic: boolean): string {
         return 'Access denied.';
       case 404:
         return 'Resource not found.';
+      case 409:
+        return 'This is not possible in the current state. Refresh the page and check the latest status.';
       case 429:
         return 'Too many requests. Please try again later.';
       default:

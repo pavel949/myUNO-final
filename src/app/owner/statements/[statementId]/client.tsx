@@ -374,7 +374,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
   const renderAmount = (amount: number, deduction?: boolean) => (
     <>
       {deduction && amount !== 0 ? '− ' : ''}
-      <MoneyAmount satang={toSatang(amount)} />
+      <MoneyAmount exact satang={toSatang(amount)} />
     </>
   );
 
@@ -427,7 +427,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             <StatTile
               label={labels['owner.statement.gross_bookings']}
               value={
-                <MoneyAmount
+                <MoneyAmount exact
                   satang={toSatang(
                     statement.grossBookingsAmountTh ?? statement.grossRevenueTh
                   )}
@@ -438,7 +438,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             <StatTile
               label={labels['owner.statement.adjusted_noi']}
               value={
-                <MoneyAmount
+                <MoneyAmount exact
                   satang={toSatang(statement.adjustedNoiTh ?? statement.noiTh)}
                 />
               }
@@ -447,7 +447,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             <StatTile
               label={labels['owner.statement.distributable_cash']}
               value={
-                <MoneyAmount
+                <MoneyAmount exact
                   satang={toSatang(
                     statement.distributableCashTh ?? statement.noiTh
                   )}
@@ -457,7 +457,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
             />
             <StatTile
               label={labels['owner.statement.your_share']}
-              value={<MoneyAmount satang={toSatang(statement.ownerShareTh)} />}
+              value={<MoneyAmount exact satang={toSatang(statement.ownerShareTh)} />}
               variant="occupancy"
             />
           </div>
@@ -600,7 +600,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 {labels['owner.statement.your_share']}
               </span>
               <span className="text-body font-semibold text-text-ink">
-                <MoneyAmount satang={toSatang(statement.ownerShareTh)} />
+                <MoneyAmount exact satang={toSatang(statement.ownerShareTh)} />
               </span>
             </div>
             <div className="flex justify-between gap-16">
@@ -608,7 +608,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 {labels['owner.statement.estate_share']}
               </span>
               <span className="text-body font-medium text-text-ink">
-                <MoneyAmount satang={toSatang(statement.estateShareTh)} />
+                <MoneyAmount exact satang={toSatang(statement.estateShareTh)} />
               </span>
             </div>
             {statement.capApplied && (
@@ -710,7 +710,7 @@ export const OwnerStatementDetailClient: React.FC<OwnerStatementDetailClientProp
                 <div>
                   <dt className="text-text-secondary">{labels['owner.statement.payout_amount']}</dt>
                   <dd className="font-semibold text-text-ink">
-                    <MoneyAmount satang={toSatang(statement.payout.amountTh)} />
+                    <MoneyAmount exact satang={toSatang(statement.payout.amountTh)} />
                   </dd>
                 </div>
                 <div>

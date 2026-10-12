@@ -69,7 +69,7 @@ export default async function ManagementCompaniesPage() {
       values={values}
       trust={{ body: labels['audience.mc.trust.body'], href: '/trust', link: labels['audience.mc.trust.link'] }}
     >
-      <div id="lead-form">
+      <div>
         <LeadFormSection audience="mc" />
       </div>
     </AudienceLanding>

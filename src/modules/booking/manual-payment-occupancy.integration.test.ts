@@ -25,12 +25,14 @@ describe('manual payment reservations occupy canonical inventory', () => {
     return { project, guest, unit, input };
   }
 
-  it.each(['cash', 'bank_transfer'] as const)('keeps %s occupied across expiry, search, allocation and PMS', async (paymentMethod) => {
+  it.each(['cash', 'bank_transfer'] as const)('keeps %s occupied for its 24-hour hold across search, allocation and PMS, then frees it', async (paymentMethod) => {
     const { project, unit, input } = await fixture();
     const sibling = await createUnit({ projectId: project.id, status: 'live', categoryKey: 'villa', name: 'Free sibling' });
     const booking = await createBooking(db, { ...input, paymentMethod });
-    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod, holdExpiresAt: null });
-    expect(await expireHolds(db, new Date(Date.now() + 7 * 86_400_000))).toBe(0);
+    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod });
+    expect(booking.holdExpiresAt).toBeInstanceOf(Date);
+    // Still held 23 hours in: nothing expires and the dates stay occupied.
+    expect(await expireHolds(db, new Date(Date.now() + 23 * 3_600_000))).toBe(0);
     expect(await checkAvailability(db, unit.id, dates.startDate, dates.endDate)).toBe(false);
     const candidates = await findAvailableUnitsForCategory(db, project.id, 'villa', dates.startDate, dates.endDate);
     expect(candidates.map((candidate) => candidate.id)).toEqual([sibling.id]);
@@ -42,8 +44,11 @@ describe('manual payment reservations occupy canonical inventory', () => {
     expect((await result.json()).units.map((entry: { id: string }) => entry.id)).toEqual([sibling.id]);
     expect(projectCalendarCell([{
       id: booking.id, unitId: unit.id, kind: 'booking', status: booking.status,
-      startDate: '2027-02-01', endDate: '2027-02-04', holdExpiresAt: null,
+      startDate: '2027-02-01', endDate: '2027-02-04', holdExpiresAt: booking.holdExpiresAt!.toISOString(),
     }], unit.id, '2027-02-02')).toMatchObject({ state: 'hold', blocking: true });
+    // Past 24 hours the unpaid manual reservation lapses and the dates are free again.
+    expect(await expireHolds(db, new Date(Date.now() + 25 * 3_600_000))).toBe(1);
+    expect(await checkAvailability(db, unit.id, dates.startDate, dates.endDate)).toBe(true);
   });
 
   it('rejects both a second booking and a maintenance block on a cash reservation', async () => {
@@ -64,7 +69,8 @@ describe('manual payment reservations occupy canonical inventory', () => {
     const request = await createBooking(db, { ...input, instantBook: false, paymentMethod });
     expect(await checkAvailability(db, input.unitId, dates.startDate, dates.endDate)).toBe(true);
     const booking = await approveBookingRequest(db, { authorizeCandidate: async () => true, bookingId: request.id });
-    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod, holdExpiresAt: null });
+    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod });
+    expect(booking.holdExpiresAt).toBeInstanceOf(Date);
     expect(await db.payment.count()).toBe(0);
     const receipt = { purpose: 'stay' as const, bookingId: booking.id, payerIdentityId: guest.id, amountThb: booking.totalThb };
     if (paymentMethod === 'cash') {

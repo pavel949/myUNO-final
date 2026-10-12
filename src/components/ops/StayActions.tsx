@@ -2,11 +2,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import CheckOutConditionReportModal from '@/components/ops/CheckOutConditionReportModal';
 
 export default function StayActions({
-  id,status,balanceSatang,canRecordMoney,canManageReservations,canManageFrontDesk,labels,
+  id,status,balanceSatang,canRecordMoney,canManageReservations,canManageFrontDesk,guestName,unitName,labels,
 }:{
-  id:string;status:string;balanceSatang:number;canRecordMoney:boolean;canManageReservations:boolean;canManageFrontDesk:boolean;
+  id:string;guestName:string;unitName:string;status:string;balanceSatang:number;canRecordMoney:boolean;canManageReservations:boolean;canManageFrontDesk:boolean;
   labels:Record<string,string>;
 }){
   const router=useRouter();
@@ -14,6 +15,7 @@ export default function StayActions({
   const [receipt,setReceipt]=useState('');
   const [message,setMessage]=useState('');
   const [failed,setFailed]=useState(false);
+  const [checkingOut,setCheckingOut]=useState(false);
   const run=async(path:string,payload:unknown={})=>{
     if(busy)return;
     setBusy(true);setMessage('');setFailed(false);
@@ -61,12 +63,16 @@ export default function StayActions({
         className="rounded-md bg-brand-deep px-16 py-12 text-center text-small font-semibold text-white">
         {labels['staff.stay_360.check_in']}
       </Link>}
-      {canCheckOut&&<button type="button" disabled={busy} onClick={()=>run('check-out')}
+      {canCheckOut&&<button type="button" disabled={busy} onClick={()=>setCheckingOut(true)}
         className="rounded-md bg-brand-deep px-16 py-12 text-small font-semibold text-white disabled:opacity-50">
         {labels['staff.stay_360.check_out']}
       </button>}
       {!canApprove&&!canCash&&!canCheckIn&&!canCheckOut&&
         <p className="text-small text-text-secondary">{labels['staff.stay_360.no_actions']}</p>}
     </div>
+    {/* A departure always goes through the inspection, never a bare status flip. */}
+    <CheckOutConditionReportModal bookingId={checkingOut?id:null} guestName={guestName} unitName={unitName} labels={labels}
+      onClose={()=>setCheckingOut(false)}
+      onComplete={()=>{setCheckingOut(false);setMessage(labels['staff.stay_360.success']);window.dispatchEvent(new Event('myuno:calendar-changed'));router.refresh();}}/>
   </section>;
 }

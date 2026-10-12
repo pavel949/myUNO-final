@@ -47,6 +47,7 @@ export default async function ProviderPage() {
       'provider.orders.loading': 'Loading your orders…',
       'provider.orders.empty': 'No orders yet — they will appear here the moment a customer books you.',
       'provider.orders.accept': 'Accept',
+      'provider.orders.awaiting_payment': 'Waiting for the customer to pay — you can accept once it is paid.',
       'provider.orders.decline': 'Decline',
       'provider.orders.fulfil': 'Mark fulfilled',
       'provider.orders.decline_reason': 'Reason (optional)',

@@ -84,6 +84,26 @@ export function resetRateLimit(key: RateLimitKey): void {
 }
 
 /**
+ * Give one attempt back — a successful login must not count against the
+ * shared-IP budget (an office, a hotel desk or a mobile carrier puts many
+ * real people behind one address). Failures keep their count.
+ */
+export function refundRateLimit(key: RateLimitKey): void {
+  const entry = limiterStore.get(key);
+  if (entry && entry.attempts > 0) {
+    entry.attempts--;
+    limiterStore.set(key, entry);
+  }
+}
+
+/** Shared-IP budget for password attempts: generous, because it is only a flood brake — the per-account limit is the strict one. */
+export const loginIpLimitConfig: RateLimitConfig = {
+  maxAttempts: 20,
+  windowMs: 15 * 60 * 1000,
+  backoffMs: 2 * 60 * 1000,
+};
+
+/**
  * Get the current state (attempts, remaining time) for monitoring.
  */
 export function getRateLimitStatus(key: RateLimitKey): {

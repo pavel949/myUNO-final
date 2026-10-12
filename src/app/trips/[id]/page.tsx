@@ -112,6 +112,10 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.refund_processing_title': 'Your refund is being processed',
     'booking.detail.refund_processing_body':
       'We are returning your payment to the original card. This usually takes a few business days — if it takes longer than expected, contact our team and we will follow up.',
+    'booking.detail.refund_processing_body_manual':
+      'We will return your payment the way you paid — in cash or by bank transfer. Our team will contact you to arrange it; if you have not heard from us, contact our team.',
+    'booking.detail.refund_completed_title': 'Your refund has been paid',
+    'booking.detail.refund_completed_body': 'The refund for this cancelled stay has been returned to you. Keep your receipt; contact our team if anything does not match.',
     'booking.detail.refund_support': 'Contact support',
     'booking.detail.cancelled_no_refund': 'This booking was cancelled.',
     'booking.detail.message_team': 'Message your property team',

@@ -72,7 +72,7 @@ export default async function BuyersPage() {
       values={values}
       trust={{ body: labels['audience.buyers.trust.body'], href: '/trust', link: labels['audience.buyers.trust.link'] }}
     >
-      <div id="lead-form">
+      <div>
         <LeadFormSection audience="buyers" />
       </div>
     </AudienceLanding>

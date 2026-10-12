@@ -66,10 +66,23 @@ describe('booking acceptance at the canonical writer', () => {
     const booking = await createBooking(db, { ...input, instantBook: false });
     expect(booking.status).toBe('requested');
   });
-  it.each(['cash', 'bank_transfer'] as const)('persists %s without a card timeout', async (paymentMethod) => {
+  it.each(['cash', 'bank_transfer'] as const)('holds %s for 24 hours, not forever and not for a card session', async (paymentMethod) => {
     unit.instantBook = true;
+    const before = Date.now();
     const booking = await createBooking(db, { ...input, paymentMethod });
-    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod, holdExpiresAt: null });
+    expect(booking).toMatchObject({ status: 'pending_payment', paymentMethod });
+    const hold = (booking.holdExpiresAt as Date).getTime() - before;
+    expect(hold).toBeGreaterThanOrEqual(24 * 60 * 60 * 1000 - 1000);
+    expect(hold).toBeLessThan(24 * 60 * 60 * 1000 + 60_000);
+  });
+
+  it('honours the configured manual hold (hours) when the caller passes it', async () => {
+    unit.instantBook = true;
+    const before = Date.now();
+    const booking = await createBooking(db, { ...input, paymentMethod: 'cash', manualHoldMinutes: 6 * 60 });
+    const hold = (booking.holdExpiresAt as Date).getTime() - before;
+    expect(hold).toBeGreaterThanOrEqual(6 * 60 * 60 * 1000 - 1000);
+    expect(hold).toBeLessThan(6 * 60 * 60 * 1000 + 60_000);
   });
 
   it('keeps the deadline for card payments', async () => {

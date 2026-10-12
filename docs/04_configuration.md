@@ -17,6 +17,7 @@ The admin panel's **Settings** section (doc 08 §6.4) renders this registry grou
 | Key | Type | Scope | Default | Meaning |
 |---|---|---|---|---|
 | `booking.hold_minutes` | int | project | `30` | How long an unpaid `pending_payment` booking blocks the calendar before expiring. |
+| `booking.manual_payment_hold_hours` | int | project | `24` | How long an unpaid **cash or bank-transfer** `pending_payment` booking blocks the calendar before it expires (card holds use `booking.hold_minutes`). Founder ruling 2026-10-12. |
 | `booking.request_hours` | int | project | `24` | Request-to-book: hours the host/ops side has to approve before auto-decline (guest notified). |
 | `booking.requests_block_calendar` | boolean | project | `false` | Whether un-answered requests block availability. |
 | `booking.min_nights_default` | int | unit | `2` | Default minimum stay for new units (each unit stores its own). |

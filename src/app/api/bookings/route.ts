@@ -14,6 +14,7 @@ import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { bookingCreationIntent, isBookingCreationKey, type BookingCreationIntent } from '@/modules/booking/creation-intent';
 import { getConfig } from '@/modules/config';
+import { checkRateLimit } from '@/app/libs/rateLimit';
 
 function replayResponse(booking: NonNullable<Awaited<ReturnType<typeof findBookingByCreationIntent>>>) {
   // The booking is already durable. Never open another payment session on a
@@ -74,6 +75,20 @@ export async function POST(req: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       throw createPublicError('unauthorized', 401);
+    }
+
+    // Every attempt can reserve inventory; cap how fast one account may try.
+    // (In-memory per instance — a shared store is a separate hardening item.)
+    const limit = checkRateLimit(`booking:create:${user.identityId}`, {
+      maxAttempts: 30,
+      windowMs: 10 * 60 * 1000,
+      backoffMs: 60 * 1000,
+    });
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many booking attempts. Please try again shortly.', code: 'RATE_LIMITED' },
+        { status: 429, headers: limit.retryAfterMs ? { 'Retry-After': String(Math.ceil(limit.retryAfterMs / 1000)) } : undefined }
+      );
     }
 
     const body = await req.json();
@@ -314,6 +329,7 @@ export async function POST(req: NextRequest) {
         const policy = sourceSeasonCancellationPolicy(candidateBreakdown.commercialTerms)
           ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
 
+        const manualHoldHours = await getConfig(prisma, 'booking.manual_payment_hold_hours', { projectId: bookingProjectId });
         const attempt = await createBookingAttempt(prisma, {
           unitId: candidate.id,
           projectId: bookingProjectId,
@@ -330,6 +346,7 @@ export async function POST(req: NextRequest) {
           acceptedMaxTotalThb: acceptedTotal,
           instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
           paymentMethod,
+          manualHoldMinutes: typeof manualHoldHours === 'number' && manualHoldHours > 0 ? Math.round(manualHoldHours * 60) : undefined,
           creationIntent,
           inventoryCategoryId: resolvedInventoryCategoryId,
           guestNote,

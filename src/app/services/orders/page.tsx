@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,7 @@ export default async function ServiceOrdersPage() {
     'orders.status.cancelled': 'Cancelled',
   });
 
+  const locale = getRequestLocale();
   const baht = (satang: number) =>
     `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
@@ -84,7 +86,7 @@ export default async function ServiceOrdersPage() {
                   </span>
                 </div>
                 <p className="text-small text-text-secondary">
-                  {`${labels['orders.when']}: ${order.scheduled_start.toLocaleString('sv-SE')} · ${
+                  {`${labels['orders.when']}: ${formatDate(order.scheduled_start, locale, 'dateTime')} · ${
                     labels['orders.provider']
                   }: ${order.provider?.name ?? '—'} · ${labels['orders.total']}: ${baht(
                     order.total_thb

@@ -132,11 +132,12 @@ export default function ProviderOrdersClient({
     };
   }, [initialOrders, loadQueue, labels]);
 
-  const needsResponse = orders.filter((order) => order.status === 'placed' || order.status === 'paid');
+  // A provider can only answer an order once it is paid; a placed order is still waiting on the customer.
+  const needsResponse = orders.filter((order) => order.status === 'paid');
   const toFulfil = orders.filter((order) => order.status === 'accepted');
   const prioritizedOrders = [...orders].sort((a, b) => {
     const priority = (status: string) =>
-      status === 'placed' || status === 'paid' ? 0 : status === 'accepted' ? 1 : 2;
+      status === 'paid' ? 0 : status === 'accepted' ? 1 : status === 'placed' ? 2 : 3;
     return priority(a.status) - priority(b.status) ||
       (a.acceptDeadline || a.scheduledStart || '9999').localeCompare(
         b.acceptDeadline || b.scheduledStart || '9999'
@@ -234,7 +235,8 @@ export default function ProviderOrdersClient({
           </p>
         ) : (
           prioritizedOrders.map((order) => {
-            const actionable = order.status === 'placed' || order.status === 'paid';
+            const actionable = order.status === 'paid';
+            const awaitingPayment = order.status === 'placed';
             return (
               <div
                 key={order.id}
@@ -258,6 +260,9 @@ export default function ProviderOrdersClient({
                     <p className="text-small text-text-secondary">
                       {labels['provider.orders.note']}: {order.noteToProvider}
                     </p>
+                  )}
+                  {awaitingPayment && (
+                    <p className="text-small text-state-warning">{labels['provider.orders.awaiting_payment']}</p>
                   )}
                   {actionable && order.acceptDeadline && (
                     <SlaCountdown

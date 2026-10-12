@@ -48,9 +48,15 @@ export function blockingBookingConditions(now: Date = new Date()): Prisma.Bookin
   ];
 }
 
-/** Cash and transfer are manually reconciled; only card/legacy holds time out. */
-export function paymentHoldExpiry(method: PaymentMethod | null | undefined, now: Date, holdMinutes: number): Date | null {
-  return method === 'cash' || method === 'bank_transfer'
-    ? null
-    : new Date(now.getTime() + holdMinutes * 60 * 1000);
+/** Cash and transfer are reconciled by hand, so they hold longer than a card session — but they DO time out. */
+export const DEFAULT_MANUAL_HOLD_MINUTES = 24 * 60;
+
+export function paymentHoldExpiry(
+  method: PaymentMethod | null | undefined,
+  now: Date,
+  holdMinutes: number,
+  manualHoldMinutes: number = DEFAULT_MANUAL_HOLD_MINUTES,
+): Date {
+  const minutes = method === 'cash' || method === 'bank_transfer' ? manualHoldMinutes : holdMinutes;
+  return new Date(now.getTime() + minutes * 60 * 1000);
 }

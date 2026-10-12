@@ -8,6 +8,7 @@ import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
 import { formatDate } from '@/lib/date';
 import StayActions from '@/components/ops/StayActions';
+import { checkOutModalLabelDrafts } from '@/lib/checkOutModalLabels';
 
 export const dynamic='force-dynamic';
 export default async function CanonicalStayPage({params,searchParams}:{params:{bookingId:string};searchParams?:{spaceId?:string}}){
@@ -39,6 +40,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   const canSeeFinance=access[4];
   const locale=getRequestLocale();
   const labels=await getLabels({
+    ...checkOutModalLabelDrafts,
     ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'staff.stay_360.title':'Stay 360',
     'staff.stay_360.back':'Stay operations',
@@ -120,6 +122,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
         </section>
         <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
           canRecordMoney={canSeeFinance} canManageReservations={access[0]} canManageFrontDesk={access[1]}
+          guestName={[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')} unitName={booking.unit?.name??''}
           labels={labels}/>
       </div>
       {canSeeFinance && <section className="stitch-panel p-20">

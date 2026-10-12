@@ -20,6 +20,7 @@ export interface ConfigParamDef<T = any> {
 export interface BookingConfig {
   'booking.hold_minutes': number;
   'booking.request_hours': number;
+  'booking.manual_payment_hold_hours': number;
   'booking.requests_block_calendar': boolean;
   'booking.min_nights_default': number;
   'booking.max_advance_days': number;

@@ -37,6 +37,17 @@ describe('Lead capture (doc 08 §3, N-29)', () => {
     expect(thread!.messages[0].body).toContain('Two-bedroom at The Title');
   });
 
+  it('journals the ticked consent as a PDPA decision (service, website) on the lead identity', async () => {
+    await createIdentity({ isAdmin: true });
+    await submitLead(db, { audience: 'owners', name: 'Sergey Volkov', contact: 'sergey@example.com', consent: true, sourceMedium: 'e2e' });
+    const consent = await db.crmConsent.findMany();
+    expect(consent).toHaveLength(1);
+    expect(consent[0]).toMatchObject({ purpose: 'service', status: 'granted', channel: 'website' });
+    expect(consent[0].evidence).toMatchObject({ form: 'lead', audience: 'owners', sourceMedium: 'e2e' });
+    const profile = await db.crmProfile.findFirstOrThrow();
+    expect(consent[0].identityId).toBe(profile.identityId);
+  });
+
   it('notifies every admin with an N-29 lead_received alert', async () => {
     const admin1 = await createIdentity({ isAdmin: true });
     const admin2 = await createIdentity({ isAdmin: true });

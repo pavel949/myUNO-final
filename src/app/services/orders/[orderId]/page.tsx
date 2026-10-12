@@ -109,6 +109,7 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.scheduled_start': 'Start date & time',
     'service-order.detail.scheduled_end': 'End date & time',
     'service-order.detail.quantity': 'Quantity',
+    'service-order.detail.unit_price': 'Unit price',
     'service-order.detail.pricing': 'Pricing',
     'service-order.detail.total_price': 'Total price',
     'service-order.detail.payment_status': 'Payment status',
@@ -343,14 +344,18 @@ export default async function ServiceOrderDetailPage({
           <p className="text-heading-2 font-semibold text-text-ink mb-16">
             ฿{baht(order.totalThb)}
           </p>
-          {order.priceBreakdown && Object.keys(order.priceBreakdown).length > 0 && (
+          {/* Only the lines a customer reads. The stored breakdown also carries internal
+              fields (price model, offer source, terms version, lead time) that are not for display. */}
+          {typeof order.priceBreakdown?.unit_price_thb === 'number' && (
             <div className="space-y-8 text-small text-text-secondary">
-              {Object.entries(order.priceBreakdown).map(([key, value]) => (
-                <div key={key} className="flex justify-between">
-                  <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                  <span>{formatBreakdownValue(key, value)}</span>
-                </div>
-              ))}
+              <div className="flex justify-between">
+                <span>{labels['service-order.detail.quantity']}</span>
+                <span>{order.quantity}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{labels['service-order.detail.unit_price']}</span>
+                <span>{formatBreakdownValue('unit_price_thb', order.priceBreakdown.unit_price_thb)}</span>
+              </div>
             </div>
           )}
         </div>

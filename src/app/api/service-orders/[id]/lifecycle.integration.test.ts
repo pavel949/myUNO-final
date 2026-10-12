@@ -226,6 +226,14 @@ describe('service-order lifecycle routes (S1)', () => {
       expect(order?.status).toBe('accepted');
     });
 
+    it('an order that is not paid yet is a 409 with a reason, never a server error', async () => {
+      asProviderMember();
+      const res = await accept(post(), { params: { id: orderId } });
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toMatch(/current state/);
+      expect((await db.serviceOrder.findUnique({ where: { id: orderId } }))?.status).toBe('placed');
+    });
+
     it("a different provider's member cannot act (404 — existence hidden)", async () => {
       asProviderMember(otherProviderId);
       const res = await accept(post(), { params: { id: orderId } });

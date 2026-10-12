@@ -18,6 +18,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
     'staff.shell.tasks': 'Tasks',
     'staff.shell.daily_close': 'Daily Reconciliation',
     'staff.shell.spaces': 'Workspaces',
+    'staff.shell.refunds': 'Refunds',
   });
 
   const [calendarProjects, frontDeskProjects, requestProjects, housekeepingProjects, maintenanceProjects, taskProjects, closeProjects] =
@@ -43,6 +44,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
     ...(maintenanceProjects.length ? [{ href: '/ops/maintenance', label: labels['staff.shell.maintenance'] }] : []),
     ...(taskProjects.length ? [{ href: '/ops/tasks', label: labels['staff.shell.tasks'] }] : []),
     ...(closeProjects.length ? [{ href: '/ops/night-audit', label: labels['staff.shell.daily_close'] }] : []),
+    ...(closeProjects.length ? [{ href: '/ops/refunds', label: labels['staff.shell.refunds'] }] : []),
     ...(hasStaffScope ? [{ href: '/ops/spaces', label: labels['staff.shell.spaces'] }] : []),
   ];
 

@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('@/modules/comms/email.seam', () => ({
+  sendEmail: vi.fn().mockResolvedValue('isolated-email'),
+  buildNotificationEmail: vi.fn().mockResolvedValue({ subject: 'Fixture', body: 'Fixture' }),
+}));
 import { db, resetDb, createIdentity } from '@/test/util';
 import { submitLead } from './lead.service';
 

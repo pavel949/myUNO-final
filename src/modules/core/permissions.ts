@@ -1,4 +1,4 @@
-import { Identity, RoleAssignment, RoleType } from '@prisma/client';
+import { Identity, Prisma, PrismaClient, RoleAssignment, RoleType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export type AccessLevel = 'allow' | 'read';
@@ -316,17 +316,20 @@ interface CanContext {
  * Check if an identity can perform an action on a resource.
  *
  * Rules:
- * 1. If identity.status === 'blocked', deny everything
+ * 1. If identity.status !== 'active', deny everything
  * 2. If identity.is_admin, allow everything
  * 3. Otherwise, check role permissions against PERMISSIONS table
  */
-export async function can(context: CanContext): Promise<boolean> {
+export async function can(
+  context: CanContext,
+  db: PrismaClient | Prisma.TransactionClient = prisma,
+): Promise<boolean> {
   const { identity, action, resource } = context;
   const requiredAccess: RequiredAccess = context.requiredAccess ?? 'read';
   const resolvedAction = resolvePermissionAction(action);
 
-  // Rule 1: Blocked identities cannot do anything
-  if (identity.status === 'blocked') {
+  // Rule 1: Only active identities may exercise permissions (PR #242).
+  if (identity.status !== 'active') {
     return false;
   }
 
@@ -353,7 +356,7 @@ export async function can(context: CanContext): Promise<boolean> {
   }
 
   // Get all active role assignments for this identity
-  const roleAssignments = await prisma.roleAssignment.findMany({
+  const roleAssignments = await db.roleAssignment.findMany({
     where: {
       identityId: identity.id,
       status: 'active',

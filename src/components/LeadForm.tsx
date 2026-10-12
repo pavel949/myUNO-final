@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { Input } from './Input';
 import { Button } from './Button';
 import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';
@@ -17,12 +18,21 @@ export interface LeadFormLabels {
   success: string;
   error: string;
   consentRequired: string;
+  viewConversation?: string;
+  contactFollowup?: string;
+  selectedHome?: string;
+  retry?: string;
+  rateLimited?: string;
 }
 
 interface LeadFormProps {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   initialMessage?: string;
+  initialName?: string;
+  initialContact?: string;
   projectId?: string;
+  unitId?: string;
+  contextLabel?: string;
   sourceMedium?: string;
   analytics?: { destination: string; locale: string };
   labels: LeadFormLabels;
@@ -32,15 +42,19 @@ interface LeadFormProps {
  * Public lead form (doc 08 §3): name, contact, free-text context, consent.
  * Posts to /api/leads; includes an invisible honeypot field for bots.
  */
-export function LeadForm({ audience, labels, initialMessage = '', projectId, sourceMedium, analytics }: LeadFormProps) {
-  const [name, setName] = useState('');
-  const [contact, setContact] = useState('');
+export function LeadForm({ audience, labels, initialMessage = '', initialName = '', initialContact = '', projectId, unitId, contextLabel, sourceMedium, analytics }: LeadFormProps) {
+  const [name, setName] = useState(initialName);
+  const [contact, setContact] = useState(initialContact);
   const [message, setMessage] = useState(initialMessage);
   const [consent, setConsent] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
   const [state, setState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [consentError, setConsentError] = useState(false);
+  const [errorText, setErrorText] = useState(labels.error);
   const started = useRef(false);
+  const submitting = useRef(false);
+  const request = useRef<{ payload: string; id: string } | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
 
   const markStarted = () => {
     if (started.current || !analytics) return;
@@ -57,22 +71,37 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId, sou
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
     if (!consent) {
       setConsentError(true);
       return;
     }
     setConsentError(false);
+    submitting.current = true;
+    setErrorText(labels.retry || labels.error);
     setState('submitting');
+    const payload = JSON.stringify({ audience, name, contact, message, consent, website, projectId, unitId, sourceMedium });
+    // Keep the same request ID after a lost acknowledgement; changed fields start
+    // a new inquiry. No contact data is written to browser storage.
+    if (!request.current || request.current.payload !== payload) request.current = { payload, id: crypto.randomUUID() };
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audience, name, contact, message, consent, website, projectId, sourceMedium }),
+        body: JSON.stringify({ ...JSON.parse(payload), requestId: request.current.id }),
       });
-      if (!res.ok) throw new Error('failed');
+      if (!res.ok) {
+        setErrorText(res.status === 429 ? (labels.rateLimited || labels.error) : (labels.retry || labels.error));
+        throw new Error('failed');
+      }
+      const result = await res.json();
+      if (result.ok !== true) throw new Error('failed');
+      setThreadId(typeof result.threadId === 'string' ? result.threadId : null);
       setState('success');
     } catch {
       setState('error');
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -83,6 +112,11 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId, sou
         role="status"
       >
         <p className="text-body text-text-ink font-semibold">{labels.success}</p>
+        {threadId ? (
+          <Link href={`/messages/${encodeURIComponent(threadId)}`} className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">
+            {labels.viewConversation || 'View conversation'}
+          </Link>
+        ) : labels.contactFollowup ? <p className="mt-12 text-small text-text-secondary">{labels.contactFollowup}</p> : null}
       </div>
     );
   }
@@ -90,6 +124,10 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId, sou
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-24">
       <h3 className="text-heading-2 font-bold text-text-ink">{labels.title}</h3>
+      {contextLabel && <div className="stitch-panel p-16">
+        {labels.selectedHome && <p className="text-small text-text-secondary">{labels.selectedHome}</p>}
+        <p className="font-semibold text-text-ink">{contextLabel}</p>
+      </div>}
 
       <Input
         label={labels.name}
@@ -156,7 +194,7 @@ export function LeadForm({ audience, labels, initialMessage = '', projectId, sou
 
       {state === 'error' ? (
         <p className="text-small text-state-error" role="alert">
-          {labels.error}
+          {errorText}
         </p>
       ) : null}
 

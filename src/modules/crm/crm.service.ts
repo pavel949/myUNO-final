@@ -7,6 +7,7 @@ import {
   Prisma,
   PrismaClient,
 } from '@prisma/client';
+import { grantConsent } from './consent.service';
 import {
   lifecycleAfterWinForExisting,
   opportunityTypeForAudience,
@@ -52,6 +53,9 @@ export interface PublicLeadInput {
   sourceCampaign?: string;
   referrerIdentityId?: string;
   projectId?: string;
+  unitId?: string;
+  authenticatedIdentityId?: string;
+  threadId?: string;
 }
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -271,7 +275,7 @@ export async function completeActivity(
 }
 
 /** Convert a public inquiry into canonical Party + CRM records. */
-export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput) {
+export async function capturePublicLead(db: DbClient, input: PublicLeadInput) {
   const fullName = cleanRequired(input.name, 'name', 500);
   const contact = cleanRequired(input.contact, 'contact', 500);
   const [firstName, ...lastParts] = fullName.split(/\s+/);
@@ -279,22 +283,24 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
   const parsed = parseLeadContact(contact);
   const source = input.source?.trim() || `website_${input.audience}`;
 
-  return db.$transaction(async (tx) => {
-    const existing = parsed.email
-      ? await tx.identity.findUnique({ where: { email: parsed.email } })
-      : parsed.phone
-        ? await tx.identity.findUnique({ where: { phone: parsed.phone } })
-        : null;
+  const capture = async (tx: DbClient) => {
+    const authenticated = input.authenticatedIdentityId
+      ? await tx.identity.findFirst({ where: { id: input.authenticatedIdentityId, status: 'active' } })
+      : null;
+    if (input.authenticatedIdentityId && !authenticated) throw new Error('invalid_session_identity');
+    // A submitted email/phone is only a contact claim. It cannot identify an
+    // existing account, change that person's CRM history, or override consent.
+    // Keep anonymous leads as provisional contact-only parties until a separate
+    // verification/matching process establishes identity. In particular, do not
+    // put the claim in Identity.email/phone, where sign-in matching relies on it.
     const identity =
-      existing ??
+      authenticated ??
       (await tx.identity.create({
         data: {
           firstName,
           lastName,
-          email: parsed.email,
-          phone: parsed.phone,
           status: 'invited',
-          notesInternal: parsed.email || parsed.phone ? null : `Unstructured contact: ${contact}`,
+          notesInternal: `Unverified inquiry contact: ${contact}`,
         },
       }));
 
@@ -307,15 +313,15 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
       sourceCampaign: input.sourceCampaign,
       referrerIdentityId: input.referrerIdentityId,
     });
-    await tx.crmConsent.create({
-      data: {
-        identityId: identity.id,
+    if (authenticated) {
+      await grantConsent(tx, {
+        identityId: authenticated.id,
         purpose: 'service',
-        status: 'granted',
         channel: 'website',
-        evidence: { form: input.audience, contact },
-      },
-    });
+        recordedByIdentityId: authenticated.id,
+        evidence: { form: input.audience, identityBasis: 'authenticated_session' },
+      });
+    }
     await tx.crmAttributionTouch.create({
       data: {
         identityId: identity.id,
@@ -345,10 +351,15 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
         data: {
           identityId: identity.id,
           projectId: input.projectId,
+          unitId: input.unitId,
           type,
           title: `${input.audience}: ${fullName}`,
           source,
-          requirements: input.message ? { message: input.message.trim() } : {},
+          requirements: {
+            ...(input.message ? { message: input.message.trim() } : {}),
+            identityMatchState: authenticated ? 'authenticated_self' : 'unverified_contact',
+            ...(!authenticated ? { inquiryContact: { value: contact, verified: false } } : {}),
+          },
         },
       }));
 
@@ -360,6 +371,7 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
         status: 'completed',
         subject: existingPropertySubmission ? 'Advisor inquiry linked to property onboarding' : 'Public inquiry received',
         body: input.message?.trim() || null,
+        channelReference: input.threadId ? `thread:${input.threadId}` : null,
         completedAt: new Date(),
         metadata: existingPropertySubmission
           ? { source, audience: input.audience, linkedToExistingPropertySubmission: true }
@@ -369,7 +381,8 @@ export async function capturePublicLead(db: PrismaClient, input: PublicLeadInput
       },
     });
     return { identityId: identity.id, opportunityId: opportunity.id };
-  });
+  };
+  return '$transaction' in db ? db.$transaction(capture) : capture(db);
 }
 
 export async function getPipeline(db: PrismaClient) {

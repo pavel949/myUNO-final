@@ -1,5 +1,7 @@
+import { synchronizeInquiryParticipant } from './inquiry-thread-access';
+import { createHash } from 'node:crypto';
 import { getBookingThreadParticipants } from './booking-thread-access';
-import { canAccessThread, getAuthorizedThreadParticipants, getStatementThreadParticipants, requireThreadAccess } from './statement-thread-access';
+import { hasLiveThreadAuthority, canAccessThread, getAuthorizedThreadParticipants, getStatementThreadParticipants, requireThreadAccess } from './statement-thread-access';
 import { PrismaClient, ThreadContextType, MessageKind } from '@prisma/client';
 import { publishMessage } from './thread.bus';
 import { track } from '@/modules/analytics';
@@ -160,19 +162,16 @@ export async function sendMessage(
 export async function markThreadRead(
   db: PrismaClient,
   threadId: string,
-  identityId: string
+  identityId: string,
+  readThrough: Date = new Date(),
 ): Promise<void> {
   await requireThreadAccess(db, threadId, identityId);
-  await db.threadParticipant.update({
+  await db.threadParticipant.updateMany({
     where: {
-      threadId_identityId: {
-        threadId,
-        identityId,
-      },
+      threadId, identityId,
+      OR: [{ lastReadAt: null }, { lastReadAt: { lt: readThrough } }],
     },
-    data: {
-      lastReadAt: new Date(),
-    },
+    data: { lastReadAt: readThrough },
   });
 }
 
@@ -185,6 +184,7 @@ export async function getThreadsForIdentity(
   identityId: string,
   limit: number = 50
 ) {
+  await synchronizeInquiryParticipant(db, identityId);
   const threads = await db.thread.findMany({
     where: {
       participants: {
@@ -204,7 +204,7 @@ export async function getThreadsForIdentity(
     take: limit,
   });
   const visible = await Promise.all(threads.map(async thread => {
-    if (thread.contextType !== 'statement' && thread.contextType !== 'booking') return thread;
+    if (!hasLiveThreadAuthority(thread)) return thread;
     const allowed = await getAuthorizedThreadParticipants(db, thread);
     if (!allowed.some(participant => participant.identityId === identityId)) return null;
     return { ...thread, participants: thread.participants.filter(participant =>
@@ -296,6 +296,7 @@ export async function getUnreadCounts(
   db: PrismaClient,
   identityId: string
 ): Promise<Record<string, number>> {
+  await synchronizeInquiryParticipant(db, identityId);
   const threads = await db.thread.findMany({
     where: {
       participants: {
@@ -318,7 +319,7 @@ export async function getUnreadCounts(
   const counts: Record<string, number> = {};
 
   for (const thread of threads) {
-    if ((thread.contextType === 'statement' || thread.contextType === 'booking') && !(await canAccessThread(db, thread.id, identityId))) continue;
+    if (hasLiveThreadAuthority(thread) && !(await canAccessThread(db, thread.id, identityId))) continue;
     const participant = thread.participants[0];
     const lastRead = participant?.lastReadAt;
 
@@ -332,4 +333,33 @@ export async function getUnreadCounts(
   }
 
   return counts;
+}
+
+/** User-authored replies: atomic persistence and idempotent acknowledged retries.
+ * Inbox unread counts derive from these canonical messages; external delivery is
+ * intentionally not part of the acknowledgement contract. */
+export async function sendHumanReply(db: PrismaClient, input: {
+  threadId: string; senderIdentityId: string; body: string; requestId?: string;
+}): Promise<string> {
+  await requireThreadAccess(db, input.threadId, input.senderIdentityId);
+  const messageId = input.requestId
+    ? createHash('sha256').update(JSON.stringify(['reply', input.threadId, input.senderIdentityId, input.requestId])).digest('hex')
+    : crypto.randomUUID();
+  const result = await db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${messageId}, 0))`;
+    const existing = await tx.message.findUnique({ where: { id: messageId } });
+    if (existing) {
+      if (existing.body !== input.body) throw Object.assign(new Error('request_id_conflict'), { statusCode: 409, isPublic: true });
+      return { message: existing, created: false };
+    }
+    const message = await tx.message.create({ data: { id: messageId, threadId: input.threadId, senderIdentityId: input.senderIdentityId, body: input.body, messageKind: 'user' } });
+    await tx.thread.update({ where: { id: input.threadId }, data: { lastMessageAt: message.createdAt } });
+    return { message, created: true };
+  });
+  if (result.created) {
+    try {
+      publishMessage(input.threadId, { ...result.message, createdAt: result.message.createdAt.toISOString() });
+    } catch { /* Persisted reply remains available by refresh/polling. */ }
+  }
+  return result.message.id;
 }

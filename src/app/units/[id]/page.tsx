@@ -193,7 +193,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         <PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />
         <aside className="stitch-panel p-24"><p>{copy.pending}</p><a href="#lead-form" className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">{copy.ask}</a></aside>
       </div>
-      <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} initialMessage={`${unit.project.name} — ${unit.name} (${unit.id})`} />
+      <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} unitId={unit.id} contextLabel={`${unit.name} · ${unit.project.name}`} initialMessage={`${unit.project.name} — ${unit.name}`} />
     </main>;
   }
 

@@ -44,21 +44,29 @@ export default function ThreadClient({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const requestRef = useRef<{ body: string; id: string } | null>(null);
 
   const load = useCallback(async () => {
-    const response = await fetch(`/api/threads/${threadId}`);
-    if (response.status === 401) {
-      router.push(`/login?next=/messages/${threadId}`);
-      return;
-    }
-    if (!response.ok) {
-      setError(labels['messages.thread.not_found']);
+    try {
+      const response = await fetch(`/api/threads/${threadId}`);
+      if (response.status === 401) {
+        setThread(null);
+        router.push(`/login?next=/messages/${threadId}`);
+        return;
+      }
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 404) setThread(null);
+        setError(labels['messages.thread.not_found']);
+        return;
+      }
+      const data = await response.json();
+      setThread(data.thread);
+    } catch {
+      setError(labels['messages.thread.error_generic']);
+    } finally {
       setLoading(false);
-      return;
     }
-    const data = await response.json();
-    setThread(data.thread);
-    setLoading(false);
   }, [threadId, router, labels]);
 
   useEffect(() => {
@@ -85,22 +93,27 @@ export default function ThreadClient({
 
   const send = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft.trim()) return;
+    if (!draft.trim() || sendingRef.current) return;
+    sendingRef.current = true;
+    const body = draft.trim();
+    if (!requestRef.current || requestRef.current.body !== body) requestRef.current = { body, id: crypto.randomUUID() };
     setSending(true);
     setError(null);
     try {
       const response = await fetch(`/api/threads/${threadId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: draft }),
+        body: JSON.stringify({ body, requestId: requestRef.current.id }),
       });
       if (!response.ok) throw new Error(labels['messages.thread.error_generic']);
-      setDraft('');
+      setDraft(current => current.trim() === body ? '' : current);
+      requestRef.current = null;
       await load();
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['messages.thread.error_generic']);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
@@ -229,6 +242,8 @@ export default function ThreadClient({
       <form onSubmit={send} className="flex gap-12 border-t border-border-line bg-surface-paper px-24 py-16">
         <input
           type="text"
+          maxLength={4000}
+          aria-label={labels['messages.thread.placeholder']}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={labels['messages.thread.placeholder']}

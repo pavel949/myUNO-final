@@ -4037,3 +4037,20 @@ model ServiceOrderDispatch {
 
   @@map("service_order_dispatch")
 }
+
+/// Founder's key register (admin "Keys" page). Storage only: nothing in the
+/// running system reads these values — runtime secrets live in Vercel. The
+/// value is AES-256-GCM encrypted (lib/encryption); `last4` is the only
+/// fragment ever shown without an explicit, audited reveal.
+model SecretVaultEntry {
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  name                String   @unique @db.VarChar(100)
+  valueEncrypted      String?  @map("value_encrypted")
+  last4               String?  @db.VarChar(4)
+  notes               String?  @db.VarChar(500)
+  updatedByIdentityId String?  @map("updated_by_identity_id")
+
+  @@map("secret_vault_entry")
+}

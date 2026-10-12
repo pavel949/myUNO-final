@@ -15,6 +15,7 @@ interface GoogleTokenResponse {
 interface GoogleUserInfo {
   id: string;
   email: string;
+  verified_email?: boolean;
   name: string;
   given_name: string;
   family_name: string;
@@ -110,6 +111,10 @@ export async function GET(request: NextRequest) {
     if (!googleUser.email) {
       console.error('Google user has no email:', googleUser);
       return loginRedirect('Google account has no email. Please use a different account.');
+    }
+
+    if (googleUser.verified_email !== true) {
+      return loginRedirect('unverified_google_email');
     }
 
     // Step 3: Find or create identity

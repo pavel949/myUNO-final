@@ -26,8 +26,35 @@ vi.mock('@/modules/auth', () => ({
 }));
 
 import { GET } from './route';
+import { prisma } from '@/lib/prisma';
+import { createSessionToken } from '@/modules/auth';
 
 describe('GET /api/auth/callback/google', () => {
+  it.each([false, undefined])('rejects unverified Google email (%s) before account linking', async (verified_email) => {
+    vi.clearAllMocks();
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'test-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'google-account', email: 'person@example.test', verified_email,
+        name: 'Person Example', given_name: 'Person', family_name: 'Example',
+      }), { status: 200 }));
+    try {
+      const request = new NextRequest('http://localhost/api/auth/callback/google?code=valid&state=nonce', {
+        headers: { cookie: 'google_oauth_state=nonce' },
+      });
+      const response = await GET(request);
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toContain('unverified_google_email');
+      expect(prisma.identity.findUnique).not.toHaveBeenCalled();
+      expect(prisma.identity.create).not.toHaveBeenCalled();
+      expect(prisma.authAccount.upsert).not.toHaveBeenCalled();
+      expect(createSessionToken).not.toHaveBeenCalled();
+      expect(response.cookies.get('auth-session')).toBeUndefined();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it('redirects missing code to /login with explicit error', async () => {
     const request = new NextRequest('http://localhost/api/auth/callback/google?state=x', {
       headers: { cookie: 'google_oauth_state=x' },

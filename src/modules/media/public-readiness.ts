@@ -115,7 +115,11 @@ export function assessGalleryReadiness(input: {
     blockers,
     warnings,
     videoUrls,
-    urls: valid.map((link) => link.media.storageKey),
+    // Public mosaics use the first URL as their hero. Honor the selected cover
+    // without rewriting gallery sort values or changing the remaining order.
+    urls: (coverLink
+      ? [coverLink, ...valid.filter((link) => link.mediaId !== coverMediaId)]
+      : valid).map((link) => link.media.storageKey),
   };
 }
 

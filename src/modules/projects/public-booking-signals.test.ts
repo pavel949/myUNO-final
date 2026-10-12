@@ -51,6 +51,25 @@ beforeEach(() => {
 });
 
 describe('public booking signals are stricter than inquiry visibility', () => {
+  it('honors each scoped cover in project, category and exact-unit public galleries', async () => {
+    const f = fixture();
+    f.project.coverMediaId = 'photo-3';
+    f.category.coverMediaId = 'photo-2';
+    f.unit.coverMediaId = 'photo-3';
+    load(f);
+    const project = await getPublicProjectBySlug('resort');
+    const unit = await getPublicUnitById('unit');
+    const unitOrder = [photos[2], photos[0], photos[1]].map(link => link.media.storageKey);
+    expect(project?.galleryUrls).toEqual(unitOrder);
+    expect(project?.units[0].galleryUrls).toEqual(unitOrder);
+    expect(unit?.galleryUrls).toEqual(unitOrder);
+    expect(project?.categories[0].galleryUrls)
+      .toEqual([photos[1], photos[0], photos[2]].map(link => link.media.storageKey));
+    expect(project?.galleryUrls[0]).toBe(project?.coverUrl);
+    expect(unit?.galleryUrls[0]).toBe(unit?.coverUrl);
+    expect(f.project.galleryMedia).toEqual(photos);
+  });
+
   it('keeps a fully photographed, offered, priced imported draft visible without booking or price-from promises', async () => {
     load(fixture('draft'));
     const project = await getPublicProjectBySlug('resort');

@@ -1,3 +1,4 @@
+import { galleryCopyLabelsForLocale, GALLERY_COPY_LOCALE_DRAFTS } from '@/modules/content/gallery-editor.seed';
 import { ownerEvidenceLabelsForLocale, OWNER_EVIDENCE_LOCALE_DRAFTS } from '@/modules/content/owner-evidence.seed';
 import { sleepingSpaceLabelsForLocale, SLEEPING_SPACE_LOCALE_DRAFTS } from '@/modules/content/sleeping-space.seed';
 import { notFound } from 'next/navigation';
@@ -22,6 +23,7 @@ export default async function PropertyOnboardingPage({ params, searchParams }: {
     }),
     getPropertyReadiness(prisma, params.id),
     getLabels({
+      ...galleryCopyLabelsForLocale('en'),
       'admin.gallery.title': 'Which gallery are you editing?',
       'admin.gallery.scope_hint': 'Project, category and exact-unit galleries are edited separately.',
       'admin.gallery.level': 'Level',
@@ -40,7 +42,7 @@ export default async function PropertyOnboardingPage({ params, searchParams }: {
       'admin.gallery.remove': 'Remove from gallery',
       'admin.gallery.safe_remove': 'Removing a photo only detaches it from this gallery.',
       'admin.gallery.saved': 'Gallery saved.',
-    }),
+    }, getRequestLocale(), GALLERY_COPY_LOCALE_DRAFTS),
     getLabels(ownerEvidenceLabelsForLocale('en'), getRequestLocale(), OWNER_EVIDENCE_LOCALE_DRAFTS),
     getLabels(sleepingSpaceLabelsForLocale('en'), getRequestLocale(), SLEEPING_SPACE_LOCALE_DRAFTS),
   ]);

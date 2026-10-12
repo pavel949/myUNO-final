@@ -1,10 +1,11 @@
 /* eslint-disable local-rules/no-literal-ui-text */
+import { galleryCopyLabelsForLocale, GALLERY_COPY_LOCALE_DRAFTS } from '@/modules/content/gallery-editor.seed';
 import { notFound, redirect } from 'next/navigation';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProjectExperienceActor } from '@/app/libs/projectExperienceGuard';
 import { prisma } from '@/lib/prisma';
-import { getLabels } from '@/lib/i18n';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
 import ScopedGalleryEditor from '@/components/property/ScopedGalleryEditor';
 import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
@@ -33,6 +34,7 @@ export default async function ProjectMediaPage({
   if (!project) notFound();
 
   const labels = await getLabels({
+    ...galleryCopyLabelsForLocale('en'),
     'admin.gallery.title': 'Media library',
     'admin.gallery.scope_hint': 'Choose project, category or exact unit. Each level keeps its own truthful gallery and cover.',
     'admin.gallery.level': 'Media scope',
@@ -51,7 +53,7 @@ export default async function ProjectMediaPage({
     'admin.gallery.set_cover': 'Set cover',
     'admin.gallery.remove': 'Remove',
     'admin.gallery.safe_remove': 'Removing a photo from this gallery does not delete a shared MediaAsset used elsewhere.',
-  });
+  }, getRequestLocale(), GALLERY_COPY_LOCALE_DRAFTS);
 
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
     <ProjectWorkspaceNav projectId={project.id} active={'media'} contentOnly={!actor.isAdmin} />

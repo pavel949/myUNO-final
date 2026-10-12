@@ -15,6 +15,20 @@ beforeEach(() => {
   mocks.findMany.mockResolvedValue([unit]);
 });
 describe('public discovery visibility separate from booking', () => {
+  it('uses the selected exact-unit cover as the first gallery photo for inquiry-only homes', async () => {
+    const media = ['pool', 'bedroom', 'living-room'].map((mediaId, sort) => ({
+      mediaId, sort, media: { id: mediaId, storageKey: `https://cdn.example.com/${mediaId}.jpg`,
+        kind: 'photo', mimeType: 'image/jpeg', encrypted: false, sizeBytes: 1024 },
+    }));
+    mocks.findMany.mockResolvedValue([{ ...unit, coverMediaId: 'living-room', media }]);
+    const [result] = await listPublicDiscoveryUnits({ unitId: unit.id });
+    expect(result.coverUrl).toBe(media[2].media.storageKey);
+    expect(result.galleryUrls).toEqual([media[2], media[0], media[1]].map(link => link.media.storageKey));
+    expect(result.photoScope).toBe('exact_unit');
+    expect(result).not.toHaveProperty('bookable');
+    expect(media.map(link => link.mediaId)).toEqual(['pool', 'bedroom', 'living-room']);
+  });
+
   it('limits draft exposure to explicit imported IDs and excludes suspended units', () => {
     const where = discoveryVisibility({ unitIds: ['imported'], projectIds: ['imported-project'] });
     expect(where.assetStatus).toEqual({ not: 'suspended' });

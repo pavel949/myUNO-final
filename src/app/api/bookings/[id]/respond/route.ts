@@ -96,12 +96,17 @@ export async function POST(
         projectId: booking.projectId,
         unitId: booking.unitId,
       });
+      const manualHoldHours = await getConfig(prisma, 'booking.manual_payment_hold_hours', {
+        projectId: booking.projectId,
+        unitId: booking.unitId,
+      });
       let updated;
       try {
         updated = await approveBookingRequest(prisma, {
           bookingId: booking.id,
           authorizeCandidate: (db, scope) => canApproveBookingCandidate(db, user.identityId, scope),
           holdMinutes: typeof holdMinutes === 'number' ? holdMinutes : 30,
+          manualHoldMinutes: typeof manualHoldHours === 'number' && manualHoldHours > 0 ? Math.round(manualHoldHours * 60) : undefined,
         });
       } catch (error) {
         if ((error as { code?: string })?.code === 'BOOKING_FORBIDDEN') {

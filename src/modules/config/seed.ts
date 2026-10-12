@@ -21,6 +21,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'How long an unpaid pending_payment booking blocks the calendar before expiring',
       },
       {
+        key: 'booking.manual_payment_hold_hours',
+        valueType: 'int',
+        defaultValue: 24,
+        scopeableTo: 'project',
+        groupKey: 'booking',
+        description: 'How long an unpaid cash or bank-transfer booking blocks the calendar before expiring (founder ruling 2026-10-12: 24 hours)',
+      },
+      {
         key: 'booking.request_hours',
         valueType: 'int',
         defaultValue: 24,

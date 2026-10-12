@@ -67,6 +67,8 @@ export interface CreateBookingInput {
   paymentMethod?: PaymentMethod;
   creationIntent?: BookingCreationIntent;
   holdMinutes?: number;
+  /** Hold for cash / bank-transfer bookings (config booking.manual_payment_hold_hours). */
+  manualHoldMinutes?: number;
   requestHours?: number;
   guestNote?: string;
 }
@@ -76,6 +78,7 @@ export interface ApproveBookingRequestInput {
   /** Trusted server authorization, rechecked for every candidate under its inventory lock. */
   authorizeCandidate: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
   holdMinutes?: number;
+  manualHoldMinutes?: number;
 }
 
 export interface DeclineBookingRequestInput {
@@ -323,6 +326,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     paymentMethod,
     creationIntent,
     holdMinutes = 30,
+    manualHoldMinutes,
     requestHours = 24,
     guestNote,
   } = input;
@@ -462,7 +466,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
         totalThb,
         ...(priceBreakdown && { priceBreakdown: priceBreakdown as any }),
         ...(cancellationPolicySnapshot && { cancellationPolicySnapshot: cancellationPolicySnapshot as any }),
-        holdExpiresAt: canInstantBook ? paymentHoldExpiry(paymentMethod, now, holdMinutes) : null,
+        holdExpiresAt: canInstantBook ? paymentHoldExpiry(paymentMethod, now, holdMinutes, manualHoldMinutes) : null,
         requestExpiresAt: !canInstantBook ? new Date(now.getTime() + requestHours * 60 * 60 * 1000) : null,
         guestNote,
       },
@@ -525,7 +529,7 @@ export async function approveBookingRequest(
   db: PrismaClient,
   input: ApproveBookingRequestInput
 ) {
-  const { bookingId, holdMinutes = 30 } = input;
+  const { bookingId, holdMinutes = 30, manualHoldMinutes } = input;
 
   const booking = await db.booking.findUnique({ where: { id: bookingId } });
   if (!booking) {
@@ -641,7 +645,7 @@ export async function approveBookingRequest(
           ...repriced, ...categorySelectionSnapshot(categoryId!),
         } as unknown as Prisma.InputJsonObject } : {}),
         status: 'pending_payment',
-        holdExpiresAt: paymentHoldExpiry(current.paymentMethod, now, holdMinutes),
+        holdExpiresAt: paymentHoldExpiry(current.paymentMethod, now, holdMinutes, manualHoldMinutes),
         requestExpiresAt: null,
       },
       include: { unit: { select: { name: true } } },

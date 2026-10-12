@@ -98,14 +98,54 @@ export async function GET(
       depositClaim = await getActiveDepositClaimForGuest(prisma, params.id);
     }
 
-    const { unit, ...rest } = booking;
+    const { unit } = booking;
+    // Explicit allow-list. The row carries replay keys, the staff-only note,
+    // the other party's identity ids and internal pricing; none of that may
+    // reach a guest or an owner just because it is a column of `booking`.
+    // New columns are therefore private until someone adds them here.
+    const visible = {
+      id: booking.id,
+      reference: booking.reference,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+      unitId: booking.unitId,
+      projectId: booking.projectId,
+      bookingType: booking.bookingType,
+      status: booking.status,
+      paymentMethod: booking.paymentMethod,
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      adults: booking.adults,
+      children: booking.children,
+      infants: booking.infants,
+      pets: booking.pets,
+      balanceDueThb: booking.balanceDueThb,
+      holdExpiresAt: booking.holdExpiresAt,
+      requestExpiresAt: booking.requestExpiresAt,
+      checkedInAt: booking.checkedInAt,
+      checkedOutAt: booking.checkedOutAt,
+      cancelledAt: booking.cancelledAt,
+      guestNote: booking.guestNote,
+      project: booking.project,
+      payments: booking.payments,
+    };
+    // Staff see the operational columns a guest or owner must not.
+    const staffOnly = isStaff
+      ? {
+          internalNote: booking.internalNote,
+          cancellationReason: booking.cancellationReason,
+          channel: booking.channel,
+          externalRef: booking.externalRef,
+        }
+      : {};
     // Display boundary: totalThb/refundAccruedThb/refundPreviewThb are all
     // computed and stored in satang (THB x 100). Convert to baht only here,
     // at the response boundary — the refund math above still ran in satang.
     return NextResponse.json({
-      ...rest,
-      totalThb: Math.round(rest.totalThb / 100),
-      refundAccruedThb: Math.round(rest.refundAccruedThb / 100),
+      ...visible,
+      ...staffOnly,
+      totalThb: Math.round(booking.totalThb / 100),
+      refundAccruedThb: Math.round(booking.refundAccruedThb / 100),
       unit: unit ? { id: unit.id, name: unit.name } : null,
       viewer: { isGuest, isOwner, isStaff },
       cancellable: CANCELLABLE_STATUSES.includes(booking.status),

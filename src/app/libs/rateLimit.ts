@@ -10,9 +10,20 @@
  * memory rather than blocking sign-in (the database being down is already the
  * bigger problem, and failing closed would lock every guest out).
  */
+import { createHash } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 
 type RateLimitKey = string;
+
+/**
+ * What is actually stored: a hash of the caller's key. Keys carry IP addresses and
+ * e-mail addresses (personal data under PDPA), so the table never holds them in
+ * readable form; the hash also fixes the length, so an oversized input cannot make
+ * the insert fail and silently drop the limiter back to per-instance memory.
+ */
+export function rateLimitBucketKey(key: RateLimitKey): string {
+  return createHash('sha256').update(key).digest('hex');
+}
 
 export interface RateLimitConfig {
   maxAttempts: number;
@@ -70,9 +81,10 @@ const SWEEP_PROBABILITY = 0.02;
  * Returns { allowed: true } or { allowed: false, retryAfterMs }.
  */
 export async function checkRateLimit(
-  key: RateLimitKey,
+  rawKey: RateLimitKey,
   config: RateLimitConfig = authLimitConfig
 ): Promise<Result> {
+  const key = rateLimitBucketKey(rawKey);
   try {
     const rows = await prisma.$queryRaw<
       { attempts: number; remaining_ms: number; backoff: number }[]
@@ -105,7 +117,8 @@ export async function checkRateLimit(
 }
 
 /** Reset rate limit for a key (e.g. after a successful login). */
-export async function resetRateLimit(key: RateLimitKey): Promise<void> {
+export async function resetRateLimit(rawKey: RateLimitKey): Promise<void> {
+  const key = rateLimitBucketKey(rawKey);
   memoryStore.delete(key);
   await prisma.$executeRaw`DELETE FROM rate_limit_bucket WHERE "key" = ${key}`.catch(() => null);
 }
@@ -115,7 +128,8 @@ export async function resetRateLimit(key: RateLimitKey): Promise<void> {
  * shared-IP budget (an office, a hotel desk or a mobile carrier puts many
  * real people behind one address). Failures keep their count.
  */
-export async function refundRateLimit(key: RateLimitKey): Promise<void> {
+export async function refundRateLimit(rawKey: RateLimitKey): Promise<void> {
+  const key = rateLimitBucketKey(rawKey);
   const entry = memoryStore.get(key);
   if (entry && entry.attempts > 0) entry.attempts--;
   await prisma.$executeRaw`UPDATE rate_limit_bucket SET attempts = GREATEST(attempts - 1, 0) WHERE "key" = ${key}`.catch(() => null);

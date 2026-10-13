@@ -253,6 +253,7 @@ describe('Retention & Privacy', () => {
 
       expect(result.deletedMedia).toBe(1);
       expect(result.expiredTokens).toBe(1);
+      expect(result.sweptRateLimits).toBe(0);
       expect(result.anonymizedIdentities).toBe(0); // No old deletion requests
     });
   });

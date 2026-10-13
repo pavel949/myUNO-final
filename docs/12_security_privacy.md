@@ -46,9 +46,11 @@ Password auth with bcrypt (cost ≥ 12); optional OAuth (Google/Apple); **rate-l
 
 Every read and mutation passes the `can()` helper against `RoleAssignment` scope (doc 03 §5) **server-side**; queries are ownership-scoped in the `where` clause (never fetch-then-filter). 🔒 field access by staff (e.g. opening the TM30 queue's passport panel) writes an `AuditLog` row — "who saw whose passport, when" is answerable. All privileged mutations (config/content edits, role grants, statement publication, manual ledger/refund actions, retention overrides) are audit-logged append-only. Admin panel is role-gated at the layout level *and* per-action server-side.
 
+**Rate-limit counters (`rate_limit_bucket`).** Shared brake counters for sign-in and public endpoints. The key is a sha256 of the caller's address or e-mail — personal data is never stored in readable form — and rows are removed by the nightly retention job a day after their window ends (and opportunistically by the limiter itself).
+
 ## 6. Retention jobs
 
-A daily job: deletes `MediaAsset` rows past `delete_after` (passport images), anonymizes deletion-requested identities past their grace window, expires stale `OneTimeToken`s, and reports counts to the admin compliance view (doc 08 §6.11) — retention is *visible*, not assumed.
+A daily job: deletes `MediaAsset` rows past `delete_after` (passport images), anonymizes deletion-requested identities past their grace window, expires stale `OneTimeToken`s, sweeps expired rate-limit counters, and reports counts to the admin compliance view (doc 08 §6.11) — retention is *visible*, not assumed.
 
 ## 7. Operational security & incident response
 

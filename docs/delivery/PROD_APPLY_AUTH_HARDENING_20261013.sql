@@ -1,8 +1,13 @@
 -- Apply on production (Supabase SQL editor). Two additive migrations, one transaction.
 --   20261013100000_session_revocation : identity.sessions_valid_from (nullable; NULL = nothing revoked)
 --   20261013101000_rate_limit_bucket  : new table, RLS on, API grants revoked
+-- ORDER MATTERS: run this SQL BEFORE the code that reads identity.sessions_valid_from is deployed,
+-- otherwise every signed-in request fails on a column that does not exist yet.
 -- Journal rows carry the sha256 of each prisma/migrations/<name>/migration.sql so `migrate status` stays clean.
 BEGIN;
+-- If another query is holding `identity`, fail fast and cleanly (nothing changes; just re-run)
+-- instead of queueing every login behind the ALTER.
+SET LOCAL lock_timeout = '5s';
 -- ===== 20261013100000_session_revocation =====
 -- Revocable sessions. Additive and nullable: NULL means "no revocation has ever happened",
 -- so every existing session stays valid. A token issued before this instant is refused

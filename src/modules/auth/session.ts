@@ -3,8 +3,15 @@ import crypto from 'crypto';
 /**
  * Signed session tokens.
  *
- * Format: `v1.<identityId>.<expiresAtMs>.<signature>`
- * Signature: HMAC-SHA256 over `<identityId>.<expiresAtMs>` with SESSION_SECRET.
+ * Format: `v2.<identityId>.<issuedAtMs>.<expiresAtMs>.<signature>`
+ * Signature: HMAC-SHA256 over `<identityId>.<issuedAtMs>.<expiresAtMs>` with SESSION_SECRET.
+ *
+ * `issuedAtMs` is what makes sessions revocable without a session table: an
+ * identity carries `sessionsValidFrom`, and any token issued before it is
+ * refused (see `lib/session.ts`). Legacy `v1.<id>.<expiresAtMs>.<sig>` cookies
+ * still verify so nobody is signed out by the rollout; their issue time is
+ * derived from the standard TTL, which can only make them look *older*, i.e.
+ * the safe side of a revocation.
  *
  * The cookie value is opaque to the client and tamper-evident: changing the
  * identity id or expiry invalidates the signature. No DB round-trip is needed
@@ -31,33 +38,44 @@ function sign(payload: string): string {
 }
 
 export function createSessionToken(identityId: string, ttlMs: number = SESSION_TTL_MS): string {
-  const expiresAtMs = Date.now() + ttlMs;
-  const payload = `${identityId}.${expiresAtMs}`;
-  return `v1.${payload}.${sign(payload)}`;
+  const issuedAtMs = Date.now();
+  const expiresAtMs = issuedAtMs + ttlMs;
+  const payload = `${identityId}.${issuedAtMs}.${expiresAtMs}`;
+  return `v2.${payload}.${sign(payload)}`;
 }
 
-export function verifySessionToken(token: string): { identityId: string } | null {
-  const parts = token.split('.');
-  if (parts.length !== 4 || parts[0] !== 'v1') {
-    return null;
-  }
-  const [, identityId, expiresAtMs, signature] = parts;
-  if (!identityId || !expiresAtMs || !signature) {
-    return null;
-  }
+export interface VerifiedSession {
+  identityId: string;
+  /** When the token was issued; compared with the identity's `sessionsValidFrom`. */
+  issuedAtMs: number;
+}
 
-  const expected = sign(`${identityId}.${expiresAtMs}`);
+function constantTimeEqual(signature: string, expected: string): boolean {
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return null;
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+export function verifySessionToken(token: string): VerifiedSession | null {
+  const parts = token.split('.');
+
+  if (parts.length === 5 && parts[0] === 'v2') {
+    const [, identityId, issuedAt, expiresAt, signature] = parts;
+    if (!identityId || !issuedAt || !expiresAt || !signature) return null;
+    if (!constantTimeEqual(signature, sign(`${identityId}.${issuedAt}.${expiresAt}`))) return null;
+    if (Number(expiresAt) < Date.now()) return null;
+    return { identityId, issuedAtMs: Number(issuedAt) };
   }
 
-  if (Number(expiresAtMs) < Date.now()) {
-    return null;
+  if (parts.length === 4 && parts[0] === 'v1') {
+    const [, identityId, expiresAt, signature] = parts;
+    if (!identityId || !expiresAt || !signature) return null;
+    if (!constantTimeEqual(signature, sign(`${identityId}.${expiresAt}`))) return null;
+    if (Number(expiresAt) < Date.now()) return null;
+    return { identityId, issuedAtMs: Number(expiresAt) - SESSION_TTL_MS };
   }
 
-  return { identityId };
+  return null;
 }
 
 /** Cookie attributes shared by login/register/logout routes. */

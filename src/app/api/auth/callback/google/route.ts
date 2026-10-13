@@ -145,6 +145,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Pre-registration takeover guard: an account created with a password for an
+    // address nobody had proven they own cannot keep that password once the real
+    // owner proves the address through Google. Verify the address, drop the
+    // unproven password and end any sessions already opened on it.
+    if (!identity.emailVerifiedAt) {
+      identity = await prisma.identity.update({
+        where: { id: identity.id },
+        data: { emailVerifiedAt: new Date(), hashedPassword: null, sessionsValidFrom: new Date() },
+      });
+    }
+
     // Step 4: Upsert auth account (link Google ID to identity)
     await prisma.authAccount.upsert({
       where: {

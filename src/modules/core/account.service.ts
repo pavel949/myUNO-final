@@ -165,7 +165,8 @@ export async function changeAccountPassword(
 
   await db.identity.update({
     where: { id: identityId },
-    data: { hashedPassword: await bcrypt.hash(newPassword, BCRYPT_COST) },
+    // Every other session ends with the old password; the caller re-issues its own.
+    data: { hashedPassword: await bcrypt.hash(newPassword, BCRYPT_COST), sessionsValidFrom: new Date() },
   });
 
   await logAudit({
@@ -260,4 +261,21 @@ export async function setNotificationPreference(
   }).catch(() => null);
 
   return saved;
+}
+
+/**
+ * End every session of one identity ("log out everywhere"). Sessions are signed
+ * tokens with no server record, so revocation is a cut-off time on the identity:
+ * anything issued before it is refused. The caller is expected to clear or
+ * re-issue its own cookie.
+ */
+export async function revokeAllSessions(db: PrismaClient, identityId: string): Promise<void> {
+  await db.identity.update({ where: { id: identityId }, data: { sessionsValidFrom: new Date() } });
+  await logAudit({
+    actorIdentityId: identityId,
+    action: 'account:revoke_sessions',
+    entityType: 'Identity',
+    entityId: identityId,
+    data: {},
+  }).catch(() => null);
 }

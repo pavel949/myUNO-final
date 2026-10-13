@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     // Every attempt can reserve inventory; cap how fast one account may try.
     // (In-memory per instance — a shared store is a separate hardening item.)
-    const limit = checkRateLimit(`booking:create:${user.identityId}`, {
+    const limit = await checkRateLimit(`booking:create:${user.identityId}`, {
       maxAttempts: 30,
       windowMs: 10 * 60 * 1000,
       backoffMs: 60 * 1000,

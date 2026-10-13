@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
 
     const ipKey = `login:ip:${clientIp(request)}`;
     const accountKey = `login:acct:${String(email).toLowerCase()}`;
-    const ipLimit = checkRateLimit(ipKey, loginIpLimitConfig);
-    const acctLimit = checkRateLimit(accountKey);
+    const ipLimit = await checkRateLimit(ipKey, loginIpLimitConfig);
+    const acctLimit = await checkRateLimit(accountKey);
     if (!ipLimit.allowed || !acctLimit.allowed) {
       const retryAfterMs = Math.max(ipLimit.retryAfterMs || 0, acctLimit.retryAfterMs || 0);
       return NextResponse.json(
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     }
 
     const identity = await login({ email, password });
-    resetRateLimit(accountKey);
-    refundRateLimit(ipKey);
+    await resetRateLimit(accountKey);
+    await refundRateLimit(ipKey);
 
     await track(prisma, 'login_success', {
       identityId: identity.id,

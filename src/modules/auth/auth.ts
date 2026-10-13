@@ -247,7 +247,14 @@ export async function confirmPasswordReset(input: PasswordResetConfirmInput) {
   await prisma.$transaction([
     prisma.identity.update({
       where: { id: oneTimeToken.identityId },
-      data: { hashedPassword },
+      // A reset proves control of the mailbox (so the address is now verified) and
+      // ends every existing session — the usual reason to reset is a lost or
+      // compromised credential.
+      data: {
+        hashedPassword,
+        sessionsValidFrom: new Date(),
+        emailVerifiedAt: oneTimeToken.identity.emailVerifiedAt ?? new Date(),
+      },
     }),
     prisma.oneTimeToken.update({
       where: { id: oneTimeToken.id },

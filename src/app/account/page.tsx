@@ -44,6 +44,9 @@ export default async function AccountPage() {
     'account.password.submit': 'Change password',
     'account.password.changed': 'Password changed.',
     'account.password.none': 'This account signs in with a link. Use the reset email to set a password.',
+    'account.sessions.title': 'Sessions',
+    'account.sessions.body': 'Signed in somewhere you no longer trust? This ends every session on every device, including this one.',
+    'account.sessions.revoke': 'Log out everywhere',
     'account.consent.title': 'How your data is used',
     'account.consent.intro':
       'You can withdraw any of these at any time. We keep a record of the change, not of what you withdrew.',

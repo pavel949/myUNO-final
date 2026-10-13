@@ -788,6 +788,8 @@ model Identity {
   latinLastName   String?        @map("latin_last_name")
   email           String?        @unique @db.Citext
   emailVerifiedAt DateTime?      @map("email_verified_at")
+  /// Sessions issued before this instant are refused (log out everywhere, password change/reset).
+  sessionsValidFrom DateTime?    @map("sessions_valid_from")
   phone           String?        @unique
   phoneVerifiedAt DateTime?      @map("phone_verified_at")
   hashedPassword  String?        @map("hashed_password")
@@ -4053,4 +4055,17 @@ model SecretVaultEntry {
   updatedByIdentityId String?  @map("updated_by_identity_id")
 
   @@map("secret_vault_entry")
+}
+
+/// Shared brake counters for auth/public endpoints (src/app/libs/rateLimit.ts).
+/// One row per limiter key; every serverless instance sees the same counts.
+/// Server-only table: row-level security on, no API grants.
+model RateLimitBucket {
+  key               String   @id @db.VarChar(200)
+  attempts          Int
+  resetAt           DateTime @map("reset_at")
+  backoffMultiplier Int      @default(1) @map("backoff_multiplier")
+
+  @@index([resetAt])
+  @@map("rate_limit_bucket")
 }

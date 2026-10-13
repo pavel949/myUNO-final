@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ipLimit = checkRateLimit(`register:ip:${clientIp(request)}`);
+    const ipLimit = await checkRateLimit(`register:ip:${clientIp(request)}`);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Too many attempts. Please try again later.', code: 'rate_limited' },

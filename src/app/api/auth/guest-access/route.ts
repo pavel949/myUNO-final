@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       'unknown';
-    const limit = checkRateLimit(`guest-access:ip:${ip}`, {
+    const limit = await checkRateLimit(`guest-access:ip:${ip}`, {
       maxAttempts: 10,
       windowMs: 60 * 1000,
       backoffMs: 5 * 60 * 1000,

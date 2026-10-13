@@ -26,6 +26,12 @@ export default function AccountClient({
   const [newPassword, setNewPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
 
+  const revokeSessions = useCallback(async () => {
+    const res = await fetch('/api/auth/logout-all', { method: 'POST' }).catch(() => null);
+    if (res?.ok) window.location.assign('/login');
+    else setPasswordMessage(labels['account.error']);
+  }, [labels]);
+
   const [settings, setSettings] = useState<Setting[]>([]);
   const [unmutable, setUnmutable] = useState<string[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
@@ -243,6 +249,20 @@ export default function AccountClient({
           ) : (
             <p className="text-body text-text-secondary">{labels['account.password.none']}</p>
           )}
+        </section>
+
+        <section className="stitch-panel p-24 mb-24">
+          <h2 className="text-heading-3 font-semibold text-text-ink mb-8">
+            {labels['account.sessions.title']}
+          </h2>
+          <p className="text-body text-text-secondary mb-16">{labels['account.sessions.body']}</p>
+          <button
+            type="button"
+            onClick={revokeSessions}
+            className="h-48 px-24 rounded-sm border border-brand-andaman text-brand-andaman font-semibold hover:bg-brand-andaman/10 transition"
+          >
+            {labels['account.sessions.revoke']}
+          </button>
         </section>
 
         <section className="stitch-panel p-24 mb-24">

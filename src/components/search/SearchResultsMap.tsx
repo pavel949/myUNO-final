@@ -168,18 +168,17 @@ export function SearchResultsMap({
         if (mapRef.current === map) onSelectProject(project.id);
       };
 
+      // Popup content is built as DOM text nodes, never parsed as HTML: the project
+      // name and the count label are data (the label comes from the editable
+      // content layer), and maplibre's HTML sanitiser has had bypasses.
+      const popupBody = document.createElement('div');
+      const popupTitle = document.createElement('strong');
+      popupTitle.textContent = project.name;
+      popupBody.append(popupTitle, document.createElement('br'), labels.homes.replace('{count}', String(project.unitCount)));
+
       const marker = new maplibregl.Marker({ element: button, anchor: 'bottom' })
         .setLngLat([project.longitude, project.latitude])
-        .setPopup(
-          new maplibregl.Popup({ offset: 18 }).setHTML(
-            '<strong>' +
-              project.name.replace(/[&<>"']/g, (char: string) =>
-                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' } as Record<string, string>)[char]
-              ) +
-              '</strong><br/>' +
-              labels.homes.replace('{count}', String(project.unitCount))
-          )
-        )
+        .setPopup(new maplibregl.Popup({ offset: 18 }).setDOMContent(popupBody))
         .addTo(map);
       markerRefs.current.set(project.id, { marker, element: button });
     }

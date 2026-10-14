@@ -157,7 +157,7 @@ export default function UnitDetailClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaseRequired, setLeaseRequired] = useState(false);
-  const [bookingType, setBookingType] = useState<'instant' | 'request'>('instant');
+  const bookingType = unit?.instantBook === false ? 'request' : 'instant';
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -173,9 +173,6 @@ export default function UnitDetailClient({
         if (!response.ok) throw new Error(labels.notFound);
         const data = await response.json();
         setUnit(data);
-        if (data.instantBook === false) {
-          setBookingType('request');
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : labels.notFound);
       } finally {
@@ -221,6 +218,7 @@ export default function UnitDetailClient({
           throw new Error(body?.code === 'stay_unquotable' ? labels.unavailableForDates : labels.errorPrice);
         }
         const data = await response.json();
+        if (data.isAvailable !== true) throw new Error(labels.unavailableForDates);
         if (!controller.signal.aborted) setBreakdown(data);
       } catch (err) {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : labels.errorPrice);
@@ -506,7 +504,7 @@ export default function UnitDetailClient({
                 disabled={!breakdown}
                 fullWidth
               >
-                {labels.reserve}
+                {bookingType === 'request' ? labels.requestToBook : labels.reserve}
               </Button>
               <p className="text-small text-text-stone text-center mt-12 mb-0">
                 {labels.notChargedYet}
@@ -526,7 +524,7 @@ export default function UnitDetailClient({
           <Button
             onClick={goToReview}
           >
-            {labels.reserve}
+            {bookingType === 'request' ? labels.requestToBook : labels.reserve}
           </Button>
         </div>
       )}

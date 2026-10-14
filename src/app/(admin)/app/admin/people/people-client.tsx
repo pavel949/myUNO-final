@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 
 const ROLES = [
   'owner', 'guest', 'resident', 'buyer',
@@ -54,7 +55,7 @@ export default function PeopleAdminClient({
   const search = useCallback(async () => {
     setSearching(true);
     setError(null);
-    const res = await fetch(`/api/admin/people/search?query=${encodeURIComponent(query)}`).catch(() => null);
+    const res = await fetch(`/api/admin/people/search?q=${encodeURIComponent(query)}`).catch(() => null);
     const body = await res?.json().catch(() => null);
     setPeople(res?.ok ? body?.identities ?? [] : []);
     if (!res?.ok) setError(body?.error ?? labels['admin.people.error']);
@@ -180,6 +181,7 @@ export default function PeopleAdminClient({
     <div>
       <h1 className="font-display text-display-xl font-semibold text-text-ink mb-24">{labels['admin.people.title']}</h1>
 
+      <p className="mb-24"><Link href="/app/admin/access" className="text-brand-andaman underline">{labels['admin.people.workspace_access']}</Link></p>
       <section className="stitch-panel p-24 mb-24">
         <h2 className="text-heading-3 font-semibold text-text-ink mb-8">{labels['admin.people.project_teams']}</h2>
         <p className="text-small text-text-secondary mb-12">{labels['admin.people.project_teams_hint']}</p>
@@ -413,3 +415,4 @@ export default function PeopleAdminClient({
     </div>
   );
 }
+

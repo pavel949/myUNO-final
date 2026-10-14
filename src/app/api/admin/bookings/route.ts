@@ -1,3 +1,4 @@
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
         unit: { select: { name: true } },
         guestIdentity: { select: { id: true, firstName: true, lastName: true, status: true } },
         payments: {
-          where: { status: 'succeeded', purpose: 'stay' },
+          where: { status: 'succeeded', purpose: { in: ['stay', 'stay_balance'] }, reconciliationReason: null },
           select: { id: true, method: true, receiptRef: true },
         },
       },
@@ -80,12 +81,12 @@ export async function GET(req: NextRequest) {
       endDate: b.endDate.toISOString(),
       // Display boundary: totalThb is satang (THB x 100).
       totalThb: b.totalThb / 100,
-      balanceDueSatang: b.totalThb, // Initial stay payment is always the server-stored booking total.
+      balanceDueSatang: outstandingStayBalanceSatang(b),
       unitName: b.unit?.name || null,
       guestName: b.guestIdentity
         ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`
         : '—',
-      paid: b.payments.length > 0,
+      paid: b.payments.length > 0 && b.balanceDueThb === 0 && ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(b.status),
       receiptRef: b.payments[0]?.receiptRef || null,
       guestIdentityId: b.guestIdentity?.id || null,
       guestInvited: b.guestIdentity?.status === 'invited',

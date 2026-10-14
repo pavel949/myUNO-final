@@ -121,7 +121,7 @@ describe('POST /api/bookings derives the project from the unit', () => {
   it('will not sell a live villa whose project has been archived', async () => {
     const unit = await db.unit.findUniqueOrThrow({ where: { id: unitId } });
     const { token } = createCategoryStayQuoteToken({
-      inventoryCategoryId: unit.inventoryCategoryId!, projectId: homeProjectId, quotedUnitId: unitId,
+      inventoryCategoryId: unit.inventoryCategoryId!, projectId: homeProjectId, quotedUnitId: unitId, instantBook: unit.instantBook,
       startDate: START, endDate: END, adultsCount: 2, childrenCount: 0, petsCount: 0,
       acceptedTotalSatang: 100_000_000,
     });
@@ -133,6 +133,7 @@ describe('POST /api/bookings derives the project from the unit', () => {
     const res = await POST(
       request({
         inventoryCategoryId: unit.inventoryCategoryId,
+        instantBook: unit.instantBook,
         projectId: homeProjectId,
         startDate: START,
         endDate: END,
@@ -151,3 +152,4 @@ describe('POST /api/bookings derives the project from the unit', () => {
     expect(await db.booking.count()).toBe(0);
   });
 });
+

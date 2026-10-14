@@ -14,6 +14,7 @@ import { verifyCategoryStayQuoteToken } from '@/modules/booking/category-quote';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { bookingCreationIntent, isBookingCreationKey, type BookingCreationIntent } from '@/modules/booking/creation-intent';
 import { getConfig } from '@/modules/config';
+import { getBookingTimingConfig } from '@/modules/booking/timing-config';
 import { checkRateLimit } from '@/app/libs/rateLimit';
 
 function replayResponse(booking: NonNullable<Awaited<ReturnType<typeof findBookingByCreationIntent>>>) {
@@ -60,8 +61,8 @@ export async function GET(req: NextRequest) {
  *   specific-unit path. If supplied it must agree with the server-side asset.
  * - startDate/endDate: ISO dates
  * - adultsCount/childrenCount
- * - instantBook: required only for the specific-unit path; category booking
- *   gets this from the assigned unit.
+ * - instantBook: required accepted booking mode on every public path; it must
+ *   match the signed category quote and the physical unit at commit.
  * - guestNote?
  * - paymentMethod?: 'cash' | 'card_provider' | 'bank_transfer'
  * - idempotencyKey: UUID identifying one guest-approved creation attempt
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
       !endDateStr ||
       adultsCount === undefined ||
       childrenCount === undefined ||
-      (requestedUnitId && typeof requestedInstantBook !== 'boolean')
+      typeof requestedInstantBook !== 'boolean'
     ) {
       throw createPublicError('invalid request: missing required fields', 400);
     }
@@ -211,6 +212,7 @@ export async function POST(req: NextRequest) {
       );
     }
     let acceptedTotal: number = acceptedTotalSatang;
+    let acceptedInstantBook = requestedInstantBook as boolean;
     if (!requestedUnitId) {
       if (
         !resolvedInventoryCategoryId ||
@@ -230,7 +232,8 @@ export async function POST(req: NextRequest) {
         quote.adultsCount !== Number(adultsCount) ||
         quote.childrenCount !== Number(childrenCount) ||
         quote.petsCount !== Number(petsCount) ||
-        quote.acceptedTotalSatang !== acceptedTotalSatang
+        quote.acceptedTotalSatang !== acceptedTotalSatang ||
+        requestedInstantBook !== quote.instantBook
       ) {
         return NextResponse.json(
           {
@@ -241,6 +244,7 @@ export async function POST(req: NextRequest) {
         );
       }
       acceptedTotal = quote.acceptedTotalSatang;
+      acceptedInstantBook = quote.instantBook;
     }
 
     const candidates = requestedUnitId
@@ -298,6 +302,12 @@ export async function POST(req: NextRequest) {
           throw Object.assign(new Error('Category candidate is no longer available'), { code: 'DOUBLE_BOOK' });
         }
 
+        if (unit.instantBook !== acceptedInstantBook) {
+          throw Object.assign(new Error('The booking mode changed. Review a current quote before booking.'), {
+            code: 'REQUOTE_REQUIRED',
+          });
+        }
+
         const bookingProjectId = unit.projectId;
         if (projectId && projectId !== bookingProjectId) {
           throw createPublicError('unit does not belong to the given project', 400);
@@ -329,7 +339,7 @@ export async function POST(req: NextRequest) {
         const policy = sourceSeasonCancellationPolicy(candidateBreakdown.commercialTerms)
           ?? await resolveStayCancellationPolicy(prisma, { unitId: candidate.id });
 
-        const manualHoldHours = await getConfig(prisma, 'booking.manual_payment_hold_hours', { projectId: bookingProjectId });
+        const timing = await getBookingTimingConfig(prisma, { projectId: bookingProjectId, unitId: candidate.id });
         const attempt = await createBookingAttempt(prisma, {
           unitId: candidate.id,
           projectId: bookingProjectId,
@@ -344,9 +354,10 @@ export async function POST(req: NextRequest) {
           pets: Number(petsCount),
           totalThb: candidateBreakdown.total_thb,
           acceptedMaxTotalThb: acceptedTotal,
-          instantBook: unit.instantBook && (!requestedUnitId || requestedInstantBook === true),
+          instantBook: acceptedInstantBook,
+          acceptedInstantBook,
           paymentMethod,
-          manualHoldMinutes: typeof manualHoldHours === 'number' && manualHoldHours > 0 ? Math.round(manualHoldHours * 60) : undefined,
+          ...timing,
           creationIntent,
           inventoryCategoryId: resolvedInventoryCategoryId,
           guestNote,
@@ -372,7 +383,7 @@ export async function POST(req: NextRequest) {
 
     if (!booking) {
       throw Object.assign(new Error(needsRequote
-        ? 'Available homes now cost more than the amount you accepted.'
+        ? 'The available homes have changed price or booking terms. Review a new quote before booking.'
         : 'No home in this category can accept this stay.'), {
         code: needsRequote ? 'REQUOTE_REQUIRED' : 'DOUBLE_BOOK',
       });
@@ -438,7 +449,10 @@ export async function POST(req: NextRequest) {
       }
     }
     if (error instanceof Error && (error as { code?: string }).code === 'BOOKING_INTENT_CONFLICT') {
-      return NextResponse.json({ error: error.message, code: 'BOOKING_INTENT_CONFLICT' }, { status: 409 });
+      return NextResponse.json({
+        error: 'This booking attempt is already saved with different details. Refresh to open the saved trip, or return to the listing to start a new booking.',
+        code: 'BOOKING_INTENT_CONFLICT',
+      }, { status: 409 });
     }
     if (error instanceof Error && (error as { code?: string }).code === 'REQUOTE_REQUIRED') {
       return NextResponse.json(
@@ -469,3 +483,4 @@ export async function POST(req: NextRequest) {
     return handleError(error);
   }
 }
+

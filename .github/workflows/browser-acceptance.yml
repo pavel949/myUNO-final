@@ -89,7 +89,7 @@ jobs:
           test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
           node scripts/e2e/founder-publication-booking.mjs
           test ! -s browser-results/blocked-server-egress.log
-      - name: Upload synthetic screenshots, traces and step evidence
+      - name: Upload synthetic screenshots and step evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -97,8 +97,15 @@ jobs:
           path: |
             browser-results/result.json
             browser-results/*.png
-            browser-results/trace-*.zip
             browser-results/server.log
             browser-results/blocked-server-egress.log
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Upload synthetic browser traces separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: founder-publication-traces-${{ github.sha }}
+          path: browser-results/trace-*.zip
           retention-days: 7
           if-no-files-found: warn

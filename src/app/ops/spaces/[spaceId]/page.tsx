@@ -3,7 +3,8 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, OPERATING_SPACE_CAPABILITIES } from '@/modules/ops';
+import { getOperatingSpaceOverviewAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
+import type { OperatingSpaceCapability } from '@/modules/ops/operating-space.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,30 +14,14 @@ export default async function OperatingSpaceHome({
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/spaces/' + encodeURIComponent(params.spaceId));
 
-  const space = await prisma.operatingSpace.findUnique({
-    where: { id: params.spaceId },
-    select: {
-      id: true,
-      key: true,
-      name: true,
-      timezone: true,
-      status: true,
-      organizationId: true,
-    },
+  const access = await getOperatingSpaceOverviewAccess(prisma, user.identityId, params.spaceId).catch(error => {
+    if (error instanceof OperatingAccessError) notFound();
+    throw error;
   });
-  if (!space || space.status !== 'active') notFound();
-
-  const membership = user.isAdmin
-    ? null
-    : await getOperatingSpaceMembership(prisma, space.id, user.identityId);
-  if (!user.isAdmin && !membership?.active) redirect('/ops/spaces');
-
-  const capabilities = new Set<string>(
-    user.isAdmin ? OPERATING_SPACE_CAPABILITIES : (membership?.capabilities ?? [])
-  );
-  const can = (capability: string) => user.isAdmin || capabilities.has(capability);
-
-  const unitIds = await getOperatingSpaceUnitIds(prisma, space.id);
+  const { space, unitIds } = access;
+  const can = (capability: OperatingSpaceCapability) => access.isAdmin || Boolean(access.byCapability[capability]?.length);
+  const bookingUnitIds = [...new Set([...(access.byCapability.view_calendar || []), ...(access.byCapability.manage_reservations || [])])];
+  const taskUnitIds = access.byCapability.manage_tasks || [];
   const now = new Date();
   const day = new Intl.DateTimeFormat('en-CA', {
     timeZone: space.timezone,
@@ -51,21 +36,21 @@ export default async function OperatingSpaceHome({
     prisma.unit.count({ where: { id: { in: unitIds }, status: { not: 'offboarded' } } }),
     prisma.booking.count({
       where: {
-        unitId: { in: unitIds },
+        unitId: { in: bookingUnitIds },
         startDate: { gte: start, lt: end },
         status: { in: ['confirmed', 'checked_in'] },
       },
     }),
     prisma.booking.count({
       where: {
-        unitId: { in: unitIds },
+        unitId: { in: bookingUnitIds },
         endDate: { gt: start, lte: end },
         status: { in: ['confirmed', 'checked_in', 'checked_out'] },
       },
     }),
     prisma.booking.count({
       where: {
-        unitId: { in: unitIds },
+        unitId: { in: bookingUnitIds },
         startDate: { lte: now },
         endDate: { gt: now },
         status: { in: ['confirmed', 'checked_in'] },
@@ -73,14 +58,15 @@ export default async function OperatingSpaceHome({
     }),
     prisma.booking.count({
       where: {
-        unitId: { in: unitIds },
+        unitId: { in: bookingUnitIds },
         status: 'requested',
       },
     }),
     prisma.operationalTask.count({
       where: {
-        unitId: { in: unitIds },
-        status: { in: ['planned', 'assigned', 'in_progress', 'inspected'] },
+        unitId: { in: taskUnitIds },
+        OR: [{ operatingSpaceId: space.id }, { operatingSpaceId: null }],
+        status: { in: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'] },
       },
     }),
   ]);
@@ -104,16 +90,13 @@ export default async function OperatingSpaceHome({
     'staff.space.finance': 'Finance & reports',
     'staff.space.channels': 'Channels',
     'staff.space.tasks_link': 'Tasks',
-    'staff.space.scope_hint': 'All actions stay within this operating space and continue to use canonical Unit, Booking, Pricing and Finance records.',
+    'staff.space.effective_scope_hint': 'Counts and daily tasks reflect your current authorized homes. Reservation, finance and recurring-automation readiness remain separate.',
   });
 
   const cards = [
     [labels['staff.space.units'], units],
-    [labels['staff.space.arrivals'], arrivals],
-    [labels['staff.space.departures'], departures],
-    [labels['staff.space.occupied'], occupied],
-    [labels['staff.space.requests'], requests],
-    [labels['staff.space.tasks'], openTasks],
+    ...(bookingUnitIds.length ? [[labels['staff.space.arrivals'], arrivals], [labels['staff.space.departures'], departures], [labels['staff.space.occupied'], occupied], [labels['staff.space.requests'], requests]] : []),
+    ...(can('manage_tasks') ? [[labels['staff.space.tasks'], openTasks]] : []),
   ] as const;
 
   const links = [
@@ -124,7 +107,7 @@ export default async function OperatingSpaceHome({
     ...(can('manage_maintenance') ? [[labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_pricing') || can('manage_availability') ? [[labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_team') ? [[labels['staff.space.team'], '/ops/team?spaceId=' + encodeURIComponent(space.id)]] : []),
-    ...(can('view_finance') ? [[labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(access.isAdmin ? [[labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_channels') ? [[labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id) + '&channel=attention']] : []),
   ];
 
@@ -138,7 +121,7 @@ export default async function OperatingSpaceHome({
           {labels['staff.space.kicker']}
         </p>
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{space.name}</h1>
-        <p className="mt-8 text-body text-text-secondary">{labels['staff.space.scope_hint']}</p>
+        <p className="mt-8 text-body text-text-secondary">{labels['staff.space.effective_scope_hint']}</p>
       </header>
 
       <section>
@@ -164,3 +147,4 @@ export default async function OperatingSpaceHome({
     </div>
   </main>;
 }
+

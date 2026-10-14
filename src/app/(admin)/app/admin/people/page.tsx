@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/app/libs/requireAdminPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import PeopleAdminClient from './people-client';
@@ -14,12 +15,14 @@ export const dynamic = 'force-dynamic';
  * someone can edit the data.
  */
 export default async function AdminPeoplePage() {
+  await requireAdminPage();
   const projects = await prisma.project.findMany({
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
 
   const labels = await getLabels({
+    'admin.people.workspace_access': 'Workspace scope & member access →',
     'admin.people.title': 'People & roles',
     'admin.people.project_teams': 'Operational teams by project',
     'admin.people.project_teams_hint': 'First grant a staff role for the property, then select exactly which departments that person can work in. Other projects are separate.',
@@ -63,3 +66,4 @@ export default async function AdminPeoplePage() {
 
   return <PeopleAdminClient projects={projects} labels={labels} />;
 }
+

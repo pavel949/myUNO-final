@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
 const require = createRequire(import.meta.url);
 const { baseUrl } = require('./isolation.cjs').assertIsolation();
 const { chromium } = require('playwright');
@@ -403,6 +404,7 @@ try {
     const reloaded = await reloadResponse.json();
     assert.deepEqual(reloaded.draft.daily.map(row => row.sourceRateId), grid.map(row => row.sourceRateId));
     await fp.screenshot({ path: `${out}/seasonal-saved-reloaded.png`, fullPage: true });
+    await rates.screenshot({ path: `${out}/seasonal-rates-region.png` });
     const preview = fp.locator('section').filter({ has: fp.getByRole('heading', { name: 'Seasonal tariff and booking-policy preview', exact: true }) });
     await preview.locator('select').selectOption('stay');
     await preview.getByLabel('Check-in', { exact: true }).fill(fixture.tariffStartDate);
@@ -418,6 +420,7 @@ try {
     await poll(async () => /5,924/.test(await preview.innerText()), 'Saved-price preview must show the base/holiday total');
     report.seasonalTariff = { unitId: fixture.tariffUnitId, baseSatang: 123400, holidaySatang: 234500, startDate: fixture.tariffStartDate, endDate: fixture.tariffEndDate, previewTotalSatang: result.totalSatang, savedAndReloaded: true };
     await fp.screenshot({ path: `${out}/seasonal-canonical-preview.png`, fullPage: true });
+    await preview.screenshot({ path: `${out}/seasonal-preview-region.png` });
   });
   await step('Guest selects seasonal dates and books the same 5924 THB quote', gp, async () => {
     await fp.goto('/app/admin/units');
@@ -477,6 +480,321 @@ try {
     report.seasonalTariff.bookingId = reservation.id;
     report.seasonalTariff.bookingTotalSatang = reservation.totalThb;
     report.seasonalTariff.calendarVerified = true;
+  });
+  await step('Operator confirms the manual commitment with payment still outstanding', fp, async () => {
+    const id = report.manualReservation.bookingId;
+    const original = await db.booking.findUniqueOrThrow({ where: { id } });
+    assert.equal(original.status, 'pending_payment'); assert.equal(original.balanceDueThb, 0);
+    assert.ok(original.holdExpiresAt);
+    for (const model of [db.payment, db.ledgerEntry, db.depositPreauth]) assert.equal(await model.count({ where: { bookingId: id } }), 0);
+    await fp.goto(`/ops/stays/${id}`);
+    const reason = 'Synthetic accepted commitment; no money received.';
+    await fp.getByLabel('Reason for confirming before payment', { exact: true }).fill(reason);
+    const response = fp.waitForResponse(r => r.url().endsWith(`/api/bookings/${id}/confirm-unpaid`) && r.request().method() === 'POST');
+    response.catch(() => {});
+    await fp.getByRole('button', { name: 'Confirm reservation — payment outstanding', exact: true }).click();
+    const saved = await response; assert.equal(saved.status(), 200);
+    const command = saved.request().postDataJSON();
+    const result = await saved.json();
+    assert.equal(result.booking.id, id); assert.equal(result.booking.status, 'confirmed');
+    assert.equal(result.booking.balanceDueSatang, original.totalThb); assert.equal(result.booking.holdExpiresAt, null);
+    const confirmed = await db.booking.findUniqueOrThrow({ where: { id } });
+    assert.equal(confirmed.status, 'confirmed'); assert.equal(confirmed.balanceDueThb, original.totalThb); assert.equal(confirmed.holdExpiresAt, null);
+    for (const model of [db.payment, db.ledgerEntry, db.depositPreauth]) assert.equal(await model.count({ where: { bookingId: id } }), 0, 'Confirmation alone must not create financial/deposit records');
+    const founderIdentity = await db.identity.findUniqueOrThrow({ where: { email: fixture.founderEmail } });
+    const audits = await db.auditLog.findMany({ where: { entityType: 'Booking', entityId: id, action: 'bookings:confirm_unpaid' } });
+    assert.equal(audits.length, 1); assert.equal(audits[0].actorIdentityId, founderIdentity.id); assert.equal(audits[0].data.reason, reason);
+    assert.equal((await fp.request.post(`/api/bookings/${id}/confirm-unpaid`, { data: command })).status(), 200, 'A retry of the same command must be idempotent');
+    assert.equal(await db.auditLog.count({ where: { entityType: 'Booking', entityId: id, action: 'bookings:confirm_unpaid' } }), 1);
+    assert.equal((await gp.request.post(`/api/bookings/${id}/confirm-unpaid`, { data: command })).status(), 403, 'A guest cannot exercise the operator confirmation');
+    await fp.reload();
+    await fp.getByText(/^Reservation confirmed\. Payment is still outstanding\./).waitFor();
+    await fp.screenshot({ path: `${out}/manual-confirmed-unpaid.png`, fullPage: true });
+    await gp.goto(`/trips/${id}`);
+    await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
+    const displayedBalance = (original.totalThb / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    assert.ok((await body(gp)).includes(`Outstanding balance: ฿${displayedBalance}`));
+    await gp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
+    const { execFileSync } = await import('node:child_process');
+    execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e/expire-synthetic-holds.ts', id], { env: process.env, stdio: 'pipe' });
+    report.unpaidExpiry = JSON.parse(await readFile(`${out}/unpaid-expiry.json`, 'utf8'));
+    assert.equal(report.unpaidExpiry.bookingId, id);
+    await fp.goto(`/ops/calendar/board?${new URLSearchParams({ projectId: fixture.projectId, unitId: fixture.unitId, start: fixture.manualStartDate, days: '7' })}`);
+    const cell = fp.getByRole('button', { name: new RegExp(`${fixture.unitName} · ${fixture.manualStartDate} ·`) });
+    await cell.waitFor(); assert.match(await cell.getAttribute('aria-label'), /Reserved/); await cell.click();
+    const link = fp.getByRole('region', { name: 'Night details' }).getByRole('link', { name: /Open canonical stay/ });
+    await link.waitFor(); assert.equal(await link.getAttribute('href'), `/ops/stays/${id}`);
+    const blocked = await ap.request.post('/api/pricing/breakdown', { data: { unitId: fixture.unitId, startDate: fixture.manualStartDate, endDate: fixture.manualEndDate, guestCount: 2 } });
+    assert.equal(blocked.status(), 200); assert.equal((await blocked.json()).isAvailable, false);
+    report.manualReservation.confirmedUnpaid = true;
+    report.manualReservation.outstandingSatang = confirmed.balanceDueThb;
+    report.manualReservation.holdExpiresAt = null;
+    await fp.screenshot({ path: `${out}/manual-durable-calendar.png`, fullPage: true });
+  });
+  await step('A separate deliberate synthetic cash receipt settles the real outstanding balance', fp, async () => {
+    const id = report.manualReservation.bookingId;
+    await fp.goto(`/ops/stays/${id}`);
+    const receiptRef = `SYNTHETIC-CASH-${id}`;
+    await fp.getByLabel('Receipt reference', { exact: true }).fill(receiptRef);
+    const response = fp.waitForResponse(r => r.url().endsWith(`/api/bookings/${id}/record-cash-payment`) && r.request().method() === 'POST');
+    response.catch(() => {});
+    await fp.getByRole('button', { name: 'Record cash payment', exact: true }).click();
+    const saved = await response; assert.equal(saved.status(), 200);
+    const result = await saved.json(); assert.equal(result.receiptRecorded, true); assert.equal(result.bookingStatus, 'confirmed');
+    const settled = await db.booking.findUniqueOrThrow({ where: { id } });
+    assert.equal(settled.status, 'confirmed'); assert.equal(settled.balanceDueThb, 0); assert.equal(settled.holdExpiresAt, null);
+    const payments = await db.payment.findMany({ where: { bookingId: id } });
+    assert.equal(payments.length, 1);
+    const payment = payments[0];
+    assert.equal(payment.id, result.payment.id); assert.equal(payment.purpose, 'stay_balance');
+    assert.equal(payment.method, 'cash'); assert.equal(payment.provider, 'cash'); assert.equal(payment.status, 'succeeded');
+    assert.equal(payment.receiptRef, receiptRef); assert.equal(payment.amountThb, settled.totalThb);
+    const founderIdentity = await db.identity.findUniqueOrThrow({ where: { email: fixture.founderEmail } });
+    assert.equal(payment.receivedByIdentityId, founderIdentity.id); assert.ok(payment.receivedAt && payment.succeededAt);
+    const ledger = await db.ledgerEntry.findMany({ where: { bookingId: id } });
+    assert.equal(ledger.length, 1); assert.equal(ledger[0].paymentId, payment.id);
+    assert.equal(ledger[0].entryType, 'rental_revenue'); assert.equal(ledger[0].amountThb, settled.totalThb);
+    assert.equal(await db.depositPreauth.count({ where: { bookingId: id } }), 0);
+    await fp.reload();
+    assert.equal(await fp.getByRole('button', { name: 'Record cash payment', exact: true }).count(), 0);
+    assert.equal((await fp.request.post(`/api/bookings/${id}/record-cash-payment`, { data: { receiptRef } })).status(), 400);
+    assert.equal(await db.payment.count({ where: { bookingId: id } }), 1);
+    assert.equal(await db.ledgerEntry.count({ where: { bookingId: id } }), 1);
+    await gp.reload();
+    await gp.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
+    assert.equal(await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).count(), 0);
+    report.manualReservation.receipt = { synthetic: true, paymentId: payment.id, amountSatang: payment.amountThb, ledgerId: ledger[0].id, outstandingSatang: 0 };
+  });
+  let requestPage;
+  let registeredGuest;
+  let firstRequest;
+  async function setBookingMode(instant) {
+    const region = fp.getByRole('region', { name: 'How guests book', exact: true });
+    await region.getByRole('radio', { name: instant ? 'Instant booking' : 'Request to book', exact: true }).click();
+    const savedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/admin/units/${fixture.unitId}/booking-mode`) && r.request().method() === 'PUT');
+    savedResponse.catch(() => {});
+    await region.getByRole('button', { name: 'Save for this villa', exact: true }).click();
+    const saved = await savedResponse; assert.equal(saved.status(), 200);
+    const result = await saved.json(); assert.equal(result.instantBook, instant); assert.equal(result.updated, 1);
+    assert.equal((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId } })).instantBook, instant);
+  }
+  async function openRequestReview(page) {
+    await page.goto(unitUrl);
+    await page.getByRole('button', { name: 'Request to book', exact: true }).first().click();
+    await page.waitForURL(url => url.pathname === '/book/review' && url.searchParams.has('bookingIntent'));
+    await page.getByRole('heading', { name: 'Review your booking request', exact: true }).waitFor();
+    await page.getByLabel('I have read the cancellation terms and agree to request these dates.', { exact: true }).check();
+    // A preferred later method is retained; requesting itself must create no payment.
+    await page.locator('select').filter({ hasText: 'Cash on arrival' }).selectOption('cash');
+  }
+  async function submitRequest(page) {
+    const response = page.waitForResponse(r => r.url().endsWith('/api/bookings') && r.request().method() === 'POST');
+    response.catch(() => {});
+    await page.getByRole('button', { name: 'Send booking request', exact: true }).click();
+    const saved = await response; assert.equal(saved.status(), 201);
+    await page.waitForURL(/\/trips(?:\/|$)/);
+    const rows = await db.booking.findMany({ where: { unitId: fixture.unitId, guestIdentityId: registeredGuest.id, status: 'requested' } });
+    assert.equal(rows.length, 1);
+    const request = rows[0]; assert.equal(request.holdExpiresAt, null); assert.ok(request.requestExpiresAt);
+    assert.equal(request.totalThb, 370200);
+    for (const model of [db.payment, db.ledgerEntry, db.depositPreauth]) assert.equal(await model.count({ where: { bookingId: request.id } }), 0);
+    assert.equal((await publicQuote(ap)).isAvailable, true, 'Request alone must not occupy the dates');
+    return request;
+  }
+  async function requestCalendar(state) {
+    await fp.goto(calendarUrl);
+    const cell = fp.getByRole('button', { name: new RegExp(`${fixture.unitName} · ${fixture.startDate} ·`) });
+    await cell.waitFor(); assert.match(await cell.getAttribute('aria-label'), state);
+  }
+  async function runRequestExpiry(id, kind) {
+    const { execFileSync } = await import('node:child_process');
+    execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e/expire-synthetic-request.ts', id, kind], { env: process.env, stdio: 'pipe' });
+    return JSON.parse(await readFile(`${out}/request-expiry-${id}.json`, 'utf8'));
+  }
+  await step('Per-unit mode persists and can reverse its saved value in the same session', fp, async () => {
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    await setBookingMode(false);
+    await setBookingMode(true); // Previously disabled because the initial prop was still true.
+    await setBookingMode(false);
+    await fp.reload();
+    const region = fp.getByRole('region', { name: 'How guests book', exact: true });
+    assert.equal(await region.getByRole('radio', { name: 'Request to book', exact: true }).getAttribute('aria-checked'), 'true');
+    const response = await ap.request.get(`/api/units/${fixture.unitId}`); assert.equal(response.status(), 200);
+    assert.equal((await response.json()).instantBook, false);
+    report.bookingModes = { unitId: fixture.unitId, savedReversalVerified: true, requestIds: [] };
+  });
+  await step('Guest registration preserves review intent and mode changes require fresh consent', fp, async () => {
+    const ctx = await context('registered-request-guest'); requestPage = await ctx.newPage();
+    await openRequestReview(requestPage);
+    const originalReview = new URL(requestPage.url());
+    const unauthorizedResponse = requestPage.waitForResponse(r => r.url().endsWith('/api/bookings') && r.request().method() === 'POST');
+    unauthorizedResponse.catch(() => {});
+    await requestPage.getByRole('button', { name: 'Send booking request', exact: true }).click();
+    assert.equal((await unauthorizedResponse).status(), 401);
+    await requestPage.waitForURL(url => url.pathname === '/login');
+    const next = new URL(requestPage.url()).searchParams.get('next');
+    assert.equal(next, originalReview.pathname + originalReview.search);
+    await requestPage.locator('form').getByRole('link', { name: 'Sign up', exact: true }).click();
+    await requestPage.waitForURL(url => url.pathname === '/register');
+    assert.equal(new URL(requestPage.url()).searchParams.get('next'), next);
+    await requestPage.getByLabel(/^First name\s*\*?$/).fill('Synthetic');
+    await requestPage.getByLabel(/^Last name\s*\*?$/).fill('Registered');
+    await requestPage.getByLabel(/^Email\s*\*?$/).fill('registered@browser.example.test');
+    await requestPage.getByLabel(/^Password\s*\*?$/).fill(fixture.password);
+    const registerResponse = requestPage.waitForResponse(r => r.url().endsWith('/api/auth/register') && r.request().method() === 'POST');
+    registerResponse.catch(() => {});
+    await requestPage.locator('form').getByRole('button', { name: 'Sign up', exact: true }).click();
+    assert.equal((await registerResponse).status(), 201);
+    await requestPage.waitForURL(url => url.pathname === '/book/review');
+    assert.equal(new URL(requestPage.url()).searchParams.get('bookingIntent'), originalReview.searchParams.get('bookingIntent'));
+    assert.equal(new URL(requestPage.url()).searchParams.get('unitId'), fixture.unitId);
+    assert.equal(new URL(requestPage.url()).searchParams.get('startDate'), fixture.startDate);
+    assert.equal(new URL(requestPage.url()).searchParams.get('endDate'), fixture.endDate);
+    const cookie = (await ctx.cookies()).find(c => c.name === 'auth-session');
+    assert.ok(cookie?.secure && cookie.httpOnly && cookie.sameSite === 'Lax');
+    assert.equal((await requestPage.request.get('/api/auth/me')).status(), 200);
+    registeredGuest = await db.identity.findUniqueOrThrow({ where: { email: 'registered@browser.example.test' } });
+    assert.equal(registeredGuest.emailVerifiedAt, null, 'Suppressed test email must not falsely verify the identity');
+    await requestPage.getByRole('heading', { name: 'Review your booking request', exact: true }).waitFor();
+    await requestPage.locator('main input[type=checkbox]').check();
+    await setBookingMode(true);
+    const requoteResponse = requestPage.waitForResponse(r => r.url().endsWith('/api/bookings') && r.request().method() === 'POST');
+    requoteResponse.catch(() => {});
+    await requestPage.getByRole('button', { name: 'Send booking request', exact: true }).click();
+    const requoted = await requoteResponse; assert.equal(requoted.status(), 409); assert.equal((await requoted.json()).code, 'REQUOTE_REQUIRED');
+    await requestPage.getByRole('button', { name: 'Confirm booking', exact: true }).waitFor();
+    assert.equal(await requestPage.locator('main input[type=checkbox]').isChecked(), false);
+    assert.equal(await db.booking.count({ where: { guestIdentityId: registeredGuest.id } }), 0);
+    await setBookingMode(false);
+    await requestPage.reload();
+    await requestPage.getByRole('heading', { name: 'Review your booking request', exact: true }).waitFor();
+    await requestPage.locator('main input[type=checkbox]').check();
+    await requestPage.locator('select').filter({ hasText: 'Cash on arrival' }).selectOption('cash');
+    await requestPage.screenshot({ path: `${out}/request-review-before-payment.png`, fullPage: true });
+    firstRequest = await submitRequest(requestPage);
+    report.bookingModes.registeredGuestId = registeredGuest.id;
+    report.bookingModes.intentPreserved = true; report.bookingModes.requoteConsentVerified = true;
+    report.bookingModes.requestIds.push(firstRequest.id);
+    await requestCalendar(/Request only/);
+  });
+  await step('Operator approval opens a real payment hold which expires at its canonical deadline', fp, async () => {
+    await fp.goto(`/ops/requests?projectId=${fixture.projectId}`);
+    const row = fp.locator('li').filter({ hasText: 'Synthetic Registered' });
+    await row.getByRole('button', { name: 'Approve', exact: true }).waitFor();
+    const response = fp.waitForResponse(r => r.url().endsWith(`/api/bookings/${firstRequest.id}/respond`) && r.request().method() === 'POST');
+    response.catch(() => {});
+    await row.getByRole('button', { name: 'Approve', exact: true }).click();
+    assert.equal((await response).status(), 200);
+    const approved = await db.booking.findUniqueOrThrow({ where: { id: firstRequest.id } });
+    assert.equal(approved.status, 'pending_payment'); assert.ok(approved.holdExpiresAt); assert.equal(approved.requestExpiresAt, null);
+    assert.equal(await db.payment.count({ where: { bookingId: approved.id } }), 0);
+    assert.equal((await publicQuote(ap)).isAvailable, false);
+    await requestCalendar(/Hold/);
+    await fp.screenshot({ path: `${out}/approved-request-calendar-hold.png`, fullPage: true });
+    await requestPage.goto(`/trips/${approved.id}`);
+    await requestPage.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
+    report.bookingModes.approvalExpiry = await runRequestExpiry(approved.id, 'hold');
+    await requestPage.reload();
+    await requestPage.getByRole('heading', { name: 'This reservation has expired', exact: true }).waitFor();
+    assert.equal(await requestPage.getByRole('button', { name: 'Cancel booking', exact: true }).count(), 0);
+    assert.equal((await publicQuote(ap)).isAvailable, true);
+    await requestCalendar(/Available/);
+  });
+  await step('Decline and unanswered request expiry both leave the calendar free', fp, async () => {
+    await openRequestReview(requestPage); const declinedRequest = await submitRequest(requestPage);
+    report.bookingModes.requestIds.push(declinedRequest.id);
+    await fp.goto(`/ops/requests?projectId=${fixture.projectId}`);
+    const row = fp.locator('li').filter({ hasText: 'Synthetic Registered' });
+    await row.getByRole('button', { name: 'Decline', exact: true }).waitFor();
+    const reason = await row.getByLabel(/^Decline reason/).inputValue(); assert.ok(reason);
+    fp.once('dialog', dialog => dialog.accept());
+    const response = fp.waitForResponse(r => r.url().endsWith(`/api/bookings/${declinedRequest.id}/respond`) && r.request().method() === 'POST');
+    response.catch(() => {});
+    await row.getByRole('button', { name: 'Decline', exact: true }).click();
+    assert.equal((await response).status(), 200);
+    const declined = await db.booking.findUniqueOrThrow({ where: { id: declinedRequest.id } });
+    assert.equal(declined.status, 'declined'); assert.equal(declined.holdExpiresAt, null); assert.equal(declined.requestExpiresAt, null);
+    assert.equal(await db.payment.count({ where: { bookingId: declined.id } }), 0);
+    assert.equal((await publicQuote(ap)).isAvailable, true);
+    await requestCalendar(/Available/);
+    await openRequestReview(requestPage); const unanswered = await submitRequest(requestPage);
+    report.bookingModes.requestIds.push(unanswered.id);
+    report.bookingModes.unansweredExpiry = await runRequestExpiry(unanswered.id, 'request');
+    assert.equal((await publicQuote(ap)).isAvailable, true);
+    await requestCalendar(/Available/);
+    await requestPage.goto(`/trips/${unanswered.id}`);
+    await requestPage.getByRole('heading', { name: 'This request was not approved', exact: true }).waitFor();
+    assert.equal(await requestPage.getByRole('button', { name: 'Cancel booking', exact: true }).count(), 0);
+    await fp.goto(`/app/admin/units/${fixture.unitId}`); await setBookingMode(true); await fp.reload();
+    assert.equal(await fp.getByRole('region', { name: 'How guests book', exact: true }).getByRole('radio', { name: 'Instant booking', exact: true }).getAttribute('aria-checked'), 'true');
+    await ap.goto(unitUrl); await ap.getByRole('button', { name: 'Reserve', exact: true }).first().waitFor();
+    report.bookingModes.finalInstantModeVerified = true;
+  });
+  await step('A real protective block disables guest card and direct review until the dates reopen', fp, async () => {
+    const before = await db.booking.count({ where: { unitId: fixture.unitId } });
+    const note = 'Synthetic browser occupancy protection; no payment imported';
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    const blockForm = fp.locator('form').filter({ has: fp.getByRole('button', { name: 'Block these dates', exact: true }) });
+    await blockForm.getByLabel('Start date', { exact: true }).fill(fixture.startDate);
+    await blockForm.getByLabel('End date', { exact: true }).fill(fixture.endDate);
+    await blockForm.getByRole('combobox').selectOption('other');
+    await blockForm.getByLabel('Note (optional)', { exact: true }).fill(note);
+    const savedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/units/${fixture.unitId}/availability-blocks`) && r.request().method() === 'POST');
+    savedResponse.catch(() => {});
+    await blockForm.getByRole('button', { name: 'Block these dates', exact: true }).click();
+    const saved = await savedResponse; assert.equal(saved.status(), 201);
+    const block = await saved.json(); assert.equal(block.note, note);
+    await fp.locator('li').filter({ hasText: note }).waitFor();
+    const unavailableQuote = await publicQuote(ap); assert.equal(unavailableQuote.isAvailable, false);
+    await requestCalendar(/Blocked/);
+    const reviewUrl = `/book/review?${new URLSearchParams({ unitId: fixture.unitId, projectId: fixture.projectId,
+      startDate: fixture.startDate, endDate: fixture.endDate, adults: '2', children: '0', instantBook: '1' })}`;
+    const unavailableCopy = 'This home cannot be booked for these dates. Please choose other dates.';
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+      await ap.setViewportSize(viewport);
+      await ap.goto(unitUrl);
+      await ap.getByText(unavailableCopy, { exact: true }).waitFor();
+      const actions = ap.getByRole('button', { name: 'Reserve', exact: true });
+      assert.equal(await actions.count(), 1, 'Unavailable quote must not render the sticky reserve action');
+      assert.equal(await actions.isEnabled(), false);
+      assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
+      assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      await ap.screenshot({ path: `${out}/blocked-unit-${viewport.width}.png`, fullPage: true });
+      await ap.goto(reviewUrl);
+      await ap.getByText(unavailableCopy, { exact: true }).waitFor();
+      assert.equal(await ap.getByRole('checkbox').isEnabled(), false);
+      assert.equal(await ap.getByRole('button', { name: 'Confirm booking', exact: true }).isEnabled(), false);
+      assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
+      assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      await ap.screenshot({ path: `${out}/blocked-review-${viewport.width}.png`, fullPage: true });
+    }
+    // Supplemental authenticated HTTP negative probe: a hand-crafted attempt
+    // must still fail under the canonical writer, even if a client ignores UI.
+    const refused = await gp.request.post('/api/bookings', { data: {
+      unitId: fixture.unitId, projectId: fixture.projectId, startDate: fixture.startDate, endDate: fixture.endDate,
+      adultsCount: 2, childrenCount: 0, instantBook: true, paymentMethod: 'cash',
+      acceptedTotalSatang: unavailableQuote.acceptedTotalSatang, idempotencyKey: randomUUID(),
+    } });
+    assert.equal(refused.status(), 409);
+    const refusal = await refused.json();
+    assert.equal(refusal.code, 'DOUBLE_BOOK');
+    assert.match(refusal.error, /unit is blocked \(other\)/);
+    assert.equal(await db.booking.count({ where: { unitId: fixture.unitId } }), before);
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    const removedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/units/${fixture.unitId}/availability-blocks/${block.id}`) && r.request().method() === 'DELETE');
+    removedResponse.catch(() => {});
+    await fp.locator('li').filter({ hasText: note }).getByRole('button', { name: 'Remove', exact: true }).click();
+    assert.equal((await removedResponse).status(), 200);
+    assert.equal((await publicQuote(ap)).isAvailable, true);
+    await ap.goto(unitUrl); await ap.getByRole('button', { name: 'Reserve', exact: true }).first().waitFor();
+    await poll(() => ap.getByRole('button', { name: 'Reserve', exact: true }).first().isEnabled(), 'Released dates must become bookable again');
+    await ap.goto(reviewUrl);
+    await ap.getByText('Total', { exact: true }).waitFor();
+    assert.equal(await ap.getByRole('checkbox').isChecked(), false);
+    assert.equal(await ap.getByRole('button', { name: 'Confirm booking', exact: true }).isEnabled(), false);
+    await ap.setViewportSize({ width: 1440, height: 1000 });
+    report.protectiveBlock = { blockId: block.id, disabledCardAndReview: true, rejectedCanonicalWrite: 409,
+      testedViewports: ['1440x900', '390x844'], removedThroughUi: true, newBookings: 0 };
   });
   assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');

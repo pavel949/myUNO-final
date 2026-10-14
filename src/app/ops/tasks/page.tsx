@@ -1,11 +1,10 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import type { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { getMCManagedUnits } from '@/modules/projects';
-import { getOperatingSpaceMembership, getOperatingSpaceUnitIds, listOperationalTasks } from '@/modules/ops';
+import { getScopedOperationalAccess, getLegacyOperationalUnitIds, operationalTaskVisibility, OperatingAccessError, TASK_DEPARTMENTS } from '@/modules/ops/operating-space-access.service';
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
 import OperationalTaskCreateForm from '@/components/ops/OperationalTaskCreateForm';
 import { enumLabelDefaults } from '@/lib/enum-labels';
@@ -19,96 +18,36 @@ export default async function OperationalTasksPage({
   if (!user) redirect('/login?next=/ops/tasks');
 
   const requestedSpaceId = typeof searchParams?.spaceId === 'string' ? searchParams.spaceId : '';
-  const spaceMembership = requestedSpaceId && !user.isAdmin
-    ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
-    : null;
-  if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
-  const taskSpace = requestedSpaceId
-    ? await prisma.operatingSpace.findUnique({ where: { id: requestedSpaceId }, select: { timezone: true, status: true } })
-    : null;
-  if (requestedSpaceId && (!taskSpace || taskSpace.status !== 'active')) redirect('/ops/spaces');
-  const spaceUnitIds = requestedSpaceId
-    ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
-    : [];
-
-  const staffProjectIds = await getDepartmentProjectIds(user, [
-    'housekeeping', 'front_desk', 'maintenance', 'guest_care', 'reservations',
-  ]);
-  const mcScopes = getMCProjectScopes(user);
-  if (!user.isAdmin && !staffProjectIds.length && !mcScopes.length) redirect('/');
-
-  const mcManagedUnitIds = new Set<string>();
-  for (const scope of mcScopes) {
-    const units = await getMCManagedUnits(
-      prisma,
-      user.identityId,
-      scope.projectId,
-      scope.organizationId
-    );
-    for (const unit of units) mcManagedUnitIds.add(unit.id);
+  const requestedUnitId = typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
+  const explicitMcMode = searchParams?.mc === '1';
+  let taskTimeZone: string | undefined;
+  let visibility: Prisma.OperationalTaskWhereInput;
+  let taskFormData: [Array<{ id: string; name: string; project: { name: string } }>, Array<{ id: string; name: string }>, Array<{ identity: { id: string; firstName: string; lastName: string } }>] | null = null;
+  try {
+    if (requestedSpaceId) {
+      const access = await getScopedOperationalAccess(prisma, user.identityId, requestedSpaceId, 'manage_tasks', TASK_DEPARTMENTS);
+      taskTimeZone = access.space.timezone;
+      if (explicitMcMode && !access.isAdmin) access.unitIds = await getLegacyOperationalUnitIds(prisma, user.identityId, TASK_DEPARTMENTS, access.unitIds, access.space.organizationId, true);
+      if (requestedUnitId && !access.unitIds.includes(requestedUnitId)) notFound();
+      visibility = { unitId: { in: access.unitIds }, OR: [{ operatingSpaceId: requestedSpaceId }, { operatingSpaceId: null }] };
+      const member = access.isAdmin ? null : await prisma.operatingSpaceMember.findUnique({
+        where: { operatingSpaceId_identityId: { operatingSpaceId: requestedSpaceId, identityId: user.identityId } }, select: { capabilities: true },
+      });
+      const canAssign = access.isAdmin || Boolean(member?.capabilities.includes('assign_tasks'));
+      taskFormData = await Promise.all([
+        prisma.unit.findMany({ where: { id: { in: access.unitIds } }, select: { id: true, name: true, project: { select: { name: true } } }, orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }] }),
+        canAssign ? prisma.operatingTeam.findMany({ where: { operatingSpaceId: requestedSpaceId, active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }) : Promise.resolve([]),
+        canAssign ? prisma.operatingSpaceMember.findMany({ where: { operatingSpaceId: requestedSpaceId, active: true, identity: { status: 'active' }, capabilities: { has: 'manage_tasks' } }, select: { identity: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { identity: { firstName: 'asc' } } }) : Promise.resolve([]),
+      ]);
+    } else {
+      visibility = await operationalTaskVisibility(prisma, user.identityId);
+      if (explicitMcMode) visibility = { AND: [visibility, { unitId: { in: await getLegacyOperationalUnitIds(prisma, user.identityId, TASK_DEPARTMENTS, undefined, undefined, true) } }] };
+    }
+  } catch (error) {
+    if (error instanceof OperatingAccessError) notFound();
+    throw error;
   }
-
-  if (!user.isAdmin && !staffProjectIds.length && !mcManagedUnitIds.size) redirect('/');
-
-  const requestedUnitId =
-    typeof searchParams?.unitId === 'string' ? searchParams.unitId : undefined;
-  const explicitMcMode = searchParams?.mc === '1' && mcScopes.length > 0;
-
-  if (requestedUnitId && !user.isAdmin) {
-    const requestedUnit = await prisma.unit.findUnique({
-      where: { id: requestedUnitId },
-      select: { projectId: true },
-    });
-    const allowed = explicitMcMode
-      ? mcManagedUnitIds.has(requestedUnitId)
-      : Boolean(
-          requestedUnit &&
-          (
-            staffProjectIds.includes(requestedUnit.projectId) ||
-            mcManagedUnitIds.has(requestedUnitId)
-          )
-        );
-    if (!allowed) redirect(explicitMcMode ? '/ops/tasks?mc=1' : '/ops/tasks');
-  }
-
-  const authorizedSpaceUnitIds = requestedSpaceId && !user.isAdmin
-    ? (await prisma.unit.findMany({
-        where: {
-          id: { in: spaceUnitIds },
-          OR: [
-            ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
-            ...(mcManagedUnitIds.size ? [{ id: { in: Array.from(mcManagedUnitIds) } }] : []),
-          ],
-        },
-        select: { id: true },
-      })).map((unit) => unit.id)
-    : spaceUnitIds;
-  if (requestedSpaceId && !user.isAdmin && !authorizedSpaceUnitIds.length) redirect('/ops/spaces');
-
-  const mcOnly = !user.isAdmin && !staffProjectIds.length && mcScopes.length > 0;
-  const backHref = requestedSpaceId
-    ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId)
-    : explicitMcMode || mcOnly ? '/mc/calendar' : '/ops/calendar';
-
-  const taskFormData = requestedSpaceId
-    ? await Promise.all([
-        prisma.unit.findMany({
-          where: { id: { in: authorizedSpaceUnitIds } },
-          select: { id: true, name: true, project: { select: { name: true } } },
-          orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }],
-        }),
-        prisma.operatingTeam.findMany({
-          where: { operatingSpaceId: requestedSpaceId, active: true },
-          select: { id: true, name: true },
-          orderBy: { name: 'asc' },
-        }),
-        prisma.operatingSpaceMember.findMany({
-          where: { operatingSpaceId: requestedSpaceId, active: true },
-          select: { identity: { select: { id: true, firstName: true, lastName: true } } },
-          orderBy: { identity: { firstName: 'asc' } },
-        }),
-      ])
-    : null;
+  const backHref = requestedSpaceId ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId) : explicitMcMode ? '/mc/calendar' : '/ops/calendar';
 
   const labels = await getLabels({
     ...enumLabelDefaults('taskType', 'taskStatus'),
@@ -138,22 +77,10 @@ export default async function OperationalTasksPage({
     'staff.task_form.create': 'Create task',
   });
 
-  const tasks = await listOperationalTasks(prisma, {
-    ...(requestedSpaceId
-      ? { projectIds: [], unitIds: authorizedSpaceUnitIds }
-      : !user.isAdmin
-      ? explicitMcMode
-        ? {
-            projectIds: [],
-            unitIds: Array.from(mcManagedUnitIds),
-          }
-        : {
-            projectIds: staffProjectIds,
-            unitIds: Array.from(mcManagedUnitIds),
-          }
-      : {}),
-    unitId: requestedUnitId,
-    statuses: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'],
+  const tasks = await prisma.operationalTask.findMany({
+    where: { AND: [visibility!, ...(requestedUnitId ? [{ unitId: requestedUnitId }] : [])], status: { in: ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'] } },
+    include: { unit: { select: { id: true, name: true } }, project: { select: { id: true, name: true } }, assignee: { select: { id: true, firstName: true, lastName: true } }, assignedTeam: { select: { id: true, name: true, teamType: true } } },
+    orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }],
   });
 
   return <main className="stitch-workspace p-16 md:p-32">
@@ -163,17 +90,17 @@ export default async function OperationalTasksPage({
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.tasks.title']}</h1>
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>
-      {requestedSpaceId && taskSpace && taskFormData ? <OperationalTaskCreateForm
+      {requestedSpaceId && taskFormData && taskTimeZone ? <OperationalTaskCreateForm
         operatingSpaceId={requestedSpaceId}
-        timeZone={taskSpace.timezone}
+        timeZone={taskTimeZone}
         units={taskFormData[0]}
         teams={taskFormData[1]}
         members={taskFormData[2]}
         labels={labels}
       /> : null}
       <OperationalTaskQueueClient
+        timeZone={taskTimeZone}
         labels={labels}
-        timeZone={taskSpace?.timezone}
         tasks={tasks.map((task) => ({
           id: task.id,
           taskType: task.taskType,

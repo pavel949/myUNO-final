@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getTransferInstructions } from '@/modules/finance';
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { canViewTransferInstructions, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
 /**
@@ -40,14 +41,31 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // What is actually outstanding: a date change leaves a balance, and asking a
-  // guest to transfer the full total again would be wrong by the amount they
-  // already paid.
-  const paid = await prisma.payment.aggregate({
+  // A request has not been accepted, and terminal/expired reservations must
+  // never invite a guest to send money. Confirmed unpaid balances remain
+  // collectable in exactly the states supported by canonical receipt writers.
+  const liveInitialHold = booking.status === 'pending_payment' &&
+    (!booking.holdExpiresAt || booking.holdExpiresAt > new Date());
+  const collectableBalance = ['confirmed', 'checked_in', 'checked_out'].includes(booking.status) &&
+    booking.balanceDueThb > 0;
+  if (!liveInitialHold && !collectableBalance) {
+    return NextResponse.json({ error: 'This booking is not awaiting payment' }, { status: 409 });
+  }
+
+  // Initial payment is all-or-nothing. An unexpected captured payment on a
+  // still-pending stay needs reconciliation, never a second payment invitation.
+  if (booking.status === 'pending_payment' && await prisma.payment.count({
     where: { bookingId: booking.id, status: 'succeeded' },
-    _sum: { amountThb: true },
-  });
-  const outstanding = booking.totalThb + booking.balanceDueThb - (paid._sum.amountThb ?? 0);
+  })) {
+    return NextResponse.json({
+      code: 'PAYMENT_RECONCILIATION_REQUIRED',
+      error: 'A payment is already recorded and needs review. Contact the property before sending another transfer.',
+    }, { status: 409 });
+  }
+  // The canonical total already includes date changes/extensions. Confirmed
+  // stay_balance receipts settle balanceDueThb directly; adding it again to
+  // totalThb would double-count the debt (including a confirmed unpaid stay).
+  const outstanding = outstandingStayBalanceSatang(booking);
 
   if (outstanding <= 0) {
     return NextResponse.json({ error: 'Nothing is outstanding on this booking' }, { status: 409 });
@@ -62,7 +80,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
     // The dates are only held until holdExpiresAt, so the transfer deadline
     // shown to the guest can never run past it.
-    const deadline = booking.holdExpiresAt && booking.holdExpiresAt < instructions.expiresAt
+    const deadline = booking.status === 'pending_payment' && booking.holdExpiresAt && booking.holdExpiresAt < instructions.expiresAt
       ? booking.holdExpiresAt
       : instructions.expiresAt;
     return NextResponse.json({
@@ -77,3 +95,4 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     );
   }
 }
+

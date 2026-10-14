@@ -18,13 +18,14 @@ describe('operational readiness tasks', () => {
   });
 
   it('enforces the readiness task state machine', async () => {
-    const update = vi.fn().mockResolvedValue({ id: 'task-a', status: 'assigned' });
+    const update = vi.fn().mockResolvedValue({ count: 1 });
     const tx = {
       operationalTask: {
         findUnique: vi.fn().mockResolvedValue({
-          id: 'task-a', status: 'planned', startedAt: null,
+          id: 'task-a', status: 'planned', startedAt: null, updatedAt: new Date('2026-01-01T00:00:00Z'),
         }),
-        update,
+        updateMany: update,
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'task-a', status: 'assigned' }),
       },
     };
     const db: any = { $transaction: (fn: any) => fn(tx) };
@@ -40,10 +41,11 @@ describe('operational readiness tasks', () => {
     }));
 
     tx.operationalTask.findUnique.mockResolvedValue({
-      id: 'task-a', status: 'ready', startedAt: new Date(),
+      id: 'task-a', status: 'ready', startedAt: new Date(), updatedAt: new Date(),
     });
     await expect(
       transitionOperationalTask(db, 'task-a', 'in_progress')
     ).rejects.toThrow(/Invalid operational task transition/);
   });
 });
+

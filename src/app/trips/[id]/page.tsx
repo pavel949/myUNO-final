@@ -17,6 +17,9 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.payment_title': 'Payment',
     'booking.detail.paid': 'Paid',
     'booking.detail.awaiting_payment': 'Awaiting payment',
+    'booking.detail.confirmed_unpaid': 'Reservation confirmed — payment outstanding',
+    'booking.detail.outstanding_balance': 'Outstanding balance',
+    'booking.detail.confirmed_unpaid_note': 'Your dates remain reserved. Contact the property team to arrange payment; confirmation is not a payment receipt.',
     'booking.detail.pay_card': 'Pay by card',
     'booking.detail.pay_cash_note':
       'You can also pay in cash to our team at check-in — we will confirm your booking on the spot.',

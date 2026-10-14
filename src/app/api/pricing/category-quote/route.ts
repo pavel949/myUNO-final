@@ -146,6 +146,7 @@ export async function POST(req: NextRequest) {
       petsCount: pets,
       acceptedTotalSatang,
       quotedUnitId: selected.unitId,
+      instantBook: selected.instantBook,
     });
 
     const toBaht = (satang: number) => satang / 100;
@@ -201,3 +202,4 @@ export async function POST(req: NextRequest) {
     return handleError(error);
   }
 }
+

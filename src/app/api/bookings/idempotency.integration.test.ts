@@ -5,6 +5,7 @@ import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/u
 import { computePriceBreakdown } from '@/modules/core';
 import { seedConfig, setConfigOverride } from '@/modules/config';
 import { createCategoryStayQuoteToken } from '@/modules/booking/category-quote';
+import { bookingCreationIntent } from '@/modules/booking/creation-intent';
 
 const currentUser = vi.hoisted(() => vi.fn());
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: currentUser }));
@@ -31,7 +32,7 @@ describe('durable booking creation intent', () => {
     const body = { ...stay, unitId: unit.id, instantBook, paymentMethod: 'cash',
       acceptedTotalSatang: breakdown.total_thb, idempotencyKey: randomUUID() };
     const { token } = createCategoryStayQuoteToken({ ...stay, inventoryCategoryId: unit.inventoryCategoryId!,
-      projectId: project.id, quotedUnitId: unit.id, petsCount: 0, acceptedTotalSatang: breakdown.total_thb });
+      projectId: project.id, quotedUnitId: unit.id, instantBook: unit.instantBook, petsCount: 0, acceptedTotalSatang: breakdown.total_thb });
     const category = { ...body, unitId: undefined, inventoryCategoryId: unit.inventoryCategoryId, categoryQuoteToken: token };
     return { project, unit, sibling, body, category };
   }
@@ -143,4 +144,50 @@ describe('durable booking creation intent', () => {
     expect(await db.payment.count()).toBe(0);
     expect(await db.ledgerEntry.count({ where: { entryType: 'rental_revenue' } })).toBe(0);
   });
+
+  it.each(['direct', 'category'] as const)('rejects reusing a committed %s intent with the opposite mode', async path => {
+    const { body, category, unit, project } = await fixture(false);
+    const original = path === 'direct' ? body : category;
+    const created = await post(original);
+    expect(created.status).toBe(201);
+    const savedId = (await created.json()).booking.id;
+    const newQuote = createCategoryStayQuoteToken({ ...stay, inventoryCategoryId: unit.inventoryCategoryId!,
+      projectId: project.id, quotedUnitId: unit.id, instantBook: true,
+      petsCount: 0, acceptedTotalSatang: body.acceptedTotalSatang });
+    const changed = await post({ ...original, instantBook: true, categoryQuoteToken: newQuote.token });
+    expect(changed.status).toBe(409);
+    expect((await changed.json()).code).toBe('BOOKING_INTENT_CONFLICT');
+    expect(await db.booking.count()).toBe(1);
+    expect((await db.booking.findUniqueOrThrow({ where: { id: savedId } })).status).toBe('requested');
+    const recovered = await GET(new NextRequest(`http://localhost/api/bookings?idempotencyKey=${body.idempotencyKey}`));
+    expect(recovered.status).toBe(200);
+    expect((await recovered.json()).booking.id).toBe(savedId);
+  });
+
+
+  it('never duplicates a legacy category intent and recovers its saved trip only for its guest', async () => {
+    const { category, body, unit } = await fixture(false);
+    const created = await post(category);
+    expect(created.status).toBe(201);
+    const savedId = (await created.json()).booking.id;
+    // Before accepted mode was bound, category digests always used null here.
+    const legacy = bookingCreationIntent(body.idempotencyKey, {
+      inventoryCategoryId: unit.inventoryCategoryId!, startDate: new Date(stay.startDate),
+      endDate: new Date(stay.endDate), adults: 2, children: 0, infants: 0, pets: 0,
+      paymentMethod: 'cash', instantBook: undefined,
+    });
+    await db.booking.update({ where: { id: savedId }, data: { creationFingerprint: legacy.fingerprint } });
+    const replay = await post(category);
+    expect(replay.status).toBe(409);
+    expect((await replay.json()).code).toBe('BOOKING_INTENT_CONFLICT');
+    expect(await db.booking.count()).toBe(1);
+    const get = () => GET(new NextRequest(`http://localhost/api/bookings?idempotencyKey=${body.idempotencyKey}`));
+    expect((await (await get()).json()).booking.id).toBe(savedId);
+    const other = await createIdentity();
+    currentUser.mockResolvedValue({ identityId: other.id });
+    expect((await get()).status).toBe(404);
+    expect(await db.booking.count()).toBe(1);
+  });
+
 });
+

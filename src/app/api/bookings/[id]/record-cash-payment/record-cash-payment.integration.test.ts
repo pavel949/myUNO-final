@@ -47,6 +47,10 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
     owner = await createIdentity({ firstName: 'Owner' });
     const project = await createProject({ status: 'live' });
     projectId = project.id;
+    // Current authorization is re-read from the database, not trusted from a
+    // previously materialized session role array.
+    await db.roleAssignment.create({ data: { identityId: staff.id, role: 'staff_ops', scopeType: 'project', projectId, status: 'active' } });
+    await db.projectStaffPermission.create({ data: { identityId: staff.id, projectId, departments: ['finance'] } });
     const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id });
     unitId = unit.id;
     const booking = await createBooking({
@@ -145,6 +149,8 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
 
   it('allows the assigned MC member for the managed unit', async () => {
     const managementOrg = await createOrganization('MC Alpha', projectId, 'management_company');
+    await db.roleAssignment.updateMany({ where: { identityId: staff.id }, data: { status: 'revoked' } });
+    await db.roleAssignment.create({ data: { identityId: staff.id, role: 'mc_member', scopeType: 'project', projectId, organizationId: managementOrg.id, status: 'active' } });
     await db.unitEngagement.create({
       data: {
         unitId,
@@ -181,6 +187,8 @@ describe('POST /api/bookings/[id]/record-cash-payment', () => {
   it('blocks MC members from other organizations for the same unit', async () => {
     const managementOrg = await createOrganization('MC Alpha', projectId, 'management_company');
     const otherOrg = await createOrganization('MC Beta', projectId, 'management_company');
+    await db.roleAssignment.updateMany({ where: { identityId: staff.id }, data: { status: 'revoked' } });
+    await db.roleAssignment.create({ data: { identityId: staff.id, role: 'mc_member', scopeType: 'project', projectId, organizationId: otherOrg.id, status: 'active' } });
     await db.unitEngagement.create({
       data: {
         unitId,

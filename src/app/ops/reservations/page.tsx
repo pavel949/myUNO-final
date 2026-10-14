@@ -1,19 +1,14 @@
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import type { BookingStatus } from '@prisma/client';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
 import { formatDate } from '@/lib/date';
-import {
-  getOperatingSpaceMembership,
-  getOperatingSpaceUnitIds,
-  hasOperatingSpaceCapability,
-} from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
+import { getScopedOperationalAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
 import ManualReservationForm from '@/components/ops/ManualReservationForm';
 import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
 
@@ -28,45 +23,13 @@ export default async function ReservationDesk({
   const spaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';
   if(!spaceId)redirect('/ops/spaces');
 
-  const space=await prisma.operatingSpace.findUnique({
-    where:{id:spaceId},select:{id:true,name:true,status:true},
+  const access=await getScopedOperationalAccess(prisma,user.identityId,spaceId,'manage_reservations',['reservations','front_desk','guest_care','finance']).catch(error=>{
+    if(error instanceof OperatingAccessError)notFound();
+    throw error;
   });
-  if(!space||space.status!=='active')redirect('/ops/spaces');
-
-  if(!user.isAdmin){
-    const membership=await getOperatingSpaceMembership(prisma,spaceId,user.identityId);
-    if(!membership?.active)redirect('/ops/spaces');
-  }
-
-  const spaceUnitIds=await getOperatingSpaceUnitIds(prisma,spaceId);
-  let authorizedUnitIds=spaceUnitIds;
-  if(!user.isAdmin){
-    const staffProjectIds=await getDepartmentProjectIds(user,[
-      'reservations','front_desk','guest_care','finance',
-    ]);
-    const mcIds=new Set<string>();
-    for(const scope of getMCProjectScopes(user)){
-      const managed=await getMCManagedUnits(
-        prisma,user.identityId,scope.projectId,scope.organizationId,
-      );
-      for(const unit of managed)mcIds.add(unit.id);
-    }
-    authorizedUnitIds=(await prisma.unit.findMany({
-      where:{
-        id:{in:spaceUnitIds},
-        OR:[
-          ...(staffProjectIds.length?[{projectId:{in:staffProjectIds}}]:[]),
-          ...(mcIds.size?[{id:{in:Array.from(mcIds)}}]:[]),
-        ],
-      },
-      select:{id:true},
-    })).map(unit=>unit.id);
-  }
+  const authorizedUnitIds=access.unitIds;
   if(!authorizedUnitIds.length)redirect('/ops/spaces');
-
-  const canManage=user.isAdmin||await hasOperatingSpaceCapability(
-    prisma,spaceId,user.identityId,'manage_reservations',
-  );
+  const canManage=true;
 
   const allowedStatuses: BookingStatus[]=[
     'requested','pending_payment','confirmed','checked_in','checked_out','completed','cancelled',
@@ -85,8 +48,7 @@ export default async function ReservationDesk({
       where:{
         status:'active',
         OR:[
-          {roleAssignments:{some:{role:{in:['guest','resident','buyer']},status:'active'}}},
-          {bookingsAsGuest:{some:{}}},
+          ...(access.isAdmin ? [{roleAssignments:{some:{role:{in:['guest' as const,'resident' as const,'buyer' as const]},status:'active' as const}}},{bookingsAsGuest:{some:{}}}] : [{bookingsAsGuest:{some:{unitId:{in:authorizedUnitIds}}}}]),
         ],
       },
       select:{id:true,firstName:true,lastName:true,email:true,phone:true},
@@ -94,7 +56,7 @@ export default async function ReservationDesk({
       take:200,
     }),
     prisma.reservationGroup.findMany({
-      where:{operatingSpaceId:spaceId,status:'active'},
+      where:{operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
       select:{
         id:true,title:true,guestIdentityId:true,notes:true,
         guest:{select:{firstName:true,lastName:true}},
@@ -164,7 +126,7 @@ export default async function ReservationDesk({
   }).format(now);
   const arrivals=bookings.filter(b=>b.startDate.toISOString().slice(0,10)===bangkokDay).length;
   const requests=bookings.filter(b=>b.status==='requested').length;
-  const balance=bookings.reduce((sum,b)=>sum+Math.max(0,b.balanceDueThb),0);
+  const balance=bookings.reduce((sum,b)=>sum+outstandingStayBalanceSatang(b),0);
 
   const statusHref=(value:BookingStatus|'' )=>'/ops/reservations?'+new URLSearchParams({
     spaceId,...(value?{status:value}:{}),
@@ -233,3 +195,4 @@ export default async function ReservationDesk({
     </div>
   </main>;
 }
+

@@ -1,3 +1,5 @@
+import { requireAdminPage } from '@/app/libs/requireAdminPage';
+import { UNIT_PUBLICATION_LABELS, UNIT_PUBLICATION_DRAFTS } from '@/modules/content/unit-publication.seed';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import UnitsAdminClient from './units-client';
@@ -6,6 +8,8 @@ import CreateUnitForm from './create-unit-form';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUnitsPage() {
+  await requireAdminPage();
+
   const units = await prisma.unit.findMany({
     include: {
       project: { select: { name: true } },
@@ -28,6 +32,7 @@ export default async function AdminUnitsPage() {
   });
 
   const labels = await getLabels({
+    ...UNIT_PUBLICATION_LABELS,
     'admin.units.title': 'Stay inventory',
     'admin.units.eyebrow': 'Project → Category → Home',
     'admin.units.intro': 'Create physical inventory once. Public Stay, pricing, availability and reservations use these same canonical homes.',
@@ -63,7 +68,7 @@ export default async function AdminUnitsPage() {
     'admin.units.asset_status.one_off_sourced': 'One-off sourced',
     'admin.units.asset_status.suspended': 'Suspended',
     'admin.units.error_generic': 'Action failed. Please try again.',
-  });
+  }, undefined, UNIT_PUBLICATION_DRAFTS);
 
   return (
     <div>

@@ -52,8 +52,18 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
     assert.equal((await mp.request.get(`/api/units/${extra.managedUnitId}/availability-blocks`)).status(), 200);
     for (const unitId of [extra.deniedUnitId, extra.foreignUnitId]) {
       assert.equal((await mp.request.get(`/api/units/${unitId}/availability-blocks`)).status(), 403);
-      const response = await mp.goto(`/mc/units/${unitId}`); assert.equal(response.status(), 404);
+      const response = await mp.goto(`/mc/units/${unitId}`);
+      // Next streams the shared layout before notFound(), so transport can be
+      // 200 while the actual protected page correctly renders only the404 UI.
+      // Assert the denied surface and absence of private editor content directly.
+      await mp.getByRole('heading', { name: 'Page not found', exact: true }).waitFor();
+      assert.equal(await mp.locator('main').getByText('404', { exact: true }).count(), 1);
       assert.equal(await mp.getByRole('heading', { name: /Property Workspace/ }).count(), 0);
+      assert.equal(await mp.locator('main input, main textarea, main select').count(), 0);
+      for (const name of [extra.deniedUnitName, extra.foreignUnitName]) {
+        assert.equal(await mp.locator('main').getByText(name, { exact: true }).count(), 0);
+      }
+      report.tenUsers.lifecycle.push({ role: 'denied-manager-page', unitId, transportStatus: response.status(), deniedUi: true });
     }
     await mp.goto('/app/admin/people'); await mp.waitForURL(url => url.pathname === '/');
     for (const viewport of [desktop, mobile]) {
@@ -63,7 +73,7 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
     }
     await mp.setViewportSize(desktop); await managerCalendar();
     report.tenUsers.managerScope = { ownUnit: extra.managedUnitId, deniedUnits: [extra.deniedUnitId, extra.foreignUnitId],
-      nonAdmin: true, ownAvailabilityRead: 200, foreignAvailabilityRead: 403, foreignManagementPage: 404 };
+      nonAdmin: true, ownAvailabilityRead: 200, foreignAvailabilityRead: 403, foreignManagementPage: 'not-found UI; no private editor' };
   });
 
   await step('Eight independent guest forms contend while founder and limited manager read their calendars', founderPage, async () => {
@@ -119,7 +129,7 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
         }
       })),
     ]);
-    assert.equal(report.tenUsers.lifecycle.length, 10);
+    assert.equal(report.tenUsers.lifecycle.filter(entry => entry.role !== 'denied-manager-page').length, 10);
     const winners = guests.filter(guest => guest.status === 201); assert.equal(winners.length, 1);
     assert.equal(guests.filter(guest => guest.status === 409).length, 7);
     const winner = winners[0]; const id = winner.result.booking.id;

@@ -42,7 +42,7 @@ async function main() {
     } });
     const operatingSpace = await db.operatingSpace.create({ data: {
       key: 'synthetic-browser-operations', name: 'Synthetic Browser Operations',
-      organizationId: organization.id, status: 'active',
+      organizationId: organization.id, status: 'active', timezone: 'Asia/Bangkok',
       units: { create: { unitId: unit.id, active: true, startsOn: new Date() } },
     } });
     // Scoped synthetic employee only. The browser creates and completes the task.
@@ -92,7 +92,7 @@ async function main() {
     if (!readiness || readiness.blockers.length) throw new Error(`Fixture prerequisites incomplete: ${JSON.stringify(readiness?.blockers)}`);
     const day = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
     await mkdir('browser-results', { recursive: true });
-    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55), staffId: staff.id, staffEmail: staff.email, taskDueAt: `${day(2)}T12:00` }, null, 2));
+    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55), staffId: staff.id, staffEmail: staff.email, taskDueAt: `${day(2)}T12:00`, taskExpectedDueAt: `${day(2)}T05:00:00.000Z`, taskTimeZone: operatingSpace.timezone }, null, 2));
     console.log('Synthetic canonical draft fixture ready; no unit published or booking created by setup.');
   } finally { await db.$disconnect(); }
 }

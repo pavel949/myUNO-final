@@ -8,7 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 const db = new PrismaClient();
 const fixture = JSON.parse(await readFile('browser-results/fixture.json', 'utf8'));
 const out = 'browser-results';
-const report = { testedCommit: process.env.GITHUB_SHA || null, headCommit: process.env.BROWSER_HEAD_SHA || null, baseUrl, synthetic: true,
+const report = { testedCommit: process.env.GITHUB_SHA || null, headCommit: process.env.BROWSER_HEAD_SHA || null, baseUrl, synthetic: true, browserTimeZone: 'Asia/Bangkok',
   steps: [], blockedBrowserOrigins: [], serverErrors: [], pageErrors: [], result: 'running' };
 const contexts = [];
 let browser;
@@ -34,7 +34,7 @@ async function step(name, page, fn) {
   finally { await writeFile(`${out}/result.json`, JSON.stringify(report, null, 2)); }
 }
 async function context(name) {
-  const ctx = await browser.newContext({ baseURL: baseUrl, locale: 'en-US', viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
+  const ctx = await browser.newContext({ baseURL: baseUrl, locale: 'en-US', timezoneId: 'Asia/Bangkok', viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
   contexts.push({ ctx, name });
   ctx.setDefaultTimeout(15000);
   ctx.setDefaultNavigationTimeout(30000);
@@ -292,7 +292,8 @@ try {
     assert.equal(task.status, 'assigned');
     assert.equal(task.projectId, fixture.projectId);
     assert.equal(task.assignedIdentityId, fixture.staffId);
-    assert.equal(task.dueAt.getTime(), new Date(fixture.taskDueAt).getTime(), 'Persist the submitted datetime using the current server-timezone contract');
+    report.taskTimeZone = { spaceTimeZone: fixture.taskTimeZone, enteredLocalTime: fixture.taskDueAt, actualDueAt: task.dueAt.toISOString(), expectedDueAt: fixture.taskExpectedDueAt };
+    assert.equal(task.dueAt.toISOString(), fixture.taskExpectedDueAt, 'Task due time must use the canonical operating-space timezone, not server or browser defaults');
     assert.ok(task.dueAt.getTime() > Date.now());
     assert.equal(task.bookingId, null);
     assert.equal(task.blocksInventory, false);

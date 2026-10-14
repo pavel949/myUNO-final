@@ -82,7 +82,7 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
       {!spaces.length && <p className="mt-12 text-text-secondary">{l('empty')}</p>}
       {space && <>
         {unitChoices(Array.from(new Map([...(organizations.find(o => o.id === space.organizationId)?.units || []), ...space.currentUnits].map(u => [u.id, u])).values()), scopeUnits, setScopeUnits)}
-        <button type="button" disabled={busy} onClick={() => void save('/api/admin/operating-spaces/' + encodeURIComponent(space.id) + '/scope', 'PUT', { unitIds: scopeUnits, expectedUpdatedAt: space.updatedAt })}
+        <button type="button" disabled={busy} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/scope`, 'PUT', { unitIds: scopeUnits, expectedUpdatedAt: space.updatedAt })}
           className="mt-16 min-h-48 rounded-md bg-brand-deep px-16 text-white disabled:opacity-50">{busy ? l('saving') : l('save_scope')}</button>
         <h2 className="mt-24 font-display text-heading-2 font-semibold">{l('delegation')}</h2><p className="mt-8 text-small text-text-secondary">{l('prerequisite')}</p>
         <div className="mt-12 flex flex-wrap gap-8"><input aria-label={l('search')} value={query} onChange={e => setQuery(e.target.value)} className="h-48 min-w-0 flex-1 rounded-md border border-border-line px-12" />
@@ -90,13 +90,13 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
         <ul className="mt-8 space-y-8">{people.map(p => <li key={p.id}><button type="button" onClick={() => choosePerson(p)} className="min-h-48 rounded-md border border-border-line px-12 text-left">{p.firstName} {p.lastName} · {p.email}</button></li>)}</ul>
         {person && <fieldset className="mt-16"><legend className="font-semibold">{person.firstName} {person.lastName} · {l('capabilities')}</legend>
           <div className="mt-8 grid gap-8 md:grid-cols-2">{OPERATING_SPACE_CAPABILITIES.map(cap => <label key={cap} className="flex items-center gap-8 text-small"><input type="checkbox" disabled={busy || (!GOVERNED_DAILY_CAPABILITIES.includes(cap) && !capabilities.includes(cap))} checked={capabilities.includes(cap)} onChange={() => setCapabilities(toggle(capabilities, cap))} />{cap.replace(/_/g, ' ')}{!GOVERNED_DAILY_CAPABILITIES.includes(cap) && <span className="text-text-secondary"> · {l('unavailable')}</span>}</label>)}</div>
-          <button type="button" disabled={busy || !capabilities.length} onClick={() => void save('/api/admin/operating-spaces/' + encodeURIComponent(space.id) + '/members', 'PUT', memberBody(person.id, true, capabilities))}
+          <button type="button" disabled={busy || !capabilities.length} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/members`, 'PUT', memberBody(person.id, true, capabilities))}
             className="mt-16 min-h-48 rounded-md bg-brand-deep px-16 text-white disabled:opacity-50">{busy ? l('saving') : l('save_member')}</button>
         </fieldset>}
         <ul className="mt-24 divide-y divide-border-line">{space.members.map(m => <li key={m.identityId} className="py-12">
           <button type="button" disabled={busy || m.identity.status !== 'active'} onClick={() => choosePerson({ ...m.identity, id: m.identityId })} className="text-left font-semibold">{m.identity.firstName} {m.identity.lastName} · {m.active ? l('active') : l('inactive')}</button>
           <p className="mt-4 text-small text-text-secondary">{m.capabilities.map(c => c.replace(/_/g, ' ')).join(', ')}</p>
-          {m.active && <button type="button" disabled={busy} onClick={() => void save('/api/admin/operating-spaces/' + encodeURIComponent(space.id) + '/members', 'PUT', memberBody(m.identityId, false, m.capabilities))} className="mt-8 min-h-48 rounded-md border border-border-line px-12">{l('deactivate')}</button>}
+          {m.active && <button type="button" disabled={busy} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/members`, 'PUT', memberBody(m.identityId, false, m.capabilities))} className="mt-8 min-h-48 rounded-md border border-border-line px-12">{l('deactivate')}</button>}
         </li>)}</ul>
       </>}
     </section>

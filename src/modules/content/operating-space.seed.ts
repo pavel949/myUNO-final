@@ -2,6 +2,8 @@ import { OPERATING_GOVERNANCE_KEYS } from './operating-governance.seed';
 /** Operating Space manager workspace: draft translations for EN/RU/TH. */
 export const OPERATING_SPACE_KEYS = [
   ...OPERATING_GOVERNANCE_KEYS,
+  { key: 'admin.people.workspace_access', namespace: 'admin', description: 'People to workspace delegation link', en: 'Workspace scope & member access →', ru: 'Объекты пространства и доступ сотрудников →', th: 'ขอบเขตพื้นที่ทำงานและสิทธิ์สมาชิก →', status: 'needs_review' as const },
+  { key: 'admin.nav.workspace_access', namespace: 'admin', description: 'Founder workspace access navigation', en: 'Workspace access', ru: 'Доступ к пространствам', th: 'สิทธิ์พื้นที่ทำงาน', status: 'needs_review' as const },
   { key: 'staff.spaces.back', namespace: 'staff', description: 'Operating spaces back link', en: '← Operations', ru: '← Операции', th: '← การปฏิบัติงาน', status: 'needs_review' as const },
   { key: 'staff.spaces.kicker', namespace: 'staff', description: 'Operating spaces kicker', en: 'MANAGED PORTFOLIO', ru: 'УПРАВЛЯЕМЫЙ ПОРТФЕЛЬ', th: 'พอร์ตที่บริหาร', status: 'needs_review' as const },
   { key: 'staff.spaces.title', namespace: 'staff', description: 'Operating spaces title', en: 'Operating spaces', ru: 'Операционные пространства', th: 'พื้นที่ปฏิบัติการ', status: 'needs_review' as const },

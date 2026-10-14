@@ -4,6 +4,8 @@
 
 Prepared after the historical PR #251 walkthrough and PR #254 description/publication fixes. **Do not treat the presence of this runner as a pass.** The authoritative evidence is the completed `Browser acceptance (isolated)` job for the exact candidate commit, its `result.json`, screenshots and Chromium traces.
 
+The first production-browser runs caught a real publication-feedback defect: the validated live response was persisted, but route refresh detached the success/review link before it could be clicked. The UI now retains the server-confirmed row status and feedback without refreshing that successful status transition. Other actions still refresh, and subsequent server props remain authoritative. The browser continues to click the actual review link; it does not bypass this failure with a direct URL or a forced click.
+
 ## Scope
 
 The existing walkthrough remains useful historical evidence. Its guest script uses a missing local `lib.mjs`, hard-coded filesystem/record/date values, and a placeholder assertion for calendar release. Process 8 explicitly excludes positive browser go-live and the tariff editor. This runnable slice closes that specific regression gap without adding a second application or mocking route success.

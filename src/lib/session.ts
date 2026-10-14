@@ -67,6 +67,13 @@ export const getSessionUser = cache(async (): Promise<CurrentUser | null> => {
       return null;
     }
 
+    // Compare the generation that was proved, not the response's issue time.
+    // Legacy cookies cannot prove a generation and stop working after revocation.
+    const generation = identity.sessionsValidFrom?.getTime() ?? null;
+    if (session.generation === undefined ? generation !== null : session.generation !== generation) {
+      return null;
+    }
+
     return {
       identityId: identity.id,
       email: identity.email,

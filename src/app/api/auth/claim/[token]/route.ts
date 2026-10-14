@@ -15,7 +15,7 @@ export async function GET(
 
     // Find the token
     const token = await prisma.oneTimeToken.findFirst({
-      where: { tokenHash },
+      where: { tokenHash, purpose: 'account_claim' },
       include: { identity: true },
     });
 

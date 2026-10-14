@@ -320,18 +320,23 @@ export async function runRetentionJobs(
   anonymizedIdentities: number;
   expiredTokens: number;
   scrubbedPassports: number;
+  sweptRateLimits: number;
 }> {
   // Scrub first so freshly-marked passport media is deleted in the same run.
   const passportResult = await scrubExpiredPassportData(db);
   const mediaResult = await deleteExpiredMediaAssets(db);
   const identityResult = await anonymizeDeletedIdentities(db);
   const tokenResult = await expireOldTokens(db);
+  // Rate-limit counters are keyed by a hash of an address or an email; they only matter
+  // inside their window, so anything a day past it goes (doc 12 §6).
+  const sweptRateLimits = await db.$executeRaw`DELETE FROM rate_limit_bucket WHERE reset_at < now() - interval '1 day'`;
 
   return {
     deletedMedia: mediaResult.deleted,
     anonymizedIdentities: identityResult.anonymized,
     expiredTokens: tokenResult.deleted,
     scrubbedPassports: passportResult.scrubbedGuests,
+    sweptRateLimits,
   };
 }
 

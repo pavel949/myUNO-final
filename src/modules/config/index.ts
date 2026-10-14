@@ -25,3 +25,6 @@ export type {
   EarlyBirdConfig,
   UnitCategoryEntry,
 } from './types';
+
+export { listVaultEntries, saveVaultEntry, revealVaultEntry, clearVaultValue } from './secret-vault.service';
+export type { VaultEntryView } from './secret-vault.service';

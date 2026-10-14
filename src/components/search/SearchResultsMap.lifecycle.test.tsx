@@ -30,6 +30,18 @@ beforeEach(() => { vi.resetModules(); vi.useFakeTimers(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.doUnmock('maplibre-gl'); });
 
 describe('SearchResultsMap lifecycle', () => {
+  it('puts the project name and count label in the popup as text, never as markup', async () => {
+    const fake = mockMapLibre();
+    const { SearchResultsMap } = await import('./SearchResultsMap');
+    const hostile = '<img src=x onerror=alert(1)>Villa';
+    render(<SearchResultsMap {...props()} projects={[{ ...projects[0], name: hostile }]} labels={{ ...props().labels, homes: '<b>{count}</b> homes' }} />);
+    await finishImport();
+    act(() => fake.maps[0].emit('load'));
+    const popup = fake.popupContents[0] as HTMLElement;
+    expect(popup.querySelector('img, b')).toBeNull();
+    expect(popup.textContent).toBe(hostile + '<b>2</b> homes');
+  });
+
   it('removes map, markers, listeners and pending bounds work on unmount', async () => {
     const fake = mockMapLibre();
     const { SearchResultsMap } = await import('./SearchResultsMap');

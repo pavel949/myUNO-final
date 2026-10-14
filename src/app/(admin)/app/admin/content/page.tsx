@@ -1,3 +1,5 @@
+import { requireAdminPage } from '@/app/libs/requireAdminPage';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
@@ -9,8 +11,16 @@ export const dynamic = 'force-dynamic';
 export default async function AdminContentPage({
   searchParams,
 }: {
-  searchParams: { ns?: string };
+  searchParams: { ns?: string; key?: string };
 }) {
+  await requireAdminPage();
+
+  const exactKey = searchParams.key;
+  if (exactKey !== undefined && (typeof exactKey !== 'string' || exactKey.length > 240 ||
+      !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(exactKey) ||
+      typeof searchParams.ns !== 'string' || searchParams.ns.length > 240 ||
+      !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(searchParams.ns))) notFound();
+
   const namespaces = await prisma.contentKey.groupBy({
     by: ['namespace'],
     _count: { key: true },
@@ -20,7 +30,7 @@ export default async function AdminContentPage({
   const activeNs = searchParams.ns || namespaces[0]?.namespace || '';
   const keys = activeNs
     ? await prisma.contentKey.findMany({
-        where: { namespace: activeNs },
+        where: { namespace: activeNs, ...(exactKey !== undefined ? { key: exactKey } : {}) },
         include: { translations: true },
         orderBy: { key: 'asc' },
         take: 200,
@@ -52,6 +62,7 @@ export default async function AdminContentPage({
         </Link>
       </div>
       <ContentAdminClient
+        key={`${activeNs}:${exactKey ?? ''}`}
         namespaces={namespaces.map((ns) => ({
           namespace: ns.namespace,
           count: ns._count.key,

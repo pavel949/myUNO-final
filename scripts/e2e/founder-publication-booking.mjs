@@ -104,6 +104,28 @@ try {
     await fp.reload(); await english.waitFor(); assert.equal(await english.inputValue(), description);
     assert.equal((await db.translation.findFirstOrThrow({ where: { contentKeyId: fixture.contentId, locale: 'en' } })).value, description);
   });
+  await step('Gallery deep link opens the selected unit and saves photo order', fp, async () => {
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    const galleryLink = fp.getByRole('link', { name: /Manage photos and galleries/ });
+    await galleryLink.click();
+    await fp.waitForURL(url => url.pathname === `/app/admin/properties/${fixture.projectId}/onboarding`
+      && url.searchParams.get('gallery') === `unit:${fixture.unitId}` && url.hash === '#step-7');
+    await fp.getByRole('heading', { name: '7. Content and galleries', exact: true }).waitFor();
+    const gallery = fp.getByRole('region', { name: 'Property gallery editor' });
+    const firstPhoto = gallery.getByRole('img', { name: `Photo 1 of ${fixture.unitName}` });
+    await firstPhoto.waitFor();
+    const original = await db.unitMedia.findMany({ where: { unitId: fixture.unitId }, orderBy: { sort: 'asc' } });
+    assert.equal(original.length, 3);
+    await gallery.getByRole('button', { name: 'Move photo 2 left', exact: true }).click();
+    await gallery.getByRole('status').filter({ hasText: 'Gallery saved.' }).waitFor();
+    const saved = await db.unitMedia.findMany({ where: { unitId: fixture.unitId }, orderBy: { sort: 'asc' } });
+    assert.deepEqual(saved.map(item => item.mediaId), [original[1].mediaId, original[0].mediaId, original[2].mediaId]);
+    await fp.reload();
+    const reloadedGallery = fp.getByRole('region', { name: 'Property gallery editor' });
+    const reloadedFirst = reloadedGallery.getByRole('img', { name: `Photo 1 of ${fixture.unitName}` });
+    await reloadedFirst.waitFor();
+    assert.equal(new URL(await reloadedFirst.getAttribute('src'), baseUrl).pathname, '/browser-acceptance/unit-1.png');
+  });
   await step('Founder saves real nightly tariff, then reloads it', fp, async () => {
     await fp.goto(`/app/admin/units/${fixture.unitId}`);
     await fp.getByRole('link', { name: /Edit rates and booking rules/ }).click();
@@ -798,6 +820,30 @@ try {
   });
   const { runTenUserSmoke } = await import('./ten-user-smoke.mjs');
   await runTenUserSmoke({ db, fixture, founderPage: fp, context, login, step, report, publicQuote, out });
+  await step('Founder pauses publication without changing canonical bookings or prices', fp, async () => {
+    const beforeBookings = await db.booking.findMany({ where: { unitId: fixture.unitId }, orderBy: { id: 'asc' } });
+    const beforeUnit = await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId }, select: { baseNightlyThb: true } });
+    const beforeOffering = await db.commercialOffering.findFirstOrThrow({ where: { unitId: fixture.unitId, offeringType: 'short_term_stay' } });
+    await fp.goto('/app/admin/units');
+    const row = fp.locator('div.flex.flex-col.lg\\:flex-row').filter({ has: fp.getByRole('link', { name: fixture.unitName, exact: true }) });
+    const response = fp.waitForResponse(r => r.url().endsWith(`/api/admin/units/${fixture.unitId}`) && r.request().method() === 'PUT');
+    response.catch(() => {});
+    await row.getByRole('button', { name: 'Pause', exact: true }).click();
+    const saved = await response;
+    assert.equal(saved.status(), 200);
+    assert.equal((await saved.json()).status, 'paused');
+    await fp.getByRole('status').filter({ hasText: `${fixture.unitName} is set to paused.` }).waitFor();
+    assert.equal((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId } })).status, 'paused');
+    const afterBookings = await db.booking.findMany({ where: { unitId: fixture.unitId }, orderBy: { id: 'asc' } });
+    assert.deepEqual(afterBookings.map(booking => ({ id: booking.id, status: booking.status, totalThb: booking.totalThb })),
+      beforeBookings.map(booking => ({ id: booking.id, status: booking.status, totalThb: booking.totalThb })));
+    assert.equal((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId }, select: { baseNightlyThb: true } })).baseNightlyThb, beforeUnit.baseNightlyThb);
+    const afterOffering = await db.commercialOffering.findFirstOrThrow({ where: { unitId: fixture.unitId, offeringType: 'short_term_stay' } });
+    assert.deepEqual(afterOffering.pricingTerms, beforeOffering.pricingTerms);
+    const guestPage = await ap.goto(unitUrl);
+    assert.equal(guestPage?.status(), 404);
+    assert.ok(!(await body(ap)).includes(fixture.unitName));
+  });
   assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');
   assert.deepEqual(report.pageErrors, [], 'Unexpected browser runtime errors');

@@ -267,6 +267,92 @@ try {
     assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 1);
     report.manualReservation.formVerified = true;
   });
+  await step('Founder assigns a task and scoped staff starts and completes it', fp, async () => {
+    const taskTitle = `Synthetic shift task ${fixture.unitId}`;
+    const taskWhere = { unitId: fixture.unitId, operatingSpaceId: fixture.operatingSpaceId, taskType: 'custom', title: taskTitle };
+    assert.equal(await db.operationalTask.count({ where: taskWhere }), 0);
+    const queueUrl = `/ops/tasks?${new URLSearchParams({ spaceId: fixture.operatingSpaceId })}`;
+    await fp.goto(queueUrl);
+    const form = fp.locator('form').filter({ has: fp.locator('input[name=title]') });
+    await form.locator('input[name=title]').fill(taskTitle);
+    await form.locator('select[name=unitId]').selectOption(fixture.unitId);
+    await form.locator('select[name=taskType]').selectOption('custom');
+    await form.locator('input[name=dueAt]').fill(fixture.taskDueAt);
+    await form.locator('select[name=assignedIdentityId]').selectOption(fixture.staffId);
+    const response = fp.waitForResponse(r => r.url().endsWith('/api/ops/tasks') && r.request().method() === 'POST');
+    response.catch(() => {});
+    await form.getByRole('button', { name: 'Create task', exact: true }).click();
+    const saved = await response;
+    assert.equal(saved.status(), 201);
+    const result = await saved.json();
+    const tasks = await db.operationalTask.findMany({ where: taskWhere });
+    assert.equal(tasks.length, 1, 'One form submission must create exactly one canonical task');
+    const task = tasks[0];
+    assert.equal(task.id, result.task?.id);
+    assert.equal(task.status, 'assigned');
+    assert.equal(task.projectId, fixture.projectId);
+    assert.equal(task.assignedIdentityId, fixture.staffId);
+    assert.equal(task.dueAt.getTime(), new Date(fixture.taskDueAt).getTime(), 'Persist the submitted datetime using the current server-timezone contract');
+    assert.ok(task.dueAt.getTime() > Date.now());
+    assert.equal(task.bookingId, null);
+    assert.equal(task.blocksInventory, false);
+    assert.equal(await db.operationalTaskMedia.count({ where: { operationalTaskId: task.id } }), 0, 'No photo upload belongs to this task slice');
+    report.staffTask = { taskId: task.id, staffId: fixture.staffId, title: taskTitle, persisted: true, status: task.status };
+    await fp.screenshot({ path: `${out}/task-after-submit.png`, fullPage: true });
+
+    // Keep the founder form untouched so separate staff evidence cannot hide a
+    // committed-but-stuck create form by navigating or refreshing that page.
+    const staff = await context('staff');
+    const sp = await staff.newPage();
+    await login(sp, fixture.staffEmail, '/ops/tasks');
+    await sp.goto(queueUrl);
+    const article = sp.locator(`article#task-${task.id}`);
+    await article.getByRole('heading', { name: taskTitle, exact: true }).waitFor();
+    assert.match(await article.innerText(), /Synthetic Staff/);
+    const startedResponse = sp.waitForResponse(r => r.url().endsWith(`/api/ops/tasks/${task.id}`) && r.request().method() === 'PATCH');
+    startedResponse.catch(() => {});
+    await article.getByRole('button', { name: 'Start', exact: true }).click();
+    const started = await startedResponse;
+    assert.equal(started.status(), 200);
+    assert.equal((await started.json()).task?.status, 'in_progress');
+    const inProgress = await db.operationalTask.findUniqueOrThrow({ where: { id: task.id } });
+    assert.equal(inProgress.status, 'in_progress');
+    assert.equal(inProgress.assignedIdentityId, fixture.staffId);
+    assert.ok(inProgress.startedAt);
+    await article.getByRole('button', { name: 'Ready', exact: true }).waitFor();
+    await sp.screenshot({ path: `${out}/staff-task-in-progress.png`, fullPage: true });
+    const readyResponse = sp.waitForResponse(r => r.url().endsWith(`/api/ops/tasks/${task.id}`) && r.request().method() === 'PATCH');
+    readyResponse.catch(() => {});
+    await article.getByRole('button', { name: 'Ready', exact: true }).click();
+    const ready = await readyResponse;
+    assert.equal(ready.status(), 200);
+    assert.equal((await ready.json()).task?.status, 'ready');
+    const completed = await db.operationalTask.findUniqueOrThrow({ where: { id: task.id } });
+    assert.equal(completed.status, 'ready');
+    assert.equal(completed.assignedIdentityId, fixture.staffId);
+    assert.ok(completed.readyAt && completed.completedAt);
+    assert.ok(completed.readyAt.getTime() >= inProgress.startedAt.getTime());
+    await article.waitFor({ state: 'detached' });
+    await sp.reload();
+    assert.equal(await sp.locator(`article#task-${task.id}`).count(), 0, 'Ready task must stay out of the open queue after reload');
+    assert.equal(await db.operationalTask.count({ where: taskWhere }), 1);
+    report.staffTask.status = completed.status;
+    report.staffTask.staffFlowVerified = true;
+    report.staffTask.readyAt = completed.readyAt.toISOString();
+    report.staffTask.completedAt = completed.completedAt.toISOString();
+    await sp.screenshot({ path: `${out}/staff-task-ready.png`, fullPage: true });
+
+    await poll(async () => {
+      const submit = form.getByRole('button', { name: 'Create task', exact: true });
+      return await submit.count() === 1 && await submit.isEnabled()
+        && await form.locator('input[name=title]').inputValue() === ''
+        && await form.locator('select[name=unitId]').inputValue() === ''
+        && await form.locator('select[name=assignedIdentityId]').inputValue() === ''
+        && await form.locator('input[name=dueAt]').inputValue() === '';
+    }, 'Task committed, but the task create form stayed busy or failed to reset');
+    assert.equal(await form.getByRole('alert').count(), 0);
+    report.staffTask.formVerified = true;
+  });
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');
   assert.deepEqual(report.pageErrors, [], 'Unexpected browser runtime errors');
   report.result = 'passed';

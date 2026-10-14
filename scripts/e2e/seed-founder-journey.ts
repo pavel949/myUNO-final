@@ -23,9 +23,10 @@ async function main() {
     const founder = await createIdentity({ email: 'founder@browser.example.test', firstName: 'Synthetic', lastName: 'Founder', isAdmin: true });
     const owner = await createIdentity({ email: 'owner@browser.example.test', firstName: 'Synthetic', lastName: 'Owner' });
     const guest = await createIdentity({ email: 'guest@browser.example.test', firstName: 'Synthetic', lastName: 'Guest' });
+    const staff = await createIdentity({ email: 'staff@browser.example.test', firstName: 'Synthetic', lastName: 'Staff' });
     const password = 'SyntheticBrowserOnly!47';
     const hashedPassword = await hash(password, 10);
-    await db.identity.updateMany({ where: { id: { in: [founder.id, guest.id] } }, data: { hashedPassword, emailVerifiedAt: new Date() } });
+    await db.identity.updateMany({ where: { id: { in: [founder.id, guest.id, staff.id] } }, data: { hashedPassword, emailVerifiedAt: new Date() } });
     await seedContent(db, founder.id);
     const area = await db.area.create({ data: { slug: 'synthetic-browser-area', nameKey: 'browser.area', status: 'live' } });
     const project = await createProject({ slug: 'synthetic-browser-estate', name: 'Synthetic Browser Estate', status: 'live', areaId: area.id, latitude: '8.01', longitude: '98.30' });
@@ -43,6 +44,19 @@ async function main() {
       key: 'synthetic-browser-operations', name: 'Synthetic Browser Operations',
       organizationId: organization.id, status: 'active',
       units: { create: { unitId: unit.id, active: true, startsOn: new Date() } },
+    } });
+    // Scoped synthetic employee only. The browser creates and completes the task.
+    await db.roleAssignment.create({ data: {
+      identityId: staff.id, role: 'staff_ops', scopeType: 'project',
+      projectId: project.id, status: 'active', grantedByIdentityId: founder.id,
+    } });
+    await db.projectStaffPermission.create({ data: {
+      projectId: project.id, identityId: staff.id,
+      departments: ['housekeeping', 'maintenance'],
+    } });
+    await db.operatingSpaceMember.create({ data: {
+      operatingSpaceId: operatingSpace.id, identityId: staff.id, active: true,
+      capabilities: ['manage_tasks', 'assign_tasks', 'manage_housekeeping', 'manage_maintenance', 'view_calendar'],
     } });
     const descriptionKey = 'browser_acceptance.villa.description';
     const content = await db.contentKey.create({ data: { key: descriptionKey, namespace: 'browser_acceptance', description: 'Synthetic browser fixture only' } });
@@ -78,7 +92,7 @@ async function main() {
     if (!readiness || readiness.blockers.length) throw new Error(`Fixture prerequisites incomplete: ${JSON.stringify(readiness?.blockers)}`);
     const day = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
     await mkdir('browser-results', { recursive: true });
-    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55) }, null, 2));
+    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55), staffId: staff.id, staffEmail: staff.email, taskDueAt: `${day(2)}T12:00` }, null, 2));
     console.log('Synthetic canonical draft fixture ready; no unit published or booking created by setup.');
   } finally { await db.$disconnect(); }
 }

@@ -6,6 +6,8 @@ Prepared after the historical PR #251 walkthrough and PR #254 description/public
 
 The first production-browser runs caught a real publication-feedback defect: the validated live response was persisted, but route refresh detached the success/review link before it could be clicked. The UI now retains the server-confirmed row status and feedback without refreshing that successful status transition. Other actions still refresh, and subsequent server props remain authoritative. The browser continues to click the actual review link; it does not bypass this failure with a direct URL or a forced click.
 
+The manual-entry extension then caught a separate browser failure after a real 201 response: the booking and its calendar hold existed, but the form threw `Cannot read properties of null (reading 'reset')` and stayed on “Creating…”. Its narrow fix captures the form before awaiting, resets only after parsed success, preserves server refusals, and restores the controls on request/JSON errors. This changes no booking or payment semantics. A pending-payment manual entry still needs a supported confirmation path; it is not proof of durable unpaid confirmation.
+
 ## Scope
 
 The existing walkthrough remains useful historical evidence. Its guest script uses a missing local `lib.mjs`, hard-coded filesystem/record/date values, and a placeholder assertion for calendar release. Process 8 explicitly excludes positive browser go-live and the tariff editor. This runnable slice closes that specific regression gap without adding a second application or mocking route success.
@@ -23,6 +25,7 @@ The fixture is a fully synthetic, already-onboarded canonical `villa_estate` wit
 9. Open the founder calendar night, inspect its hold, and follow its canonical booking identity. Independently verify the public quote reports the dates unavailable.
 10. Cancel through the guest UI; verify the canonical row, date release and free calendar cell.
 11. Enter a separate manual reservation through the founder's operational desk; verify one persisted canonical booking, exact tariff/dates/guest, matching calendar hold, and a usable reset form with the new row visible. This exercises the current pending-payment entry contract, not a paid or permanently confirmed commitment.
+12. Create and assign a no-photo custom task as founder, sign a scoped synthetic employee in through the actual login form, start and finish that task, and verify canonical completion timestamps, queue removal after reload, exactly one task and a usable founder create form. Staff provisioning is synthetic setup, not an acceptance claim for the permissions editor.
 
 Unexpected local 5xx responses and browser runtime exceptions fail the run. Each completed step has a screenshot. Failures produce a nonzero exit and preserve traces/screenshots.
 

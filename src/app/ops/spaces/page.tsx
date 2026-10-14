@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
-import { listOperatingSpacesForIdentity } from '@/modules/ops';
+import { getOperationalActor, getOperatingSpaceOverviewAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,27 +12,30 @@ export default async function OperatingSpacesPage({ searchParams }: { searchPara
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/spaces');
 
-  const spaces = user.isAdmin
-    ? await prisma.operatingSpace.findMany({
-        where: { status: 'active' },
-        select: {
-          id: true,
-          key: true,
-          name: true,
-          timezone: true,
-          organizationId: true,
-          _count: {
-            select: {
-              units: { where: { active: true } },
-              members: { where: { active: true } },
-            },
-          },
-        },
-        orderBy: { name: 'asc' },
-      })
-    : await listOperatingSpacesForIdentity(prisma, user.identityId);
+  const actor = await getOperationalActor(prisma, user.identityId).catch(error => {
+    if (error instanceof OperatingAccessError) redirect('/');
+    throw error;
+  });
+  const candidates = await prisma.operatingSpace.findMany({
+    where: { status: 'active', organization: { status: 'active' },
+      ...(actor.isAdmin ? {} : { members: { some: { identityId: user.identityId, active: true } } }),
+    }, select: { id: true }, orderBy: { name: 'asc' },
+  });
+  const spaces = (await Promise.all(candidates.map(async candidate => {
+    try {
+      const access = await getOperatingSpaceOverviewAccess(prisma, user.identityId, candidate.id);
+      const viewCapability = searchParams?.view === 'housekeeping' ? 'manage_housekeeping' :
+        searchParams?.view === 'maintenance' ? 'manage_maintenance' : null;
+      if (!access.isAdmin && viewCapability && !access.byCapability[viewCapability]?.length) return null;
+      const members = access.isAdmin ? await prisma.operatingSpaceMember.count({ where: { operatingSpaceId: candidate.id, active: true } }) : null;
+      return { ...access.space, _count: { units: access.unitIds.length, members } };
+    } catch (error) {
+      if (error instanceof OperatingAccessError) return null;
+      throw error;
+    }
+  }))).filter((space): space is NonNullable<typeof space> => space !== null);
 
-  if (!user.isAdmin && !spaces.length) redirect('/ops');
+  if (!actor.isAdmin && !spaces.length) redirect('/ops');
   // The shell sends a staff member here when their current URL has no
   // operating-space context. A single permitted space needs no extra chooser;
   // destination pages still enforce membership and unit scope themselves.
@@ -84,10 +87,10 @@ export default async function OperatingSpacesPage({ searchParams }: { searchPara
                   <p className="font-display text-heading-3 font-bold text-text-ink">{space._count.units}</p>
                   <p className="text-small text-text-secondary">{labels['staff.spaces.units']}</p>
                 </div>
-                <div className="rounded-md bg-surface-ivory p-12">
+                {space._count.members !== null && <div className="rounded-md bg-surface-ivory p-12">
                   <p className="font-display text-heading-3 font-bold text-text-ink">{space._count.members}</p>
                   <p className="text-small text-text-secondary">{labels['staff.spaces.team']}</p>
-                </div>
+                </div>}
               </div>
               <Link href={pmsWorkspaceSelectionHref(searchParams?.view || '', space.id)}
                 className="mt-20 inline-flex rounded-lg bg-brand-deep px-16 py-8 text-small font-semibold text-white transition hover:bg-brand-andaman">
@@ -100,3 +103,4 @@ export default async function OperatingSpacesPage({ searchParams }: { searchPara
     </div>
   </main>;
 }
+

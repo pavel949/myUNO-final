@@ -1,7 +1,9 @@
+import { assertOperationalTaskMediaAccess } from './operating-space-access.service';
 import type {
   OperationalTaskStatus,
   OperationalTaskType,
   PrismaClient,
+  Prisma,
 } from '@prisma/client';
 
 const OPEN_STATUSES: OperationalTaskStatus[] = ['planned', 'assigned', 'in_progress', 'inspected', 'blocked'];
@@ -80,22 +82,23 @@ const TRANSITIONS: Record<OperationalTaskStatus, OperationalTaskStatus[]> = {
 };
 
 export async function transitionOperationalTask(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   taskId: string,
   nextStatus: OperationalTaskStatus,
   input: { assignedIdentityId?: string | null; notes?: string | null } = {}
 ) {
-  return db.$transaction(async (tx) => {
+  const transition = async (tx: Prisma.TransactionClient) => {
     const task = await tx.operationalTask.findUnique({ where: { id: taskId } });
     if (!task) throw new Error('Operational task not found');
     if (task.status !== nextStatus && !TRANSITIONS[task.status].includes(nextStatus)) {
       throw new Error(`Invalid operational task transition: ${task.status} → ${nextStatus}`);
     }
     const now = new Date();
-    return tx.operationalTask.update({
-      where: { id: taskId },
+    const changed = await tx.operationalTask.updateMany({
+      where: { id: taskId, status: task.status, updatedAt: task.updatedAt },
       data: {
         status: nextStatus,
+        updatedAt: new Date(Math.max(now.getTime(), task.updatedAt.getTime() + 1)),
         ...(input.assignedIdentityId !== undefined
           ? { assignedIdentityId: input.assignedIdentityId }
           : {}),
@@ -105,7 +108,10 @@ export async function transitionOperationalTask(
         ...(nextStatus === 'ready' ? { readyAt: now, completedAt: now } : {}),
       },
     });
-  });
+    if (changed.count !== 1) throw new Error('Operational task changed. Reload and retry.');
+    return tx.operationalTask.findUniqueOrThrow({ where: { id: taskId } });
+  };
+  return '$transaction' in db ? db.$transaction(transition) : transition(db);
 }
 
 export async function getUnitReadinessMap(
@@ -183,6 +189,8 @@ export async function listOperationalTasks(
 
 
 export interface CreateOperationalTaskInput {
+  /** Required when attaching media; never accepted from an HTTP body. */
+  actorIdentityId?: string;
   projectId: string;
   unitId: string;
   operatingSpaceId?: string | null;
@@ -202,14 +210,15 @@ export interface CreateOperationalTaskInput {
 }
 
 export async function createOperationalTask(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: CreateOperationalTaskInput,
 ) {
   if (!input.projectId || !input.unitId) throw new Error('TASK_SCOPE_REQUIRED');
   if (!(input.dueAt instanceof Date) || Number.isNaN(input.dueAt.getTime())) {
     throw new Error('TASK_DUE_AT_INVALID');
   }
-  if ((input.estimatedCostSatang ?? 0) < 0 || (input.actualCostSatang ?? 0) < 0) {
+  if ([input.estimatedCostSatang, input.actualCostSatang].some(value => value != null &&
+    (!Number.isSafeInteger(value) || value < 0 || value > 2_147_483_647))) {
     throw new Error('TASK_COST_INVALID');
   }
 
@@ -246,8 +255,8 @@ export async function createOperationalTask(
 
   const mediaIds = Array.from(new Set(input.mediaAssetIds ?? []));
   if (mediaIds.length) {
-    const mediaCount = await db.mediaAsset.count({ where: { id: { in: mediaIds } } });
-    if (mediaCount !== mediaIds.length) throw new Error('TASK_MEDIA_NOT_FOUND');
+    if (!input.actorIdentityId) throw new Error('TASK_ATTACHMENT_ACTOR_REQUIRED');
+    await assertOperationalTaskMediaAccess(db, input.actorIdentityId, { unitId: input.unitId, projectId: input.projectId, operatingSpaceId: input.operatingSpaceId ?? null }, mediaIds);
   }
 
   return db.operationalTask.create({
@@ -279,7 +288,7 @@ export async function createOperationalTask(
       unit: { select: { id: true, name: true } },
       assignee: { select: { id: true, firstName: true, lastName: true } },
       assignedTeam: { select: { id: true, name: true, teamType: true } },
-      media: { include: { media: true }, orderBy: { sortOrder: 'asc' } },
+      media: { select: { id: true, mediaAssetId: true, sortOrder: true, media: { select: { id: true, kind: true, mimeType: true, sizeBytes: true, encrypted: true } } }, orderBy: { sortOrder: 'asc' } },
     },
   });
 }
@@ -300,7 +309,7 @@ export interface CreatePreventiveMaintenancePlanInput {
 }
 
 export async function createPreventiveMaintenancePlan(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: CreatePreventiveMaintenancePlanInput,
 ) {
   if (!input.title.trim()) throw new Error('PREVENTIVE_TITLE_REQUIRED');
@@ -408,3 +417,4 @@ export async function generateDuePreventiveMaintenanceTasks(
   }
   return generated;
 }
+

@@ -1,5 +1,7 @@
+import { OPERATING_GOVERNANCE_KEYS } from './operating-governance.seed';
 /** Operating Space manager workspace: draft translations for EN/RU/TH. */
 export const OPERATING_SPACE_KEYS = [
+  ...OPERATING_GOVERNANCE_KEYS,
   { key: 'staff.spaces.back', namespace: 'staff', description: 'Operating spaces back link', en: '← Operations', ru: '← Операции', th: '← การปฏิบัติงาน', status: 'needs_review' as const },
   { key: 'staff.spaces.kicker', namespace: 'staff', description: 'Operating spaces kicker', en: 'MANAGED PORTFOLIO', ru: 'УПРАВЛЯЕМЫЙ ПОРТФЕЛЬ', th: 'พอร์ตที่บริหาร', status: 'needs_review' as const },
   { key: 'staff.spaces.title', namespace: 'staff', description: 'Operating spaces title', en: 'Operating spaces', ru: 'Операционные пространства', th: 'พื้นที่ปฏิบัติการ', status: 'needs_review' as const },
@@ -27,4 +29,7 @@ export const OPERATING_SPACE_KEYS = [
   { key: 'staff.space.finance', namespace: 'staff', description: 'Operating space finance link', en: 'Finance & reports', ru: 'Финансы и отчёты', th: 'การเงินและรายงาน', status: 'needs_review' as const },
   { key: 'staff.space.channels', namespace: 'staff', description: 'Operating space channels link', en: 'Channels', ru: 'Каналы', th: 'ช่องทาง', status: 'needs_review' as const },
   { key: 'staff.space.scope_hint', namespace: 'staff', description: 'Operating space canonical scope explanation', en: 'All actions stay within this operating space and continue to use canonical Unit, Booking, Pricing and Finance records.', ru: 'Все действия ограничены этим операционным пространством и используют канонические записи объектов, бронирований, цен и финансов.', th: 'ทุกการดำเนินการอยู่ภายในพื้นที่ปฏิบัติการนี้และใช้ข้อมูลหลักของยูนิต การจอง ราคา และการเงิน', status: 'needs_review' as const },
+  { key: 'staff.space.effective_scope_hint', namespace: 'staff', description: 'Effective operation scope limits', en: 'Counts and daily tasks reflect your current authorized homes. Reservation, finance and recurring-automation readiness remain separate.', ru: 'Показатели и задачи ограничены вашими действующими правами. Готовность бронирований, финансов и регулярной автоматизации проверяется отдельно.', th: 'ยอดรวมและงานประจำวันจำกัดตามบ้านที่คุณมีสิทธิ์ การจอง การเงิน และงานอัตโนมัติต้องตรวจสอบแยกกัน', status: 'needs_review' as const },
+  { key: 'staff.maintenance.recurring_unavailable', namespace: 'staff', description: 'Recurring plan deferral', en: 'New recurring plans are unavailable while scheduled scope and assignment checks are being completed. Use manual tasks for daily work.', ru: 'Создание регулярных планов пока недоступно: проверки прав и назначений ещё не завершены. Для ежедневной работы используйте ручные задачи.', th: 'ยังสร้างแผนประจำไม่ได้จนกว่าการตรวจสอบขอบเขตและผู้รับผิดชอบจะเสร็จ ใช้งานที่สร้างเองสำหรับงานประจำวัน', status: 'needs_review' as const },
 ];
+

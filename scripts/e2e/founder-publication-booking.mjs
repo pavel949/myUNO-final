@@ -60,7 +60,8 @@ async function login(page, email, next) {
   await page.getByLabel(/^Email\s*\*?$/).fill(email);
   await page.getByLabel(/^Password\s*\*?$/).fill(fixture.password);
   const response = page.waitForResponse(r => r.url().endsWith('/api/auth/login') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  response.catch(() => {});
+  await page.locator('form').getByRole('button', { name: 'Log in', exact: true }).click();
   assert.equal((await response).status(), 200);
   await page.waitForURL(url => url.pathname === next);
   const session = (await page.context().cookies()).find(c => c.name === 'auth-session');
@@ -94,6 +95,7 @@ try {
     const english = fp.locator('textarea').nth(1);
     await english.fill(description);
     const saveResponse = fp.waitForResponse(r => r.url().endsWith(`/api/admin/content/${fixture.contentId}`) && r.request().method() === 'PUT');
+    saveResponse.catch(() => {});
     await english.locator('..').getByRole('button', { name: 'Save', exact: true }).click();
     const saved = await saveResponse;
     assert.equal(saved.status(), 200);
@@ -114,6 +116,7 @@ try {
     await rates.getByLabel('Price includes taxes (VAT)', { exact: true }).check();
     await rates.getByLabel('Price includes service charge', { exact: true }).check();
     const response = fp.waitForResponse(r => r.url().endsWith(`/api/admin/units/${fixture.unitId}/tariff`) && r.request().method() === 'PUT');
+    response.catch(() => {});
     await rates.getByRole('button', { name: 'Save for this villa', exact: true }).click();
     assert.equal((await response).status(), 200);
     await rates.getByText('Saved for 1 villa(s). New quotes use these rates now.', { exact: true }).waitFor();
@@ -126,6 +129,7 @@ try {
     await fp.goto('/app/admin/units');
     const row = fp.locator('div.flex.flex-col.lg\\:flex-row').filter({ has: fp.getByRole('link', { name: fixture.unitName, exact: true }) });
     const response = fp.waitForResponse(r => r.url().endsWith(`/api/admin/units/${fixture.unitId}`) && r.request().method() === 'PUT');
+    response.catch(() => {});
     await row.getByRole('button', { name: 'Set live', exact: true }).click();
     const saved = await response; assert.equal(saved.status(), 200); assert.equal((await saved.json()).status, 'live');
     await fp.getByRole('status').filter({ hasText: `${fixture.unitName} is set to live.` }).waitFor();
@@ -157,6 +161,7 @@ try {
     await gp.locator('main input[type=checkbox]').check();
     await gp.locator('select').filter({ hasText: 'Cash on arrival' }).selectOption('cash');
     const response = gp.waitForResponse(r => r.url().endsWith('/api/bookings') && r.request().method() === 'POST');
+    response.catch(() => {});
     await gp.getByRole('button', { name: 'Confirm booking', exact: true }).click();
     assert.equal((await response).status(), 201);
     await gp.waitForURL(/\/trips(?:\/|$)/);
@@ -188,6 +193,7 @@ try {
   await step('Cancellation through guest UI releases the dates and calendar hold', gp, async () => {
     gp.once('dialog', dialog => dialog.accept());
     const response = gp.waitForResponse(r => r.url().endsWith(`/api/bookings/${booking.id}/cancel`) && r.request().method() === 'POST');
+    response.catch(() => {});
     await gp.getByRole('button', { name: 'Cancel booking', exact: true }).click();
     assert.equal((await response).status(), 200);
     assert.equal((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status, 'cancelled');

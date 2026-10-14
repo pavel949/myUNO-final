@@ -40,13 +40,17 @@ Password auth with bcrypt (cost ≥ 12); optional OAuth (Google/Apple); **rate-l
 - **Objects:** the media bucket is private; `passport/document` kinds additionally envelope-encrypted; all access via short-lived signed URLs from the upload/download seam.
 - **Secrets:** environment-injected via the platform's secret store (doc 15); never in the repo, never in client bundles; `.env` files git-ignored; per-environment values; rotation documented per integration in the admin's integration health view.
 
+**Founder key register (admin → Launch readiness → Keys register).** A storage-only register of every key and account the platform needs (`src/lib/secret-catalog.ts`). Values live in `secret_vault_entry`, AES-256-GCM encrypted with `ENCRYPTION_KEY`; listings expose only the last four characters; reveal is an explicit POST (`Cache-Control: no-store`) and every save, reveal and delete is written to `audit_log` (`secret_vault:*`) without the value. Admin-only (`admin:edit_configuration`). **Nothing at runtime reads the register** — a key takes effect only when also set in Vercel or GitHub. Consequence worth knowing: losing `ENCRYPTION_KEY` also makes the register unreadable, so keep the offline copy listed in the catalogue.
+
 ## 5. Permission enforcement & auditability
 
 Every read and mutation passes the `can()` helper against `RoleAssignment` scope (doc 03 §5) **server-side**; queries are ownership-scoped in the `where` clause (never fetch-then-filter). 🔒 field access by staff (e.g. opening the TM30 queue's passport panel) writes an `AuditLog` row — "who saw whose passport, when" is answerable. All privileged mutations (config/content edits, role grants, statement publication, manual ledger/refund actions, retention overrides) are audit-logged append-only. Admin panel is role-gated at the layout level *and* per-action server-side.
 
+**Rate-limit counters (`rate_limit_bucket`).** Shared brake counters for sign-in and public endpoints. The key is a sha256 of the caller's address or e-mail — personal data is never stored in readable form — and rows are removed by the nightly retention job a day after their window ends (and opportunistically by the limiter itself).
+
 ## 6. Retention jobs
 
-A daily job: deletes `MediaAsset` rows past `delete_after` (passport images), anonymizes deletion-requested identities past their grace window, expires stale `OneTimeToken`s, and reports counts to the admin compliance view (doc 08 §6.11) — retention is *visible*, not assumed.
+A daily job: deletes `MediaAsset` rows past `delete_after` (passport images), anonymizes deletion-requested identities past their grace window, expires stale `OneTimeToken`s, sweeps expired rate-limit counters, and reports counts to the admin compliance view (doc 08 §6.11) — retention is *visible*, not assumed.
 
 ## 7. Operational security & incident response
 

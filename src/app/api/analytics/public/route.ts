@@ -69,7 +69,7 @@ function sanitizeDimensions(input: unknown): Record<string, string | number | bo
  * transition and are intentionally rejected here.
  */
 export async function POST(req: NextRequest) {
-  const limit = checkRateLimit('analytics:public:' + clientIp(req), {
+  const limit = await checkRateLimit('analytics:public:' + clientIp(req), {
     maxAttempts: 120,
     windowMs: 60_000,
     backoffMs: 60_000,

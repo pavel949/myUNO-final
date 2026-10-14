@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { advanceSessionGeneration } from '@/lib/session-generation';
 import {
   createSessionToken,
   sessionCookieOptions,
@@ -145,6 +146,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Pre-registration takeover guard: an account created with a password for an
+    // address nobody had proven they own cannot keep that password once the real
+    // owner proves the address through Google. Verify the address, drop the
+    // unproven password and end any sessions already opened on it.
+    if (!identity.emailVerifiedAt) {
+      const identityId = identity.id;
+      identity = await prisma.$transaction(async (tx) => {
+        // Decide against the current row under lock: a concurrent password reset
+        // may already have verified the address and replaced the unproven hash.
+        await tx.$queryRaw`SELECT id FROM identity WHERE id = ${identityId} FOR UPDATE`;
+        const current = await tx.identity.findUniqueOrThrow({ where: { id: identityId } });
+        if (current.status !== 'active') throw new Error('Account unavailable');
+        if (current.emailVerifiedAt) return current;
+        const verified = await tx.identity.update({
+          where: { id: identityId },
+          data: { emailVerifiedAt: new Date(), hashedPassword: null },
+        });
+        const sessionsValidFrom = await advanceSessionGeneration(tx, identityId);
+        return { ...verified, sessionsValidFrom };
+      });
+    }
+
     // Step 4: Upsert auth account (link Google ID to identity)
     await prisma.authAccount.upsert({
       where: {
@@ -162,7 +185,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Step 5: Create session
-    const sessionToken = await createSessionToken(identity.id);
+    const sessionToken = await createSessionToken(identity.id, identity.sessionsValidFrom?.getTime() ?? null);
 
     // Step 6: Redirect to app with session cookie
     const response = NextResponse.redirect(new URL('/app', request.nextUrl.origin));

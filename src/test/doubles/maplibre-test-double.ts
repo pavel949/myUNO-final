@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 export function createMapLibreFake(failControl = false) {
   const maps: FakeMap[] = [];
   const markers: FakeMarker[] = [];
+  const popupContents: Node[] = [];
   class FakeMap {
     listeners = new Map<string, Set<() => void>>();
     on = vi.fn((type: string, listener: () => void) => {
@@ -37,8 +38,8 @@ export function createMapLibreFake(failControl = false) {
     Map: FakeMap,
     Marker: FakeMarker,
     NavigationControl: class {},
-    Popup: class { setHTML() { return this; } },
+    Popup: class { setDOMContent(node: Node) { popupContents.push(node); return this; } },
     LngLatBounds: class { extend() { return this; } isEmpty() { return false; } },
   };
-  return { api, maps, markers };
+  return { api, maps, markers, popupContents };
 }

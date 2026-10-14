@@ -23,7 +23,7 @@ async function main() {
   await createRoleAssignment({ identityId: owner.id, role: 'owner', scopeType: 'unit', unitId: unit.id });
   await createRoleAssignment({ identityId: other.id, role: 'owner', scopeType: 'project', projectId: project.id });
   await createBooking({ unitId: unit.id, projectId: project.id, guestIdentityId: other.id, startDate: new Date('2026-07-05'), endDate: new Date('2026-07-10'), totalThb: 900_000 });
-  const t = (i: {id:string}) => createSessionToken(i.id);
+  const t = (i: {id:string}) => createSessionToken(i.id, null);
   writeFileSync(process.argv[2], JSON.stringify({ unitId: unit.id, tokens: { admin: t(admin), staff: t(staff), owner: t(owner), other: t(other) } }));
   console.log('seeded');
 }

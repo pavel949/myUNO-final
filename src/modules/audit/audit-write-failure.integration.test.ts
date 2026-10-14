@@ -1,12 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { db, resetDb, createIdentity } from '@/test/util';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
+import { resetDb, createIdentity } from '@/test/util';
 
+// This file gets its own Prisma client. The shared test client is cached on
+// globalThis and lives for the whole single-fork run, so a spy left on its model
+// delegate would break every later file that writes through it (the key register
+// service did, in CI). A private client keeps the damage inside this file.
+const own = vi.hoisted(() => ({ client: undefined as import('@prisma/client').PrismaClient | undefined }));
 vi.mock('@/lib/prisma', async () => {
-  const util = await import('@/test/util');
-  return { prisma: util.db };
+  const { PrismaClient } = await import('@prisma/client');
+  own.client = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+  return { prisma: own.client };
 });
 
 import { logAudit } from './audit';
+
+const db = new Proxy({} as import('@prisma/client').PrismaClient, {
+  get: (_target, key) => (own.client as never)[key as never],
+});
+
+afterAll(async () => {
+  await own.client?.$disconnect();
+});
 
 /**
  * The audit write failing is its own file on purpose.
@@ -14,8 +28,8 @@ import { logAudit } from './audit';
  * Forcing the failure means spying on a Prisma model delegate, and that spy does
  * not come off cleanly — `mockRestore` and `restoreAllMocks` both leave the
  * delegate replaced, so every later write in the same file silently rejects and
- * the read tests fail for a reason that has nothing to do with them. Vitest
- * isolates by file, so the blast radius stops here.
+ * the read tests fail for a reason that has nothing to do with them. The
+ * file runs on a private client (see above), so the blast radius stops here.
  */
 describe('when the audit trail itself cannot be written', () => {
   let actorId: string;

@@ -17,7 +17,7 @@ describe('POST /api/auth/login — rate limits', () => {
   const ip = '203.0.113.9';
   beforeEach(async () => {
     await resetDb();
-    resetRateLimit(`login:ip:${ip}`);
+    await resetRateLimit(`login:ip:${ip}`);
   });
 
   it('many successful sign-ins from one shared address (office, hotel desk) are never throttled', async () => {

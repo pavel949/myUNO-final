@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // alerts every admin (N-29). Without a limit, one script can bury the
     // founder's inbox and the real leads inside it. The honeypot below stops
     // naive bots; this stops the determined ones.
-    const limit = checkRateLimit(`leads:ip:${clientIp(req)}`);
+    const limit = await checkRateLimit(`leads:ip:${clientIp(req)}`);
     if (!limit.allowed) {
       return NextResponse.json(
         { error: 'rate_limited' },

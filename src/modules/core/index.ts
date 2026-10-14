@@ -97,6 +97,7 @@ export {
   getAccountProfile,
   updateAccountProfile,
   changeAccountPassword,
+  revokeAllSessions,
   getNotificationSettings,
   setNotificationPreference,
   SUPPORTED_LOCALES,

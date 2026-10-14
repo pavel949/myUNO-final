@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ipLimit = checkRateLimit(`register:ip:${clientIp(request)}`);
+    const ipLimit = await checkRateLimit(`register:ip:${clientIp(request)}`);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Too many attempts. Please try again later.', code: 'rate_limited' },
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     );
     response.cookies.set(
       SESSION_COOKIE_NAME,
-      createSessionToken(identity.id),
+      createSessionToken(identity.id, identity.sessionsValidFrom?.getTime() ?? null),
       sessionCookieOptions()
     );
     return response;

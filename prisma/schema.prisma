@@ -788,6 +788,8 @@ model Identity {
   latinLastName   String?        @map("latin_last_name")
   email           String?        @unique @db.Citext
   emailVerifiedAt DateTime?      @map("email_verified_at")
+  /// Sessions issued before this instant are refused (log out everywhere, password change/reset).
+  sessionsValidFrom DateTime?    @map("sessions_valid_from")
   phone           String?        @unique
   phoneVerifiedAt DateTime?      @map("phone_verified_at")
   hashedPassword  String?        @map("hashed_password")
@@ -4036,4 +4038,34 @@ model ServiceOrderDispatch {
   serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
 
   @@map("service_order_dispatch")
+}
+
+/// Founder's key register (admin "Keys" page). Storage only: nothing in the
+/// running system reads these values — runtime secrets live in Vercel. The
+/// value is AES-256-GCM encrypted (lib/encryption); `last4` is the only
+/// fragment ever shown without an explicit, audited reveal.
+model SecretVaultEntry {
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  name                String   @unique @db.VarChar(100)
+  valueEncrypted      String?  @map("value_encrypted")
+  last4               String?  @db.VarChar(4)
+  notes               String?  @db.VarChar(500)
+  updatedByIdentityId String?  @map("updated_by_identity_id")
+
+  @@map("secret_vault_entry")
+}
+
+/// Shared brake counters for auth/public endpoints (src/app/libs/rateLimit.ts).
+/// One row per limiter key; every serverless instance sees the same counts.
+/// Server-only table: row-level security on, no API grants.
+model RateLimitBucket {
+  key               String   @id @db.VarChar(200)
+  attempts          Int
+  resetAt           DateTime @map("reset_at")
+  backoffMultiplier Int      @default(1) @map("backoff_multiplier")
+
+  @@index([resetAt])
+  @@map("rate_limit_bucket")
 }

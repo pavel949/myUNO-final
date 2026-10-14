@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ipLimit = checkRateLimit(`reset:ip:${clientIp(request)}`);
-    const acctLimit = checkRateLimit(`reset:acct:${String(email).toLowerCase()}`);
+    const ipLimit = await checkRateLimit(`reset:ip:${clientIp(request)}`);
+    const acctLimit = await checkRateLimit(`reset:acct:${String(email).toLowerCase()}`);
     if (!ipLimit.allowed || !acctLimit.allowed) {
       const retryAfterMs = Math.max(ipLimit.retryAfterMs || 0, acctLimit.retryAfterMs || 0);
       return NextResponse.json(

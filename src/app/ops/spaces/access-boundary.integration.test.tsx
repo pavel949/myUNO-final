@@ -9,7 +9,7 @@ vi.mock('@/lib/i18n', () => ({ getLabels: async (labels: Record<string, string>)
 vi.mock('next/navigation', () => ({ redirect: (url: string) => { throw new Error('REDIRECT:' + url); }, notFound: () => { throw new Error('NOT_FOUND'); } }));
 import Home from './[spaceId]/page';
 import Spaces from './page';
-import Reservations from '../reservations/page';
+import Reservations from '@/app/ops/reservations/page';
 import { POST as createTask } from '@/app/api/ops/tasks/route';
 import { PATCH as updateTask } from '@/app/api/ops/tasks/[id]/route';
 import { GET as getPlans, POST as createPlan } from '@/app/api/ops/preventive-maintenance/route';

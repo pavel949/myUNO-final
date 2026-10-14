@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateGovernedOperatingMember } from '@/modules/ops/operating-space-governance.service';
-import { governanceActor, governanceError } from '../../shared';
+import { governanceActor, governanceError } from '@/app/api/admin/operating-spaces/shared';
 
 export async function PUT(request: NextRequest, { params }: { params: { spaceId: string } }) {
   try {

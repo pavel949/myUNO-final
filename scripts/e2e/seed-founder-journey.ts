@@ -40,6 +40,11 @@ async function main() {
       projectId: project.id, contactEmail: 'operations@browser.example.test',
       contactPhone: '', status: 'active',
     } });
+    // Synthetic existing operator authority; membership/attachment alone grants no operating mandate.
+    await db.projectOrganizationRole.create({ data: {
+      projectId: project.id, organizationId: organization.id,
+      roleKey: 'operator', provenance: 'verified', effectiveFrom: new Date(),
+    } });
     const operatingSpace = await db.operatingSpace.create({ data: {
       key: 'synthetic-browser-operations', name: 'Synthetic Browser Operations',
       organizationId: organization.id, status: 'active', timezone: 'Asia/Bangkok',
@@ -123,3 +128,4 @@ async function main() {
   } finally { await db.$disconnect(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
+

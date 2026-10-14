@@ -26,7 +26,6 @@ export default async function ReservationDesk({
     if(error instanceof OperatingAccessError)notFound();
     throw error;
   });
-  const space=access.space;
   const authorizedUnitIds=access.unitIds;
   if(!authorizedUnitIds.length)redirect('/ops/spaces');
   const canManage=true;

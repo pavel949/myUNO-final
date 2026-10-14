@@ -2,9 +2,7 @@
   "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "outputDirectory": ".next",
-  "regions": [
-    "sin1"
-  ],
+  "regions": ["sin1"],
   "git": {
     "deploymentEnabled": false
   },

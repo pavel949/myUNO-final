@@ -36,9 +36,15 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
 
   async function managerCalendar() {
     await mp.goto(managerUrl);
-    await mp.getByRole('button', { name: new RegExp(`${extra.managedUnitName} · ${fixture.startDate} ·`) }).waitFor();
+    const isMobile = (await mp.evaluate(() => innerWidth)) < 768;
+    const surface = mp.getByRole('region', { name: isMobile ? 'Mobile occupancy agenda' : 'Unified occupancy grid', exact: true });
+    await surface.waitFor();
+    const ownCell = isMobile
+      ? surface.getByRole('button').filter({ hasText: extra.managedUnitName })
+      : surface.getByRole('button', { name: new RegExp(`${extra.managedUnitName} · ${fixture.startDate} ·`) });
+    await ownCell.waitFor();
     for (const name of [extra.deniedUnitName, extra.foreignUnitName, fixture.tariffUnitName]) {
-      assert.equal(await mp.getByRole('button', { name: new RegExp(`${name} ·`) }).count(), 0, 'MC calendar must not leak unmandated units');
+      assert.equal(await surface.getByText(name, { exact: true }).count(), 0, 'MC calendar must not leak unmandated units');
     }
   }
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, resetDb, createProject, createUnit } from '@/test/util';
 import { computePriceBreakdown } from './index';
+import { remainingAnnualWindows } from './tariff-calendar';
 import { readTariffDraft, saveTariffDraft, validateTariffDraft, usesTariffGrid, type TariffDraft } from './tariff-editor';
 
 /**
@@ -95,6 +96,21 @@ describe('admin rates editor', () => {
     expect(quote.commercialTerms).toMatchObject({ minimumNights: 5, cancellationSteps: [{ days: 0, pct: 0 }] });
   });
 
+  it('saves and reloads explicit base-plus-season dates with canonical quote parity', async () => {
+    const value = draft({ monthly: [], yearly: null, daily: [
+      { seasonCode: 'BASE', windows: [{ start: '01-01', end: '12-31' }], amountSatang: 123_400, minimumNights: 1 },
+      { seasonCode: 'HOLIDAY', windows: [{ start: '12-20', end: '01-10' }], amountSatang: 234_500, minimumNights: 1 },
+    ] });
+    value.daily[0].windows = remainingAnnualWindows(value.daily, 0);
+    await saveTariffDraft(db, { unitIds: [unitId], draft: value, actorIdentityId: admin });
+    const reloaded = await readTariffDraft(db, unitId);
+    expect(reloaded.daily[0].windows).toEqual([{ start: '01-11', end: '12-19' }]);
+    expect(reloaded.daily.map(s => s.amountSatang)).toEqual([123_400, 234_500]);
+    const quote = await computePriceBreakdown(db, unitId, day('2028-12-19'), day('2028-12-22'), 2);
+    expect(quote.total_thb).toBe(592_400);
+    expect(quote.lines.map(line => line.nightly_thb)).toEqual([123_400, 234_500, 234_500]);
+  });
+
   it('refuses an invalid draft without touching the saved grid', async () => {
     await saveTariffDraft(db, { unitIds: [unitId], draft: draft(), actorIdentityId: admin });
     await expect(saveTariffDraft(db, { unitIds: [unitId], draft: draft({ daily: [] }), actorIdentityId: admin }))
@@ -102,3 +118,4 @@ describe('admin rates editor', () => {
     expect((await readTariffDraft(db, unitId)).daily).toHaveLength(2);
   });
 });
+

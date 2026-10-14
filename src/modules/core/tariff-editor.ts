@@ -13,6 +13,8 @@ import { quoteSeasonalTariffGrid } from './seasonal-tariff';
  */
 
 export interface SeasonRate {
+  /** Stable identity from this unit; used only to preserve an existing row. */
+  sourceRateId?: string;
   seasonCode: string;
   windows: Array<{ start: string; end: string }>;
   amountSatang: number;
@@ -52,20 +54,29 @@ const inWindow = (md: string, w: { start: string; end: string }) =>
 
 function checkSeasons(kind: 'daily' | 'monthly', seasons: SeasonRate[], errors: TariffIssue[]): string[] {
   const seen = new Set<string>();
+  const seenIds = new Set<string>();
   for (const s of seasons) {
+    if (!s || typeof s !== 'object' || Array.isArray(s)) {
+      errors.push({ code: 'season_code', kind });
+      continue;
+    }
     const issue = (code: string) => errors.push({ code, kind, season: s.seasonCode || '?' });
-    if (!SEASON.test(s.seasonCode)) issue('season_code');
+    if (typeof s.seasonCode !== 'string' || !SEASON.test(s.seasonCode)) issue('season_code');
+    if (s.sourceRateId !== undefined) {
+      if (typeof s.sourceRateId !== 'string' || !s.sourceRateId || seenIds.has(s.sourceRateId)) issue('season_duplicate');
+      seenIds.add(s.sourceRateId);
+    }
     if (seen.has(s.seasonCode)) issue('season_duplicate');
     seen.add(s.seasonCode);
     if (!Array.isArray(s.windows) || !s.windows.length) issue('window_missing');
-    if ((s.windows ?? []).some(w => !validMonthDay(w.start) || !validMonthDay(w.end))) issue('window_format');
+    if (Array.isArray(s.windows) && s.windows.some(w => !w || typeof w.start !== 'string' || typeof w.end !== 'string' || !validMonthDay(w.start) || !validMonthDay(w.end))) issue('window_format');
     if (!Number.isSafeInteger(s.amountSatang) || s.amountSatang <= 0) issue('amount');
     if (!Number.isSafeInteger(s.minimumNights) || s.minimumNights < (kind === 'monthly' ? 30 : 1))
       issue(kind === 'monthly' ? 'minimum_monthly' : 'minimum');
     if (s.cancellationSteps) {
       const steps = s.cancellationSteps;
-      const ok = steps.length > 0 && steps.every((st, i) =>
-        Number.isSafeInteger(st.days) && st.days >= 0 && Number.isFinite(st.pct) && st.pct >= 0 && st.pct <= 100 &&
+      const ok = Array.isArray(steps) && steps.length > 0 && steps.every((st, i) =>
+        st && Number.isSafeInteger(st.days) && st.days >= 0 && Number.isFinite(st.pct) && st.pct >= 0 && st.pct <= 100 &&
         (i === 0 || st.days < steps[i - 1].days));
       if (!ok) issue('cancellation_steps');
     }
@@ -85,6 +96,8 @@ function checkSeasons(kind: 'daily' | 'monthly', seasons: SeasonRate[], errors: 
 
 export function validateTariffDraft(draft: TariffDraft): TariffValidation {
   const errors: TariffIssue[] = [];
+  if (!draft || !Array.isArray(draft.daily) || !Array.isArray(draft.monthly))
+    return { errors: [{ code: 'daily_missing', kind: 'daily' }], dailyGaps: [], monthlyGaps: [] };
   if (!draft.daily.length) errors.push({ code: 'daily_missing', kind: 'daily' });
   const dailyGaps = checkSeasons('daily', draft.daily, errors);
   const monthlyGaps = draft.monthly.length ? checkSeasons('monthly', draft.monthly, errors) : [];
@@ -101,15 +114,25 @@ type Row = Record<string, unknown>;
 const asObject = (v: unknown): Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : {};
 
+function previousSeason(previous: Row[], mode: 'daily' | 'monthly', season: SeasonRate): Row | undefined {
+  // Bulk application preserves each TARGET unit's own metadata. A source ID
+  // from another unit cannot be copied into the target's provenance.
+  return previous.find(row => row.rateMode === mode && season.sourceRateId && row.sourceRateId === season.sourceRateId)
+    ?? previous.find(row => row.rateMode === mode && row.seasonCode === season.seasonCode);
+}
+
 function toRows(draft: TariffDraft, mode: 'daily' | 'monthly', previous: Row[]): Row[] {
   const seasons = mode === 'daily' ? draft.daily : draft.monthly;
-  return seasons.map(s => {
-    const prior = previous.find(r => r.rateMode === mode && r.seasonCode === s.seasonCode);
+  const rows = seasons.map(s => {
+    const prior = previousSeason(previous, mode, s);
     return {
       ...(prior ?? {}),
       sourceRateId: typeof prior?.sourceRateId === 'string' ? prior.sourceRateId : `manual:${mode}:${s.seasonCode}`,
       seasonCode: s.seasonCode,
-      dateWindows: s.windows.map(w => ({ start: w.start, end: w.end })),
+      dateWindows: s.windows.map((w, index) => ({
+        ...asObject(Array.isArray(prior?.dateWindows) ? prior.dateWindows[index] : null),
+        start: w.start, end: w.end,
+      })),
       rateMode: mode,
       pricingUnit: mode === 'daily' ? 'night' : '30_nights',
       amountSatang: s.amountSatang,
@@ -121,6 +144,16 @@ function toRows(draft: TariffDraft, mode: 'daily' | 'monthly', previous: Row[]):
       sourceSellable: true,
     };
   });
+  const ids = new Set<string>();
+  for (const row of rows) {
+    // Renaming A to B and adding a fresh A must not bind two rows to the same
+    // saved source identity (or silently change monthly rounding/policies).
+    if (ids.has(row.sourceRateId)) throw Object.assign(new Error('TARIFF_INVALID'), {
+      issues: [{ code: 'row_identity', kind: mode, season: row.seasonCode }],
+    });
+    ids.add(row.sourceRateId);
+  }
+  return rows;
 }
 
 /** The editor's view of a unit's current grid. */
@@ -142,6 +175,7 @@ export async function readTariffDraft(db: PrismaClient, unitId: string): Promise
   const season = (mode: 'daily' | 'monthly') => rows.filter(r => r.rateMode === mode).map(r => {
     const policy = policies.find(p => p.rate_mode === mode && p.season_code === r.seasonCode && p.active === true);
     return {
+      ...(typeof r.sourceRateId === 'string' ? { sourceRateId: r.sourceRateId } : {}),
       seasonCode: String(r.seasonCode),
       windows: Array.isArray(r.dateWindows) ? r.dateWindows as Array<{ start: string; end: string }> : [],
       amountSatang: Number(r.amountSatang),
@@ -204,9 +238,10 @@ export async function saveTariffDraft(
         const seasons = mode === 'daily' ? input.draft.daily : input.draft.monthly;
         const policies = Array.isArray(rules.bookingPolicies)
           ? (rules.bookingPolicies as Row[]).map(p => {
-            const s = seasons.find(x => p.rate_mode === mode && p.season_code === x.seasonCode);
+            const s = seasons.find(x => p.rate_mode === mode && p.season_code ===
+              (previousSeason(previous, mode, x)?.seasonCode ?? x.seasonCode));
             if (!s) return p;
-            const next: Row = { ...p, min_nights: s.minimumNights };
+            const next: Row = { ...p, season_code: s.seasonCode, min_nights: s.minimumNights };
             if (s.cancellationSteps === null) {
               // The editor's “Use standard policy” action explicitly removes
               // the season refund override; undefined preserves existing terms.
@@ -244,8 +279,12 @@ export async function saveTariffDraft(
       };
       const prevShort = asObject(offers.find(o => o.offeringType === 'short_term_stay')?.pricingTerms).tariffGrid;
       const prevLong = asObject(offers.find(o => o.offeringType === 'long_term_rental')?.pricingTerms).tariffGrid;
-      await write('short_term_stay', toRows(input.draft, 'daily', Array.isArray(prevShort) ? prevShort as Row[] : []));
+      await write('short_term_stay', [
+        ...toRows(input.draft, 'daily', Array.isArray(prevShort) ? prevShort as Row[] : []),
+        ...(Array.isArray(prevShort) ? (prevShort as Row[]).filter(r => r.rateMode !== 'daily') : []),
+      ]);
       const longRows = [
+        ...(Array.isArray(prevLong) ? (prevLong as Row[]).filter(r => r.rateMode !== 'monthly' && r.rateMode !== 'yearly') : []),
         ...toRows(input.draft, 'monthly', Array.isArray(prevLong) ? prevLong as Row[] : []),
         ...(input.draft.yearly ? [{
           ...((Array.isArray(prevLong) ? (prevLong as Row[]).find(r => r.rateMode === 'yearly') : null) ?? {}),
@@ -275,3 +314,4 @@ export async function usesTariffGrid(db: Pick<PrismaClient, 'commercialOffering'
   const terms = asObject(offer?.pricingTerms);
   return terms.quoteEngine === 'canonical_tariff_grid_v1' && terms.taxPolicyVerified === true && Array.isArray(terms.tariffGrid);
 }
+

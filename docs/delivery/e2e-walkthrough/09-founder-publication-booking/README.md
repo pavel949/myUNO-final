@@ -16,7 +16,7 @@ The staff-task extension reproduced the same async reset defect after a task was
 
 The existing walkthrough remains useful historical evidence. Its guest script uses a missing local `lib.mjs`, hard-coded filesystem/record/date values, and a placeholder assertion for calendar release. Process 8 explicitly excludes positive browser go-live and the tariff editor. This runnable slice closes that specific regression gap without adding a second application or mocking route success.
 
-The fixture is a fully synthetic, already-onboarded canonical `villa_estate` with one draft unit, owner, founder, guest, category/rate plan, local image bytes, private synthetic regulatory evidence, engagement and seven completed mobilization prerequisites. The unit is not published by setup. The browser must:
+The fixture is a fully synthetic, already-onboarded canonical `villa_estate` with two separately categorized draft units, owner, founder, guest, category/rate plans, local image bytes, private synthetic regulatory evidence, engagement and seven completed mobilization prerequisites. Neither unit is published by setup. The browser must:
 
 1. Prove the draft's public API is private and anonymous admin access redirects.
 2. Log the founder in through the real login form (real server-issued secure session).
@@ -30,6 +30,9 @@ The fixture is a fully synthetic, already-onboarded canonical `villa_estate` wit
 10. Cancel through the guest UI; verify the canonical row, date release and free calendar cell.
 11. Enter a separate manual reservation through the founder's operational desk; verify one persisted canonical booking, exact tariff/dates/guest, matching calendar hold, and a usable reset form with the new row visible. This exercises the current pending-payment entry contract, not a paid or permanently confirmed commitment.
 12. Create and assign a no-photo custom task as founder, sign a scoped synthetic employee in through the actual login form, start and finish that task, and verify canonical completion timestamps, queue removal after reload, exactly one task and a usable founder create form. The browser runs in Asia/Bangkok and checks the configured operating-space due-time instant and display. Staff provisioning is synthetic setup, not an acceptance claim for the permissions editor.
+
+13. On a separate unit, create a year-round base tariff 1,234 THB and holiday tariff 2,345 THB (Dec 20–Jan 10), review/apply the base remaining dates, save/reload with stable source identities, and calculate the canonical saved-price preview for Dec 19–Dec 22: 5,924 THB.
+14. Publish that unit, select those dates using the guest date picker, review and submit the matching 5,924 THB booking, and resolve its hold to the same canonical booking on the founder calendar. No payment is collected.
 
 Unexpected external browser requests, local 5xx responses and browser runtime exceptions fail the run. Each completed step has a screenshot. Failures produce a nonzero exit and preserve traces/screenshots.
 

@@ -10,6 +10,7 @@ import { getLabels } from '@/lib/i18n';
 import { MOBILIZATION_STEPS } from '@/modules/core';
 import OnboardingClient from './onboarding-client';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
+import { TARIFF_EDITOR_USABILITY_DRAFTS } from '@/modules/content/tariff-editor-usability.seed';
 import TariffPreviewClient from './tariff-preview-client';
 import TariffEditorClient from './tariff-editor-client';
 import BookingModeClient from './booking-mode-client';
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic';
 const COMMERCIAL_LABELS = {
   'admin.tariff_editor.title': 'Rates and seasons',
   'admin.tariff_editor.body': 'These are the prices guests are quoted. Nightly seasons apply to stays under 30 nights; the monthly rate applies from 30 nights, per 30 nights; the 12-month rate is offered by lease request only. Dates are month-day (MM-DD) and repeat every year.',
+  'admin.tariff_editor.grid_precedence': 'Annual tariff grid for this unit. Saving this grid makes it the price source instead of category base/BAR and dated price overrides. Nightly rates apply below 30 nights; monthly rates apply from 30 nights; 12-month rent is lease-request only. Dates repeat annually and include both endpoints. New quotes change; accepted bookings keep their saved prices.',
   'admin.tariff_editor.loading': 'Loading rates…',
   'admin.tariff_editor.load_error': 'Rates could not be loaded. Refresh the page.',
   'admin.tariff_editor.included': 'What the price includes',
@@ -28,6 +30,7 @@ const COMMERCIAL_LABELS = {
   'admin.tariff_editor.includesBreakfast': 'Breakfast included',
   'admin.tariff_editor.daily_title': 'Nightly seasons',
   'admin.tariff_editor.daily_hint': 'Every night of the year should belong to exactly one season.',
+  'admin.tariff_editor.base_hint': 'Start with a year-round rate. Add seasonal dates and prices, then use the base row for dates outside the other seasons. Review the proposed ranges before saving. Every night must belong to exactly one row.',
   'admin.tariff_editor.monthly_title': 'Monthly rates (from 30 nights)',
   'admin.tariff_editor.monthly_hint': 'Charged per 30 nights by the season of each night. Leave empty if monthly stays are not offered.',
   'admin.tariff_editor.yearly_title': '12-month lease',
@@ -42,6 +45,17 @@ const COMMERCIAL_LABELS = {
   'admin.tariff_editor.remove': 'Remove',
   'admin.tariff_editor.remove_season': 'Remove season',
   'admin.tariff_editor.add_season': 'Add season',
+  'admin.tariff_editor.add_base': 'Add year-round base rate',
+  'admin.tariff_editor.remaining_dates': 'Use for dates outside other seasons',
+  'admin.tariff_editor.remaining_preview': 'Review base-rate dates',
+  'admin.tariff_editor.remaining_summary': 'Replace only the dates for {season}. Its price, minimum stay and terms stay the same. This changes the draft; save afterward.',
+  'admin.tariff_editor.previous_dates': 'Current dates',
+  'admin.tariff_editor.new_dates': 'Proposed dates',
+  'admin.tariff_editor.apply_dates': 'Apply these dates to draft',
+  'admin.tariff_editor.cancel_dates': 'Cancel',
+  'admin.tariff_editor.invalid_dates': 'Complete valid MM-DD dates for the other seasons first.',
+  'admin.tariff_editor.conflicting_dates': 'Other seasons overlap. Resolve their shared dates before filling the remaining dates.',
+  'admin.tariff_editor.no_remaining_dates': 'Other seasons already cover the whole year. No base-rate dates remain.',
   'admin.tariff_editor.rate_night': 'THB per night',
   'admin.tariff_editor.rate_30': 'THB per 30 nights',
   'admin.tariff_editor.rate_month': 'THB per month',
@@ -63,6 +77,7 @@ const COMMERCIAL_LABELS = {
   'admin.tariff_editor.yearly': '12-month',
   'admin.tariff_editor.flags': 'Inclusions',
   'admin.tariff_editor.error.season_code': '{kind} season “{season}”: use capital letters, digits or _.',
+  'admin.tariff_editor.error.row_identity': '{kind} season “{season}” reuses another saved rate. Reload and keep a distinct season code for each row.',
   'admin.tariff_editor.error.season_duplicate': '{kind} season “{season}” is listed twice.',
   'admin.tariff_editor.error.window_missing': '{kind} season “{season}” needs dates.',
   'admin.tariff_editor.error.window_format': '{kind} season “{season}”: dates must be MM-DD, e.g. 11-01.',
@@ -125,7 +140,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
   });
 
   const [commercialLabels, categoryUnits] = await Promise.all([
-    getLabels(COMMERCIAL_LABELS),
+    getLabels(COMMERCIAL_LABELS, undefined, TARIFF_EDITOR_USABILITY_DRAFTS),
     unit.inventoryCategoryId
       ? prisma.unit.count({ where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } } })
       : Promise.resolve(1),
@@ -207,6 +222,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'admin.tariff_preview.title': 'Seasonal tariff and booking-policy preview',
     'admin.tariff_preview.mode': 'Tariff mode',
     'admin.tariff_preview.daily': 'Daily',
+    'admin.tariff_preview.stay_mode': 'Stay (rate selected by stay length)',
     'admin.tariff_preview.monthly': 'Monthly',
     'admin.tariff_preview.yearly': '12-month lease',
     'admin.tariff_preview.arrival': 'Check-in',
@@ -214,13 +230,24 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'admin.tariff_preview.preview': 'Preview quote',
     'admin.tariff_preview.draft': 'Preview only. Draft tariffs do not create bookings or authorize channel activation.',
     'admin.tariff_preview.total': 'Illustrative total',
+    'admin.tariff_preview.booking_total': 'Saved booking-price total',
+    'admin.tariff_preview.guests': 'Guests',
+    'admin.tariff_preview.subtotal': 'Accommodation subtotal',
+    'admin.tariff_preview.partial': 'Draft tariff only. Taxes, fees, discounts and booking eligibility are not included in this subtotal.',
+    'admin.tariff_preview.saved': 'Uses saved prices and rules. Save your changes above before refreshing the preview. Stay length selects the applicable nightly or monthly calculation.',
+    'admin.tariff_preview.availability': 'Availability and booking eligibility are not checked. This preview does not reserve dates.',
+    'admin.tariff_preview.cleaning': 'Cleaning fee',
+    'admin.tariff_preview.service': 'Service fee',
+    'admin.tariff_preview.tax': 'Tax',
+    'admin.tariff_preview.discount': 'Discounts',
+    'admin.tariff_preview.annual': 'Illustrative 12-month rent',
     'admin.tariff_preview.minimum': 'Minimum stay',
     'admin.tariff_preview.failure': 'Unable to calculate the tariff.',
     'admin.tariff_preview.terms': 'Cancellation terms',
     'admin.tariff_preview.deposit': 'Refundable security deposit',
     'admin.tariff_preview.confirmation': 'Confirmation payment',
 
-  }, undefined, UNIT_PUBLICATION_DRAFTS);
+  }, undefined, { ...UNIT_PUBLICATION_DRAFTS, ...TARIFF_EDITOR_USABILITY_DRAFTS });
 
   const checklistByStep = Object.fromEntries(
     unit.mobilizationChecklist.map((item) => [item.step, item])
@@ -359,21 +386,32 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         <TariffPreviewClient unitId={unit.id} labels={{
           title: labels['admin.tariff_preview.title'],
           mode: labels['admin.tariff_preview.mode'],
-          daily: labels['admin.tariff_preview.daily'],
+          daily: labels['admin.tariff_preview.stay_mode'],
           monthly: labels['admin.tariff_preview.monthly'],
           yearly: labels['admin.tariff_preview.yearly'],
           arrival: labels['admin.tariff_preview.arrival'],
           departure: labels['admin.tariff_preview.departure'],
           preview: labels['admin.tariff_preview.preview'],
           draft: labels['admin.tariff_preview.draft'],
-          total: labels['admin.tariff_preview.total'],
+          total: labels['admin.tariff_preview.booking_total'],
           minimum: labels['admin.tariff_preview.minimum'],
           failure: labels['admin.tariff_preview.failure'],
           terms: labels['admin.tariff_preview.terms'],
           deposit: labels['admin.tariff_preview.deposit'],
           confirmation: labels['admin.tariff_preview.confirmation'],
+          guests: labels['admin.tariff_preview.guests'],
+          subtotal: labels['admin.tariff_preview.subtotal'],
+          partial: labels['admin.tariff_preview.partial'],
+          saved: labels['admin.tariff_preview.saved'],
+          availability: labels['admin.tariff_preview.availability'],
+          cleaning: labels['admin.tariff_preview.cleaning'],
+          service: labels['admin.tariff_preview.service'],
+          tax: labels['admin.tariff_preview.tax'],
+          discount: labels['admin.tariff_preview.discount'],
+          annual: labels['admin.tariff_preview.annual'],
         }} />
       </div>
     </div>
   );
 }
+

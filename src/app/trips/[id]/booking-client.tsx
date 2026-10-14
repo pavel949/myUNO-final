@@ -19,6 +19,8 @@ interface BookingDetail {
   adults: number;
   children: number;
   totalThb: number;
+  /** Unlike totalThb's display-baht boundary, the API balance is raw satang. */
+  balanceDueThb?: number;
   holdExpiresAt?: string | null;
   paymentMethod?: string | null;
   refundAccruedThb?: number | null;
@@ -366,7 +368,9 @@ export default function BookingDetailClient({
     );
   }
 
-  const paid = booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
+  const outstandingSatang = ['confirmed', 'checked_in', 'checked_out'].includes(booking.status) &&
+    Number.isSafeInteger(booking.balanceDueThb) && (booking.balanceDueThb ?? 0) > 0 ? booking.balanceDueThb! : 0;
+  const paid = outstandingSatang === 0 && booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
   const succeededPayment = booking.payments.find((p) => p.status === 'succeeded' && !p.reconciliationReason);
   const statusLabel =
     labels[`booking.detail.status.${booking.status}`] || booking.status.replace(/_/g, ' ');
@@ -635,6 +639,12 @@ export default function BookingDetailClient({
             </div>
           ) : booking.unallocatedPaymentRefunded ? (
             <p className="text-body" role="status">{labels['payments.checkout.refunded_body']}</p>
+          ) : outstandingSatang > 0 ? (
+            <div role="status" className="text-body text-state-warning">
+              <p className="font-semibold">{labels['booking.detail.confirmed_unpaid']}</p>
+              <p>{labels['booking.detail.outstanding_balance']}: ฿{(outstandingSatang / 100).toLocaleString(UI_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="mt-8 text-small text-text-secondary">{labels['booking.detail.confirmed_unpaid_note']}</p>
+            </div>
           ) : paid ? (
             <p className="text-body text-state-success font-semibold">
               {labels['booking.detail.paid']}

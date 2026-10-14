@@ -29,8 +29,17 @@ describe('direct-unit booking acceptance with PostgreSQL', () => {
       idempotencyKey: '00000000-0000-4000-8000-000000000001' };
   }
 
-  it('cannot bypass host approval by posting instantBook=true', async () => {
+  it('cannot bypass host approval or silently change accepted mode by posting instantBook=true', async () => {
     const body = await reviewed(false);
+    const result = await POST(request(body));
+    expect(result.status).toBe(409);
+    expect((await result.json()).code).toBe('REQUOTE_REQUIRED');
+    expect(await db.booking.count()).toBe(0);
+    expect(await db.payment.count()).toBe(0);
+  });
+
+  it('creates a request only after the guest explicitly accepts request mode', async () => {
+    const body = { ...await reviewed(false), instantBook: false };
     const result = await POST(request(body));
     expect(result.status).toBe(201);
     const booking = await db.booking.findFirstOrThrow({ where: { unitId: body.unitId } });

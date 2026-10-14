@@ -10,7 +10,8 @@ export function isBookingCreationKey(value: unknown): value is string {
 }
 
 /** Quotes may expire after a successful write. Recovery returns that frozen stay,
- * so quote tokens and the later accepted ceiling are not part of its identity. */
+ * so quote tokens and the later accepted ceiling are not part of its identity.
+ * Accepted mode is part of every public intent, including a category stay. */
 export function bookingCreationIntent(key: string, stay: {
   unitId?: string; inventoryCategoryId?: string; categoryKey?: string; projectId?: string;
   startDate: Date; endDate: Date; adults: number; children: number; infants: number; pets: number;
@@ -20,7 +21,8 @@ export function bookingCreationIntent(key: string, stay: {
     1, stay.unitId ?? null, stay.inventoryCategoryId ?? null, stay.categoryKey ?? null,
     stay.projectId ?? null, stay.startDate.toISOString(), stay.endDate.toISOString(),
     stay.adults, stay.children, stay.infants, stay.pets,
-    stay.unitId ? stay.instantBook : null, stay.paymentMethod, stay.guestNote ?? null,
+    stay.instantBook ?? null, stay.paymentMethod, stay.guestNote ?? null,
   ];
   return { key: key.toLowerCase(), fingerprint: createHash('sha256').update(JSON.stringify(payload)).digest('hex') };
 }
+

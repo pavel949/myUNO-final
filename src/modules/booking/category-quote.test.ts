@@ -24,7 +24,7 @@ describe('category stay quote token', () => {
         childrenCount: 1,
         petsCount: 0,
         acceptedTotalSatang: 123_456,
-        quotedUnitId: 'unit-1',
+        quotedUnitId: 'unit-1', instantBook: true,
       },
       60_000
     );
@@ -33,7 +33,7 @@ describe('category stay quote token', () => {
       inventoryCategoryId: 'category-1',
       projectId: 'project-1',
       acceptedTotalSatang: 123_456,
-      quotedUnitId: 'unit-1',
+      quotedUnitId: 'unit-1', instantBook: true,
     });
 
     const parts = token.split('.');
@@ -51,10 +51,23 @@ describe('category stay quote token', () => {
         childrenCount: 1,
         petsCount: 0,
         acceptedTotalSatang: 123_456,
-        quotedUnitId: 'unit-1',
+        quotedUnitId: 'unit-1', instantBook: true,
       },
       -1
     );
     expect(verifyCategoryStayQuoteToken(expired)).toBeNull();
   });
+
+  it('rejects legacy signed quotes that did not bind the booking mode', () => {
+    const payload = {
+      inventoryCategoryId: 'category-1', projectId: 'project-1', quotedUnitId: 'unit-1',
+      startDate: '2027-01-01', endDate: '2027-01-04', adultsCount: 2, childrenCount: 0,
+      petsCount: 0, acceptedTotalSatang: 123_456,
+    };
+    // An old release could mint this valid signature without the new field.
+    const { token } = createCategoryStayQuoteToken(payload as Parameters<typeof createCategoryStayQuoteToken>[0]);
+    expect(verifyCategoryStayQuoteToken(token)).toBeNull();
+  });
+
 });
+

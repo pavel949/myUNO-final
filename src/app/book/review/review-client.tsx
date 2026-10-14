@@ -12,6 +12,10 @@ type PaymentMethod = 'cash' | 'bank_transfer' | 'card_provider';
 
 export interface ReviewLabels {
   title: string;
+  requestTitle: string;
+  requestConfirm: string;
+  requestConsent: string;
+  requestNote: string;
   recap: string;
   checkIn: string;
   checkOut: string;
@@ -28,6 +32,7 @@ export interface ReviewLabels {
   back: string;
   error: string;
   requote: string;
+  unavailableForDates: string;
   conflictTitle: string;
   conflictBody: string;
   searchAgain: string;
@@ -72,7 +77,8 @@ export default function BookingReviewClient({
   const endDate = searchParams?.get('endDate');
   const adults = Number(searchParams?.get('adults') || '1');
   const children = Number(searchParams?.get('children') || '0');
-  const instantBook = searchParams?.get('instantBook') !== '0';
+  // The URL is navigation context, never booking authority or current mode.
+  const [instantBook, setInstantBook] = useState<boolean | null>(null);
 
   const [headline, setHeadline] = useState(categoryKey || '');
   const [policyText] = useState(defaultPolicy);
@@ -84,6 +90,7 @@ export default function BookingReviewClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [creationKey, setCreationKey] = useState<string | null>(null);
   const [quoteRevision, setQuoteRevision] = useState(0);
   const [quotedStay, setQuotedStay] = useState<string | null>(null);
@@ -139,8 +146,10 @@ export default function BookingReviewClient({
     if (inventoryCategoryId && !unitId && startDate && endDate) {
       const controller = new AbortController();
       const loadCategoryQuote = async () => {
+        setUnavailable(false);
         setConsented(false);
         setQuotedStay(null);
+        setInstantBook(null);
         setBreakdown(null);
         setCategoryQuoteToken(null);
         setAcceptedTotalSatang(null);
@@ -162,6 +171,8 @@ export default function BookingReviewClient({
         if (!Number.isSafeInteger(data.acceptedTotalSatang) || data.acceptedTotalSatang < 0) {
           throw new Error(labels.error);
         }
+        if (typeof data.instantBook !== 'boolean') throw new Error(labels.error);
+        setInstantBook(data.instantBook);
         if (data.categoryName) setHeadline(data.categoryName);
         setBreakdown(data.breakdown);
         setCategoryQuoteToken(data.quoteToken);
@@ -179,17 +190,20 @@ export default function BookingReviewClient({
   useEffect(() => {
     if (!unitId || !startDate || !endDate) return;
     const controller = new AbortController();
+    setUnavailable(false);
     setConsented(false);
     setQuotedStay(null);
+    setInstantBook(null);
     setBreakdown(null);
     setAcceptedTotalSatang(null);
     const load = async () => {
-      const unitRes = await fetch(`/api/units/${unitId}`, { signal: controller.signal });
-      if (unitRes.ok) {
-        const unit = await unitRes.json();
-        if (controller.signal.aborted) return;
-        setHeadline(unit.name);
-      }
+      const unitRes = await fetch(`/api/units/${unitId}`, { signal: controller.signal, cache: 'no-store' });
+      if (!unitRes.ok) throw new Error(labels.error);
+      const unit = await unitRes.json();
+      if (controller.signal.aborted) return;
+      if (typeof unit.instantBook !== 'boolean') throw new Error(labels.error);
+      setHeadline(unit.name);
+      setInstantBook(unit.instantBook);
       const priceRes = await fetch('/api/pricing/breakdown', {
         method: 'POST',
         signal: controller.signal,
@@ -204,6 +218,10 @@ export default function BookingReviewClient({
       if (!priceRes.ok) throw new Error(labels.error);
       const quote = await priceRes.json();
       if (controller.signal.aborted) return;
+      if (quote.isAvailable !== true) {
+        setUnavailable(true);
+        return;
+      }
       if (!Number.isSafeInteger(quote.acceptedTotalSatang) || quote.acceptedTotalSatang < 0) {
         throw new Error(labels.error);
       }
@@ -220,7 +238,7 @@ export default function BookingReviewClient({
   const categorySelected = Boolean(inventoryCategoryId || categoryKey);
   const canSubmit =
     Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
-    Boolean(breakdown) &&
+    Boolean(breakdown) && instantBook !== null &&
     quotedStay === stayKey && acceptedTotalSatang !== null &&
     Boolean(creationKey) &&
     (Boolean(unitId) ||
@@ -272,6 +290,7 @@ export default function BookingReviewClient({
         if (body?.code === 'REQUOTE_REQUIRED') {
           setConsented(false);
           setQuotedStay(null);
+          setInstantBook(null);
           setBreakdown(null);
           setCategoryQuoteToken(null);
           setAcceptedTotalSatang(null);
@@ -318,7 +337,7 @@ export default function BookingReviewClient({
             {labels.back}
           </Link>
         </p>
-        <PageHeading title={labels.title} subtitle={headline || undefined} />
+        <PageHeading title={instantBook === false ? labels.requestTitle : labels.title} subtitle={headline || undefined} />
 
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div>
@@ -350,14 +369,15 @@ export default function BookingReviewClient({
             <input
               type="checkbox"
               checked={consented}
+              disabled={instantBook === null || quotedStay !== stayKey || !breakdown || submitting}
               onChange={(event) => setConsented(event.target.checked)}
               className="mt-4"
             />
-            <span>{labels.policyConsent}</span>
+            <span>{instantBook === false ? labels.requestConsent : labels.policyConsent}</span>
           </label>
         </section>
 
-        <p className="mb-24 text-body text-text-stone">{labels.verificationNote}</p>
+        <p className="mb-24 text-body text-text-stone">{instantBook === false ? labels.requestNote : labels.verificationNote}</p>
         </div>
 
         <aside className="lg:sticky lg:top-96">
@@ -398,9 +418,9 @@ export default function BookingReviewClient({
           />
         </div>
 
-        {conflict && (
+        {(conflict || unavailable) && (
           <div className="mb-16 rounded-lg border border-state-warning bg-state-warning-soft p-16">
-            <p className="mb-8 text-body-strong text-text-ink">{labels.conflictTitle}</p>
+            <p className="mb-8 text-body-strong text-text-ink">{unavailable ? labels.unavailableForDates : labels.conflictTitle}</p>
             <p className="mb-12 text-small text-text-secondary">{labels.conflictBody}</p>
             <Link href={backHref} className="font-semibold text-brand-andaman hover:underline">
               {labels.searchAgain}
@@ -416,7 +436,7 @@ export default function BookingReviewClient({
           isLoading={submitting}
           fullWidth
         >
-          {labels.confirm}
+          {instantBook === false ? labels.requestConfirm : labels.confirm}
         </Button>
         </aside>
         </div>

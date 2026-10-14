@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ConfigKey } from './types';
 import { getConfig, invalidateConfig } from './config.service';
+import { BOOKING_WINDOWS, validateBookingWindow, type BookingWindowKey } from './booking-windows';
 
 interface ConfigChangeInput {
   identityId: string;
@@ -42,12 +43,6 @@ const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?:
   'compliance.expiry_warning_days': (value: any) => {
     if (!Number.isInteger(value) || value < 0) {
       return { valid: false, error: 'expiry warning must be a whole number of days, zero or more' };
-    }
-    return { valid: true };
-  },
-  'booking.hold_minutes': (value: any) => {
-    if (typeof value !== 'number' || value <= 0) {
-      return { valid: false, error: 'hold_minutes must be positive' };
     }
     return { valid: true };
   },
@@ -164,6 +159,10 @@ export async function updateConfigParameter(
 ): Promise<void> {
   const { identityId, paramKey, newValue, projectId, unitId } = input;
 
+  if (Object.prototype.hasOwnProperty.call(BOOKING_WINDOWS, paramKey)) {
+    validateBookingWindow(paramKey as BookingWindowKey, newValue);
+  }
+
   // Validate the parameter value against business rules
   const validator = VALIDATION_RULES[paramKey];
   if (validator) {
@@ -275,3 +274,4 @@ export async function clearConfigOverride(
   // Invalidate cache so the reverted value takes effect immediately
   invalidateConfig(paramKey as string);
 }
+

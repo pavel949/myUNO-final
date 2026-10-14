@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { canApproveBookingCandidate, resolveBookingOperationsAccess } from '@/app/libs/bookingOperationsAccess';
 import { approveBookingRequest, declineBookingRequest, isBookingRequestDeclineReason, bookingRequestDeclineReasonLabelKey } from '@/modules/booking';
-import { getConfig } from '@/modules/config';
+import { getBookingTimingConfig } from '@/modules/booking/timing-config';
 import { createNotification } from '@/modules/comms';
 import { logAudit } from '@/modules/audit';
 import { track } from '@/modules/analytics';
@@ -92,21 +92,16 @@ export async function POST(
     };
 
     if (action === 'approve') {
-      const holdMinutes = await getConfig(prisma, 'booking.hold_minutes', {
-        projectId: booking.projectId,
-        unitId: booking.unitId,
-      });
-      const manualHoldHours = await getConfig(prisma, 'booking.manual_payment_hold_hours', {
-        projectId: booking.projectId,
-        unitId: booking.unitId,
+      const { holdMinutes, manualHoldMinutes } = await getBookingTimingConfig(prisma, {
+        projectId: booking.projectId, unitId: booking.unitId,
       });
       let updated;
       try {
         updated = await approveBookingRequest(prisma, {
           bookingId: booking.id,
           authorizeCandidate: (db, scope) => canApproveBookingCandidate(db, user.identityId, scope),
-          holdMinutes: typeof holdMinutes === 'number' ? holdMinutes : 30,
-          manualHoldMinutes: typeof manualHoldHours === 'number' && manualHoldHours > 0 ? Math.round(manualHoldHours * 60) : undefined,
+          holdMinutes,
+          manualHoldMinutes,
         });
       } catch (error) {
         if ((error as { code?: string })?.code === 'BOOKING_FORBIDDEN') {
@@ -261,3 +256,4 @@ export async function POST(
     );
   }
 }
+

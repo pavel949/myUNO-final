@@ -13,6 +13,7 @@ export interface CategoryStayQuotePayload {
   petsCount: number;
   acceptedTotalSatang: number;
   quotedUnitId: string;
+  instantBook: boolean;
   expiresAtMs: number;
 }
 
@@ -71,6 +72,7 @@ export function verifyCategoryStayQuoteToken(token: string): CategoryStayQuotePa
     !Number.isInteger(value.acceptedTotalSatang) ||
     value.acceptedTotalSatang < 0 ||
     typeof value.quotedUnitId !== 'string' ||
+    typeof value.instantBook !== 'boolean' ||
     typeof value.expiresAtMs !== 'number' ||
     value.expiresAtMs <= Date.now()
   ) {
@@ -79,3 +81,4 @@ export function verifyCategoryStayQuoteToken(token: string): CategoryStayQuotePa
 
   return value as CategoryStayQuotePayload;
 }
+

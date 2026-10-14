@@ -2,56 +2,46 @@ import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 import { createSessionToken, verifySessionToken, SESSION_TTL_MS } from './session';
 
+const sign = (payload: string) => crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET || 'dev-only-insecure-session-secret').update(payload).digest('base64url');
+
 describe('session tokens', () => {
-  it('round-trips a valid token', () => {
-    const token = createSessionToken('identity-123');
-    const session = verifySessionToken(token);
-    expect(session?.identityId).toBe('identity-123');
-    expect(session?.issuedAtMs).toBeLessThanOrEqual(Date.now());
-    expect(session?.issuedAtMs).toBeGreaterThan(Date.now() - 5000);
+  it.each([null, 123456789])('round-trips the authenticated generation %s', (generation) => {
+    const token = createSessionToken('identity-123', generation);
+    expect(verifySessionToken(token)).toMatchObject({ identityId: 'identity-123', generation });
+    expect(verifySessionToken(token)!.issuedAtMs).toBeLessThanOrEqual(Date.now());
   });
 
-  it('rejects a tampered identity id', () => {
-    const token = createSessionToken('identity-123');
-    const [v, , iat, expiry, sig] = token.split('.');
-    const tampered = `${v}.identity-456.${iat}.${expiry}.${sig}`;
-    expect(verifySessionToken(tampered)).toBeNull();
-  });
-
-  it('rejects a tampered expiry', () => {
-    const token = createSessionToken('identity-123');
-    const [v, id, iat, , sig] = token.split('.');
-    const tampered = `${v}.${id}.${iat}.${Date.now() + 999999999}.${sig}`;
-    expect(verifySessionToken(tampered)).toBeNull();
+  it.each([1, 2, 3, 4])('rejects a tampered signed field at index %s', (index) => {
+    const parts = createSessionToken('identity-123', null).split('.');
+    parts[index] = index === 1 ? 'identity-456' : String(Date.now() + 60000);
+    expect(verifySessionToken(parts.join('.'))).toBeNull();
   });
 
   it('rejects an expired token', () => {
-    const token = createSessionToken('identity-123', -1000);
-    expect(verifySessionToken(token)).toBeNull();
+    expect(verifySessionToken(createSessionToken('identity-123', null, -1))).toBeNull();
   });
 
-  it('rejects a tampered issue time (it is signed, so a token cannot be made to look newer)', () => {
-    const token = createSessionToken('identity-123');
-    const [v, id, , expiry, sig] = token.split('.');
-    expect(verifySessionToken(`${v}.${id}.${Date.now() + 60000}.${expiry}.${sig}`)).toBeNull();
+  it('requires an explicit valid generation rather than silently granting the initial one', () => {
+    // @ts-expect-error proving omitted generation fails at runtime as well as at typecheck
+    expect(() => createSessionToken('identity-123')).toThrow(/generation/);
+    expect(() => createSessionToken('identity-123', Number.NaN)).toThrow(/generation/);
   });
 
-  it('still accepts a legacy v1 cookie, dating it from the standard TTL', () => {
-    const exp = Date.now() + SESSION_TTL_MS;
-    const sig = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET || 'dev-only-insecure-session-secret').update(`identity-123.${exp}`).digest('base64url');
-    const session = verifySessionToken(`v1.identity-123.${exp}.${sig}`);
-    expect(session?.identityId).toBe('identity-123');
-    expect(session!.issuedAtMs).toBeLessThanOrEqual(Date.now() + 1000);
+  it('verifies legacy signatures without claiming a generation', () => {
+    const issuedAt = Date.now();
+    const expiresAt = issuedAt + SESSION_TTL_MS;
+    const v1 = `identity-123.${expiresAt}`;
+    const v2 = `identity-123.${issuedAt}.${expiresAt}`;
+    expect(verifySessionToken(`v1.${v1}.${sign(v1)}`)).toMatchObject({ identityId: 'identity-123' });
+    expect(verifySessionToken(`v2.${v2}.${sign(v2)}`)).toMatchObject({ identityId: 'identity-123' });
+    expect(verifySessionToken(`v2.${v2}.${sign(v2)}`)?.generation).toBeUndefined();
   });
 
-  it('rejects a raw identity id (the old unsigned format)', () => {
-    expect(verifySessionToken('identity-123')).toBeNull();
-  });
-
-  it('rejects garbage', () => {
-    expect(verifySessionToken('')).toBeNull();
-    expect(verifySessionToken('v1...')).toBeNull();
-    expect(verifySessionToken('v2.id.123.sig')).toBeNull();
-    expect(verifySessionToken('v2.id.1.2.sig')).toBeNull();
+  it('refuses nonfinite and malformed signed timestamps', () => {
+    const payload = `v3.identity-123.none.NaN.${Date.now() + SESSION_TTL_MS}`;
+    expect(verifySessionToken(`${payload}.${sign(payload)}`)).toBeNull();
+    for (const token of ['identity-123', '', 'v1...', 'v2.id.123.sig', 'v3.id.none.1.2.sig']) {
+      expect(verifySessionToken(token)).toBeNull();
+    }
   });
 });

@@ -1,5 +1,10 @@
 /** Reviewable UI drafts; importing this file never writes or approves CMS content. */
 export const UNIT_PUBLICATION_KEYS = [
+  { suffix: 'edit_description', en: 'Edit description', ru: 'Редактировать описание', th: 'แก้ไขคำอธิบาย', zh: '编辑描述' },
+  { suffix: 'edit_tariffs', en: 'Edit rates and booking rules', ru: 'Тарифы и правила бронирования', th: 'แก้ไขราคาและกฎการจอง', zh: '编辑价格和预订规则' },
+  { suffix: 'publish_saved', en: '{name} is set to live. Review its public visibility and booking readiness.', ru: '{name}: статус «Опубликован» сохранён. Проверьте публичную страницу и готовность к бронированию.', th: 'บันทึกสถานะเผยแพร่ของ {name} แล้ว โปรดตรวจสอบการแสดงต่อสาธารณะและความพร้อมรับจอง', zh: '{name} 已设为上线。请核验公开展示和预订准备情况。' },
+  { suffix: 'pause_saved', en: '{name} is set to paused.', ru: '{name}: статус «Приостановлен» сохранён.', th: 'บันทึกสถานะหยุดพักของ {name} แล้ว', zh: '{name} 已设为暂停。' },
+  { suffix: 'review_status', en: 'Review publication and bookings', ru: 'Проверить публикацию и бронирования', th: 'ตรวจสอบการเผยแพร่และการจอง', zh: '检查发布和预订状态' },
   { suffix: 'title', en: 'Publication and bookings', ru: 'Публикация и бронирования', th: 'การเผยแพร่และการจอง', zh: '发布与预订' },
   { suffix: 'inquiries', en: 'Published · inquiries', ru: 'Опубликовано · обращения', th: 'เผยแพร่แล้ว · รับคำสอบถาม', zh: '已发布 · 可咨询' },
   { suffix: 'visible', en: 'Published · inquiries unavailable', ru: 'Опубликовано · обращения недоступны', th: 'เผยแพร่แล้ว · ยังรับคำสอบถามไม่ได้', zh: '已发布 · 暂不接受咨询' },

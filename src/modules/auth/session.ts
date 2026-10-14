@@ -1,22 +1,14 @@
 import crypto from 'crypto';
 
 /**
- * Signed session tokens.
+ * Signed sessions bind to the identity generation that was actually authenticated.
+ * v3.<id>.<generation-or-none>.<issuedAtMs>.<expiresAtMs>.<signature>
  *
- * Format: `v2.<identityId>.<issuedAtMs>.<expiresAtMs>.<signature>`
- * Signature: HMAC-SHA256 over `<identityId>.<issuedAtMs>.<expiresAtMs>` with SESSION_SECRET.
- *
- * `issuedAtMs` is what makes sessions revocable without a session table: an
- * identity carries `sessionsValidFrom`, and any token issued before it is
- * refused (see `lib/session.ts`). Legacy `v1.<id>.<expiresAtMs>.<sig>` cookies
- * still verify so nobody is signed out by the rollout; their issue time is
- * derived from the standard TTL, which can only make them look *older*, i.e.
- * the safe side of a revocation.
- *
- * The cookie value is opaque to the client and tamper-evident: changing the
- * identity id or expiry invalidates the signature. No DB round-trip is needed
- * to verify; the identity row is still checked (exists, not blocked) by the
- * caller.
+ * Generation comes from the authenticated identity snapshot, never from a later
+ * lookup after password verification. A concurrent recovery therefore invalidates
+ * an in-flight old-credential login even if its response is sent afterwards.
+ * Legacy v1/v2 signatures still verify; session resolution accepts them only while
+ * sessionsValidFrom is null. A prior revocation requires signing in again.
  */
 
 export const SESSION_COOKIE_NAME = 'auth-session';
@@ -37,17 +29,25 @@ function sign(payload: string): string {
   return crypto.createHmac('sha256', getSessionSecret()).update(payload).digest('base64url');
 }
 
-export function createSessionToken(identityId: string, ttlMs: number = SESSION_TTL_MS): string {
+export function createSessionToken(
+  identityId: string,
+  generation: number | null,
+  ttlMs: number = SESSION_TTL_MS,
+): string {
+  if (generation !== null && (!Number.isSafeInteger(generation) || generation < 0)) {
+    throw new Error('A valid session generation is required');
+  }
   const issuedAtMs = Date.now();
   const expiresAtMs = issuedAtMs + ttlMs;
-  const payload = `${identityId}.${issuedAtMs}.${expiresAtMs}`;
-  return `v2.${payload}.${sign(payload)}`;
+  const payload = `v3.${identityId}.${generation === null ? 'none' : generation}.${issuedAtMs}.${expiresAtMs}`;
+  return `${payload}.${sign(payload)}`;
 }
 
 export interface VerifiedSession {
   identityId: string;
-  /** When the token was issued; compared with the identity's `sessionsValidFrom`. */
   issuedAtMs: number;
+  /** Undefined only for a legacy v1/v2 token. Null is the initial generation. */
+  generation?: number | null;
 }
 
 function constantTimeEqual(signature: string, expected: string): boolean {
@@ -56,22 +56,35 @@ function constantTimeEqual(signature: string, expected: string): boolean {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+function validTime(value: string): boolean {
+  return /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) >= 0;
+}
+
 export function verifySessionToken(token: string): VerifiedSession | null {
   const parts = token.split('.');
 
+  if (parts.length === 6 && parts[0] === 'v3') {
+    const [, identityId, generation, issuedAt, expiresAt, signature] = parts;
+    if (!identityId || !signature || !validTime(issuedAt) || !validTime(expiresAt)) return null;
+    if (generation !== 'none' && !validTime(generation)) return null;
+    if (!constantTimeEqual(signature, sign(parts.slice(0, 5).join('.')))) return null;
+    if (Number(expiresAt) <= Date.now() || Number(expiresAt) <= Number(issuedAt)) return null;
+    return { identityId, issuedAtMs: Number(issuedAt), generation: generation === 'none' ? null : Number(generation) };
+  }
+
   if (parts.length === 5 && parts[0] === 'v2') {
     const [, identityId, issuedAt, expiresAt, signature] = parts;
-    if (!identityId || !issuedAt || !expiresAt || !signature) return null;
+    if (!identityId || !signature || !validTime(issuedAt) || !validTime(expiresAt)) return null;
     if (!constantTimeEqual(signature, sign(`${identityId}.${issuedAt}.${expiresAt}`))) return null;
-    if (Number(expiresAt) < Date.now()) return null;
+    if (Number(expiresAt) <= Date.now() || Number(expiresAt) <= Number(issuedAt)) return null;
     return { identityId, issuedAtMs: Number(issuedAt) };
   }
 
   if (parts.length === 4 && parts[0] === 'v1') {
     const [, identityId, expiresAt, signature] = parts;
-    if (!identityId || !expiresAt || !signature) return null;
+    if (!identityId || !signature || !validTime(expiresAt)) return null;
     if (!constantTimeEqual(signature, sign(`${identityId}.${expiresAt}`))) return null;
-    if (Number(expiresAt) < Date.now()) return null;
+    if (Number(expiresAt) <= Date.now()) return null;
     return { identityId, issuedAtMs: Number(expiresAt) - SESSION_TTL_MS };
   }
 

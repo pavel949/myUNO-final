@@ -52,9 +52,13 @@ export default function ContentAdminClient({
   const [preview, setPreview] = useState<Record<string, string>>({});
   const [previewBusy, setPreviewBusy] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const namespaceRequest = useRef(0);
+  const confirmedInitialKeys = useRef(initialKeys);
+  const savePending = useRef(false);
 
   const loadNamespace = useCallback(
     async (namespace: string) => {
+      const request = ++namespaceRequest.current;
       setLoadingKeys(true);
       setError(null);
       try {
@@ -64,23 +68,36 @@ export default function ContentAdminClient({
         if (!response.ok) throw new Error(labels['admin.content.error_generic']);
         const data = await response.json();
         const rows = Array.isArray(data.keys) ? data.keys.map(mapApiKey) : [];
+        if (request !== namespaceRequest.current) return;
         setKeys(rows);
         setDrafts({});
       } catch (err) {
+        if (request !== namespaceRequest.current) return;
         setError(err instanceof Error ? err.message : labels['admin.content.error_generic']);
         setKeys([]);
       } finally {
-        setLoadingKeys(false);
+        if (request === namespaceRequest.current) setLoadingKeys(false);
       }
     },
     [labels]
   );
 
   useEffect(() => {
-    if (activeNs && activeNs !== initialNamespace) {
+    confirmedInitialKeys.current = initialKeys;
+  }, [initialKeys]);
+
+  useEffect(() => {
+    if (activeNs === initialNamespace) {
+      namespaceRequest.current += 1;
+      setKeys(confirmedInitialKeys.current);
+      setDrafts({});
+      setError(null);
+      setLoadingKeys(false);
+    } else if (activeNs) {
       void loadNamespace(activeNs);
     }
-  }, [activeNs, initialNamespace, loadNamespace]);
+    return () => { namespaceRequest.current += 1; };
+  }, [activeNs, initialNamespace, initialKeys, loadNamespace]);
 
   const draftId = (key: string, locale: string) => `${key}::${locale}`;
 
@@ -88,7 +105,8 @@ export default function ContentAdminClient({
     if (!row.id) { setError(labels['admin.content.error_generic']); return; }
     const id = draftId(row.key, locale);
     const value = drafts[id];
-    if (value === undefined) return;
+    if (value === undefined || savePending.current) return;
+    savePending.current = true;
     setBusyKey(id);
     setError(null);
     try {
@@ -101,11 +119,28 @@ export default function ContentAdminClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.content.error_generic']);
       }
+      const data = await response.json().catch(() => null);
+      if (data?.success !== true || data?.key?.id !== row.id ||
+          data?.key?.key !== row.key || !Array.isArray(data?.key?.translations)) {
+        throw new Error(labels['admin.content.error_generic']);
+      }
+      const confirmed = mapApiKey(data.key);
+      setKeys(rows => rows.map(entry => entry.id === confirmed.id ? confirmed : entry));
+      confirmedInitialKeys.current = confirmedInitialKeys.current.map(entry =>
+        entry.id === confirmed.id ? confirmed : entry);
+      setDrafts(previous => {
+        // Do not discard a newer edit typed while this save was in flight.
+        if (previous[id] !== value) return previous;
+        const next = { ...previous };
+        delete next[id];
+        return next;
+      });
       setSavedFlash(id);
       setTimeout(() => setSavedFlash(null), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.content.error_generic']);
     } finally {
+      savePending.current = false;
       setBusyKey(null);
     }
   };
@@ -275,7 +310,7 @@ export default function ContentAdminClient({
                           variant="ghost"
                           onClick={() => save(row, locale)}
                           isLoading={busyKey === id}
-                          disabled={!row.id || drafts[id] === undefined}
+                          disabled={busyKey !== null || !row.id || drafts[id] === undefined}
                         >
                           {savedFlash === id
                             ? labels['admin.content.saved']

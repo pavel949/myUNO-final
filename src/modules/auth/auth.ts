@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { advanceSessionGeneration } from '@/lib/session-generation';
 import { sendEmail } from './email';
 import {
   RegisterInput,
@@ -244,23 +245,25 @@ export async function confirmPasswordReset(input: PasswordResetConfirmInput) {
 
   const hashedPassword = await hashPassword(newPassword);
 
-  await prisma.$transaction([
-    prisma.identity.update({
+  await prisma.$transaction(async (tx) => {
+    // Consumption and credential change are one transaction. A concurrent use of
+    // this link must not pass merely because both requests read it before hashing.
+    const consumed = await tx.oneTimeToken.updateMany({
+      where: { id: oneTimeToken.id, purpose: 'password_reset', consumedAt: null, expiresAt: { gt: new Date() } },
+      data: { consumedAt: new Date() },
+    });
+    if (consumed.count !== 1) {
+      throw createAuthError('invalid_token', 'Invalid or expired reset link', 401);
+    }
+    await tx.identity.update({
       where: { id: oneTimeToken.identityId },
-      // A reset proves control of the mailbox (so the address is now verified) and
-      // ends every existing session — the usual reason to reset is a lost or
-      // compromised credential.
       data: {
         hashedPassword,
-        sessionsValidFrom: new Date(),
         emailVerifiedAt: oneTimeToken.identity.emailVerifiedAt ?? new Date(),
       },
-    }),
-    prisma.oneTimeToken.update({
-      where: { id: oneTimeToken.id },
-      data: { consumedAt: new Date() },
-    }),
-  ]);
+    });
+    await advanceSessionGeneration(tx, oneTimeToken.identityId);
+  });
 
   return { success: true };
 }

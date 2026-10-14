@@ -561,3 +561,254 @@ describe('Owner Statement Generation — golden numbers', () => {
   })
 
 })
+
+describe('Owner Statement Generation — distinct period overlap guard', () => {
+  // Pause the first real insert after its overlap query, while it still owns
+  // the transaction's ledger lock. The competing request must either wait on
+  // that exact PostgreSQL lock or reach a second insert (a broken-lock path).
+  let insertGate: {
+    unitId: string
+    count: number
+    entered: () => void
+    released: Promise<void>
+  } | null = null
+  db.$use(async (params, next) => {
+    if (
+      insertGate && params.model === 'OwnerStatement' &&
+      params.action === 'create' && params.args.data.unitId === insertGate.unitId
+    ) {
+      const gate = insertGate
+      gate.count++
+      if (gate.count === 1) {
+        gate.entered()
+        await gate.released
+      }
+    }
+    return next(params)
+  })
+
+  async function waitForOtherWriter(unitId: string, gate: NonNullable<typeof insertGate>) {
+    const lockKey = 'unit-ledger:' + unitId
+    const deadline = Date.now() + 4_000
+    while (gate.count < 2) {
+      // A pool that cannot admit the observer must fail within the deadline,
+      // rather than hanging while the first writer is deliberately paused.
+      const [row] = await db.$transaction(tx => tx.$queryRaw<Array<{ waiting: boolean }>>`
+          SELECT EXISTS (
+            SELECT 1 FROM pg_locks
+            WHERE locktype = 'advisory' AND mode = 'ExclusiveLock'
+              AND NOT granted AND objsubid = 1
+              AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+              AND classid = (((hashtextextended(${lockKey}, 0) >> 32) & 4294967295)::oid)
+              AND objid = ((hashtextextended(${lockKey}, 0) & 4294967295)::oid)
+          ) AS waiting
+        `, { maxWait: 1_000, timeout: 2_000 })
+      if (row.waiting) return
+      if (Date.now() > deadline) {
+        throw new Error('The competing statement never reached the insert or unit ledger lock')
+      }
+      await new Promise(resolve => setTimeout(resolve, 10))
+    }
+  }
+
+  async function fixture() {
+    await resetDb()
+    await setGlobalConfig('finance.statement.service_fee_pct', 0)
+    const admin = await createIdentity({ isAdmin: true })
+    const owner = await createIdentity()
+    const project = await createProject()
+
+    async function addUnit() {
+      const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id })
+      await db.unitEngagement.create({
+        data: {
+          unitId: unit.id,
+          ownerIdentityId: owner.id,
+          engagementType: 'direct_managed',
+          status: 'active',
+          noiCapAnnualThb: 1_000_000,
+        },
+      })
+      return unit
+    }
+
+    mockGetCurrentUser.mockResolvedValue(currentUser(admin, true))
+    return { unit: await addUnit(), addUnit }
+  }
+
+  async function generate(
+    unitId: string,
+    periodStart = '2026-07-01',
+    periodEnd = '2026-07-31',
+    regenerate = false
+  ) {
+    const res = await generatePost(post({ unitId, periodStart, periodEnd, regenerate }))
+    return { res, body: await res.json() }
+  }
+
+  it.each([
+    ['the first calendar day', '2026-06-15', '2026-07-01'],
+    ['the last calendar day', '2026-07-31', '2026-08-15'],
+    ['a contained range', '2026-07-10', '2026-07-20'],
+    ['a containing range', '2026-06-01', '2026-08-31'],
+  ])('refuses a distinct period overlapping %s', async (_case, start, end) => {
+    const { unit } = await fixture()
+    const original = await generate(unit.id)
+    expect(original.res.status).toBe(200)
+
+    const overlap = await generate(unit.id, start, end)
+    expect(overlap.res.status).toBe(409)
+    expect(overlap.body.code).toBe('statement_period_overlap')
+    expect(overlap.body.statementId).toBe(original.body.statement.id)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(1)
+  })
+
+  it('does not let regenerate bypass a distinct overlapping period with the same start', async () => {
+    const { unit } = await fixture()
+    const original = await generate(unit.id)
+    expect(original.res.status).toBe(200)
+
+    const overlap = await generate(unit.id, '2026-07-01', '2026-08-15', true)
+    expect(overlap.res.status).toBe(409)
+    expect(overlap.body.code).toBe('statement_period_overlap')
+    expect(overlap.body.statementId).toBe(original.body.statement.id)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(1)
+  })
+
+  it('allows adjacent periods that share no inclusive calendar day', async () => {
+    const { unit } = await fixture()
+    expect((await generate(unit.id)).res.status).toBe(200)
+    expect((await generate(unit.id, '2026-06-01', '2026-06-30')).res.status).toBe(200)
+    expect((await generate(unit.id, '2026-08-01', '2026-08-31')).res.status).toBe(200)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(3)
+  })
+
+  it('does not confuse another unit with an overlapping period', async () => {
+    const { unit, addUnit } = await fixture()
+    const otherUnit = await addUnit()
+    expect((await generate(unit.id)).res.status).toBe(200)
+    expect((await generate(otherUnit.id, '2026-07-10', '2026-07-20')).res.status).toBe(200)
+    expect(await db.ownerStatement.count({ where: { unitId: otherUnit.id } })).toBe(1)
+  })
+
+  it('ignores a superseded period while preserving its historical row', async () => {
+    const { unit } = await fixture()
+    const original = await generate(unit.id)
+    expect(original.res.status).toBe(200)
+    await db.ownerStatement.update({
+      where: { id: original.body.statement.id },
+      data: { status: 'superseded' },
+    })
+
+    const replacement = await generate(unit.id, '2026-07-10', '2026-07-20')
+    expect(replacement.res.status).toBe(200)
+    expect(replacement.body.statement.id).not.toBe(original.body.statement.id)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(2)
+    expect((await db.ownerStatement.findUniqueOrThrow({
+      where: { id: original.body.statement.id },
+    })).status).toBe('superseded')
+  })
+
+  it('keeps exact-period duplicates refused and rebuilds an unsigned draft in place', async () => {
+    const { unit } = await fixture()
+    const original = await generate(unit.id)
+    expect(original.res.status).toBe(200)
+
+    const duplicate = await generate(unit.id)
+    expect(duplicate.res.status).toBe(409)
+    expect(duplicate.body.error).toContain('already exists')
+    expect(duplicate.body.code).not.toBe('statement_period_overlap')
+
+    const rebuilt = await generate(unit.id, '2026-07-01', '2026-07-31', true)
+    expect(rebuilt.res.status).toBe(200)
+    expect(rebuilt.body.regenerated).toBe(true)
+    expect(rebuilt.body.statement.id).toBe(original.body.statement.id)
+    expect(rebuilt.body.supersededStatementId).toBeNull()
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(1)
+  })
+
+  it.each(['published', 'pending_owner_review'] as const)(
+    'preserves exact-period replacement of an unsigned %s report',
+    async status => {
+      const { unit } = await fixture()
+      const original = await generate(unit.id)
+      expect(original.res.status).toBe(200)
+      await db.ownerStatement.update({
+        where: { id: original.body.statement.id },
+        data: {
+          status,
+          signedOffByOperatorAt: new Date('2026-08-01T00:00:00.000Z'),
+          signedOffByOwnerAt: null,
+        },
+      })
+
+      const replacement = await generate(unit.id, '2026-07-01', '2026-07-31', true)
+      expect(replacement.res.status).toBe(200)
+      expect(replacement.body.statement.id).not.toBe(original.body.statement.id)
+      expect(replacement.body.supersededStatementId).toBe(original.body.statement.id)
+      const old = await db.ownerStatement.findUniqueOrThrow({
+        where: { id: original.body.statement.id },
+      })
+      expect(old.status).toBe('superseded')
+      expect(await db.ownerStatement.count({
+        where: { unitId: unit.id, status: { not: 'superseded' } },
+      })).toBe(1)
+    }
+  )
+
+  it('continues to refuse exact-period regeneration after owner sign-off', async () => {
+    const { unit } = await fixture()
+    const original = await generate(unit.id)
+    expect(original.res.status).toBe(200)
+    await db.ownerStatement.update({
+      where: { id: original.body.statement.id },
+      data: {
+        status: 'signed_off',
+        signedOffByOwnerAt: new Date('2026-08-01T00:00:00.000Z'),
+        signedOffByOperatorAt: new Date('2026-08-01T00:00:00.000Z'),
+      },
+    })
+
+    const refused = await generate(unit.id, '2026-07-01', '2026-07-31', true)
+    expect(refused.res.status).toBe(409)
+    expect(refused.body.code).toBe('statement_not_regenerable')
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(1)
+  })
+
+  it('serializes two concurrent overlapping requests and commits only one statement', async () => {
+    const { unit } = await fixture()
+    let enter!: () => void
+    let release!: () => void
+    const entered = new Promise<void>(resolve => { enter = resolve })
+    const released = new Promise<void>(resolve => { release = resolve })
+    const gate = { unitId: unit.id, count: 0, entered: enter, released }
+    insertGate = gate
+    const first = generate(unit.id, '2026-07-01', '2026-07-31')
+    let second: ReturnType<typeof generate> | undefined
+    let readyTimer: ReturnType<typeof setTimeout> | undefined
+    try {
+      await Promise.race([
+        entered,
+        first.then(() => { throw new Error('The first statement never reached the insert barrier') }),
+        new Promise<void>((_, reject) => {
+          readyTimer = setTimeout(() => reject(new Error('The first statement insert barrier timed out')), 4_000)
+        }),
+      ])
+      clearTimeout(readyTimer)
+      second = generate(unit.id, '2026-07-15', '2026-08-15')
+      await waitForOtherWriter(unit.id, gate)
+    } finally {
+      clearTimeout(readyTimer)
+      release()
+      await Promise.allSettled(second ? [first, second] : [first])
+      insertGate = null
+    }
+    const outcomes = await Promise.all([first, second!])
+    expect(outcomes.map(({ res }) => res.status).sort((a, b) => a - b)).toEqual([200, 409])
+    const successful = outcomes.find(({ res }) => res.status === 200)!
+    const refused = outcomes.find(({ res }) => res.status === 409)!
+    expect(refused.body.code).toBe('statement_period_overlap')
+    expect(refused.body.statementId).toBe(successful.body.statement.id)
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(1)
+  })
+})

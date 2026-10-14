@@ -1,6 +1,7 @@
 import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { logAudit } from '@/modules/audit';
+import { advanceSessionGeneration } from '@/lib/session-generation';
 
 /**
  * A person's own account: who they are, how they sign in, and what reaches them.
@@ -139,14 +140,14 @@ export async function changeAccountPassword(
   identityId: string,
   currentPassword: string,
   newPassword: string
-): Promise<{ changed: true }> {
+): Promise<{ changed: true; sessionsValidFrom: Date }> {
   if (newPassword.length < 8) {
     throw new Error('A password must be at least 8 characters');
   }
 
   const identity = await db.identity.findUnique({
     where: { id: identityId },
-    select: { hashedPassword: true },
+    select: { hashedPassword: true, sessionsValidFrom: true },
   });
   if (!identity?.hashedPassword) {
     throw new Error('This account has no password set. Use the reset link instead.');
@@ -163,10 +164,19 @@ export async function changeAccountPassword(
     throw new Error('The new password must differ from the current one');
   }
 
-  await db.identity.update({
-    where: { id: identityId },
-    // Every other session ends with the old password; the caller re-issues its own.
-    data: { hashedPassword: await bcrypt.hash(newPassword, BCRYPT_COST), sessionsValidFrom: new Date() },
+  const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_COST);
+  const sessionsValidFrom = await db.$transaction(async (tx) => {
+    // The password and generation we proved must still be current at the write.
+    const changed = await tx.identity.updateMany({
+      where: { id: identityId, status: 'active', hashedPassword: identity.hashedPassword, sessionsValidFrom: identity.sessionsValidFrom },
+      data: { hashedPassword },
+    });
+    if (changed.count !== 1) {
+      const error = new Error('Credentials changed. Sign in again before changing the password.');
+      (error as { code?: string }).code = 'STALE_CREDENTIALS';
+      throw error;
+    }
+    return advanceSessionGeneration(tx, identityId);
   });
 
   await logAudit({
@@ -177,7 +187,7 @@ export async function changeAccountPassword(
     data: {},
   }).catch(() => null);
 
-  return { changed: true };
+  return { changed: true, sessionsValidFrom };
 }
 
 // --- Notification preferences --------------------------------------------
@@ -266,11 +276,11 @@ export async function setNotificationPreference(
 /**
  * End every session of one identity ("log out everywhere"). Sessions are signed
  * tokens with no server record, so revocation is a cut-off time on the identity:
- * anything issued before it is refused. The caller is expected to clear or
+ * a token from another generation is refused. The caller is expected to clear or
  * re-issue its own cookie.
  */
 export async function revokeAllSessions(db: PrismaClient, identityId: string): Promise<void> {
-  await db.identity.update({ where: { id: identityId }, data: { sessionsValidFrom: new Date() } });
+  await advanceSessionGeneration(db, identityId);
   await logAudit({
     actorIdentityId: identityId,
     action: 'account:revoke_sessions',

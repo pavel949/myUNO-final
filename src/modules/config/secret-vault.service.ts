@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { decrypt, encrypt } from '@/lib/encryption';
 import { SECRET_NAME_PATTERN } from '@/lib/secret-catalog';
 
@@ -15,7 +15,7 @@ import { SECRET_NAME_PATTERN } from '@/lib/secret-catalog';
  */
 
 async function audit(
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   actorIdentityId: string,
   action: string,
   name: string,
@@ -65,12 +65,14 @@ export async function saveVaultEntry(
     data.last4 = input.value.length >= 8 ? input.value.slice(-4) : '';
   }
   if (input.notes !== undefined) data.notes = input.notes ? input.notes.slice(0, 500) : null;
-  await db.secretVaultEntry.upsert({
-    where: { name: input.name },
-    create: { name: input.name, ...data },
-    update: data,
+  await db.$transaction(async (tx) => {
+    await tx.secretVaultEntry.upsert({
+      where: { name: input.name },
+      create: { name: input.name, ...data },
+      update: data,
+    });
+    await audit(tx, input.actorIdentityId, 'secret_vault:saved', input.name, { valueChanged: typeof input.value === 'string' && input.value.length > 0 });
   });
-  await audit(db, input.actorIdentityId, 'secret_vault:saved', input.name, { valueChanged: typeof input.value === 'string' && input.value.length > 0 });
 }
 
 export async function revealVaultEntry(
@@ -88,9 +90,11 @@ export async function clearVaultValue(
   input: { name: string; actorIdentityId: string }
 ): Promise<void> {
   assertName(input.name);
-  await db.secretVaultEntry.updateMany({
-    where: { name: input.name },
-    data: { valueEncrypted: null, last4: null, updatedByIdentityId: input.actorIdentityId },
+  await db.$transaction(async (tx) => {
+    await tx.secretVaultEntry.updateMany({
+      where: { name: input.name },
+      data: { valueEncrypted: null, last4: null, updatedByIdentityId: input.actorIdentityId },
+    });
+    await audit(tx, input.actorIdentityId, 'secret_vault:cleared', input.name, {});
   });
-  await audit(db, input.actorIdentityId, 'secret_vault:cleared', input.name, {});
 }

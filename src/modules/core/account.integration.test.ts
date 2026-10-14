@@ -81,7 +81,7 @@ describe('a person managing their own account', () => {
     it('changes when the current one is proved', async () => {
       await expect(
         changeAccountPassword(db, identityId, 'current-password', 'a-new-password')
-      ).resolves.toEqual({ changed: true });
+      ).resolves.toMatchObject({ changed: true, sessionsValidFrom: expect.any(Date) });
 
       const identity = await db.identity.findUnique({ where: { id: identityId } });
       expect(await bcrypt.compare('a-new-password', identity!.hashedPassword!)).toBe(true);

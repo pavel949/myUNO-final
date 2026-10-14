@@ -1,3 +1,5 @@
+import { requireAdminPage } from '@/app/libs/requireAdminPage';
+import { UNIT_PUBLICATION_LABELS, UNIT_PUBLICATION_DRAFTS } from '@/modules/content/unit-publication.seed';
 import UnitPublicationPanel from '@/components/units/UnitPublicationPanel';
 import { UI_LOCALE } from '@/lib/format';
 import { notFound } from 'next/navigation';
@@ -90,6 +92,8 @@ const COMMERCIAL_LABELS = {
  * rate-plan hierarchy rather than silently relying on a legacy category key.
  */
 export default async function UnitOnboardingPage({ params }: { params: { id: string } }) {
+  await requireAdminPage();
+
   const unit = await prisma.unit.findUnique({
     where: { id: params.id },
     include: {
@@ -103,6 +107,10 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
   });
 
   if (!unit) notFound();
+
+  const descriptionContent = unit.descriptionKey
+    ? await prisma.contentKey.findUnique({ where: { key: unit.descriptionKey }, select: { namespace: true } })
+    : null;
 
   const ratePlans = await prisma.ratePlan.findMany({
     where: {
@@ -123,6 +131,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       : Promise.resolve(1),
   ]);
   const labels = await getLabels({
+    ...UNIT_PUBLICATION_LABELS,
     'admin.units.breadcrumb_home': 'Home',
     'admin.units.breadcrumb_admin': 'Admin',
     'admin.units.breadcrumb_units': 'Units',
@@ -211,7 +220,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     'admin.tariff_preview.deposit': 'Refundable security deposit',
     'admin.tariff_preview.confirmation': 'Confirmation payment',
 
-  });
+  }, undefined, UNIT_PUBLICATION_DRAFTS);
 
   const checklistByStep = Object.fromEntries(
     unit.mobilizationChecklist.map((item) => [item.step, item])
@@ -239,10 +248,21 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
       <h1 className="font-display text-display-xl font-semibold text-text-ink mt-8 mb-24">
         {unit.name} · {labels['admin.onboarding.title']}
       </h1>
-      <Link href={`/app/admin/properties/${unit.project.id}/onboarding?gallery=unit:${unit.id}#step-7`}
-        className="inline-block mb-24 rounded-md border border-border-line px-16 py-12 text-brand-andaman">
-        {labels['admin.gallery.manage']} →
-      </Link>
+      <div className="mb-24 flex flex-wrap gap-8">
+        <Link href={`/app/admin/properties/${unit.project.id}/onboarding?gallery=unit:${unit.id}#step-7`}
+          className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+          {labels['admin.gallery.manage']} →
+        </Link>
+        {unit.descriptionKey && descriptionContent && <Link
+          href={`/app/admin/content?ns=${encodeURIComponent(descriptionContent.namespace)}&key=${encodeURIComponent(unit.descriptionKey)}`}
+          className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+          {labels['admin.unit_publication.edit_description']} →
+        </Link>}
+        <Link href="#unit-tariffs"
+          className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+          {labels['admin.unit_publication.edit_tariffs']} →
+        </Link>
+      </div>
 
       <UnitPublicationPanel unitId={unit.id} />
 
@@ -332,7 +352,7 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
         permittedUseConfirmed={Boolean(unit.permittedUseConfirmedAt)}
       />
 
-      <div className="mt-32">
+      <div id="unit-tariffs" className="mt-32 scroll-mt-96">
         <BookingModeClient unitId={unit.id} instantBook={unit.instantBook} categoryUnits={categoryUnits} labels={commercialLabels} />
         <TariffEditorClient unitId={unit.id} labels={commercialLabels} />
         <AvailabilityPricingPanel unitId={unit.id} labels={labels} />

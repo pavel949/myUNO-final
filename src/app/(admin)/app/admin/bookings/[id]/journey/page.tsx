@@ -1,3 +1,4 @@
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 /* eslint-disable local-rules/no-literal-ui-text -- operational diagnostic labels; localization is handled in a separate content pass */
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -71,7 +72,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
   const ownerPayoutReconciled = statements.some(s => s.payouts.some(p => p.status === 'reconciled'));
   const checks = [
     { name: 'Payment / ledger reconciliation', good: cashReconciled, description: cashReconciled ? 'Successful rental receipts match the rental ledger.' : 'Payment and ledger need reconciliation.' },
-    { name: 'Outstanding guest balance', good: booking.balanceDueThb === 0, description: `฿${money(booking.balanceDueThb)} outstanding` },
+    { name: 'Outstanding guest balance', good: outstandingStayBalanceSatang(booking) === 0, description: `฿${money(outstandingStayBalanceSatang(booking))} outstanding` },
     { name: 'Refund obligations', good: booking.refundAccruedThb === 0 && outstandingRefunds.length === 0, description: `฿${money(booking.refundAccruedThb)} liability · ${outstandingRefunds.length} in flight` },
     { name: 'Stay operationally closed', good: stayClosed, description: `Booking status: ${booking.status.replace(/_/g, ' ')}` },
     { name: 'Owner statement', good: ownerRecorded, description: ownerRecorded ? `${statements.length} statement(s) linked` : 'No statement line linked yet.' },

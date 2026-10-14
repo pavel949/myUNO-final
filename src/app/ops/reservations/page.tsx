@@ -1,3 +1,4 @@
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import type { BookingStatus } from '@prisma/client';
@@ -164,7 +165,7 @@ export default async function ReservationDesk({
   }).format(now);
   const arrivals=bookings.filter(b=>b.startDate.toISOString().slice(0,10)===bangkokDay).length;
   const requests=bookings.filter(b=>b.status==='requested').length;
-  const balance=bookings.reduce((sum,b)=>sum+Math.max(0,b.balanceDueThb),0);
+  const balance=bookings.reduce((sum,b)=>sum+outstandingStayBalanceSatang(b),0);
 
   const statusHref=(value:BookingStatus|'' )=>'/ops/reservations?'+new URLSearchParams({
     spaceId,...(value?{status:value}:{}),

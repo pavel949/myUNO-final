@@ -27,6 +27,8 @@ export interface RecordCashPaymentInput {
   amountThb: number;
   receivedByIdentityId: string;
   receiptRef: string;
+  /** Optional server policy, rechecked while holding the stay inventory lock. */
+  authorizeBooking?: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
 }
 
 export interface RecordCashRefundInput {
@@ -169,6 +171,9 @@ export async function recordCashPayment(
       const locked = await lockBookingInventory(tx, bookingId);
       booking = locked;
       if (!booking) throw new Error(`Booking ${bookingId} not found`);
+      if (input.authorizeBooking && !(await input.authorizeBooking(tx as PrismaClient, booking))) {
+        throw Object.assign(new Error('Forbidden'), { code: 'BOOKING_FORBIDDEN' });
+      }
       if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
       if (purpose === 'stay') {
         if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');

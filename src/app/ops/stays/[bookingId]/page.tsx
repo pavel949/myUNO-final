@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { pmsNavigationHref } from '@/lib/pms-navigation';
 import { notFound,redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
+import { resolveBookingOperationsAccess } from '@/app/libs/bookingOperationsAccess';
+import { canConfirmUnpaidBooking } from '@/app/libs/bookingOperatorAccess';
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
@@ -16,7 +18,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   if(!user)redirect('/login?next=/ops/stays/'+params.bookingId);
   const booking=await prisma.booking.findUnique({where:{id:params.bookingId},
     select:{
-      id:true,status:true,startDate:true,endDate:true,totalThb:true,balanceDueThb:true,
+      id:true,status:true,updatedAt:true,holdExpiresAt:true,startDate:true,endDate:true,totalThb:true,balanceDueThb:true,
       refundAccruedThb:true,channel:true,projectId:true,unitId:true,guestNote:true,
       unit:{select:{name:true,inventoryCategory:{select:{name:true}}}},
       project:{select:{name:true}},
@@ -35,9 +37,13 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
     },
   });
   if(!booking)notFound();
-  const access=await Promise.all(['reservations','front_desk','housekeeping','guest_care','finance'].map(department=>hasProjectDepartmentAccess(user,booking.projectId,department)));
-  if(!access.some(Boolean))notFound();
-  const canSeeFinance=access[4];
+  const access=await resolveBookingOperationsAccess(user,booking,prisma);
+  if(!access.canView)notFound();
+  const canSeeFinance=access.canSeeFinance;
+  const balanceSatang=outstandingStayBalanceSatang(booking);
+  const canConfirmUnpaid=booking.status==='pending_payment'&&booking.payments.length===0&&!booking.depositPreauth&&
+    (!booking.holdExpiresAt||booking.holdExpiresAt>new Date())&&
+    await canConfirmUnpaidBooking(prisma,user.identityId,booking);
   const locale=getRequestLocale();
   const labels=await getLabels({
     ...checkOutModalLabelDrafts,
@@ -71,6 +77,10 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
     'staff.stay_360.request':'Approve request',
     'staff.stay_360.cash':'Record cash payment',
     'staff.stay_360.receipt':'Receipt reference',
+    'staff.stay_360.confirm_unpaid':'Confirm reservation — payment outstanding',
+    'staff.stay_360.confirm_unpaid_note':'Keep these dates reserved until an authorized cancellation. No payment or deposit authorization is recorded by this action.',
+    'staff.stay_360.confirm_reason':'Reason for confirming before payment',
+    'staff.stay_360.payment_outstanding':'Reservation confirmed. Payment is still outstanding.',
     'staff.stay_360.check_in':'Check in',
     'staff.stay_360.check_out':'Check out',
     'staff.stay_360.error':'Action failed; check the booking and retry.',
@@ -98,13 +108,15 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
         {[
           [labels['staff.stay_360.total'],amount(booking.totalThb)],
           [labels['staff.stay_360.collected'],amount(paid)],
-          [labels['staff.stay_360.balance'],amount(booking.balanceDueThb)],
+          [labels['staff.stay_360.balance'],amount(balanceSatang)],
           [labels['staff.stay_360.refund'],amount(booking.refundAccruedThb)],
         ].map(([label,value])=><div key={label} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-8 font-display text-heading-3 font-semibold text-text-ink">{value}</p>
         </div>)}
       </div>}
+      {booking.status==='confirmed'&&balanceSatang>0&&(access.canManageReservations||canSeeFinance)&&
+        <p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.payment_outstanding']} {amount(balanceSatang)}</p>}
       <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
         <section className="stitch-panel p-20">
           <dl className="grid grid-cols-2 gap-12">
@@ -120,8 +132,9 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
             {labels['staff.stay_360.guest_note']}: {booking.guestNote}
           </p>}
         </section>
-        <StayActions id={booking.id} status={booking.status} balanceSatang={canSeeFinance?booking.balanceDueThb:0}
-          canRecordMoney={canSeeFinance} canManageReservations={access[0]} canManageFrontDesk={access[1]}
+        <StayActions id={booking.id} status={booking.status} updatedAt={booking.updatedAt.toISOString()}
+          balanceSatang={canSeeFinance||access.canManageReservations?balanceSatang:0} canConfirmUnpaid={canConfirmUnpaid}
+          canRecordMoney={access.canRecordMoney} canManageReservations={access.canManageReservations} canManageFrontDesk={access.canManageFrontDesk}
           guestName={[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')} unitName={booking.unit?.name??''}
           labels={labels}/>
       </div>

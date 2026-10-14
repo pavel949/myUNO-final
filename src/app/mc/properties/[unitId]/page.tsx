@@ -1,3 +1,4 @@
+import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -210,7 +211,7 @@ export default async function MCPropertyWorkspace({
   const nextBooking = bookings.find(b => b.startDate > now && ['confirmed','checked_in'].includes(b.status));
   const upcomingBalance = bookings
     .filter(b => ['pending_payment','confirmed','checked_in'].includes(b.status))
-    .reduce((sum,b) => sum + Math.max(0,b.balanceDueThb),0);
+    .reduce((sum,b) => sum + outstandingStayBalanceSatang(b),0);
   const activeEngagement = unit.engagements[0];
   const currentBookings = bookings.filter(b => b.startDate <= now && b.endDate > now && !['cancelled','declined'].includes(b.status));
   const upcomingBookings = bookings.filter(b => b.startDate > now && !['cancelled','declined'].includes(b.status));
@@ -335,7 +336,7 @@ export default async function MCPropertyWorkspace({
                   <p className={small}>{bangkokDate(b.startDate, locale)} → {bangkokDate(b.endDate, locale)} · {b.channel.replace(/_/g,' ')}</p>
                   <span className={pill}>{b.status.replace(/_/g,' ')}</span>
                 </div>
-                <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(b.balanceDueThb)}</p></div>
+                <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(outstandingStayBalanceSatang(b))}</p></div>
               </div>
               <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open booking →</Link>
             </article>)}</div>

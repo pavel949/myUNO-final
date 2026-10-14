@@ -65,6 +65,8 @@ export interface CreateBookingInput {
   inventoryCategoryId?: string;
   cancellationPolicySnapshot?: Record<string, unknown>;
   instantBook: boolean;
+  /** Reviewed mode accepted by the guest; rechecked while holding the unit row. */
+  acceptedInstantBook?: boolean;
   paymentMethod?: PaymentMethod;
   creationIntent?: BookingCreationIntent;
   holdMinutes?: number;
@@ -88,10 +90,20 @@ export interface DeclineBookingRequestInput {
   reasonCode?: string;
 }
 
-export interface ConfirmBookingInput {
+export type ConfirmBookingInput = {
   bookingId: string;
   paymentReceivedAt: Date;
-}
+  mode?: 'payment_received';
+} | {
+  bookingId: string;
+  mode: 'operator_unpaid';
+  actorIdentityId: string;
+  reason: string;
+  expectedUpdatedAt: Date;
+  commandId: string;
+  /** Trusted server policy, evaluated again under the canonical inventory lock. */
+  authorizeCandidate: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
+};
 
 export interface CancelBookingInput {
   bookingId: string;
@@ -324,6 +336,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     inventoryCategoryId,
     cancellationPolicySnapshot,
     instantBook,
+    acceptedInstantBook,
     paymentMethod,
     creationIntent,
     holdMinutes = 30,
@@ -392,6 +405,11 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
 
     // A caller may ask for approval, but cannot grant instant-book authority.
     // Read the current unit again at the writer, including category fallbacks.
+    if (acceptedInstantBook !== undefined) {
+      // Unit editors do not take the booking advisory lock. Serialize their
+      // ordinary UPDATE with the accepted-mode read through commit as well.
+      await tx.$queryRaw`SELECT id FROM unit WHERE id = ${unitId} FOR SHARE`;
+    }
     const unit = await tx.unit.findUnique({
       where: { id: unitId },
       select: {
@@ -402,6 +420,9 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
       },
     });
     if (!unit || unit.projectId !== projectId) throw new Error('Booking unit not found');
+    if (acceptedInstantBook !== undefined && (acceptedInstantBook !== unit.instantBook || acceptedInstantBook !== instantBook)) {
+      throw Object.assign(new Error('The booking mode changed after review. A new quote and consent are required.'), { code: 'REQUOTE_REQUIRED' });
+    }
     const selectedCategoryId = inventoryCategoryId;
     if ((bookingType === 'guest_stay' && unit.assetStatus === 'suspended') || (selectedCategoryId && (
       unit.inventoryCategoryId !== selectedCategoryId || unit.status !== 'live' ||
@@ -749,6 +770,77 @@ export async function confirmBooking(
   input: ConfirmBookingInput
 ) {
   const { bookingId } = input;
+
+  if (input.mode === 'operator_unpaid') {
+    const reason = input.reason.trim();
+    if (!reason || reason.length > 500 || !/^[A-Za-z0-9_-]{16,128}$/.test(input.commandId) ||
+        !input.actorIdentityId || !Number.isFinite(input.expectedUpdatedAt.getTime())) {
+      throw Object.assign(new Error('A reason, command ID and current booking revision are required'), { code: 'INVALID_CONFIRMATION' });
+    }
+    return db.$transaction(async tx => {
+      const booking = await lockBookingInventory(tx, bookingId);
+      if (!booking) throw Object.assign(new Error('Booking not found'), { code: 'BOOKING_NOT_FOUND' });
+      if (!(await input.authorizeCandidate(tx as PrismaClient, booking))) {
+        throw Object.assign(new Error('Forbidden'), { code: 'BOOKING_FORBIDDEN' });
+      }
+      await assertLayantaraBookingAuthority(tx, booking.unitId);
+
+      // The booking lock serializes commands; the audit row is written in the
+      // same transaction as the transition, so retries cannot duplicate it.
+      const previous = await tx.auditLog.findFirst({ where: {
+        entityType: 'Booking', entityId: bookingId, action: 'bookings:confirm_unpaid',
+        data: { path: ['commandId'], equals: input.commandId },
+      } });
+      if (previous) {
+        const data = previous.data as Record<string, unknown> | null;
+        if (previous.actorIdentityId !== input.actorIdentityId || data?.reason !== reason ||
+            data?.expectedUpdatedAt !== input.expectedUpdatedAt.toISOString()) {
+          throw Object.assign(new Error('Confirmation command was reused with different details'), { code: 'BOOKING_STATE_CHANGED' });
+        }
+        // Return current truth, even if a later authorized action cancelled it.
+        return booking;
+      }
+      if (booking.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) {
+        throw Object.assign(new Error('Booking changed; review it before confirming'), { code: 'BOOKING_STATE_CHANGED' });
+      }
+      const issue = await initialStayConfirmationIssue(tx, booking);
+      if (issue) throw Object.assign(new Error('Booking cannot be confirmed: ' + issue), { code: issue });
+      const unit = await tx.unit.findUnique({ where: { id: booking.unitId }, select: {
+        projectId: true, status: true, assetStatus: true,
+        project: { select: { status: true } },
+        inventoryCategory: { select: { status: true } },
+      } });
+      if (!unit || unit.projectId !== booking.projectId || unit.status !== 'live' ||
+          unit.assetStatus === 'suspended' || unit.project.status !== 'live' ||
+          unit.inventoryCategory?.status !== 'live') {
+        throw Object.assign(new Error('Booking inventory is no longer available'), { code: 'DOUBLE_BOOK' });
+      }
+      if (booking.bookingType !== 'guest_stay' || !Number.isSafeInteger(booking.totalThb) || booking.totalThb <= 0 ||
+          booking.balanceDueThb !== 0 || booking.refundAccruedThb !== 0 ||
+          await tx.payment.count({ where: { bookingId } }) ||
+          await tx.ledgerEntry.count({ where: { bookingId } }) ||
+          await tx.depositPreauth.count({ where: { bookingId } })) {
+        throw Object.assign(new Error('Only a wholly unpaid booking without payment activity can be confirmed this way'), { code: 'BOOKING_NOT_UNPAID' });
+      }
+      const updated = await tx.booking.update({ where: { id: bookingId }, data: {
+        status: 'confirmed', holdExpiresAt: null, requestExpiresAt: null,
+        balanceDueThb: booking.totalThb,
+      } });
+      await tx.auditLog.create({ data: {
+        actorIdentityId: input.actorIdentityId, action: 'bookings:confirm_unpaid',
+        entityType: 'Booking', entityId: bookingId,
+        data: {
+          commandId: input.commandId, reason, expectedUpdatedAt: input.expectedUpdatedAt.toISOString(),
+          before: { status: booking.status, balanceDueSatang: booking.balanceDueThb,
+            holdExpiresAt: booking.holdExpiresAt?.toISOString() ?? null },
+          after: { status: updated.status, balanceDueSatang: updated.balanceDueThb, holdExpiresAt: null },
+        },
+      } });
+      // Commercial acceptance is not receipt, revenue recognition or a deposit
+      // authorization. Only a later genuine financial writer records payment.
+      return updated;
+    });
+  }
 
   const updated = await db.$transaction(async tx => {
     const booking = await lockBookingInventory(tx, bookingId);
@@ -1538,21 +1630,18 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
     },
   });
 
-  const expired = await db.booking.updateMany({
-    where: {
-      status: 'pending_payment',
-      holdExpiresAt: { lte: now },
-    },
-    data: {
-      status: 'expired',
-      holdExpiresAt: null,
-    },
-  });
+  let expiredCount = 0;
 
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   // Track analytics events and notify guests (N-04) for each expired booking
   for (const booking of expiredBookings) {
+    const won = await db.booking.updateMany({
+      where: { id: booking.id, updatedAt: booking.updatedAt, status: 'pending_payment', holdExpiresAt: { lte: now } },
+      data: { status: 'expired', holdExpiresAt: null },
+    });
+    if (!won.count) continue;
+    expiredCount += won.count;
     const nights = Math.ceil(
       (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -1580,7 +1669,7 @@ export async function expireHolds(db: PrismaClient, now: Date = new Date()) {
     }).catch(() => null);
   }
 
-  return expired.count;
+  return expiredCount;
 }
 
 /**
@@ -1597,20 +1686,15 @@ export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date
     },
   });
 
-  const declined = await db.booking.updateMany({
-    where: {
-      status: 'requested',
-      requestExpiresAt: { lte: now },
-    },
-    data: {
-      status: 'declined',
-      requestExpiresAt: null,
-      cancellationReason: 'auto_declined_timeout',
-      cancelledAt: now,
-    },
-  });
+  let declinedCount = 0;
 
   for (const booking of toDecline) {
+    const won = await db.booking.updateMany({
+      where: { id: booking.id, updatedAt: booking.updatedAt, status: 'requested', requestExpiresAt: { lte: now } },
+      data: { status: 'declined', requestExpiresAt: null, cancellationReason: 'auto_declined_timeout', cancelledAt: now },
+    });
+    if (!won.count) continue;
+    declinedCount += won.count;
     await createNotification(db, {
       identityId: booking.guestIdentityId,
       type: 'stay_request_declined',
@@ -1637,7 +1721,7 @@ export async function autoDeclineRequests(db: PrismaClient, now: Date = new Date
     }).catch(() => null);
   }
 
-  return declined.count;
+  return declinedCount;
 }
 
 /**

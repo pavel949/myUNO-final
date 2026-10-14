@@ -199,6 +199,30 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        // Exact-period regeneration is handled below. A different active
+        // period must not share even one calendar day with this statement.
+        // The unit ledger lock serializes this check with other generators.
+        const overlappingPeriod = await tx.ownerStatement.findFirst({
+          where: {
+            unitId: unit.id,
+            status: { not: 'superseded' },
+            periodStart: { lte: endDate },
+            periodEnd: { gte: startDate },
+            OR: [
+              { periodStart: { not: startDate } },
+              { periodEnd: { not: endDate } },
+            ],
+          },
+          select: { id: true },
+        })
+        if (overlappingPeriod) {
+          throw new StatementConflict(409, {
+            error: 'Overlapping statement period for this unit',
+            code: 'statement_period_overlap',
+            statementId: overlappingPeriod.id,
+          })
+        }
+
         const inPlace =
           body.regenerate === true &&
           existing?.status === 'draft' &&

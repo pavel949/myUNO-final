@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { advanceSessionGeneration } from '@/lib/session-generation';
 import {
   createSessionToken,
   sessionCookieOptions,
@@ -150,9 +151,20 @@ export async function GET(request: NextRequest) {
     // owner proves the address through Google. Verify the address, drop the
     // unproven password and end any sessions already opened on it.
     if (!identity.emailVerifiedAt) {
-      identity = await prisma.identity.update({
-        where: { id: identity.id },
-        data: { emailVerifiedAt: new Date(), hashedPassword: null, sessionsValidFrom: new Date() },
+      const identityId = identity.id;
+      identity = await prisma.$transaction(async (tx) => {
+        // Decide against the current row under lock: a concurrent password reset
+        // may already have verified the address and replaced the unproven hash.
+        await tx.$queryRaw`SELECT id FROM identity WHERE id = ${identityId} FOR UPDATE`;
+        const current = await tx.identity.findUniqueOrThrow({ where: { id: identityId } });
+        if (current.status !== 'active') throw new Error('Account unavailable');
+        if (current.emailVerifiedAt) return current;
+        const verified = await tx.identity.update({
+          where: { id: identityId },
+          data: { emailVerifiedAt: new Date(), hashedPassword: null },
+        });
+        const sessionsValidFrom = await advanceSessionGeneration(tx, identityId);
+        return { ...verified, sessionsValidFrom };
       });
     }
 
@@ -173,7 +185,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Step 5: Create session
-    const sessionToken = await createSessionToken(identity.id);
+    const sessionToken = await createSessionToken(identity.id, identity.sessionsValidFrom?.getTime() ?? null);
 
     // Step 6: Redirect to app with session cookie
     const response = NextResponse.redirect(new URL('/app', request.nextUrl.origin));

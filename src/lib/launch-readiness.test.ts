@@ -3,6 +3,27 @@ import { evaluateEnvReadiness } from './launch-readiness';
 import { SECRET_CATALOG } from './secret-catalog';
 
 describe('launch readiness (environment facts)', () => {
+  it('rejects malformed encryption keys and public URLs, and recognises the runtime session-secret fallback', () => {
+    const state = (env: Record<string, string>, id: string) => evaluateEnvReadiness(env).find((item) => item.id === id)?.state;
+    expect(state({ ENCRYPTION_KEY: 'x' }, 'encryption_key')).toBe('action');
+    expect(state({ ENCRYPTION_KEY: 'g'.repeat(64) }, 'encryption_key')).toBe('action');
+    expect(state({ ENCRYPTION_KEY: 'ab'.repeat(32) }, 'encryption_key')).toBe('ok');
+    for (const url of ['not a URL', 'http://example.com', 'https://user:password@example.com']) {
+      expect(state({ NEXT_PUBLIC_APP_URL: url }, 'app_url')).toBe('action');
+    }
+    expect(state({ NEXT_PUBLIC_APP_URL: 'https://example.com' }, 'app_url')).toBe('ok');
+    expect(state({ NEXTAUTH_SECRET: 'configured-fallback' }, 'session_secret')).toBe('ok');
+  });
+
+  it('validates the session secret chosen by runtime precedence before marking it configured', () => {
+    const sessionState = (env: Record<string, string>) => evaluateEnvReadiness(env).find((item) => item.id === 'session_secret');
+    expect(sessionState({ SESSION_SECRET: ' \t\n', NEXTAUTH_SECRET: 'configured-fallback' })).toMatchObject({ state: 'action', blocking: true });
+    expect(sessionState({ SESSION_SECRET: '', NEXTAUTH_SECRET: 'configured-fallback' })).toMatchObject({ state: 'ok', blocking: true });
+    expect(sessionState({ SESSION_SECRET: 'configured-primary', NEXTAUTH_SECRET: '  ' })).toMatchObject({ state: 'ok', blocking: true });
+    expect(sessionState({ SESSION_SECRET: '  ' })).toMatchObject({ state: 'action', blocking: true });
+    expect(sessionState({ NEXTAUTH_SECRET: '  ' })).toMatchObject({ state: 'action', blocking: true });
+  });
+
   it('flags every blocking item as needing action on an empty environment, never marks card payments blocking', () => {
     const items = evaluateEnvReadiness({});
     expect(items.every((i) => i.state === 'action')).toBe(true);

@@ -47,9 +47,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === 'string' ? body.name : '';
   if (!SECRET_NAME_PATTERN.test(name)) return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
-  const value = await revealVaultEntry(prisma, { name, actorIdentityId: auth.identityId });
-  if (value === null) return NextResponse.json({ error: 'No value stored' }, { status: 404 });
-  return NextResponse.json({ value }, { headers: noStore });
+  try {
+    const value = await revealVaultEntry(prisma, { name, actorIdentityId: auth.identityId });
+    if (value === null) return NextResponse.json({ error: 'No value stored' }, { status: 404, headers: noStore });
+    return NextResponse.json({ value }, { headers: noStore });
+  } catch {
+    return NextResponse.json({ error: 'Could not reveal' }, { status: 500, headers: noStore });
+  }
 }
 
 /** Remove the stored value (the row and its note stay). */
@@ -59,6 +63,10 @@ export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === 'string' ? body.name : '';
   if (!SECRET_NAME_PATTERN.test(name)) return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
-  await clearVaultValue(prisma, { name, actorIdentityId: auth.identityId });
-  return NextResponse.json({ ok: true }, { headers: noStore });
+  try {
+    await clearVaultValue(prisma, { name, actorIdentityId: auth.identityId });
+    return NextResponse.json({ ok: true }, { headers: noStore });
+  } catch {
+    return NextResponse.json({ error: 'Could not clear' }, { status: 500, headers: noStore });
+  }
 }

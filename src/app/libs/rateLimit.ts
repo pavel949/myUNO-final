@@ -6,9 +6,8 @@
  * across instances and multiply the budget. One atomic upsert per check; time is
  * the database's, so instances with skewed clocks agree.
  *
- * If the database cannot be reached the limiter falls back to this instance's
- * memory rather than blocking sign-in (the database being down is already the
- * bigger problem, and failing closed would lock every guest out).
+ * If the shared counter is unavailable, refuse the attempt. Per-instance memory
+ * cannot preserve the shared budget during a schema, permission or database failure.
  */
 import { createHash } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
@@ -45,31 +44,6 @@ export const loginIpLimitConfig: RateLimitConfig = {
 };
 
 type Result = { allowed: boolean; retryAfterMs?: number };
-
-// ---- Fallback: per-instance memory (only used while the database is unreachable) ----
-
-interface MemoryEntry {
-  attempts: number;
-  resetAt: number;
-  backoffMultiplier: number;
-}
-const memoryStore = new Map<RateLimitKey, MemoryEntry>();
-
-function memoryCheck(key: RateLimitKey, config: RateLimitConfig): Result {
-  const now = Date.now();
-  const entry = memoryStore.get(key);
-  if (!entry || now >= entry.resetAt) {
-    memoryStore.set(key, { attempts: 1, resetAt: now + config.windowMs, backoffMultiplier: 1 });
-    return { allowed: true };
-  }
-  if (entry.attempts < config.maxAttempts) {
-    entry.attempts++;
-    return { allowed: true };
-  }
-  const backoffMs = config.backoffMs * Math.pow(2, Math.min(entry.backoffMultiplier - 1, 10));
-  entry.backoffMultiplier++;
-  return { allowed: false, retryAfterMs: entry.resetAt - now + backoffMs };
-}
 
 // ---- Shared counters ----
 
@@ -109,17 +83,19 @@ export async function checkRateLimit(
     if (row.attempts <= config.maxAttempts) return { allowed: true };
 
     const backoffMs = config.backoffMs * Math.pow(2, Math.min(row.backoff - 1, 10));
-    await prisma.$executeRaw`UPDATE rate_limit_bucket SET backoff_multiplier = backoff_multiplier + 1 WHERE "key" = ${key}`;
+    // A bookkeeping failure must never turn an established denial into an allowance.
+    await prisma.$executeRaw`UPDATE rate_limit_bucket SET backoff_multiplier = backoff_multiplier + 1 WHERE "key" = ${key}`.catch(() => null);
     return { allowed: false, retryAfterMs: Math.max(0, Math.round(row.remaining_ms)) + backoffMs };
   } catch {
-    return memoryCheck(key, config);
+    // Do not include the error: driver messages can contain connection details.
+    console.error('Shared rate limiter unavailable; request refused');
+    return { allowed: false, retryAfterMs: 60_000 };
   }
 }
 
 /** Reset rate limit for a key (e.g. after a successful login). */
 export async function resetRateLimit(rawKey: RateLimitKey): Promise<void> {
   const key = rateLimitBucketKey(rawKey);
-  memoryStore.delete(key);
   await prisma.$executeRaw`DELETE FROM rate_limit_bucket WHERE "key" = ${key}`.catch(() => null);
 }
 
@@ -130,7 +106,5 @@ export async function resetRateLimit(rawKey: RateLimitKey): Promise<void> {
  */
 export async function refundRateLimit(rawKey: RateLimitKey): Promise<void> {
   const key = rateLimitBucketKey(rawKey);
-  const entry = memoryStore.get(key);
-  if (entry && entry.attempts > 0) entry.attempts--;
   await prisma.$executeRaw`UPDATE rate_limit_bucket SET attempts = GREATEST(attempts - 1, 0) WHERE "key" = ${key}`.catch(() => null);
 }

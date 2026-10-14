@@ -33,22 +33,45 @@ export default function UnitsAdminClient({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<{ unitId: string; message: string } | null>(null);
+  const actionPending = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<string | null>(null);
 
-  const act = async (unitId: string, fn: () => Promise<Response>) => {
+  const act = async (
+    unitId: string,
+    fn: () => Promise<Response>,
+    expectedStatus?: 'live' | 'paused',
+  ) => {
+    // Lock synchronously as well as disabling controls after React renders.
+    if (actionPending.current) return;
+    actionPending.current = true;
     setBusyId(unitId);
     setError(null);
+    setSuccess(null);
     try {
       const response = await fn();
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['admin.units.error_generic']);
       }
+      if (expectedStatus) {
+        const saved = await response.json().catch(() => null);
+        if (saved?.id !== unitId || saved?.status !== expectedStatus) {
+          throw new Error(labels['admin.units.error_generic']);
+        }
+        const name = units.find(unit => unit.id === unitId)?.name ?? unitId;
+        const key = expectedStatus === 'live' ? 'publish_saved' : 'pause_saved';
+        setSuccess({
+          unitId,
+          message: labels[`admin.unit_publication.${key}`].replace('{name}', name),
+        });
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.units.error_generic']);
     } finally {
+      actionPending.current = false;
       setBusyId(null);
     }
   };
@@ -64,7 +87,8 @@ export default function UnitsAdminClient({
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
-      })
+      }),
+      status,
     );
 
   const setAssetStatus = (unitId: string, assetStatus: string) => {
@@ -110,8 +134,16 @@ export default function UnitsAdminClient({
         onChange={handleFileChosen}
       />
       {error && (
-        <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
+        <div role="alert" className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-16">
           <p className="text-body text-state-error">{error}</p>
+        </div>
+      )}
+      {success && (
+        <div role="status" className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-16">
+          <p className="text-body text-text-ink">{success.message}</p>
+          <Link href={`/app/admin/units/${encodeURIComponent(success.unitId)}`} className="mt-8 inline-block text-small font-semibold text-brand-andaman hover:underline">
+            {labels['admin.unit_publication.review_status']} →
+          </Link>
         </div>
       )}
       {units.map((unit) => (
@@ -168,6 +200,7 @@ export default function UnitsAdminClient({
                 variant="secondary"
                 onClick={() => confirmPermittedUse(unit.id)}
                 isLoading={busyId === unit.id}
+                disabled={busyId !== null}
               >
                 {labels['admin.units.confirm_action']}
               </Button>
@@ -177,7 +210,7 @@ export default function UnitsAdminClient({
                 size="sm"
                 onClick={() => setStatus(unit.id, 'live')}
                 isLoading={busyId === unit.id}
-                disabled={!unit.permittedUseConfirmed}
+                disabled={busyId !== null || !unit.permittedUseConfirmed}
               >
                 {labels['admin.units.set_live']}
               </Button>
@@ -187,6 +220,7 @@ export default function UnitsAdminClient({
                 variant="ghost"
                 onClick={() => setStatus(unit.id, 'paused')}
                 isLoading={busyId === unit.id}
+                disabled={busyId !== null}
               >
                 {labels['admin.units.pause']}
               </Button>
@@ -194,7 +228,7 @@ export default function UnitsAdminClient({
             <select
               value={unit.assetStatus}
               onChange={(e) => setAssetStatus(unit.id, e.target.value)}
-              disabled={busyId === unit.id}
+              disabled={busyId !== null}
               className="h-40 px-8 rounded-sm border border-border-line text-small text-text-ink bg-surface-paper"
               aria-label={labels['admin.units.asset_status']}
             >
@@ -215,6 +249,7 @@ export default function UnitsAdminClient({
                 fileInputRef.current?.click();
               }}
               isLoading={busyId === unit.id}
+              disabled={busyId !== null}
             >
               {labels['admin.units.upload_photo']}
             </Button>

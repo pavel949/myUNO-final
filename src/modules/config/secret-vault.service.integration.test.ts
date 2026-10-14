@@ -1,10 +1,44 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db as prisma, resetDb, createIdentity } from '@/test/util';
 import { clearVaultValue, listVaultEntries, revealVaultEntry, saveVaultEntry } from './secret-vault.service';
+import type { Prisma, PrismaClient } from '@prisma/client';
+
+// Wrap this call's clients rather than spying on the suite's shared Prisma delegates.
+function withFailingAudit(client: PrismaClient): PrismaClient {
+  const wrap = <T extends PrismaClient | Prisma.TransactionClient>(db: T): T => new Proxy(db, {
+    get(target, property) {
+      if (property === 'auditLog') return new Proxy(target.auditLog, {
+        get(delegate, operation) {
+          if (operation === 'create') return async () => { throw new Error('audit unavailable'); };
+          return Reflect.get(delegate, operation);
+        },
+      });
+      if (property === '$transaction') {
+        return (work: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+          client.$transaction((tx) => work(wrap(tx)));
+      }
+      return Reflect.get(target, property);
+    },
+  });
+  return wrap(client);
+}
 
 describe('Founder key register', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  it('rolls a save or clear back when its audit cannot be committed', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    const input = { name: 'ATOMIC_TEST', value: 'original-test-value', actorIdentityId: admin.id };
+    await saveVaultEntry(prisma, input);
+    const before = await prisma.secretVaultEntry.findUniqueOrThrow({ where: { name: input.name } });
+    const failing = withFailingAudit(prisma);
+    await expect(saveVaultEntry(failing, { ...input, value: 'replacement-test-value' })).rejects.toThrow('audit unavailable');
+    expect(await prisma.secretVaultEntry.findUniqueOrThrow({ where: { name: input.name } })).toEqual(before);
+    await expect(clearVaultValue(failing, input)).rejects.toThrow('audit unavailable');
+    expect(await prisma.secretVaultEntry.findUniqueOrThrow({ where: { name: input.name } })).toEqual(before);
+    await expect(revealVaultEntry(failing, input)).rejects.toThrow('audit unavailable');
   });
 
   it('stores the value encrypted, lists only the last four, and audits save and reveal without the value', async () => {

@@ -4,9 +4,10 @@ import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({
   user: vi.fn(), unit: vi.fn(), category: vi.fn(), create: vi.fn(),
   price: vi.fn(), candidates: vi.fn(), checkout: vi.fn(),
-  replay: vi.fn(),
+  replay: vi.fn(), rateLimit: vi.fn(),
 }));
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: mocks.user }));
+vi.mock('@/app/libs/rateLimit', () => ({ checkRateLimit: mocks.rateLimit }));
 vi.mock('@/lib/prisma', () => ({ prisma: {
   unit: { findUnique: mocks.unit }, inventoryCategory: { findUnique: mocks.category },
 } }));
@@ -40,6 +41,7 @@ describe('POST booking acceptance', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.rateLimit.mockReset().mockResolvedValue({ allowed: true });
     mocks.replay.mockResolvedValue(null);
     mocks.user.mockResolvedValue({ identityId: 'guest-a' });
     mocks.unit.mockResolvedValue({
@@ -55,6 +57,29 @@ describe('POST booking acceptance', () => {
       booking: { id: 'booking-a', status: input.instantBook ? 'pending_payment' : 'requested', totalThb: 300_000 },
       replayed: false,
     }));
+  });
+
+  it('stops a denied booking attempt before reading inventory or writing money and bookings', async () => {
+    mocks.rateLimit.mockResolvedValueOnce({ allowed: false, retryAfterMs: 1501 });
+    mocks.unit.mockResolvedValue({
+      id: 'unit-a', projectId: 'project-a', instantBook: true, status: 'live',
+      inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' },
+    });
+    const response = await POST(request({ ...direct, paymentMethod: 'card_provider' }));
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('2');
+    expect(await response.json()).toMatchObject({ code: 'RATE_LIMITED' });
+    expect(mocks.rateLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.rateLimit).toHaveBeenCalledWith('booking:create:guest-a', {
+      maxAttempts: 30, windowMs: 10 * 60 * 1000, backoffMs: 60 * 1000,
+    });
+    expect(mocks.replay).not.toHaveBeenCalled();
+    expect(mocks.unit).not.toHaveBeenCalled();
+    expect(mocks.category).not.toHaveBeenCalled();
+    expect(mocks.candidates).not.toHaveBeenCalled();
+    expect(mocks.price).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.checkout).not.toHaveBeenCalled();
   });
 
   it('derives direct-unit booking mode from the current unit', async () => {

@@ -2,7 +2,7 @@
 import OwnerEvidenceDraftEditor from '@/components/OwnerEvidenceDraftEditor';
 /* eslint-disable local-rules/no-literal-ui-text */
 
-import { FormEvent, createContext, useContext, useState, useRef } from 'react';
+import { FormEvent, createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
@@ -28,6 +28,16 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
+  useEffect(() => {
+    const activateHashStep = () => {
+      const match = window.location.hash.match(/^#step-(\d+)$/);
+      const step = match ? Number(match[1]) : 0;
+      if (step >= 1 && step <= steps.length) setActiveStep(step);
+    };
+    activateHashStep();
+    window.addEventListener('hashchange', activateHashStep);
+    return () => window.removeEventListener('hashchange', activateHashStep);
+  }, []);
   const submit = async (url: string, body: object, method = 'POST') => {
     if (busy) return null;
     setBusy(true);

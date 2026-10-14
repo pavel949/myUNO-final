@@ -840,8 +840,10 @@ try {
     assert.equal((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId }, select: { baseNightlyThb: true } })).baseNightlyThb, beforeUnit.baseNightlyThb);
     const afterOffering = await db.commercialOffering.findFirstOrThrow({ where: { unitId: fixture.unitId, offeringType: 'short_term_stay' } });
     assert.deepEqual(afterOffering.pricingTerms, beforeOffering.pricingTerms);
-    const guestPage = await ap.goto(unitUrl);
-    assert.equal(guestPage?.status(), 404);
+    assert.equal((await ap.request.get(`/api/units/${fixture.unitId}`)).status(), 404);
+    await ap.goto(unitUrl);
+    await ap.getByRole('heading', { name: 'Page not found', exact: true }).waitFor();
+    assert.equal(await ap.locator('main').getByText('404', { exact: true }).count(), 1);
     assert.ok(!(await body(ap)).includes(fixture.unitName));
   });
   assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');

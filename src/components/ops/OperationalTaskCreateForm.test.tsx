@@ -9,8 +9,8 @@ const labels = {
   'staff.task_form.creating': 'Creating…', 'staff.task_form.property': 'Property',
   'staff.task_form.employee': 'Employee', 'staff.task_form.team': 'Team',
 };
-function setup() {
-  const { container } = render(<OperationalTaskCreateForm operatingSpaceId="space"
+function setup(timeZone = 'Asia/Bangkok') {
+  const { container } = render(<OperationalTaskCreateForm operatingSpaceId="space" timeZone={timeZone}
     units={[{ id: 'unit', name: 'Villa', project: { name: 'Estate' } }]}
     teams={[]} members={[{ identity: { id: 'staff', firstName: 'Test', lastName: 'Staff' } }]}
     labels={labels} />);
@@ -41,8 +41,30 @@ describe('operational task form submission', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/ops/tasks');
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
       operatingSpaceId: 'space', unitId: 'unit', taskType: 'custom', title: 'Shift task',
-      assignedIdentityId: 'staff', dueAt: '2027-01-10T10:00', mediaAssetIds: [],
+      assignedIdentityId: 'staff', dueAt: '2027-01-10T03:00:00.000Z', mediaAssetIds: [],
     });
+  });
+
+  it('uses the configured space zone instead of the browser zone', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ task: { id: 'task' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const form = setup('America/New_York'); fireEvent.submit(form);
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).dueAt).toBe('2027-01-10T15:00:00.000Z');
+    expect(screen.getByText(/America\/New_York/)).toBeInTheDocument();
+  });
+
+  it('rejects an ambiguous due time before uploads or task writes and preserves inputs', async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
+    const form = setup('America/New_York');
+    fireEvent.change(form.querySelector('[name=dueAt]')!, { target: { value: '2026-11-01T01:30' } });
+    fireEvent.change(form.querySelector('[name=photos]')!, { target: { files: [new File(['synthetic'], 'task.png', { type: 'image/png' })] } });
+    fireEvent.submit(form);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Choose a valid, unambiguous due time in America/New_York.');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(form.querySelector('[name=title]')).toHaveValue('Shift task');
+    expect(form.querySelector('[name=dueAt]')).toHaveValue('2026-11-01T01:30');
+    expect(screen.getByRole('button', { name: 'Create task' })).toBeEnabled();
   });
 
   it('preserves a canonical refusal and the entered task without refresh', async () => {

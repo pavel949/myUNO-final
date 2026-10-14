@@ -198,3 +198,38 @@ export function formatDate(
   const options = typeof format === 'string' ? DATE_FORMATS[format] : format;
   return new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? INTL_LOCALE.en, { ...options, timeZone }).format(date);
 }
+
+
+/** Convert a datetime-local wall time in an explicit operating zone to an instant.
+ * A DST gap has no instant; a DST fold has two. Reject both rather than silently
+ * moving the task or selecting an occurrence the operator never chose.
+ */
+export function localDateTimeToInstant(value: string, timeZone: string): Date {
+  const invalid = () => new RangeError(`Choose a valid, unambiguous due time in ${timeZone}.`);
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) || !timeZone.trim()) throw invalid();
+  const wall = new Date(`${value}:00.000Z`);
+  if (!Number.isFinite(wall.getTime()) || wall.toISOString().slice(0, 16) !== value) throw invalid();
+  let formatter: Intl.DateTimeFormat;
+  try {
+    formatter = new Intl.DateTimeFormat('en-CA-u-ca-gregory-nu-latn', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    });
+  } catch { throw invalid(); }
+  const wallTimeAt = (instant: Date) => {
+    const parts = Object.fromEntries(formatter.formatToParts(instant).map(part => [part.type, part.value]));
+    return `${parts.year.padStart(4, '0')}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
+  };
+  // Inspect offsets on both sides of a possible transition, without inheriting
+  // the server or browser timezone. Round trips reject gaps and calendar rollover.
+  const offsets = new Set<number>();
+  for (const day of [-2, -1, 0, 1, 2]) {
+    const sample = new Date(wall.getTime() + day * MS_PER_DAY);
+    offsets.add(Date.parse(`${wallTimeAt(sample)}Z`) - sample.getTime());
+  }
+  const candidates = [...offsets]
+    .map(offset => new Date(wall.getTime() - offset))
+    .filter(instant => wallTimeAt(instant) === `${value}:00`);
+  if (candidates.length !== 1) throw invalid();
+  return candidates[0];
+}

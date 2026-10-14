@@ -8,6 +8,8 @@ The first production-browser runs caught a real publication-feedback defect: the
 
 The manual-entry extension then caught a separate browser failure after a real 201 response: the booking and its calendar hold existed, but the form threw `Cannot read properties of null (reading 'reset')` and stayed on “Creating…”. Its narrow fix captures the form before awaiting, resets only after parsed success, preserves server refusals, and restores the controls on request/JSON errors. This changes no booking or payment semantics. A pending-payment manual entry still needs a supported confirmation path; it is not proof of durable unpaid confirmation.
 
+The Bangkok-timezone browser also reproduced an incorrect task instant: entering noon stored noon UTC, which displayed as 19:00 in Bangkok. The form now receives the selected operating-space timezone explicitly, converts wall time to an ISO instant before uploads/writes, and rejects invalid or ambiguous DST times. Scoped queue display uses the same zone. The runner requires noon Bangkok to persist as 05:00Z and appear as noon in the employee queue.
+
 The staff-task extension reproduced the same async reset defect after a task was saved and the separate employee session had successfully completed it. The task form receives the same narrow fix, preserving upload/API refusals and all existing task/access semantics. Its five component regressions include stopping after an upload refusal without creating a task.
 
 ## Scope
@@ -27,9 +29,9 @@ The fixture is a fully synthetic, already-onboarded canonical `villa_estate` wit
 9. Open the founder calendar night, inspect its hold, and follow its canonical booking identity. Independently verify the public quote reports the dates unavailable.
 10. Cancel through the guest UI; verify the canonical row, date release and free calendar cell.
 11. Enter a separate manual reservation through the founder's operational desk; verify one persisted canonical booking, exact tariff/dates/guest, matching calendar hold, and a usable reset form with the new row visible. This exercises the current pending-payment entry contract, not a paid or permanently confirmed commitment.
-12. Create and assign a no-photo custom task as founder, sign a scoped synthetic employee in through the actual login form, start and finish that task, and verify canonical completion timestamps, queue removal after reload, exactly one task and a usable founder create form. Staff provisioning is synthetic setup, not an acceptance claim for the permissions editor.
+12. Create and assign a no-photo custom task as founder, sign a scoped synthetic employee in through the actual login form, start and finish that task, and verify canonical completion timestamps, queue removal after reload, exactly one task and a usable founder create form. The browser runs in Asia/Bangkok and checks the configured operating-space due-time instant and display. Staff provisioning is synthetic setup, not an acceptance claim for the permissions editor.
 
-Unexpected local 5xx responses and browser runtime exceptions fail the run. Each completed step has a screenshot. Failures produce a nonzero exit and preserve traces/screenshots.
+Unexpected external browser requests, local 5xx responses and browser runtime exceptions fail the run. Each completed step has a screenshot. Failures produce a nonzero exit and preserve traces/screenshots.
 
 ## Safe execution
 
@@ -39,7 +41,7 @@ Next telemetry and Prisma's optional checkpoint request are disabled in this job
 
 The guard requires the exact loopback database URL and synthetic auth/encryption values. A same-named remote DB, a mismatched app/test database, a nonlocal app URL, runtime `.env` files and known provider secrets are refused. Setup never invokes `resetDb`, truncation, `db push`, production seeding or migration repair; rerunning against an existing fixture refuses rather than deleting it. The CI service is discarded after the run.
 
-Browser requests outside localhost are aborted and their origins recorded. Node fetch/http/https egress is guarded; an attempted external server request fails the job. This is an application-HTTP guard, not an operating-system network sandbox. No provider credentials are supplied. Anonymous maps or other third-party browser assets may be intentionally blocked; the report records those origins separately from application failures.
+Browser requests outside localhost are aborted and their origins recorded. Node fetch/http/https egress is guarded; an attempted external server request fails the job. This is an application-HTTP guard, not an operating-system network sandbox. No provider credentials are supplied. Unexpected third-party browser assets also fail the run; the report records every blocked origin.
 
 To run on a reviewed branch, open/update its PR and inspect **Browser acceptance (isolated) → founder-publication-booking** for that exact SHA. A successful build or historical screenshot is not acceptance. The workflow can also be manually dispatched once registered on the default branch. Do not point the scripts at a preview or production environment.
 

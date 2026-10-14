@@ -310,6 +310,7 @@ try {
     const article = sp.locator(`article#task-${task.id}`);
     await article.getByRole('heading', { name: taskTitle, exact: true }).waitFor();
     assert.match(await article.innerText(), /Synthetic Staff/);
+    assert.match(await article.innerText(), /Due[^\n]*12:00/, 'Staff queue must display the entered operating-space noon');
     const startedResponse = sp.waitForResponse(r => r.url().endsWith(`/api/ops/tasks/${task.id}`) && r.request().method() === 'PATCH');
     startedResponse.catch(() => {});
     await article.getByRole('button', { name: 'Start', exact: true }).click();
@@ -353,7 +354,10 @@ try {
     }, 'Task committed, but the task create form stayed busy or failed to reset');
     assert.equal(await form.getByRole('alert').count(), 0);
     report.staffTask.formVerified = true;
+    await fp.reload();
+    assert.equal(await fp.locator(`article#task-${task.id}`).count(), 0, 'Founder reload must reflect the staff completion');
   });
+  assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');
   assert.deepEqual(report.pageErrors, [], 'Unexpected browser runtime errors');
   report.result = 'passed';

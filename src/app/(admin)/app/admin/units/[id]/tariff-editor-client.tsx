@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/Button';
+import { remainingAnnualWindows } from '@/modules/core/tariff-calendar';
 
 type Step = { days: number; pct: number };
-type Season = { seasonCode: string; windows: Array<{ start: string; end: string }>; amountSatang: number; minimumNights: number; cancellationSteps?: Step[] | null };
+type Season = { sourceRateId?: string; seasonCode: string; windows: Array<{ start: string; end: string }>; amountSatang: number; minimumNights: number; cancellationSteps?: Step[] | null };
 type Draft = {
   includesTaxes: boolean; includesServiceCharge: boolean; includesBreakfast: boolean;
   daily: Season[]; monthly: Season[]; yearly: { amountSatang: number; minimumNights: number } | null;
@@ -31,12 +32,17 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
   const [validation, setValidation] = useState<Validation | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading');
   const [savedCount, setSavedCount] = useState(0);
+  const saving = useRef<AbortController | null>(null);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<{ kind: 'daily' | 'monthly'; index: number; windows: Season['windows'] } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     setDraft(null);
     setValidation(null);
     setState('loading');
+    setRemaining(null); setCalendarError(null);
+    saving.current?.abort(); saving.current = null;
     fetch(`/api/admin/units/${unitId}/tariff`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Tariff load failed');
@@ -51,25 +57,34 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
         setDraft(data.draft); setCategoryUnits(data.categoryUnits ?? 1); setValidation(data.validation ?? null); setState('idle');
       })
       .catch(() => { if (!controller.signal.aborted) setState('error'); });
-    return () => controller.abort();
+    return () => { controller.abort(); saving.current?.abort(); };
   }, [unitId]);
 
   if (!draft) {
     return <section className="stitch-panel mt-24 p-20"><p role={state === 'error' ? 'alert' : 'status'} className="text-small text-text-secondary">{state === 'error' ? L('load_error') : L('loading')}</p></section>;
   }
 
-  const update = (next: Draft) => { setDraft(next); setState('idle'); };
+  const update = (next: Draft) => { setDraft(next); setState('idle'); setRemaining(null); setCalendarError(null); };
+  const previewRemaining = (kind: 'daily' | 'monthly', index: number) => {
+    setRemaining(null); setCalendarError(null);
+    try { setRemaining({ kind, index, windows: remainingAnnualWindows(draft[kind], index) }); }
+    catch (error) { setCalendarError(L(error instanceof Error ? error.message : 'invalid_dates')); }
+  };
   const setSeason = (kind: typeof KINDS[number], i: number, patch: Partial<Season>) =>
     update({ ...draft, [kind]: draft[kind].map((s, j) => (j === i ? { ...s, ...patch } : s)) });
 
   async function save(scope: 'unit' | 'category') {
+    if (saving.current || remaining) return;
+    const controller = new AbortController();
+    saving.current = controller;
     setState('saving');
     setValidation(null);
     try {
       const res = await fetch(`/api/admin/units/${unitId}/tariff`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope }),
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope }), signal: controller.signal,
       });
       const data = await res.json().catch(() => null);
+      if (controller.signal.aborted || saving.current !== controller) return;
       if (data?.validation) setValidation(data.validation);
       if (!res.ok || !data || !Number.isInteger(data.saved) || data.saved < 1) {
         setState('error');
@@ -77,8 +92,11 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       }
       setSavedCount(data.saved);
       setState('saved');
+      window.dispatchEvent(new CustomEvent('tariff-saved', { detail: { unitId } }));
     } catch {
-      setState('error');
+      if (!controller.signal.aborted) setState('error');
+    } finally {
+      if (saving.current === controller) saving.current = null;
     }
   }
 
@@ -88,7 +106,9 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
     <section className="stitch-panel mt-24 p-20" aria-labelledby="tariff-editor-title">
       <h2 id="tariff-editor-title" className="font-display text-heading-3 font-semibold text-text-ink">{L('title')}</h2>
       <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('body')}</p>
+      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('grid_precedence')}</p>
 
+      <fieldset disabled={state === 'saving'} className="min-w-0">
       <fieldset className="mt-16 flex flex-wrap gap-16">
         <legend className="sr-only">{L('included')}</legend>
         {FLAGS.map(flag => (
@@ -103,6 +123,9 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
         <div key={kind} className="mt-20">
           <h3 className="font-display text-title font-semibold text-text-ink">{L(kind + '_title')}</h3>
           <p className="text-small text-text-secondary">{L(kind + '_hint')}</p>
+          {kind === 'daily' && <p className="text-small text-text-secondary">{L('base_hint')}</p>}
+          {!draft[kind].length && <Button type="button" variant="secondary" size="sm" className="mt-8"
+            onClick={() => update({ ...draft, [kind]: [{ seasonCode: 'BASE', windows: [{ start: '01-01', end: '12-31' }], amountSatang: 0, minimumNights: kind === 'monthly' ? 30 : 1 }] })}>{L('add_base')}</Button>}
           <div className="mt-8 space-y-12">
             {draft[kind].map((s, i) => (
               <div key={i} className="stitch-panel-soft grid gap-12 p-12 md:grid-cols-[8rem_1fr_8rem_7rem_auto]">
@@ -124,9 +147,10 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
                     </div>
                   ))}
                   <Button type="button" variant="ghost" size="sm" className="mt-4" onClick={() => setSeason(kind, i, { windows: [...s.windows, { start: '', end: '' }] })}>{L('add_window')}</Button>
+                  <Button type="button" variant="ghost" size="sm" className="mt-4" onClick={() => previewRemaining(kind, i)}>{L('remaining_dates')}</Button>
                 </div>
                 <label className="text-small text-text-secondary">{L(kind === 'daily' ? 'rate_night' : 'rate_30')}
-                  <input type="number" min={0} step="1" className="stitch-control mt-4 w-full px-8 py-4 tabular-nums text-text-ink" value={toBaht(s.amountSatang)}
+                  <input type="number" min={0} step="0.01" className="stitch-control mt-4 w-full px-8 py-4 tabular-nums text-text-ink" value={toBaht(s.amountSatang)}
                     onChange={e => setSeason(kind, i, { amountSatang: toSatang(e.target.value) })} />
                 </label>
                 <label className="text-small text-text-secondary">{L('minimum')}
@@ -176,7 +200,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
         {draft.yearly ? (
           <div className="mt-8 flex flex-wrap gap-12">
             <label className="text-small text-text-secondary">{L('rate_month')}
-              <input type="number" min={0} className="stitch-control mt-4 block w-96 px-8 py-4 tabular-nums text-text-ink" value={toBaht(draft.yearly.amountSatang)}
+              <input type="number" min={0} step="0.01" className="stitch-control mt-4 block w-96 px-8 py-4 tabular-nums text-text-ink" value={toBaht(draft.yearly.amountSatang)}
                 onChange={e => update({ ...draft, yearly: { ...draft.yearly!, amountSatang: toSatang(e.target.value) } })} />
             </label>
             <label className="text-small text-text-secondary">{L('minimum')}
@@ -186,6 +210,18 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
           </div>
         ) : null}
       </div>
+
+      {calendarError && <p role="alert" className="mt-12 text-small text-state-error">{calendarError}</p>}
+      {remaining && <div role="region" aria-label={L('remaining_preview')} className="mt-16 rounded-md border border-border-line p-16 text-small">
+        <p>{fill(L('remaining_summary'), { season: draft[remaining.kind][remaining.index].seasonCode })}</p>
+        <p>{L('previous_dates')}: {draft[remaining.kind][remaining.index].windows.map(w => w.start + ' – ' + w.end).join(', ')}</p>
+        <p>{L('new_dates')}: {remaining.windows.map(w => w.start + ' – ' + w.end).join(', ')}</p>
+        <div className="mt-8 flex gap-8">
+          <Button type="button" size="sm" onClick={() => setSeason(remaining.kind, remaining.index, { windows: remaining.windows })}>{L('apply_dates')}</Button>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setRemaining(null)}>{L('cancel_dates')}</Button>
+        </div>
+      </div>}
+      </fieldset>
 
       {validation?.errors.length ? (
         <ul role="alert" className="mt-16 list-disc pl-20 text-small text-state-error">
@@ -199,9 +235,9 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       ) : null}
 
       <div className="mt-20 flex flex-wrap items-center gap-12">
-        <Button type="button" onClick={() => save('unit')} disabled={state === 'saving'}>{L('save_unit')}</Button>
+        <Button type="button" onClick={() => save('unit')} disabled={state === 'saving' || remaining !== null}>{L('save_unit')}</Button>
         {categoryUnits > 1 ? (
-          <Button type="button" variant="secondary" onClick={() => save('category')} disabled={state === 'saving'}>
+          <Button type="button" variant="secondary" onClick={() => save('category')} disabled={state === 'saving' || remaining !== null}>
             {fill(L('save_category'), { count: categoryUnits })}
           </Button>
         ) : null}
@@ -212,3 +248,4 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
     </section>
   );
 }
+

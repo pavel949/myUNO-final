@@ -57,8 +57,8 @@ async function context(name) {
 }
 async function login(page, email, next) {
   await page.goto(`/login?next=${encodeURIComponent(next)}`);
-  await page.getByLabel('Email', { exact: true }).fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(fixture.password);
+  await page.getByLabel(/^Email\s*\*?$/).fill(email);
+  await page.getByLabel(/^Password\s*\*?$/).fill(fixture.password);
   const response = page.waitForResponse(r => r.url().endsWith('/api/auth/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Log in', exact: true }).click();
   assert.equal((await response).status(), 200);

@@ -43,7 +43,8 @@ type Task = {
 export default function OperationalTaskQueueClient({
   tasks,
   labels,
-}: { tasks: Task[]; labels: Record<string, string> }) {
+  timeZone,
+}: { tasks: Task[]; labels: Record<string, string>; timeZone?: string }) {
   const locale = useLocale();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export default function OperationalTaskQueueClient({
               {task.title || enumLabel(labels, 'taskType', task.taskType)}
             </h2>
             <p className="mt-4 text-small text-text-secondary">
-              <span className="font-tabular">{labels['staff.tasks.due']} {formatDate(task.dueAt, locale, 'dateTime')}</span> · {enumLabel(labels, 'taskStatus', task.status)}
+              <span className="font-tabular">{labels['staff.tasks.due']} {formatDate(task.dueAt, locale, 'dateTime', timeZone)}</span> · {enumLabel(labels, 'taskStatus', task.status)}
               {task.assignee ? ' · ' + task.assignee.firstName + ' ' + task.assignee.lastName : ''}
               {task.assignedTeam ? ' · ' + task.assignedTeam.name : ''}
             </p>
@@ -121,3 +122,4 @@ export default function OperationalTaskQueueClient({
     })}
   </div>;
 }
+

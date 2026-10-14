@@ -16,13 +16,14 @@ const labels = {
   'admin.units.pause': 'Pause',
   'admin.units.error_generic': 'Action failed',
   'admin.units.asset_status': 'Asset status',
+  'admin.units.confirm_action': 'Confirm permitted use',
 };
 const response = (body: unknown, ok = true) => ({ ok, json: async () => body });
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.unstubAllGlobals());
 
 describe('publication action feedback', () => {
-  it('confirms the saved status and links to the same unit readiness after refresh', async () => {
+  it('keeps confirmed feedback and the review link mounted without a route refresh', async () => {
     const fetchMock = vi.fn().mockResolvedValue(response({ id: row.id, status: 'live' }));
     vi.stubGlobal('fetch', fetchMock);
     const { rerender } = render(<UnitsAdminClient units={[row]} labels={labels} />);
@@ -31,11 +32,34 @@ describe('publication action feedback', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/admin/units/villa', expect.objectContaining({
       method: 'PUT', body: JSON.stringify({ status: 'live' }),
     }));
-    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
     rerender(<UnitsAdminClient units={[{ ...row, status: 'live' }]} labels={labels} />);
     expect(screen.getByRole('status')).toHaveTextContent('Review its public visibility and booking readiness');
     expect(screen.getByRole('link', { name: /Review publication and bookings/ }))
       .toHaveAttribute('href', '/app/admin/units/villa');
+  });
+
+  it('adopts newer canonical rows after a later parent refresh', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response({ id: row.id, status: 'live' })));
+    const { rerender } = render(<UnitsAdminClient units={[row]} labels={labels} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByRole('button', { name: 'Pause' })).toBeEnabled();
+    rerender(<UnitsAdminClient units={[{ ...row, name: 'Canonical villa', status: 'paused' }]} labels={labels} />);
+    expect(await screen.findByRole('button', { name: 'Publish' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Pause' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Canonical villa' })).toHaveAttribute('href', '/app/admin/units/villa');
+  });
+
+  it('retains the existing refresh for a non-publication mutation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<UnitsAdminClient units={[{ ...row, permittedUseConfirmed: false }]} labels={labels} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm permitted use' }));
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledWith('/api/admin/units/villa/confirm-permitted-use', { method: 'POST' });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('shows the canonical refusal, never reports success, and permits retry', async () => {
@@ -85,10 +109,12 @@ describe('publication action feedback', () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(response({ id: row.id, status: 'paused' }))
       .mockRejectedValueOnce(new Error('Connection lost'));
     vi.stubGlobal('fetch', fetchMock);
-    const { rerender } = render(<UnitsAdminClient units={[{ ...row, status: 'live' }]} labels={labels} />);
+    render(<UnitsAdminClient units={[{ ...row, status: 'live' }]} labels={labels} />);
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Villa one is set to paused.');
-    rerender(<UnitsAdminClient units={[{ ...row, status: 'paused' }]} labels={labels} />);
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Pause' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Connection lost');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -103,3 +129,4 @@ describe('publication action feedback', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+

@@ -1,0 +1,104 @@
+name: Browser acceptance (isolated)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  founder-publication-booking:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: myuno_browser_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d myuno_browser_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BROWSER_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MYUNO_BROWSER_ACCEPTANCE: isolated
+      DATABASE_URL: postgresql://test:test@localhost:5432/myuno_browser_test
+      DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_browser_test
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: synthetic-browser-acceptance-only
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      CONTENT_REVIEW_GATE_ENABLED: 'false'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CHECKPOINT_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Validate strict isolation guard
+        run: |
+          node --test scripts/e2e/isolation.test.cjs scripts/e2e/block-egress.test.cjs
+          node scripts/e2e/isolation.cjs
+          for file in .env .env.local .env.production .env.production.local; do
+            test ! -f "$file" || { echo "Refusing checkout with runtime env file: $file"; exit 1; }
+          done
+      - name: Install locked application and pinned browser library
+        run: |
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/myuno-browser" --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/myuno-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Prepare disposable database with real migrations
+        env:
+          PGPASSWORD: test
+        run: |
+          psql -h localhost -U test -d myuno_browser_test -v ON_ERROR_STOP=1 -f scripts/sql/supabase-compat-roles.sql
+          npx prisma migrate deploy
+      - name: Seed canonical synthetic draft and build production app
+        run: |
+          mkdir -p browser-results
+          export NODE_OPTIONS="--require=$PWD/scripts/e2e/block-egress.cjs"
+          npx tsx scripts/e2e/seed-founder-journey.ts
+          npm run build
+      - name: Run actual Chromium journey against local production server
+        run: |
+          set -euo pipefail
+          export NODE_OPTIONS="--require=$PWD/scripts/e2e/block-egress.cjs"
+          export NODE_PATH="$RUNNER_TEMP/myuno-browser/node_modules"
+          npm run start -- --hostname localhost > browser-results/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://localhost:3000/login > /dev/null; then ready=1; break; fi
+            kill -0 "$server_pid" || { cat browser-results/server.log; exit 1; }
+            sleep 2
+          done
+          test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
+          node scripts/e2e/founder-publication-booking.mjs
+          test ! -s browser-results/blocked-server-egress.log
+      - name: Upload synthetic screenshots, traces and step evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: founder-publication-booking-${{ github.sha }}
+          path: |
+            browser-results/result.json
+            browser-results/*.png
+            browser-results/trace-*.zip
+            browser-results/server.log
+            browser-results/blocked-server-egress.log
+          retention-days: 7
+          if-no-files-found: warn

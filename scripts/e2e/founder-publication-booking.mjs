@@ -499,6 +499,25 @@ try {
     report.seasonalTariff.bookingTotalSatang = reservation.totalThb;
     report.seasonalTariff.calendarVerified = true;
   });
+  // Synthetic fixture enrollment happens only after proving contact creation itself
+  // issued no credentials, tokens or roles. Authentication still uses the real UI.
+  const manualContact = await db.identity.findUniqueOrThrow({ where: { id: report.manualGuest.id } });
+  assert.equal(manualContact.hashedPassword, null);
+  const { hash } = require('bcryptjs');
+  await db.identity.update({ where: { id: manualContact.id }, data: {
+    hashedPassword: await hash(fixture.password, 10), emailVerifiedAt: new Date(),
+  } });
+  const manualGuestContext = await context('manual-guest');
+  const mgp = await manualGuestContext.newPage();
+  await step('Manual guest signs in; a different guest cannot read this booking', mgp, async () => {
+    await login(mgp, manualContact.email, '/trips');
+    const id = report.manualReservation.bookingId;
+    assert.equal((await gp.request.get(`/api/bookings/${id}`)).status(), 404);
+    await gp.goto(`/trips/${id}`);
+    await gp.getByText('Booking not found', { exact: true }).waitFor();
+    report.manualGuest.syntheticEnrollment = true;
+    report.manualGuest.foreignGuestDenied = true;
+  });
   await step('Operator confirms the manual commitment with payment still outstanding', fp, async () => {
     const id = report.manualReservation.bookingId;
     const original = await db.booking.findUniqueOrThrow({ where: { id } });
@@ -528,11 +547,11 @@ try {
     await fp.reload();
     await fp.getByText(/^Reservation confirmed\. Payment is still outstanding\./).waitFor();
     await fp.screenshot({ path: `${out}/manual-confirmed-unpaid.png`, fullPage: true });
-    await gp.goto(`/trips/${id}`);
-    await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
+    await mgp.goto(`/trips/${id}`);
+    await mgp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
     const displayedBalance = (original.totalThb / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    assert.ok((await body(gp)).includes(`Outstanding balance: ฿${displayedBalance}`));
-    await gp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
+    assert.ok((await body(mgp)).includes(`Outstanding balance: ฿${displayedBalance}`));
+    await mgp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
     const { execFileSync } = await import('node:child_process');
     execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e/expire-synthetic-holds.ts', id], { env: process.env, stdio: 'pipe' });
     report.unpaidExpiry = JSON.parse(await readFile(`${out}/unpaid-expiry.json`, 'utf8'));
@@ -578,9 +597,9 @@ try {
     assert.equal((await fp.request.post(`/api/bookings/${id}/record-cash-payment`, { data: { receiptRef } })).status(), 400);
     assert.equal(await db.payment.count({ where: { bookingId: id } }), 1);
     assert.equal(await db.ledgerEntry.count({ where: { bookingId: id } }), 1);
-    await gp.reload();
-    await gp.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
-    assert.equal(await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).count(), 0);
+    await mgp.reload();
+    await mgp.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
+    assert.equal(await mgp.getByText('Reservation confirmed — payment outstanding', { exact: true }).count(), 0);
     report.manualReservation.receipt = { synthetic: true, paymentId: payment.id, amountSatang: payment.amountThb, ledgerId: ledger[0].id, outstandingSatang: 0 };
   });
   let requestPage;

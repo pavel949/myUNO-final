@@ -34,8 +34,8 @@ async function step(name, page, fn) {
   } catch (error) { entry.status = 'failed'; entry.error = String(error); throw error; }
   finally { await writeFile(`${out}/result.json`, JSON.stringify(report, null, 2)); }
 }
-async function context(name) {
-  const ctx = await browser.newContext({ baseURL: baseUrl, locale: 'en-US', timezoneId: 'Asia/Bangkok', viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
+async function context(name, viewport = { width: 1440, height: 1000 }) {
+  const ctx = await browser.newContext({ baseURL: baseUrl, locale: 'en-US', timezoneId: 'Asia/Bangkok', viewport, serviceWorkers: 'block' });
   contexts.push({ ctx, name });
   ctx.setDefaultTimeout(15000);
   ctx.setDefaultNavigationTimeout(30000);
@@ -796,6 +796,8 @@ try {
     report.protectiveBlock = { blockId: block.id, disabledCardAndReview: true, rejectedCanonicalWrite: 409,
       testedViewports: ['1440x900', '390x844'], removedThroughUi: true, newBookings: 0 };
   });
+  const { runTenUserSmoke } = await import('./ten-user-smoke.mjs');
+  await runTenUserSmoke({ db, fixture, founderPage: fp, context, login, step, report, publicQuote, out });
   assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');
   assert.deepEqual(report.pageErrors, [], 'Unexpected browser runtime errors');

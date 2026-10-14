@@ -106,6 +106,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
     <section className="stitch-panel mt-24 p-20" aria-labelledby="tariff-editor-title">
       <h2 id="tariff-editor-title" className="font-display text-heading-3 font-semibold text-text-ink">{L('title')}</h2>
       <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('body')}</p>
+      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('grid_precedence')}</p>
 
       <fieldset disabled={state === 'saving'} className="min-w-0">
       <fieldset className="mt-16 flex flex-wrap gap-16">
@@ -122,6 +123,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
         <div key={kind} className="mt-20">
           <h3 className="font-display text-title font-semibold text-text-ink">{L(kind + '_title')}</h3>
           <p className="text-small text-text-secondary">{L(kind + '_hint')}</p>
+          {kind === 'daily' && <p className="text-small text-text-secondary">{L('base_hint')}</p>}
           {!draft[kind].length && <Button type="button" variant="secondary" size="sm" className="mt-8"
             onClick={() => update({ ...draft, [kind]: [{ seasonCode: 'BASE', windows: [{ start: '01-01', end: '12-31' }], amountSatang: 0, minimumNights: kind === 'monthly' ? 30 : 1 }] })}>{L('add_base')}</Button>}
           <div className="mt-8 space-y-12">

@@ -1,55 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
 import { prisma } from '@/lib/prisma';
-import { getOperatingSpaceUnitIds, hasOperatingSpaceCapability } from '@/modules/ops';
-import { getMCManagedUnits } from '@/modules/projects';
+import { getScopedOperationalAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
+import { canUseReservationGuest, RESERVATION_DEPARTMENTS } from '@/modules/ops/reservation-guests.service';
 import {
   attachBookingToReservationGroup,
   createBooking,
   resolveCancellationPolicy,
 } from '@/modules/booking';
-
-async function authorizedUnitIds(
-  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
-  operatingSpaceId: string,
-) {
-  const spaceUnitIds = await getOperatingSpaceUnitIds(prisma, operatingSpaceId);
-  if (user.isAdmin) return spaceUnitIds;
-
-  const canManage = await hasOperatingSpaceCapability(
-    prisma,
-    operatingSpaceId,
-    user.identityId,
-    'manage_reservations',
-  );
-  if (!canManage) return [];
-
-  const staffProjectIds = await getDepartmentProjectIds(user, [
-    'reservations', 'front_desk', 'guest_care', 'finance',
-  ]);
-  const mcIds = new Set<string>();
-  for (const scope of getMCProjectScopes(user)) {
-    const managed = await getMCManagedUnits(
-      prisma,
-      user.identityId,
-      scope.projectId,
-      scope.organizationId,
-    );
-    for (const unit of managed) mcIds.add(unit.id);
-  }
-
-  return (await prisma.unit.findMany({
-    where: {
-      id: { in: spaceUnitIds },
-      OR: [
-        ...(staffProjectIds.length ? [{ projectId: { in: staffProjectIds } }] : []),
-        ...(mcIds.size ? [{ id: { in: Array.from(mcIds) } }] : []),
-      ],
-    },
-    select: { id: true },
-  })).map((unit) => unit.id);
-}
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -80,8 +38,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing reservation fields' }, { status: 400 });
     }
 
-    const allowedUnitIds = await authorizedUnitIds(user, body.operatingSpaceId);
-    if (!allowedUnitIds.includes(body.unitId)) {
+    const access = await getScopedOperationalAccess(prisma, user.identityId, body.operatingSpaceId, 'manage_reservations', RESERVATION_DEPARTMENTS);
+    if (!access.unitIds.includes(body.unitId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -108,6 +66,10 @@ export async function POST(request: NextRequest) {
     }
     if (!guest || guest.status !== 'active') {
       return NextResponse.json({ error: 'Guest is not active' }, { status: 400 });
+    }
+
+    if (!await canUseReservationGuest(prisma, guest.id, body.operatingSpaceId, access.unitIds, access.isAdmin)) {
+      return NextResponse.json({ error: 'Guest is outside this workspace' }, { status: 403 });
     }
 
     if (body.reservationGroupId) {
@@ -168,6 +130,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {
+    if (error instanceof OperatingAccessError) return NextResponse.json({ error: error.message }, { status: error.status });
     const code = (error as { code?: string })?.code;
     const message = error instanceof Error ? error.message : 'Reservation creation failed';
     return NextResponse.json(

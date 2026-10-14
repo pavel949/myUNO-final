@@ -18,14 +18,17 @@ export default function OperationalTaskCreateForm({
   const [error,setError]=useState('');
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy(true);setError('');
-    const data=new FormData(event.currentTarget);
-    const files=Array.from((event.currentTarget.elements.namedItem('photos') as HTMLInputElement | null)?.files||[]);
+    // Keep the element before React clears currentTarget after this handler yields.
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    const files=Array.from((form.elements.namedItem('photos') as HTMLInputElement | null)?.files||[]);
+    try {
     const mediaAssetIds:string[]=[];
     for(const file of files){
       const upload=new FormData();upload.set('file',file);upload.set('kind','photo');
       const uploaded=await fetch('/api/media/upload',{method:'POST',body:upload});
       const uploadedBody=await uploaded.json();
-      if(!uploaded.ok){setError(uploadedBody.error||'Photo upload failed');setBusy(false);return;}
+      if(!uploaded.ok){setError(uploadedBody?.error||'Photo upload failed');return;}
       mediaAssetIds.push(uploadedBody.mediaAssetId);
     }
     const response=await fetch('/api/ops/tasks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
@@ -43,8 +46,13 @@ export default function OperationalTaskCreateForm({
       mediaAssetIds,
     })});
     const body=await response.json();
-    if(!response.ok){setError(body.error||'Task creation failed');setBusy(false);return;}
-    event.currentTarget.reset();setBusy(false);router.refresh();
+    if(!response.ok){setError(body?.error||'Task creation failed');return;}
+    form.reset();router.refresh();
+    } catch {
+      setError('Task creation failed');
+    } finally {
+      setBusy(false);
+    }
   }
   const taskTypes=['custom','turnover_cleaning','turnover_inspection','maintenance_followup','preventive_maintenance','deep_cleaning','restocking','guest_request','prearrival','owner_request','utilities','pool','garden','pest_control','compliance'];
   return <form onSubmit={submit} className="mb-20 grid gap-12 stitch-panel p-16 md:grid-cols-2 xl:grid-cols-4">
@@ -68,3 +76,4 @@ export default function OperationalTaskCreateForm({
     {error?<p role="alert" className="text-small text-state-error md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }
+

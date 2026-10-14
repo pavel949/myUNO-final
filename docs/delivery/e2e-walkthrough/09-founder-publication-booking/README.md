@@ -8,6 +8,8 @@ The first production-browser runs caught a real publication-feedback defect: the
 
 The manual-entry extension then caught a separate browser failure after a real 201 response: the booking and its calendar hold existed, but the form threw `Cannot read properties of null (reading 'reset')` and stayed on “Creating…”. Its narrow fix captures the form before awaiting, resets only after parsed success, preserves server refusals, and restores the controls on request/JSON errors. This changes no booking or payment semantics. A pending-payment manual entry still needs a supported confirmation path; it is not proof of durable unpaid confirmation.
 
+The staff-task extension reproduced the same async reset defect after a task was saved and the separate employee session had successfully completed it. The task form receives the same narrow fix, preserving upload/API refusals and all existing task/access semantics. Its five component regressions include stopping after an upload refusal without creating a task.
+
 ## Scope
 
 The existing walkthrough remains useful historical evidence. Its guest script uses a missing local `lib.mjs`, hard-coded filesystem/record/date values, and a placeholder assertion for calendar release. Process 8 explicitly excludes positive browser go-live and the tariff editor. This runnable slice closes that specific regression gap without adding a second application or mocking route success.

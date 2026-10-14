@@ -705,7 +705,7 @@ try {
     await fp.goto(`/ops/requests?projectId=${fixture.projectId}`);
     const row = fp.locator('li').filter({ hasText: 'Synthetic Registered' });
     await row.getByRole('button', { name: 'Decline', exact: true }).waitFor();
-    const reason = await row.getByLabel('Decline reason', { exact: true }).inputValue(); assert.ok(reason);
+    const reason = await row.getByLabel(/^Decline reason/).inputValue(); assert.ok(reason);
     fp.once('dialog', dialog => dialog.accept());
     const response = fp.waitForResponse(r => r.url().endsWith(`/api/bookings/${declinedRequest.id}/respond`) && r.request().method() === 'POST');
     response.catch(() => {});

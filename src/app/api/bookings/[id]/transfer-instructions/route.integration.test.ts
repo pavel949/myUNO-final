@@ -59,14 +59,14 @@ describe('GET /api/bookings/[id]/transfer-instructions', () => {
     });
     bookingId = booking.id;
 
-    mockGetTransferInstructions.mockResolvedValue({
+    mockGetTransferInstructions.mockImplementation(async (_db, input) => ({
       accountName: 'myUNO Operations',
       accountNumberMasked: 'xxx-1234',
       bankName: 'Kasikorn',
-      amountThb: 120_000,
+      amountThb: input.amountThb,
       reference: 'BOOK-REF-1',
-      expiresAt: new Date('2026-09-05T10:00:00Z'),
-    });
+      expiresAt: new Date(Date.now() + 4 * 3_600_000),
+    }));
   });
 
   it('allows assigned MC member and returns transfer instructions', async () => {
@@ -147,11 +147,78 @@ describe('GET /api/bookings/[id]/transfer-instructions', () => {
   });
 
   it('never shows a transfer deadline later than the date hold', async () => {
-    const holdExpiresAt = new Date('2026-09-05T08:00:00Z');
+    const holdExpiresAt = new Date(Date.now() + 2 * 3_600_000);
     await db.booking.update({ where: { id: bookingId }, data: { holdExpiresAt } });
     mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
     const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
     expect(response.status).toBe(200);
     expect((await response.json()).expiresAt).toBe(holdExpiresAt.toISOString());
   });
+
+  it.each(['requested', 'declined', 'cancelled', 'expired', 'completed', 'no_show'] as const)(
+    'does not offer transfer instructions for %s', async status => {
+      await db.booking.update({ where: { id: bookingId }, data: { status, balanceDueThb: 120_000 } });
+      mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+      const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+      expect(response.status).toBe(409);
+      expect(mockGetTransferInstructions).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not invite payment after a hold deadline even before the expiry job runs', async () => {
+    await db.booking.update({ where: { id: bookingId }, data: { holdExpiresAt: new Date(Date.now() - 1_000) } });
+    mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+    const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+    expect(response.status).toBe(409);
+    expect(mockGetTransferInstructions).not.toHaveBeenCalled();
+  });
+
+  it.each(['confirmed', 'checked_in', 'checked_out'] as const)(
+    'preserves positive unpaid balance collection in %s', async status => {
+      await db.booking.update({ where: { id: bookingId }, data: {
+        status, balanceDueThb: 120_000, holdExpiresAt: new Date(Date.now() - 1_000),
+      } });
+      mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+      const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+      expect(response.status).toBe(200);
+      expect(new Date((await response.json()).expiresAt).getTime()).toBeGreaterThan(Date.now());
+      expect(mockGetTransferInstructions).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('does not show a new payment invitation for a confirmed booking with no recorded balance', async () => {
+    await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed', balanceDueThb: 0 } });
+    mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+    const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+    expect(response.status).toBe(409);
+    expect(mockGetTransferInstructions).not.toHaveBeenCalled();
+  });
+
+
+  it.each([
+    ['confirmed unpaid', 120_000, 120_000, 0],
+    ['partially settled', 120_000, 70_000, 50_000],
+    ['extension already in total', 150_000, 30_000, 120_000],
+  ] as const)('invites exactly the canonical remaining amount for %s', async (_label, totalThb, balanceDueThb, paid) => {
+    await db.booking.update({ where: { id: bookingId }, data: { status: 'confirmed', totalThb, balanceDueThb } });
+    if (paid) await db.payment.create({ data: { purpose: 'stay', bookingId, payerIdentityId: guest.id,
+      method: 'cash', provider: 'mock', amountThb: paid, status: 'succeeded', succeededAt: new Date() } });
+    mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+    const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+    expect(response.status).toBe(200);
+    expect((await response.json()).amountThb).toBe(balanceDueThb);
+    expect(mockGetTransferInstructions.mock.calls[0][1].amountThb).toBe(balanceDueThb);
+  });
+
+  it('requires reconciliation instead of a second initial transfer after any succeeded payment', async () => {
+    await db.payment.create({ data: { purpose: 'stay', bookingId, payerIdentityId: guest.id,
+      method: 'cash', provider: 'mock', amountThb: 10_000, status: 'succeeded', succeededAt: new Date() } });
+    mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });
+    const response = await GET(new NextRequest('http://localhost/api/bookings/x/transfer-instructions'), { params: { id: bookingId } });
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe('PAYMENT_RECONCILIATION_REQUIRED');
+    expect(mockGetTransferInstructions).not.toHaveBeenCalled();
+  });
+
 });
+

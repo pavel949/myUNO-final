@@ -20,7 +20,8 @@ vi.mock('@/modules/booking', () => ({
 }));
 vi.mock('@/modules/finance', () => ({ createCheckout: mocks.checkout }));
 vi.mock('@/modules/config', () => ({
-  getConfig: vi.fn().mockResolvedValue(['cash', 'bank_transfer', 'card_provider']),
+  getConfig: vi.fn().mockImplementation(async (_db, key) => key === 'booking.payment.methods_enabled'
+    ? ['cash', 'bank_transfer', 'card_provider'] : undefined),
 }));
 vi.mock('@/modules/core', () => ({
   computePriceBreakdown: mocks.price,
@@ -45,7 +46,7 @@ describe('POST booking acceptance', () => {
     mocks.replay.mockResolvedValue(null);
     mocks.user.mockResolvedValue({ identityId: 'guest-a' });
     mocks.unit.mockResolvedValue({
-      id: 'unit-a', projectId: 'project-a', instantBook: false, status: 'live',
+      id: 'unit-a', projectId: 'project-a', instantBook: true, status: 'live',
       inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' },
     });
     mocks.category.mockResolvedValue({
@@ -82,11 +83,13 @@ describe('POST booking acceptance', () => {
     expect(mocks.checkout).not.toHaveBeenCalled();
   });
 
-  it('derives direct-unit booking mode from the current unit', async () => {
-    const response = await POST(request({ ...direct, paymentMethod: 'card_provider' }));
-    expect(response.status).toBe(201);
-    expect(mocks.create.mock.calls[0][1].instantBook).toBe(false);
-    expect((await response.json()).booking.status).toBe('requested');
+  it.each([true, false])('requotes instead of silently changing accepted mode %s', async (acceptedMode) => {
+    mocks.unit.mockResolvedValue({ projectId: 'project-a', instantBook: !acceptedMode, status: 'live',
+      inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' } });
+    const response = await POST(request({ ...direct, instantBook: acceptedMode, paymentMethod: 'card_provider' }));
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe('REQUOTE_REQUIRED');
+    expect(mocks.create).not.toHaveBeenCalled();
     expect(mocks.checkout).not.toHaveBeenCalled();
   });
 
@@ -131,11 +134,11 @@ describe('POST booking acceptance', () => {
   });
 
   const categoryBody = () => ({
-    ...stay, inventoryCategoryId: 'category-a', acceptedTotalSatang: 300_000,
+    ...stay, inventoryCategoryId: 'category-a', instantBook: true, acceptedTotalSatang: 300_000,
     idempotencyKey: direct.idempotencyKey,
     categoryQuoteToken: createCategoryStayQuoteToken({
       ...stay, inventoryCategoryId: 'category-a', projectId: 'project-a', petsCount: 0,
-      acceptedTotalSatang: 300_000, quotedUnitId: 'unit-b',
+      acceptedTotalSatang: 300_000, quotedUnitId: 'unit-b', instantBook: true,
     }).token,
   });
 
@@ -218,18 +221,52 @@ describe('POST booking acceptance', () => {
     expect(mocks.candidates.mock.calls[0].at(-1)).toBe('category-a');
   });
 
-  it('preserves the category signed-quote cap and refreshes booking mode', async () => {
+  it('preserves the signed quote cap and mode at the canonical writer', async () => {
     const { token } = createCategoryStayQuoteToken({
       ...stay, inventoryCategoryId: 'category-a', projectId: 'project-a', petsCount: 0,
-      acceptedTotalSatang: 300_000, quotedUnitId: 'unit-a',
+      acceptedTotalSatang: 300_000, quotedUnitId: 'unit-a', instantBook: true,
     });
     const response = await POST(request({
-      ...stay, inventoryCategoryId: 'category-a', acceptedTotalSatang: 300_000, categoryQuoteToken: token,
+      ...stay, inventoryCategoryId: 'category-a', instantBook: true, acceptedTotalSatang: 300_000, categoryQuoteToken: token,
       idempotencyKey: direct.idempotencyKey,
     }));
     expect(response.status).toBe(201);
     expect(mocks.create.mock.calls[0][1]).toMatchObject({
-      instantBook: false, acceptedMaxTotalThb: 300_000, inventoryCategoryId: 'category-a',
+      instantBook: true, acceptedInstantBook: true, acceptedMaxTotalThb: 300_000, inventoryCategoryId: 'category-a',
     });
   });
+
+  it('uses an eligible same-mode sibling instead of silently downgrading the category', async () => {
+    mocks.candidates.mockResolvedValue([{ id: 'unit-a' }, { id: 'unit-b' }]);
+    mocks.unit.mockResolvedValueOnce({ projectId: 'project-a', instantBook: false, status: 'live',
+      inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' } });
+    expect((await POST(request(categoryBody()))).status).toBe(201);
+    expect(mocks.create.mock.calls[0][1]).toMatchObject({ unitId: 'unit-b', acceptedInstantBook: true });
+  });
+
+  it('requotes the category if only different-mode homes remain', async () => {
+    mocks.unit.mockResolvedValue({ projectId: 'project-a', instantBook: false, status: 'live',
+      inventoryCategoryId: 'category-a', inventoryCategory: { status: 'live' } });
+    const result = await POST(request(categoryBody()));
+    expect(result.status).toBe(409);
+    expect((await result.json()).code).toBe('REQUOTE_REQUIRED');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('does not let submitted category mode override the signed quote', async () => {
+    const result = await POST(request({ ...categoryBody(), instantBook: false }));
+    expect(result.status).toBe(409);
+    expect((await result.json()).code).toBe('REQUOTE_REQUIRED');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+
+  it('requires explicit accepted category mode before replay or creation', async () => {
+    const result = await POST(request({ ...categoryBody(), instantBook: undefined }));
+    expect(result.status).toBe(400);
+    expect(mocks.replay).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
 });
+

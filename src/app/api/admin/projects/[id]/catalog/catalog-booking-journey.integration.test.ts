@@ -204,6 +204,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
       inventoryCategoryId: c.id, projectId, ...dates, adultsCount: 2, childrenCount: 0,
       paymentMethod: 'cash', totalThb: 1, // client-supplied total cannot override the server quote
       categoryQuoteToken: acceptedQuote.quoteToken,
+      instantBook: acceptedQuote.instantBook,
       acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
       idempotencyKey: '00000000-0000-4000-8000-000000000001',
     };
@@ -299,13 +300,13 @@ describe('canonical onboarding → pricing → search → booking route journey'
     session.identityId = guestId;
     // A previously issued token cannot bypass the current offering eligibility.
     const { token } = createCategoryStayQuoteToken({
-      inventoryCategoryId: c.id, projectId, quotedUnitId: unit.id, ...dates,
+      inventoryCategoryId: c.id, projectId, quotedUnitId: unit.id, instantBook: unit.instantBook, ...dates,
       adultsCount: 2, childrenCount: 0, petsCount: 0, acceptedTotalSatang: 100_000_000,
     });
     const attempted = await bookingPost(request('/api/bookings', {
       inventoryCategoryId: c.id, projectId, ...dates,
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
-      acceptedTotalSatang: 100_000_000, categoryQuoteToken: token,
+      instantBook: unit.instantBook, acceptedTotalSatang: 100_000_000, categoryQuoteToken: token,
       idempotencyKey: '00000000-0000-4000-8000-000000000005',
     }));
     expect(attempted.status).toBe(409);
@@ -358,6 +359,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
       inventoryCategoryId: cat.id, projectId, ...dates,
       adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', totalThb: 1,
       categoryQuoteToken: acceptedQuote.quoteToken,
+      instantBook: acceptedQuote.instantBook,
       acceptedTotalSatang: acceptedQuote.acceptedTotalSatang,
       idempotencyKey: '00000000-0000-4000-8000-000000000002',
     }));
@@ -565,3 +567,4 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(after?.blockers.some(b => b.key === 'unit.stay_offering' && b.unitId === unit.id)).toBe(false);
   });
 });
+

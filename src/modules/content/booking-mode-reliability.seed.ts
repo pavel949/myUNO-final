@@ -1,0 +1,11 @@
+/** Request-mode booking copy; reviewable drafts with locale fallbacks. */
+export const BOOKING_MODE_RELIABILITY_KEYS = [
+  { key: "booking.review.request_title", namespace: "booking", description: "Request booking review and changed-terms consent", en: "Review your booking request", ru: "Проверьте запрос на бронирование", th: "ตรวจสอบคำขอจองของคุณ", status: 'needs_review' as const },
+  { key: "booking.review.request_confirm", namespace: "booking", description: "Request booking review and changed-terms consent", en: "Send booking request", ru: "Отправить запрос на бронирование", th: "ส่งคำขอจอง", status: 'needs_review' as const },
+  { key: "booking.review.request_consent", namespace: "booking", description: "Request booking review and changed-terms consent", en: "I have read the cancellation terms and agree to request these dates.", ru: "Я прочитал условия отмены и согласен отправить запрос на эти даты.", th: "ฉันอ่านเงื่อนไขการยกเลิกแล้วและยินยอมส่งคำขอสำหรับวันที่เหล่านี้", status: 'needs_review' as const },
+  { key: "booking.review.request_note", namespace: "booking", description: "Request booking review and changed-terms consent", en: "The property team will review this request before payment. Sending a request does not reserve the dates or charge you. If approved, your trip will show the payment deadline.", ru: "Команда объекта рассмотрит запрос до оплаты. Отправка запроса не закрепляет даты и не списывает деньги. После одобрения срок оплаты появится в вашей поездке.", th: "ทีมที่พักจะพิจารณาคำขอก่อนชำระเงิน การส่งคำขอยังไม่กันวันที่และไม่มีการเรียกเก็บเงิน หากอนุมัติแล้ว กำหนดชำระจะแสดงในทริปของคุณ.", status: 'needs_review' as const },
+  { key: "booking.review.terms_requote", namespace: "booking", description: "Request booking review and changed-terms consent", en: "The price or booking terms changed. Review the updated details and agree again before booking.", ru: "Цена или условия бронирования изменились. Проверьте новые данные и подтвердите согласие ещё раз.", th: "ราคาหรือเงื่อนไขการจองเปลี่ยนไป โปรดตรวจสอบรายละเอียดใหม่และยืนยันอีกครั้งก่อนจอง", status: 'needs_review' as const },
+];
+export const BOOKING_MODE_RELIABILITY_DRAFTS = Object.fromEntries(
+  BOOKING_MODE_RELIABILITY_KEYS.map(row => [row.key, { en: row.en, ru: row.ru, th: row.th }]),
+);

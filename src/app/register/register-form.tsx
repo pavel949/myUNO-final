@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { safeNextPath } from '@/lib/safe-next-path';
 
 interface RegisterFormLabels {
   firstName: string;
@@ -32,7 +33,7 @@ function calculatePasswordStrength(pass: string): number {
 export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams?.get('next') || '';
+  const next = safeNextPath(searchParams?.get('next'));
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -145,3 +146,4 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
     </form>
   );
 }
+

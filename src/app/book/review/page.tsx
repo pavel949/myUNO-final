@@ -1,3 +1,4 @@
+import { BOOKING_MODE_RELIABILITY_DRAFTS } from '@/modules/content/booking-mode-reliability.seed';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
@@ -97,6 +98,10 @@ export default async function BookingReviewPage({
 
   const labels = await getLabels({
     'booking.review.title': 'Review and confirm',
+    'booking.review.request_title': 'Review your booking request',
+    'booking.review.request_confirm': 'Send booking request',
+    'booking.review.request_consent': 'I have read the cancellation terms and agree to request these dates.',
+    'booking.review.request_note': 'The property team will review this request before payment. Sending a request does not reserve the dates or charge you. If approved, your trip will show the payment deadline.',
     'booking.review.policy_step': '{pct}% refund when cancelled at least {days} days before check-in',
     'booking.review.policy_step_last': '{pct}% refund for later cancellations',
     'catalog.cancellation_policies.flexible.label': 'Flexible',
@@ -116,7 +121,7 @@ export default async function BookingReviewPage({
     'booking.review.confirming': 'Confirming…',
     'booking.review.back': '← Back',
     'booking.review.error': 'Could not complete the booking. Please try again.',
-    'booking.review.requote': 'The price changed. Review the updated total and agree again before booking.',
+    'booking.review.terms_requote': 'The price or booking terms changed. Review the updated details and agree again before booking.',
     'booking.review.category_note':
       'We assign a free home in this category when you confirm. The total is calculated on that home.',
     'listing.payment_method': 'Payment method',
@@ -133,7 +138,7 @@ export default async function BookingReviewPage({
     'listing.cleaning_fee': 'Cleaning',
     'listing.occupancy_tax': 'Occupancy tax',
     'listing.cancellation_default': 'The cancellation terms for this home apply.',
-  });
+  }, undefined, BOOKING_MODE_RELIABILITY_DRAFTS);
 
   return (
     <Suspense>
@@ -159,6 +164,10 @@ export default async function BookingReviewPage({
         }
         labels={{
           title: labels['booking.review.title'],
+          requestTitle: labels['booking.review.request_title'],
+          requestConfirm: labels['booking.review.request_confirm'],
+          requestConsent: labels['booking.review.request_consent'],
+          requestNote: labels['booking.review.request_note'],
           recap: labels['booking.review.recap'],
           checkIn: labels['booking.review.check_in'],
           checkOut: labels['booking.review.check_out'],
@@ -174,7 +183,7 @@ export default async function BookingReviewPage({
           confirming: labels['booking.review.confirming'],
           back: labels['booking.review.back'],
           error: labels['booking.review.error'],
-          requote: labels['booking.review.requote'],
+          requote: labels['booking.review.terms_requote'],
           conflictTitle: labels['listing.conflict_title'],
           conflictBody: labels['listing.conflict_body'],
           searchAgain: labels['listing.search_again'],
@@ -190,3 +199,4 @@ export default async function BookingReviewPage({
     </Suspense>
   );
 }
+

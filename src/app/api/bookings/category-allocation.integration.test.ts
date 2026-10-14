@@ -84,6 +84,7 @@ describe('category booking falls through to the next villa', () => {
       petsCount: 0,
       acceptedTotalSatang,
       quotedUnitId: quotedUnit.id,
+      instantBook: quotedUnit.instantBook,
     });
     return request({
       inventoryCategoryId: category.id,
@@ -93,6 +94,7 @@ describe('category booking falls through to the next villa', () => {
       adultsCount: 2,
       childrenCount: 0,
       paymentMethod: 'cash',
+      instantBook: quotedUnit.instantBook,
       idempotencyKey: randomUUID(),
       categoryQuoteToken: token,
       acceptedTotalSatang,
@@ -271,4 +273,32 @@ describe('category booking falls through to the next villa', () => {
     // Four nights of the cheaper villa, not the pricier one it skipped.
     expect(booking?.totalThb).toBeLessThan(900_000 * 4);
   });
+
+  it('uses a same-mode sibling after the quoted unit switches to request-only', async () => {
+    const first = await villa('Villa A');
+    const sibling = await villa('Villa B');
+    const guest = await createIdentity();
+    mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
+    const accepted = await categoryBooking();
+    await db.unit.update({ where: { id: first.id }, data: { instantBook: false } });
+    const response = await POST(accepted);
+    expect(response.status).toBe(201);
+    const booking = (await response.json()).booking;
+    expect(booking.unitId).toBe(sibling.id);
+    expect(booking.status).toBe('pending_payment');
+  });
+
+  it('requires a new quote if every remaining home has a different booking mode', async () => {
+    const unit = await villa('Villa A');
+    const guest = await createIdentity();
+    mockGetCurrentUser.mockReturnValue({ identityId: guest.id, isAdmin: false });
+    const accepted = await categoryBooking();
+    await db.unit.update({ where: { id: unit.id }, data: { instantBook: false } });
+    const response = await POST(accepted);
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe('REQUOTE_REQUIRED');
+    expect(await db.booking.count()).toBe(0);
+  });
+
 });
+

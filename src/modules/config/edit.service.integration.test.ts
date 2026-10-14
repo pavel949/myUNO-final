@@ -285,7 +285,7 @@ describe('Config edit service', () => {
           paramKey: 'booking.hold_minutes',
           newValue: 0,
         })
-      ).rejects.toThrow('hold_minutes must be positive');
+      ).rejects.toThrow(/must be positive whole units/);
     });
 
     it('validates pricing.season.calendar is array of valid seasons', async () => {
@@ -520,4 +520,22 @@ describe('a configured zero is a value, not an absence (T-058)', () => {
       newValue: 1440,
     });
   });
+});
+
+
+
+describe('booking windows reject unsafe persisted configuration', () => {
+  beforeEach(() => resetDb());
+  it.each(['booking.hold_minutes', 'booking.request_hours', 'booking.manual_payment_hold_hours'] as const)(
+    'validates %s at the canonical admin writer', async paramKey => {
+      const admin = await createIdentity({ isAdmin: true });
+      for (const newValue of [0, -1, 1.5, '24', Number.MAX_SAFE_INTEGER]) {
+        await expect(updateConfigParameter(prisma, { identityId: admin.id, paramKey, newValue }))
+          .rejects.toThrow(/positive whole units/);
+      }
+      expect(await prisma.configOverride.count({ where: { parameterKey: paramKey } })).toBe(0);
+      await updateConfigParameter(prisma, { identityId: admin.id, paramKey, newValue: 12 });
+      expect(await getConfig(prisma, paramKey)).toBe(12);
+    }
+  );
 });

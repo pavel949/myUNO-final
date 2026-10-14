@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { GoogleLoginButton } from './google-login-button';
+import { safeNextPath } from '@/lib/safe-next-path';
 
 interface LoginFormLabels {
   email: string;
@@ -24,6 +25,7 @@ interface LoginFormLabels {
 export function LoginForm({ labels }: { labels: LoginFormLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams?.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +62,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
         return;
       }
 
-      const next = searchParams?.get('next');
-      router.push(next && next.startsWith('/') ? next : '/');
+      router.push(next || '/');
       router.refresh();
     } catch {
       setError(labels.errorGeneric);
@@ -111,7 +112,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
       <div className="flex flex-col gap-8 text-center">
         <p className="text-small text-text-secondary">
           {labels.noAccount}{' '}
-          <Link href="/register" className="text-brand-andaman font-semibold hover:underline">
+          <Link href={next ? `/register?next=${encodeURIComponent(next)}` : '/register'} className="text-brand-andaman font-semibold hover:underline">
             {labels.registerLink}
           </Link>
         </p>
@@ -125,3 +126,4 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
     </form>
   );
 }
+

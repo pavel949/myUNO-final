@@ -12,6 +12,7 @@ const currentUser = vi.hoisted(() => vi.fn());
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: currentUser }));
 vi.mock('@/lib/prisma', async () => ({ prisma: (await import('@/test/util')).db }));
 import { POST } from './route';
+import { POST as respondToRequest } from './[id]/respond/route';
 import { POST as manualReservation } from '@/app/api/ops/reservations/route';
 
 describe('public booking payment methods follow the asset project', () => {
@@ -41,7 +42,7 @@ describe('public booking payment methods follow the asset project', () => {
     const body = { ...stay, unitId: unit.id, instantBook, acceptedTotalSatang: quote.total_thb,
       paymentMethod: 'cash', idempotencyKey: randomUUID() };
     const { token } = createCategoryStayQuoteToken({ ...stay, inventoryCategoryId: unit.inventoryCategoryId!,
-      projectId: project.id, quotedUnitId: unit.id, petsCount: 0, acceptedTotalSatang: quote.total_thb });
+      projectId: project.id, quotedUnitId: unit.id, instantBook: unit.instantBook, petsCount: 0, acceptedTotalSatang: quote.total_thb });
     const category = { ...body, unitId: undefined, inventoryCategoryId: unit.inventoryCategoryId,
       categoryQuoteToken: token };
     return { project, unit, body, category };
@@ -131,4 +132,64 @@ describe('public booking payment methods follow the asset project', () => {
     expect(booking).toMatchObject({ bookingType: 'owner_stay', status: 'confirmed', totalThb: 0 });
     expect(await db.payment.count()).toBe(0);
   });
+
+  it('applies the configured request deadline instead of the service default', async () => {
+    const { project, body } = await fixture(['cash'], false);
+    await setConfigOverride(db, 'booking.request_hours', 6, {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guestId,
+    });
+    const before = Date.now();
+    expect((await POST(request(body))).status).toBe(201);
+    const stored = await db.booking.findFirstOrThrow();
+    expect(stored.status).toBe('requested');
+    expect(stored.requestExpiresAt!.getTime()).toBeGreaterThanOrEqual(before + 6 * 3_600_000);
+    expect(stored.requestExpiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + 6 * 3_600_000);
+    expect(stored.holdExpiresAt).toBeNull();
+  });
+
+  it('applies the configured card hold instead of the service default', async () => {
+    vi.stubEnv('PAYMENT_PROVIDER', 'mock');
+    const { project, body } = await fixture(['card_provider']);
+    await setConfigOverride(db, 'booking.hold_minutes', 17, {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guestId,
+    });
+    const before = Date.now();
+    expect((await POST(request({ ...body, paymentMethod: 'card_provider' }))).status).toBe(201);
+    const stored = await db.booking.findFirstOrThrow();
+    expect(stored.holdExpiresAt!.getTime()).toBeGreaterThanOrEqual(before + 17 * 60_000);
+    expect(stored.holdExpiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + 17 * 60_000);
+  });
+
+  it('fails closed on an invalid persisted booking window before creating inventory holds', async () => {
+    const { project, body } = await fixture(['cash']);
+    await setConfigOverride(db, 'booking.request_hours', 0, {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guestId,
+    });
+    expect((await POST(request(body))).status).toBe(500);
+    expect(await db.booking.count()).toBe(0);
+    expect(await db.payment.count()).toBe(0);
+  });
+
+
+  it('uses the same configured manual hold on instant creation and request approval', async () => {
+    const { project, body } = await fixture(['cash'], false);
+    await setConfigOverride(db, 'booking.manual_payment_hold_hours', 4, {
+      scopeType: 'project', scopeId: project.id, changedByIdentityId: guestId,
+    });
+    const created = await POST(request(body));
+    expect(created.status).toBe(201);
+    const bookingId = (await created.json()).booking.id;
+    const admin = await createIdentity({ isAdmin: true });
+    currentUser.mockResolvedValue({ identityId: admin.id, isAdmin: true, roles: [] });
+    const before = Date.now();
+    const approved = await respondToRequest(request({ action: 'approve' }), { params: { id: bookingId } });
+    expect(approved.status).toBe(200);
+    const stored = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
+    expect(stored.status).toBe('pending_payment');
+    expect(stored.requestExpiresAt).toBeNull();
+    expect(stored.holdExpiresAt!.getTime()).toBeGreaterThanOrEqual(before + 4 * 3_600_000);
+    expect(stored.holdExpiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + 4 * 3_600_000);
+  });
+
 });
+

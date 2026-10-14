@@ -208,8 +208,8 @@ try {
     assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 0);
     await fp.goto(`/ops/reservations?${new URLSearchParams({ spaceId: fixture.operatingSpaceId })}`);
     const form = fp.locator('form').filter({ has: fp.getByRole('heading', { name: 'Create reservation', exact: true }) });
-    await form.getByLabel('Property', { exact: true }).selectOption(fixture.unitId);
-    await form.getByLabel('Guest', { exact: true }).selectOption(fixture.guestId);
+    await form.locator('select[name=unitId]').selectOption(fixture.unitId);
+    await form.locator('select[name=guestIdentityId]').selectOption(fixture.guestId);
     await form.getByLabel('Check-in', { exact: true }).fill(fixture.manualStartDate);
     await form.getByLabel('Check-out', { exact: true }).fill(fixture.manualEndDate);
     await form.getByLabel('Adults', { exact: true }).fill('2');
@@ -256,8 +256,8 @@ try {
     await poll(async () => {
       const submit = form.getByRole('button', { name: 'Create reservation', exact: true });
       return await submit.count() === 1 && await submit.isEnabled()
-        && await form.getByLabel('Property', { exact: true }).inputValue() === ''
-        && await form.getByLabel('Guest', { exact: true }).inputValue() === ''
+        && await form.locator('select[name=unitId]').inputValue() === ''
+        && await form.locator('select[name=guestIdentityId]').inputValue() === ''
         && await form.getByLabel('Check-in', { exact: true }).inputValue() === ''
         && await form.getByPlaceholder('Notes', { exact: true }).inputValue() === '';
     }, 'Reservation committed, but the manual form stayed busy or failed to reset');

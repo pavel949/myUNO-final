@@ -33,6 +33,17 @@ async function main() {
     const unit = await createUnit({ projectId: project.id, ownerIdentityId: owner.id,
       name: 'Synthetic Browser Villa', status: 'draft', categoryKey: 'synthetic_browser_1br',
       bedrooms: 1, maxGuests: 2, baseNightlyThb: 200000, minNights: 1, instantBook: true });
+    // Existing operational context only. The browser must create the reservation.
+    const organization = await db.organization.create({ data: {
+      name: 'Synthetic Browser Operations', orgType: 'management_company',
+      projectId: project.id, contactEmail: 'operations@browser.example.test',
+      contactPhone: '', status: 'active',
+    } });
+    const operatingSpace = await db.operatingSpace.create({ data: {
+      key: 'synthetic-browser-operations', name: 'Synthetic Browser Operations',
+      organizationId: organization.id, status: 'active',
+      units: { create: { unitId: unit.id, active: true, startsOn: new Date() } },
+    } });
     const descriptionKey = 'browser_acceptance.villa.description';
     const content = await db.contentKey.create({ data: { key: descriptionKey, namespace: 'browser_acceptance', description: 'Synthetic browser fixture only' } });
     await db.translation.create({ data: { contentKeyId: content.id, locale: 'en', value: 'Original synthetic description.', status: 'ok', updatedByIdentityId: founder.id } });
@@ -67,7 +78,7 @@ async function main() {
     if (!readiness || readiness.blockers.length) throw new Error(`Fixture prerequisites incomplete: ${JSON.stringify(readiness?.blockers)}`);
     const day = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
     await mkdir('browser-results', { recursive: true });
-    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48) }, null, 2));
+    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55) }, null, 2));
     console.log('Synthetic canonical draft fixture ready; no unit published or booking created by setup.');
   } finally { await db.$disconnect(); }
 }

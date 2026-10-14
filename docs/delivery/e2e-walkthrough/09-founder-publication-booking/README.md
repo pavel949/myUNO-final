@@ -22,12 +22,15 @@ The fixture is a fully synthetic, already-onboarded canonical `villa_estate` wit
 8. Reserve through the guest card, review, explicit consent and cash selection. Verify exactly one real booking with the quoted total and a live manual-payment hold. No payment is collected.
 9. Open the founder calendar night, inspect its hold, and follow its canonical booking identity. Independently verify the public quote reports the dates unavailable.
 10. Cancel through the guest UI; verify the canonical row, date release and free calendar cell.
+11. Enter a separate manual reservation through the founder's operational desk; verify one persisted canonical booking, exact tariff/dates/guest, matching calendar hold, and a usable reset form with the new row visible. This exercises the current pending-payment entry contract, not a paid or permanently confirmed commitment.
 
 Unexpected local 5xx responses and browser runtime exceptions fail the run. Each completed step has a screenshot. Failures produce a nonzero exit and preserve traces/screenshots.
 
 ## Safe execution
 
 The workflow uses a fresh GitHub Actions PostgreSQL 16 service named `myuno_browser_test`, the real migration chain and a local production Next.js build. It has read-only repository permissions, no environment binding, no repository secrets, no deployment steps, and no production URLs. It installs the exact official Playwright library version into the runner's temporary directory and Chromium through Playwright; the application's lockfile and dependency tree are unchanged.
+
+Next telemetry and Prisma's optional checkpoint request are disabled in this job. The egress guard remains strict: the first completed 10-step journey was still correctly marked red when Prisma attempted its checkpoint request. See the [official Prisma telemetry opt-out](https://docs.prisma.io/docs/orm/v6/tools/prisma-cli).
 
 The guard requires the exact loopback database URL and synthetic auth/encryption values. A same-named remote DB, a mismatched app/test database, a nonlocal app URL, runtime `.env` files and known provider secrets are refused. Setup never invokes `resetDb`, truncation, `db push`, production seeding or migration repair; rerunning against an existing fixture refuses rather than deleting it. The CI service is discarded after the run.
 

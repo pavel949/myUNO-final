@@ -204,6 +204,69 @@ try {
     await cell.click(); await fp.getByText('No reservation or closure for this date.', { exact: true }).waitFor();
     await fp.screenshot({ path: `${out}/calendar-released.png`, fullPage: true });
   });
+  await step('Founder records a manual reservation through the operational desk', fp, async () => {
+    assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 0);
+    await fp.goto(`/ops/reservations?${new URLSearchParams({ spaceId: fixture.operatingSpaceId })}`);
+    const form = fp.locator('form').filter({ has: fp.getByRole('heading', { name: 'Create reservation', exact: true }) });
+    await form.getByLabel('Property', { exact: true }).selectOption(fixture.unitId);
+    await form.getByLabel('Guest', { exact: true }).selectOption(fixture.guestId);
+    await form.getByLabel('Check-in', { exact: true }).fill(fixture.manualStartDate);
+    await form.getByLabel('Check-out', { exact: true }).fill(fixture.manualEndDate);
+    await form.getByLabel('Adults', { exact: true }).fill('2');
+    await form.getByLabel('Children', { exact: true }).fill('0');
+    await form.getByLabel('Pets', { exact: true }).fill('0');
+    await form.getByPlaceholder('Notes', { exact: true }).fill('Synthetic founder-entered reservation.');
+    const response = fp.waitForResponse(r => r.url().endsWith('/api/ops/reservations') && r.request().method() === 'POST');
+    response.catch(() => {});
+    await form.getByRole('button', { name: 'Create reservation', exact: true }).click();
+    const saved = await response;
+    assert.equal(saved.status(), 201);
+    const result = await saved.json();
+    const reservations = await db.booking.findMany({ where: { unitId: fixture.unitId, channel: 'manual' } });
+    assert.equal(reservations.length, 1, 'One form submission must create exactly one canonical manual booking');
+    const reservation = reservations[0];
+    assert.equal(reservation.id, result.booking?.id);
+    assert.equal(reservation.guestIdentityId, fixture.guestId);
+    assert.equal(reservation.startDate.toISOString().slice(0, 10), fixture.manualStartDate);
+    assert.equal(reservation.endDate.toISOString().slice(0, 10), fixture.manualEndDate);
+    assert.equal(reservation.totalThb, 370200, 'Manual reservation must use the saved 1234 THB nightly tariff');
+    assert.equal(reservation.status, 'pending_payment');
+    assert.equal(reservation.paymentMethod, null, 'Manual desk does not record a payment method');
+    assert.ok(reservation.holdExpiresAt && reservation.holdExpiresAt.getTime() > Date.now());
+    assert.equal(await db.payment.count({ where: { bookingId: reservation.id } }), 0);
+    report.manualReservation = { bookingId: reservation.id, status: reservation.status, totalSatang: reservation.totalThb, startDate: fixture.manualStartDate, endDate: fixture.manualEndDate, persisted: true };
+    await fp.screenshot({ path: `${out}/manual-reservation-after-submit.png`, fullPage: true });
+
+    // Inspect the persisted hold in a second real page so a stuck submission
+    // form is preserved for diagnosis rather than repaired by navigation.
+    const calendar = await founder.newPage();
+    try {
+      await calendar.goto(`/ops/calendar/board?${new URLSearchParams({ projectId: fixture.projectId, unitId: fixture.unitId, start: fixture.manualStartDate, days: '7' })}`);
+      const cell = calendar.getByRole('button', { name: new RegExp(`${fixture.unitName} · ${fixture.manualStartDate} ·`) });
+      await cell.waitFor(); assert.match(await cell.getAttribute('aria-label'), /Hold/i);
+      await cell.click();
+      const detail = calendar.getByRole('region', { name: 'Night details' });
+      const stay = detail.getByRole('link', { name: /Open canonical stay/ });
+      await stay.waitFor();
+      assert.equal(await stay.getAttribute('href'), `/ops/stays/${reservation.id}`);
+      await calendar.screenshot({ path: `${out}/manual-calendar-held.png`, fullPage: true });
+      report.manualReservation.calendarVerified = true;
+    } finally { await calendar.close(); }
+
+    await poll(async () => {
+      const submit = form.getByRole('button', { name: 'Create reservation', exact: true });
+      return await submit.count() === 1 && await submit.isEnabled()
+        && await form.getByLabel('Property', { exact: true }).inputValue() === ''
+        && await form.getByLabel('Guest', { exact: true }).inputValue() === ''
+        && await form.getByLabel('Check-in', { exact: true }).inputValue() === ''
+        && await form.getByPlaceholder('Notes', { exact: true }).inputValue() === '';
+    }, 'Reservation committed, but the manual form stayed busy or failed to reset');
+    const row = fp.locator('article').filter({ has: fp.locator(`a[href="/ops/stays/${reservation.id}"]`) });
+    await row.waitFor();
+    assert.match(await row.innerText(), /Synthetic Guest/);
+    assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 1);
+    report.manualReservation.formVerified = true;
+  });
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');
   assert.deepEqual(report.pageErrors, [], 'Unexpected browser runtime errors');
   report.result = 'passed';

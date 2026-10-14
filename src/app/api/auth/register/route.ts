@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     );
     response.cookies.set(
       SESSION_COOKIE_NAME,
-      createSessionToken(identity.id),
+      createSessionToken(identity.id, identity.sessionsValidFrom?.getTime() ?? null),
       sessionCookieOptions()
     );
     return response;

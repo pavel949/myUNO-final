@@ -54,4 +54,23 @@ describe('launch readiness (catalogue gates)', () => {
     expect(item(items, 'live_units')).toMatchObject({ state: 'ok', blocking: true, detail: '2' });
     expect(item(items, 'permitted_use')).toMatchObject({ state: 'action', blocking: true, detail: '1' });
   });
+
+  it('reports a published catalogue and a failed scheduler independently', async () => {
+    const db = {
+      unit: {
+        count: vi.fn(({ where }: { where: Record<string, unknown> }) =>
+          Promise.resolve(where.permittedUseConfirmedAt === null ? 0 : 1)
+        ),
+      },
+    } as unknown as PrismaClient;
+    const failedJob = { cadence: 'frequent', status: 'failed', lastFinishedAt: new Date() };
+    getSchedulerHealthMock.mockResolvedValue([failedJob]);
+    jobsNeedingAttentionMock.mockReturnValue([failedJob]);
+
+    const items = await evaluateDataReadiness(db);
+
+    expect(item(items, 'live_units')).toMatchObject({ state: 'ok', blocking: true, detail: '1' });
+    expect(item(items, 'permitted_use')).toMatchObject({ state: 'ok', blocking: true, detail: '0' });
+    expect(item(items, 'scheduler_running')).toMatchObject({ state: 'action', blocking: true });
+  });
 });

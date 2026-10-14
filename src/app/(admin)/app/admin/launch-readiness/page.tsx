@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/app/libs/requireAdminPage';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
@@ -17,16 +18,17 @@ const GROUPS: ReadinessGroup[] = ['security', 'delivery', 'automation', 'payment
  * system; nothing is ticked on trust.
  */
 export default async function LaunchReadinessPage() {
+  await requireAdminPage();
   const { items, blockingOpen } = await collectLaunchReadiness(prisma);
   const vault = await listVaultEntries(prisma);
   const locale = getRequestLocale();
 
   const labels = await getLabels({
     'admin.launch.title': 'Launch readiness',
-    'admin.launch.subtitle': 'What the platform still needs from you before real guests and real money. The code side is done; these rows are keys, accounts and data.',
-    'admin.launch.headline.ready': 'Nothing blocks launch.',
+    'admin.launch.configuration.subtitle': 'Configuration and data checks before launch. Key presence does not verify provider operation, deployment or end-to-end behavior.',
+    'admin.launch.configuration.checked': 'These configuration checks passed. Live operation still needs verification.',
     'admin.launch.headline.blocked': 'Blocking launch: {count}',
-    'admin.launch.state.ok': 'Ready',
+    'admin.launch.configuration.state.checked': 'Configured / checked',
     'admin.launch.state.action': 'Needs you',
     'admin.launch.badge.blocking': 'Blocks launch',
     'admin.launch.badge.optional': 'Optional',
@@ -134,11 +136,11 @@ export default async function LaunchReadinessPage() {
 
   const t = (key: string) => (labels as Record<string, string>)[key] ?? key;
   const headline =
-    blockingOpen === 0 ? t('admin.launch.headline.ready') : t('admin.launch.headline.blocked').replace('{count}', String(blockingOpen));
+    blockingOpen === 0 ? t('admin.launch.configuration.checked') : t('admin.launch.headline.blocked').replace('{count}', String(blockingOpen));
 
   return (
     <div>
-      <PageHeading title={t('admin.launch.title')} subtitle={t('admin.launch.subtitle')} />
+      <PageHeading title={t('admin.launch.title')} subtitle={t('admin.launch.configuration.subtitle')} />
       <p className={`text-body font-semibold mb-24 ${blockingOpen === 0 ? 'text-state-success' : 'text-state-error'}`}>{headline}</p>
       {GROUPS.map((group) => {
         const rows = items.filter((i) => i.group === group);
@@ -155,7 +157,7 @@ export default async function LaunchReadinessPage() {
                         row.state === 'ok' ? 'bg-state-success-soft text-state-success' : 'bg-state-error-soft text-state-error'
                       }`}
                     >
-                      {t(`admin.launch.state.${row.state}`)}
+                      {t(row.state === 'ok' ? 'admin.launch.configuration.state.checked' : 'admin.launch.state.action')}
                     </span>
                     <span className="font-semibold text-text-ink">{t(`admin.launch.item.${row.id}.title`)}</span>
                     {row.detail ? <span className="text-small text-text-secondary">· {row.detail}</span> : null}

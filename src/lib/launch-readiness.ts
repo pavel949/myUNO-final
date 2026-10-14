@@ -29,6 +29,17 @@ export interface ReadinessEnv {
   [key: string]: string | undefined;
 }
 
+// These are local configuration checks, not proof that a provider is operational.
+function isPublicHttpsUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 const present = (env: ReadinessEnv, key: string) => Boolean(env[key] && env[key]!.trim().length > 0);
 
 /** Pure part: everything decidable from environment variables alone. */
@@ -40,6 +51,8 @@ export function evaluateEnvReadiness(env: ReadinessEnv): ReadinessItem[] {
     blocking,
   });
 
+  const sessionSecret = env.SESSION_SECRET || env.NEXTAUTH_SECRET;
+
   const cardReady =
     env.PAYMENT_PROVIDER === 'omise' &&
     present(env, 'OMISE_PUBLIC_KEY') &&
@@ -47,9 +60,9 @@ export function evaluateEnvReadiness(env: ReadinessEnv): ReadinessItem[] {
     present(env, 'OMISE_WEBHOOK_SECRET');
 
   return [
-    item('encryption_key', 'security', present(env, 'ENCRYPTION_KEY'), true),
-    item('session_secret', 'security', present(env, 'SESSION_SECRET'), true),
-    item('app_url', 'security', present(env, 'NEXT_PUBLIC_APP_URL'), true),
+    item('encryption_key', 'security', /^[0-9a-fA-F]{64}$/.test(env.ENCRYPTION_KEY ?? ''), true),
+    item('session_secret', 'security', Boolean(sessionSecret?.trim()), true),
+    item('app_url', 'security', isPublicHttpsUrl(env.NEXT_PUBLIC_APP_URL), true),
     item('email', 'delivery', present(env, 'RESEND_API_KEY') && present(env, 'EMAIL_FROM'), true),
     item('media_storage', 'delivery', present(env, 'BLOB_READ_WRITE_TOKEN'), true),
     item('cron_secret', 'automation', present(env, 'CRON_SECRET'), true),

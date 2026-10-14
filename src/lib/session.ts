@@ -67,9 +67,10 @@ export const getSessionUser = cache(async (): Promise<CurrentUser | null> => {
       return null;
     }
 
-    // Revocation: a session issued before the identity's cut-off is dead, however
-    // valid its signature (log out everywhere, password change or reset).
-    if (identity.sessionsValidFrom && session.issuedAtMs < identity.sessionsValidFrom.getTime()) {
+    // Compare the generation that was proved, not the response's issue time.
+    // Legacy cookies cannot prove a generation and stop working after revocation.
+    const generation = identity.sessionsValidFrom?.getTime() ?? null;
+    if (session.generation === undefined ? generation !== null : session.generation !== generation) {
       return null;
     }
 

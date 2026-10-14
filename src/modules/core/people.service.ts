@@ -426,7 +426,7 @@ export async function claimIdentity(db: PrismaClient, input: ClaimIdentityInput)
 
   // Find the token
   const token = await db.oneTimeToken.findFirst({
-    where: { tokenHash },
+    where: { tokenHash, purpose: 'account_claim' },
     include: { identity: true },
   });
 

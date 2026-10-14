@@ -36,4 +36,14 @@ describe('/api/admin/secrets — founder key register', () => {
     expect((await DELETE(req('DELETE', { name: 'OMISE_SECRET_KEY' }))).status).toBe(200);
     expect((await POST(req('POST', { name: 'OMISE_SECRET_KEY' }))).status).toBe(404);
   });
+
+  it('returns a generic no-store failure for corrupt ciphertext', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    currentUser.mockResolvedValue({ identityId: admin.id, isAdmin: true, roles: [] });
+    await db.secretVaultEntry.create({ data: { name: 'CORRUPT', valueEncrypted: 'not-ciphertext' } });
+    const response = await POST(req('POST', { name: 'CORRUPT' }));
+    expect(response.status).toBe(500);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ error: 'Could not reveal' });
+  });
 });

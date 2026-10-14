@@ -98,6 +98,48 @@ describe('Explicit operating-space creation: founder, canonical assets and atomi
     expect(audits[1].data).toMatchObject({ before: [], afterUnitIds: [f.unit.id, f.sibling.id] });
   });
 
+
+  it('creates a 39-unit resort atomically with bounded database round trips', async () => {
+    const f = await fixture();
+    const units = [f.unit, f.sibling];
+    for (let i = 2; i < 39; i++) units.push(await createUnit({ projectId: f.project.id }));
+    let calls = 0;
+    // Real PostgreSQL queries with simulated remote round-trip latency.
+    // The old per-unit locking/upsert path exceeds the transaction deadline.
+    const remote = db.$extends({ query: { $allOperations: async ({ args, query }) => {
+      calls++;
+      await new Promise(resolve => setTimeout(resolve, 80));
+      return query(args);
+    } } }) as unknown as typeof db;
+    const space = await createGovernedOperatingSpace(remote, f.founder.id, createInput(f, {
+      key: 'resort-39', unitIds: units.map(u => u.id),
+    }));
+    expect(calls).toBeLessThanOrEqual(20);
+    const attached = await db.operatingSpaceUnit.findMany({ where: { operatingSpaceId: space.id } });
+    expect(attached.map(u => u.unitId).sort()).toEqual(units.map(u => u.id).sort());
+    expect(attached.every(u => u.active && u.endsOn === null)).toBe(true);
+    expect(await db.operatingSpaceMember.count({ where: { operatingSpaceId: space.id } })).toBe(0);
+    expect((await db.auditLog.findMany({ where: { entityId: space.id } })).map(a => a.action).sort())
+      .toEqual(['operating_space:create', 'operating_space:scope']);
+  });
+
+  it('bulk scope preserves active dates, reactivates inactive rows and creates only missing rows', async () => {
+    const f = await fixture();
+    const third = await createUnit({ projectId: f.project.id });
+    const inactive = await db.operatingSpaceUnit.create({ data: {
+      operatingSpaceId: f.space.id, unitId: f.sibling.id, active: false, startsOn: past(), endsOn: past(),
+    } });
+    await updateGovernedOperatingScope(db, f.founder.id, f.space.id, {
+      unitIds: [f.unit.id, f.sibling.id, third.id], expectedUpdatedAt: f.space.updatedAt.toISOString(),
+    });
+    expect(await db.operatingSpaceUnit.findUnique({ where: { id: f.attachment.id } })).toEqual(f.attachment);
+    const reactivated = await db.operatingSpaceUnit.findUniqueOrThrow({ where: { id: inactive.id } });
+    expect(reactivated.active).toBe(true);
+    expect(reactivated.endsOn).toBeNull();
+    expect(reactivated.startsOn.getTime()).toBeGreaterThan(inactive.startsOn.getTime());
+    expect(await db.operatingSpaceUnit.count({ where: { operatingSpaceId: f.space.id } })).toBe(3);
+  });
+
   it('accepts an existing evidenced current management mandate without inventing a project operator relation', async () => {
     const f = await fixture();
     await db.projectOrganizationRole.delete({ where: { id: f.relation.id } });

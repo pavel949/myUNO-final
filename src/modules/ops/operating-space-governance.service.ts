@@ -33,8 +33,11 @@ async function lockSpaceVersion(tx: Prisma.TransactionClient, spaceId: string, e
 
 async function saveScope(tx: Prisma.TransactionClient, actorId: string, spaceId: string, organizationId: string, unitIds: string[]) {
   // Serialize overlapping selections across different spaces without a new occupancy store.
-  for (const id of [...unitIds].sort()) {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`operating-space-unit:${id}`}))`;
+  if (unitIds.length) {
+    await tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(hashtext('operating-space-unit:' || unit_id))
+      FROM (SELECT unnest(${unitIds}::text[]) AS unit_id ORDER BY 1) AS ordered_units
+    `;
   }
   const now = new Date();
   const eligible = new Set((await eligibleOrganizationUnits(tx, organizationId, now)).map(u => u.id));
@@ -47,15 +50,25 @@ async function saveScope(tx: Prisma.TransactionClient, actorId: string, spaceId:
   const before = await tx.operatingSpaceUnit.findMany({ where: { operatingSpaceId: spaceId }, select: { unitId: true, active: true, startsOn: true, endsOn: true } });
   if (before.some(u => u.active && u.startsOn > now)) throw new OperatingAccessError('This scope contains future attachments. Review their operating dates before changing scope.', 409);
   await tx.operatingSpaceUnit.updateMany({ where: { operatingSpaceId: spaceId, active: true, unitId: { notIn: unitIds } }, data: { active: false, endsOn: now } });
+  const previous = new Map(before.map(u => [u.unitId, u]));
   for (const unitId of unitIds) {
-    const existing = before.find(u => u.unitId === unitId);
+    const existing = previous.get(unitId);
     // Never silently alter a scheduled attachment. An explicit future scheduling UI is separate.
     if (existing?.active && (existing.startsOn > now || (existing.endsOn && existing.endsOn <= now))) {
       throw new OperatingAccessError('A selected attachment has scheduled dates. Review its operating dates before changing scope.', 409);
     }
-    await tx.operatingSpaceUnit.upsert({ where: { operatingSpaceId_unitId: { operatingSpaceId: spaceId, unitId } },
-      create: { operatingSpaceId: spaceId, unitId, active: true, startsOn: now },
-      update: existing?.active ? {} : { active: true, startsOn: now, endsOn: null },
+  }
+  const newIds = unitIds.filter(id => !previous.has(id));
+  const inactiveIds = unitIds.filter(id => previous.get(id)?.active === false);
+  if (newIds.length) {
+    await tx.operatingSpaceUnit.createMany({ data: newIds.map(unitId => ({
+      operatingSpaceId: spaceId, unitId, active: true, startsOn: now,
+    })) });
+  }
+  if (inactiveIds.length) {
+    await tx.operatingSpaceUnit.updateMany({
+      where: { operatingSpaceId: spaceId, unitId: { in: inactiveIds }, active: false },
+      data: { active: true, startsOn: now, endsOn: null },
     });
   }
   await tx.auditLog.create({ data: { actorIdentityId: actorId, action: 'operating_space:scope', entityType: 'OperatingSpace', entityId: spaceId,

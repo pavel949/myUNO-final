@@ -96,12 +96,16 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
       const reserve = guest.page.getByRole('button', { name: 'Reserve', exact: true });
       const action = guest.viewport.width === mobile.width ? reserve.last() : reserve.first();
       await action.waitFor(); await layout(guest.page, `guest-${index + 1}-unit`, action);
+      // The quote resolves asynchronously after the button becomes visible.
+      // Wait for genuine actionability; never force-click a loading/disabled CTA.
+      await action.click({ trial: true, timeout: 15_000 });
       assert.equal(await action.isEnabled(), true);
       await action.click(); await guest.page.waitForURL(url => url.pathname === '/book/review' && url.searchParams.has('bookingIntent'));
       await guest.page.getByText('Total', { exact: true }).waitFor();
       await guest.page.locator('main input[type=checkbox]').check();
       await guest.page.locator('select').filter({ hasText: 'Cash on arrival' }).selectOption('cash');
       const confirm = guest.page.getByRole('button', { name: 'Confirm booking', exact: true });
+      await confirm.click({ trial: true, timeout: 15_000 });
       assert.equal(await confirm.isEnabled(), true); await layout(guest.page, `guest-${index + 1}-review`, confirm);
       guest.confirm = confirm;
       if (index < 2) await guest.page.screenshot({ path: `${out}/concurrent-review-${guest.viewport.width}.png`, fullPage: true });

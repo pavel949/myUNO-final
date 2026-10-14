@@ -123,7 +123,7 @@ function previousSeason(previous: Row[], mode: 'daily' | 'monthly', season: Seas
 
 function toRows(draft: TariffDraft, mode: 'daily' | 'monthly', previous: Row[]): Row[] {
   const seasons = mode === 'daily' ? draft.daily : draft.monthly;
-  return seasons.map(s => {
+  const rows = seasons.map(s => {
     const prior = previousSeason(previous, mode, s);
     return {
       ...(prior ?? {}),
@@ -144,6 +144,16 @@ function toRows(draft: TariffDraft, mode: 'daily' | 'monthly', previous: Row[]):
       sourceSellable: true,
     };
   });
+  const ids = new Set<string>();
+  for (const row of rows) {
+    // Renaming A to B and adding a fresh A must not bind two rows to the same
+    // saved source identity (or silently change monthly rounding/policies).
+    if (ids.has(row.sourceRateId)) throw Object.assign(new Error('TARIFF_INVALID'), {
+      issues: [{ code: 'row_identity', kind: mode, season: row.seasonCode }],
+    });
+    ids.add(row.sourceRateId);
+  }
+  return rows;
 }
 
 /** The editor's view of a unit's current grid. */

@@ -78,6 +78,17 @@ describe('tariff row identity and roundtrip', () => {
       ] });
     }
   });
+  it('refuses two draft rows resolving to one saved source identity before a write', async () => {
+    const { db, update } = roundtripDatabase();
+    const value = await readTariffDraft(db, 'unit');
+    value.daily[0].seasonCode = 'BASE';
+    value.daily[0].windows = [{ start: '01-01', end: '06-30' }];
+    value.daily.push({ seasonCode: 'ALL', windows: [{ start: '07-01', end: '12-31' }], amountSatang: 700000, minimumNights: 1 });
+    await expect(saveTariffDraft(db, { unitIds: ['unit'], actorIdentityId: 'actor', draft: value }))
+      .rejects.toMatchObject({ message: 'TARIFF_INVALID', issues: [{ code: 'row_identity', kind: 'daily', season: 'ALL' }] });
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('preserves target-unit provenance during a same-code bulk copy', async () => {
     const { db, update } = roundtripDatabase();
     const value = draft(undefined); value.daily[0].sourceRateId = 'other-unit-rate';

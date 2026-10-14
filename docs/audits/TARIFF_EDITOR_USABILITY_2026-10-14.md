@@ -24,7 +24,7 @@ Baseline: `7b29b4728961f583028d6b3350d7505fdcd05965`. Scope: the existing admin 
 
 ## Verification
 
-- 12 dependency-free checks executed against the exact candidate TypeScript domain modules: full calendar, cross-year boundaries, leap-day inclusion/exception, shared-endpoint conflict, invalid/no-remaining dates, repeat application, canonical boundary/leap totals, repeated rename/save/reload metadata preservation and malformed-input rejection.
+- 13 dependency-free checks executed against the exact candidate TypeScript domain modules: full calendar, cross-year boundaries, leap-day inclusion/exception, shared-endpoint conflict, invalid/no-remaining dates, repeat application, canonical boundary/leap totals, repeated rename/save/reload metadata preservation and malformed-input rejection and colliding saved-row identity rejection.
 - Added Vitest domain, client, API and database integration regressions. Existing tariff/canonical suites remain required.
 - Local React/Next/Prisma checks not run: workspace contains connector-fetched source artifacts, not an installed application checkout. CI and the isolated browser runner must establish their results on the exact candidate head.
 - Actual browser proof, screenshots and remote CI are pending at initial patch creation. No production claim follows from source tests.

@@ -74,6 +74,7 @@ const COMMERCIAL_LABELS = {
   'admin.tariff_editor.yearly': '12-month',
   'admin.tariff_editor.flags': 'Inclusions',
   'admin.tariff_editor.error.season_code': '{kind} season “{season}”: use capital letters, digits or _.',
+  'admin.tariff_editor.error.row_identity': '{kind} season “{season}” reuses another saved rate. Reload and keep a distinct season code for each row.',
   'admin.tariff_editor.error.season_duplicate': '{kind} season “{season}” is listed twice.',
   'admin.tariff_editor.error.window_missing': '{kind} season “{season}” needs dates.',
   'admin.tariff_editor.error.window_format': '{kind} season “{season}”: dates must be MM-DD, e.g. 11-01.',

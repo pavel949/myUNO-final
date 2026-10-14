@@ -22,7 +22,7 @@ export default function StayActions({
     if(busy)return;
     setBusy(true);setMessage('');setFailed(false);
     try{
-      const result=await fetch('/api/bookings/'+encodeURIComponent(id)+'/'+path,{
+      const result=await fetch(`/api/bookings/${encodeURIComponent(id)}/${path}`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload),
       });

@@ -94,12 +94,12 @@ export async function evaluateDataReadiness(db: PrismaClient): Promise<Readiness
       state: bankEnabled !== false && Boolean(legalName) && Boolean(bankNumber) ? 'ok' : 'action',
       blocking: true,
     },
-    { id: 'live_units', group: 'catalogue', state: liveUnits > 0 ? 'ok' : 'action', blocking: false, detail: `${liveUnits}` },
+    { id: 'live_units', group: 'catalogue', state: liveUnits > 0 ? 'ok' : 'action', blocking: true, detail: `${liveUnits}` },
     {
       id: 'permitted_use',
       group: 'catalogue',
       state: liveWithoutPermittedUse === 0 ? 'ok' : 'action',
-      blocking: false,
+      blocking: true,
       detail: `${liveWithoutPermittedUse}`,
     },
   ];

@@ -54,3 +54,30 @@ describe('tariff editor failure recovery', () => {
     expect(fetchMock.mock.calls[1][1].signal.aborted).toBe(false);
   });
 });
+
+
+it('previews the base-date replacement and saves only the explicitly applied draft', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce(load()).mockResolvedValueOnce(response({ saved: 1 }));
+  vi.stubGlobal('fetch', fetch);
+  render(<TariffEditorClient unitId="unit" labels={labels} />);
+  await screen.findByRole('button', { name: 'save_unit' });
+  fireEvent.click(screen.getAllByRole('button', { name: 'add_season' })[0]);
+  fireEvent.change(screen.getAllByLabelText('season')[1], { target: { value: 'HOLIDAY' } });
+  fireEvent.change(screen.getAllByLabelText('from')[1], { target: { value: '12-20' } });
+  fireEvent.change(screen.getAllByLabelText('to')[1], { target: { value: '01-10' } });
+  fireEvent.change(screen.getAllByLabelText('rate_night')[1], { target: { value: '2345.67' } });
+  fireEvent.click(screen.getAllByRole('button', { name: 'remaining_dates' })[0]);
+  expect(screen.getByRole('region', { name: 'remaining_preview' })).toHaveTextContent('01-11 – 12-19');
+  expect(screen.getByRole('button', { name: 'save_unit' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'cancel_dates' }));
+  expect(screen.getAllByLabelText('from')[0]).toHaveValue('01-01');
+  fireEvent.click(screen.getAllByRole('button', { name: 'remaining_dates' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'apply_dates' }));
+  expect(screen.getAllByLabelText('from')[0]).toHaveValue('01-11');
+  fireEvent.click(screen.getByRole('button', { name: 'save_unit' }));
+  await screen.findByRole('status');
+  const saved = JSON.parse(fetch.mock.calls[1][1].body).draft;
+  expect(saved.daily[0].windows).toEqual([{ start: '01-11', end: '12-19' }]);
+  expect(saved.daily[1]).toMatchObject({ seasonCode: 'HOLIDAY', amountSatang: 234567,
+    windows: [{ start: '12-20', end: '01-10' }] });
+});

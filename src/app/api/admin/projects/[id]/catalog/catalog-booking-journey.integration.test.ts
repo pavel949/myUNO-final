@@ -266,7 +266,7 @@ describe('canonical onboarding → pricing → search → booking route journey'
     expect(attempted.status).toBe(403);
     const booking = await bookingPost(request('/api/bookings', {
       inventoryCategoryId: c.id, projectId, startDate: '2026-11-10', endDate: '2026-11-14',
-      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash',
+      adultsCount: 2, childrenCount: 0, paymentMethod: 'cash', instantBook: true,
       idempotencyKey: '00000000-0000-4000-8000-000000000004',
     }));
     expect(booking.status).toBe(404);

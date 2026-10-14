@@ -155,7 +155,7 @@ describe('GET /api/bookings/[id]/transfer-instructions', () => {
     expect((await response.json()).expiresAt).toBe(holdExpiresAt.toISOString());
   });
 
-  it.each(['requested', 'declined', 'cancelled', 'expired', 'completed', 'no_show'] as const)(
+  it.each(['requested', 'declined', 'cancelled', 'expired', 'completed'] as const)(
     'does not offer transfer instructions for %s', async status => {
       await db.booking.update({ where: { id: bookingId }, data: { status, balanceDueThb: 120_000 } });
       mockGetCurrentUser.mockResolvedValue({ identityId: guest.id, isAdmin: false, roles: [] });

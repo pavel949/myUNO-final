@@ -2,7 +2,7 @@
 
 
 import { UI_LOCALE } from '@/lib/format';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -24,13 +24,15 @@ interface AdminUnit {
 type Labels = Record<string, string>;
 
 export default function UnitsAdminClient({
-  units,
+  units: initialUnits,
   labels,
 }: {
   units: AdminUnit[];
   labels: Labels;
 }) {
   const router = useRouter();
+  const [units, setUnits] = useState(initialUnits);
+  useEffect(() => { setUnits(initialUnits); }, [initialUnits]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ unitId: string; message: string } | null>(null);
@@ -62,12 +64,17 @@ export default function UnitsAdminClient({
         }
         const name = units.find(unit => unit.id === unitId)?.name ?? unitId;
         const key = expectedStatus === 'live' ? 'publish_saved' : 'pause_saved';
+        // The server has confirmed this exact transition. Keep the feedback
+        // and review link mounted while reflecting its persisted row status.
+        setUnits(current => current.map(unit => unit.id === unitId
+          ? { ...unit, status: expectedStatus } : unit));
         setSuccess({
           unitId,
           message: labels[`admin.unit_publication.${key}`].replace('{name}', name),
         });
+      } else {
+        router.refresh();
       }
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['admin.units.error_generic']);
     } finally {
@@ -259,3 +266,4 @@ export default function UnitsAdminClient({
     </div>
   );
 }
+

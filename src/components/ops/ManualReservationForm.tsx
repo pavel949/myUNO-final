@@ -23,7 +23,10 @@ export default function ManualReservationForm({
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     setBusy(true);setError('');
-    const data=new FormData(event.currentTarget);
+    // React clears currentTarget after the event handler yields.
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    try {
     const response=await fetch('/api/ops/reservations',{
       method:'POST',
       headers:{'content-type':'application/json'},
@@ -42,10 +45,14 @@ export default function ManualReservationForm({
       }),
     });
     const body=await response.json();
-    if(!response.ok){setError(body.error||labels['reservations.create_failed']);setBusy(false);return;}
-    event.currentTarget.reset();
-    setBusy(false);
+    if(!response.ok){setError(body?.error||labels['reservations.create_failed']);return;}
+    form.reset();
     router.refresh();
+    } catch {
+      setError(labels['reservations.create_failed']);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return <form onSubmit={submit} className="space-y-12 stitch-panel p-16">
@@ -94,3 +101,4 @@ export default function ManualReservationForm({
     </div>
   </form>;
 }
+

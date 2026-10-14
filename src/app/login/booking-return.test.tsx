@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginForm } from './login-form';
 import { RegisterForm } from '@/app/register/register-form';
 
@@ -13,6 +13,7 @@ const registerLabels = { firstName: 'First name', lastName: 'Last name', email: 
   passwordHelp: 'Help', submit: 'Create account', errorGeneric: 'Error', haveAccount: 'Already registered', loginLink: 'Sign in' };
 
 describe('booking authentication continuity', () => {
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   beforeEach(() => {
     vi.clearAllMocks();
     navigation.params = new URLSearchParams();
@@ -26,23 +27,23 @@ describe('booking authentication continuity', () => {
     login.unmount();
     render(<RegisterForm labels={registerLabels} />);
     expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', `/login?next=${encodeURIComponent(next)}`);
-    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Synthetic' } });
-    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Guest' } });
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'guest@example.test' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Synthetic-Only-1234' } });
-    fireEvent.submit(screen.getByLabelText('Email').closest('form')!);
+    fireEvent.change(screen.getByLabelText(/^First name\s*\*?$/), { target: { value: 'Synthetic' } });
+    fireEvent.change(screen.getByLabelText(/^Last name\s*\*?$/), { target: { value: 'Guest' } });
+    fireEvent.change(screen.getByLabelText(/^Email\s*\*?$/), { target: { value: 'guest@example.test' } });
+    fireEvent.change(screen.getByLabelText(/^Password\s*\*?$/), { target: { value: 'Synthetic-Only-1234' } });
+    fireEvent.submit(screen.getByLabelText(/^Email\s*\*?$/).closest('form')!);
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(next));
   });
   it.each(['//evil.example', 'https://evil.example', '/\\evil.example'])('does not carry or follow an unsafe return %s', async next => {
     navigation.params.set('next', next);
     const login = render(<LoginForm labels={loginLabels} />);
     expect(screen.getByRole('link', { name: 'Register' })).toHaveAttribute('href', '/register');
-    fireEvent.submit(screen.getByLabelText('Email').closest('form')!);
+    fireEvent.submit(screen.getByLabelText(/^Email\s*\*?$/).closest('form')!);
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'));
     login.unmount();
     navigation.push.mockClear();
     render(<RegisterForm labels={registerLabels} />);
-    fireEvent.submit(screen.getByLabelText('Email').closest('form')!);
+    fireEvent.submit(screen.getByLabelText(/^Email\s*\*?$/).closest('form')!);
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'));
   });
 });

@@ -5,27 +5,32 @@ const TASK_PHOTO_ACCEPT = ['image/jpeg', 'image/png', 'image/webp'].join(',');
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { enumLabel } from '@/lib/enum-labels';
+import { localDateTimeToInstant } from '@/lib/date';
 
 type Unit={id:string;name:string;project:{name:string}};
 type Team={id:string;name:string};
 type Member={identity:{id:string;firstName:string;lastName:string}};
 
 export default function OperationalTaskCreateForm({
-  operatingSpaceId,units,teams,members,labels,
-}:{operatingSpaceId:string;units:Unit[];teams:Team[];members:Member[];labels:Record<string,string>}){
+  operatingSpaceId,timeZone,units,teams,members,labels,
+}:{operatingSpaceId:string;timeZone:string;units:Unit[];teams:Team[];members:Member[];labels:Record<string,string>}){
   const router=useRouter();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy(true);setError('');
-    const data=new FormData(event.currentTarget);
-    const files=Array.from((event.currentTarget.elements.namedItem('photos') as HTMLInputElement | null)?.files||[]);
+    // Keep the element before React clears currentTarget after this handler yields.
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    const files=Array.from((form.elements.namedItem('photos') as HTMLInputElement | null)?.files||[]);
+    try {
+    const dueAt=localDateTimeToInstant(String(data.get('dueAt')||''),timeZone).toISOString();
     const mediaAssetIds:string[]=[];
     for(const file of files){
       const upload=new FormData();upload.set('file',file);upload.set('kind','photo');
       const uploaded=await fetch('/api/media/upload',{method:'POST',body:upload});
       const uploadedBody=await uploaded.json();
-      if(!uploaded.ok){setError(uploadedBody.error||'Photo upload failed');setBusy(false);return;}
+      if(!uploaded.ok){setError(uploadedBody?.error||'Photo upload failed');return;}
       mediaAssetIds.push(uploadedBody.mediaAssetId);
     }
     const response=await fetch('/api/ops/tasks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
@@ -35,7 +40,7 @@ export default function OperationalTaskCreateForm({
       title:String(data.get('title')||''),
       description:String(data.get('description')||''),
       priority:String(data.get('priority')||'normal'),
-      dueAt:String(data.get('dueAt')||''),
+      dueAt,
       assignedIdentityId:String(data.get('assignedIdentityId')||'')||undefined,
       assignedTeamId:String(data.get('assignedTeamId')||'')||undefined,
       estimatedCostThb:Number(data.get('estimatedCostThb')||0)||undefined,
@@ -43,8 +48,13 @@ export default function OperationalTaskCreateForm({
       mediaAssetIds,
     })});
     const body=await response.json();
-    if(!response.ok){setError(body.error||'Task creation failed');setBusy(false);return;}
-    event.currentTarget.reset();setBusy(false);router.refresh();
+    if(!response.ok){setError(body?.error||'Task creation failed');return;}
+    form.reset();router.refresh();
+    } catch (cause) {
+      setError(cause instanceof RangeError ? cause.message : 'Task creation failed');
+    } finally {
+      setBusy(false);
+    }
   }
   const taskTypes=['custom','turnover_cleaning','turnover_inspection','maintenance_followup','preventive_maintenance','deep_cleaning','restocking','guest_request','prearrival','owner_request','utilities','pool','garden','pest_control','compliance'];
   return <form onSubmit={submit} className="mb-20 grid gap-12 stitch-panel p-16 md:grid-cols-2 xl:grid-cols-4">
@@ -53,7 +63,10 @@ export default function OperationalTaskCreateForm({
     <select name="taskType" defaultValue={'custom'} className="h-44 rounded-md border border-border-line px-12">
       {taskTypes.map(t=><option key={t} value={t}>{enumLabel(labels,'taskType',t)}</option>)}
     </select>
-    <input required name="dueAt" type="datetime-local" className="h-44 rounded-md border border-border-line px-12"/>
+    <label className="flex flex-col gap-4 text-small text-text-secondary">
+      {labels['staff.tasks.due']} ({timeZone})
+      <input required name="dueAt" type="datetime-local" className="h-44 rounded-md border border-border-line px-12"/>
+    </label>
     <select name="assignedIdentityId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.employee']}</option>{members.map(m=><option key={m.identity.id} value={m.identity.id}>{m.identity.firstName} {m.identity.lastName}</option>)}</select>
     <select name="assignedTeamId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.team']}</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
     <select name="priority" defaultValue={'normal'} className="h-44 rounded-md border border-border-line px-12"><option value="low">{labels['staff.task_form.priority.low']}</option><option value="normal">{labels['staff.task_form.priority.normal']}</option><option value="high">{labels['staff.task_form.priority.high']}</option><option value="urgent">{labels['staff.task_form.priority.urgent']}</option></select>
@@ -68,3 +81,4 @@ export default function OperationalTaskCreateForm({
     {error?<p role="alert" className="text-small text-state-error md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }
+

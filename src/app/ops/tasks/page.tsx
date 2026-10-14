@@ -23,6 +23,10 @@ export default async function OperationalTasksPage({
     ? await getOperatingSpaceMembership(prisma, requestedSpaceId, user.identityId)
     : null;
   if (requestedSpaceId && !user.isAdmin && !spaceMembership?.active) redirect('/ops/spaces');
+  const taskSpace = requestedSpaceId
+    ? await prisma.operatingSpace.findUnique({ where: { id: requestedSpaceId }, select: { timezone: true, status: true } })
+    : null;
+  if (requestedSpaceId && (!taskSpace || taskSpace.status !== 'active')) redirect('/ops/spaces');
   const spaceUnitIds = requestedSpaceId
     ? await getOperatingSpaceUnitIds(prisma, requestedSpaceId)
     : [];
@@ -159,8 +163,9 @@ export default async function OperationalTasksPage({
         <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.tasks.title']}</h1>
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>
-      {requestedSpaceId && taskFormData ? <OperationalTaskCreateForm
+      {requestedSpaceId && taskSpace && taskFormData ? <OperationalTaskCreateForm
         operatingSpaceId={requestedSpaceId}
+        timeZone={taskSpace.timezone}
         units={taskFormData[0]}
         teams={taskFormData[1]}
         members={taskFormData[2]}
@@ -168,6 +173,7 @@ export default async function OperationalTasksPage({
       /> : null}
       <OperationalTaskQueueClient
         labels={labels}
+        timeZone={taskSpace?.timezone}
         tasks={tasks.map((task) => ({
           id: task.id,
           taskType: task.taskType,
@@ -188,3 +194,4 @@ export default async function OperationalTasksPage({
     </div>
   </main>;
 }
+

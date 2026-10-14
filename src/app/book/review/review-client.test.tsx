@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BookingReviewClient, { type ReviewLabels } from './review-client';
 
 const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), params: new URLSearchParams() }));
@@ -12,12 +12,12 @@ vi.mock('next/navigation', () => ({
 const labels = Object.fromEntries([
   'requestTitle', 'requestConfirm', 'requestConsent', 'requestNote', 'title', 'recap', 'checkIn', 'checkOut', 'guests', 'policy', 'policyConsent',
   'verificationNote', 'paymentMethod', 'payCash', 'payCard', 'payTransfer', 'confirm',
-  'confirming', 'back', 'error', 'requote', 'conflictTitle', 'conflictBody', 'searchAgain',
+  'confirming', 'back', 'error', 'requote', 'unavailableForDates', 'conflictTitle', 'conflictBody', 'searchAgain',
   'categoryNote', 'total', 'nights', 'discountLongStay', 'discountEarlyBird', 'cleaningFee', 'occupancyTax',
 ].map(key => [key, key])) as unknown as ReviewLabels;
 const fetchMock = vi.fn();
 const quote = (total = 3000) => ({
-  nights: 3, subtotal: total, total, acceptedTotalSatang: Math.round(total * 100),
+  isAvailable: true, nights: 3, subtotal: total, total, acceptedTotalSatang: Math.round(total * 100),
   lengthOfStayDiscount: 0, earlyBirdDiscount: 0, cleaningFee: 0, occupancyTax: 0,
 });
 const response = (data: unknown, status = 200) => ({ ok: status < 400, status, json: async () => data });
@@ -33,6 +33,7 @@ async function consent() {
 }
 
 describe('reviewed price and recovery', () => {
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   beforeEach(() => {
     vi.clearAllMocks();
     navigation.params = new URLSearchParams('unitId=unit-a&startDate=2027-02-01&endDate=2027-02-04&adults=2&children=0');
@@ -131,6 +132,42 @@ describe('reviewed price and recovery', () => {
     renderReview();
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/already-created'));
     expect(fetchMock).toHaveBeenCalledWith(`/api/bookings?idempotencyKey=${key}`, expect.anything());
+    expect(bookingCalls()).toHaveLength(0);
+  });
+
+  it.each([
+    { instantBook: true, isAvailable: false }, { instantBook: false, isAvailable: false },
+    { instantBook: true, isAvailable: undefined }, { instantBook: false, isAvailable: undefined },
+  ])('refuses direct review for mode=$instantBook availability=$isAvailable', async ({ instantBook, isAvailable }) => {
+    fetchMock.mockImplementation(async (url: string) => url.startsWith('/api/units/')
+      ? response({ name: 'Villa A', instantBook })
+      : response({ ...quote(), isAvailable }));
+    renderReview();
+    expect(await screen.findByText('unavailableForDates')).toBeInTheDocument();
+    expect(screen.queryByText('total')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeDisabled();
+    expect(screen.getByRole('button', { name: instantBook ? 'confirm' : 'requestConfirm' })).toBeDisabled();
+    expect(bookingCalls()).toHaveLength(0);
+  });
+
+  it('clears prior price and consent when changed dates are unavailable, then requires new consent after recovery', async () => {
+    let available = true;
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => url === '/api/pricing/breakdown'
+      ? response({ ...quote(), isAvailable: available }) : normalFetch(url, options));
+    const view = renderReview(); await consent();
+    available = false; navigation.params.set('endDate', '2027-02-05');
+    view.rerender(<BookingReviewClient labels={labels} methods={['cash']} defaultPolicy="Policy" projectId="project-a" />);
+    expect(await screen.findByText('unavailableForDates')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('checkbox')).toBeDisabled();
+    expect(screen.queryByText('total')).not.toBeInTheDocument();
+    available = true; navigation.params.set('endDate', '2027-02-06');
+    view.rerender(<BookingReviewClient labels={labels} methods={['cash']} defaultPolicy="Policy" projectId="project-a" />);
+    await waitFor(() => expect(screen.getByText('total')).toBeInTheDocument());
+    expect(screen.queryByText('unavailableForDates')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'confirm' })).toBeDisabled();
     expect(bookingCalls()).toHaveLength(0);
   });
 
@@ -254,4 +291,3 @@ describe('reviewed price and recovery', () => {
   });
 
 });
-

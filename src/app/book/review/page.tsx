@@ -129,6 +129,7 @@ export default async function BookingReviewPage({
     'listing.pay_card': 'Card (online)',
     'listing.pay_transfer': 'Bank transfer',
     'listing.conflict_title': 'Those dates were just taken',
+    'listing.unavailable_for_dates': 'This home cannot be booked for these dates. Please choose other dates.',
     'listing.conflict_body': 'Choose other dates and try again.',
     'listing.search_again': 'Search again',
     'listing.total': 'Total',
@@ -184,6 +185,7 @@ export default async function BookingReviewPage({
           back: labels['booking.review.back'],
           error: labels['booking.review.error'],
           requote: labels['booking.review.terms_requote'],
+          unavailableForDates: labels['listing.unavailable_for_dates'],
           conflictTitle: labels['listing.conflict_title'],
           conflictBody: labels['listing.conflict_body'],
           searchAgain: labels['listing.search_again'],
@@ -199,4 +201,3 @@ export default async function BookingReviewPage({
     </Suspense>
   );
 }
-

@@ -32,6 +32,7 @@ export interface ReviewLabels {
   back: string;
   error: string;
   requote: string;
+  unavailableForDates: string;
   conflictTitle: string;
   conflictBody: string;
   searchAgain: string;
@@ -89,6 +90,7 @@ export default function BookingReviewClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [creationKey, setCreationKey] = useState<string | null>(null);
   const [quoteRevision, setQuoteRevision] = useState(0);
   const [quotedStay, setQuotedStay] = useState<string | null>(null);
@@ -144,6 +146,7 @@ export default function BookingReviewClient({
     if (inventoryCategoryId && !unitId && startDate && endDate) {
       const controller = new AbortController();
       const loadCategoryQuote = async () => {
+        setUnavailable(false);
         setConsented(false);
         setQuotedStay(null);
         setInstantBook(null);
@@ -187,6 +190,7 @@ export default function BookingReviewClient({
   useEffect(() => {
     if (!unitId || !startDate || !endDate) return;
     const controller = new AbortController();
+    setUnavailable(false);
     setConsented(false);
     setQuotedStay(null);
     setInstantBook(null);
@@ -214,6 +218,10 @@ export default function BookingReviewClient({
       if (!priceRes.ok) throw new Error(labels.error);
       const quote = await priceRes.json();
       if (controller.signal.aborted) return;
+      if (quote.isAvailable !== true) {
+        setUnavailable(true);
+        return;
+      }
       if (!Number.isSafeInteger(quote.acceptedTotalSatang) || quote.acceptedTotalSatang < 0) {
         throw new Error(labels.error);
       }
@@ -410,9 +418,9 @@ export default function BookingReviewClient({
           />
         </div>
 
-        {conflict && (
+        {(conflict || unavailable) && (
           <div className="mb-16 rounded-lg border border-state-warning bg-state-warning-soft p-16">
-            <p className="mb-8 text-body-strong text-text-ink">{labels.conflictTitle}</p>
+            <p className="mb-8 text-body-strong text-text-ink">{unavailable ? labels.unavailableForDates : labels.conflictTitle}</p>
             <p className="mb-12 text-small text-text-secondary">{labels.conflictBody}</p>
             <Link href={backHref} className="font-semibold text-brand-andaman hover:underline">
               {labels.searchAgain}
@@ -436,4 +444,3 @@ export default function BookingReviewClient({
     </main>
   );
 }
-

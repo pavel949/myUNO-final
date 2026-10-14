@@ -2,11 +2,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import UnitDetailClient, { type UnitDetailLabels } from './unit-client';
 
-const mocks = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), available: true }));
+const mocks = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), available: true as boolean | undefined,
+  unquotable: false, params: new URLSearchParams() }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push, replace: mocks.replace }),
   usePathname: () => '/units/request-unit',
-  useSearchParams: () => new URLSearchParams('startDate=2027-01-10&endDate=2027-01-13&adults=2'),
+  useSearchParams: () => mocks.params,
 }));
 vi.mock('@/components/LocaleProvider', () => ({ useLocale: () => 'en' }));
 vi.mock('@/components/UnitPhotoMosaic', () => ({ UnitPhotoMosaic: () => null }));
@@ -31,15 +32,16 @@ const labels = {
 } as UnitDetailLabels;
 
 beforeEach(() => {
-  vi.clearAllMocks(); mocks.available = true;
+  vi.clearAllMocks(); mocks.available = true; mocks.unquotable = false;
+  mocks.params = new URLSearchParams('startDate=2027-01-10&endDate=2027-01-13&adults=2');
   vi.stubGlobal('fetch', vi.fn(async (input: string) => {
     if (input.startsWith('/api/units/')) {
       const id = input.split('/').at(-1)!;
       return { ok: true, json: async () => ({ id, name: id, projectId: 'project', baseNightlyThb: 123400,
         instantBook: id === 'instant-unit', maxGuests: 4, bedrooms: 2, minNights: 1 }) };
     }
-    if (!mocks.available) return { ok: false, json: async () => ({ code: 'stay_unquotable' }) };
-    return { ok: true, json: async () => ({ isAvailable: true, nights: 3, nightlyRate: 1234,
+    if (mocks.unquotable) return { ok: false, json: async () => ({ code: 'stay_unquotable' }) };
+    return { ok: true, json: async () => ({ isAvailable: mocks.available, nights: 3, nightlyRate: 1234,
       subtotal: 3702, total: 3702, lengthOfStayDiscount: 0, earlyBirdDiscount: 0, cleaningFee: 0, occupancyTax: 0 }) };
   }));
 });
@@ -78,12 +80,39 @@ describe('unit primary booking actions follow the fetched canonical mode', () =>
   });
 
   it('does not enable a request without an available quote', async () => {
-    mocks.available = false;
+    mocks.unquotable = true;
     render(<UnitDetailClient unitId="request-unit" labels={labels} />);
     await screen.findByText('Dates unavailable');
     const buttons = screen.getAllByRole('button', { name: 'Request to book', exact: true });
     expect(buttons).toHaveLength(1); // No quoted total means no sticky action.
     for (const button of buttons) expect(button).toBeDisabled();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['request-unit', false], ['instant-unit', false], ['request-unit', undefined], ['instant-unit', undefined],
+  ] as const)('does not offer %s when quote availability is %s', async (unitId, available) => {
+    mocks.available = available;
+    render(<UnitDetailClient unitId={unitId} labels={labels} />);
+    await screen.findByText('Dates unavailable');
+    const name = unitId === 'instant-unit' ? 'Reserve' : 'Request to book';
+    expect(screen.getByRole('button', { name, exact: true })).toBeDisabled();
+    expect(screen.queryByText('Total')).not.toBeInTheDocument();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('clears the old quote when new dates are blocked and recovers on valid dates', async () => {
+    const view = render(<UnitDetailClient unitId="instant-unit" labels={labels} />);
+    await readyActions('Reserve'); expect(screen.getByText('Total')).toBeInTheDocument();
+    mocks.available = false; mocks.params.set('endDate', '2027-01-14');
+    view.rerender(<UnitDetailClient unitId="instant-unit" labels={labels} />);
+    await screen.findByText('Dates unavailable');
+    expect(screen.queryByText('Total')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reserve', exact: true })).toBeDisabled();
+    mocks.available = true; mocks.params.set('endDate', '2027-01-15');
+    view.rerender(<UnitDetailClient unitId="instant-unit" labels={labels} />);
+    await readyActions('Reserve');
+    expect(screen.queryByText('Dates unavailable')).not.toBeInTheDocument();
     expect(mocks.push).not.toHaveBeenCalled();
   });
 });

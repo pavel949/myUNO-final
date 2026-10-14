@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
 const require = createRequire(import.meta.url);
 const { baseUrl } = require('./isolation.cjs').assertIsolation();
 const { chromium } = require('playwright');
@@ -728,6 +729,72 @@ try {
     assert.equal(await fp.getByRole('region', { name: 'How guests book', exact: true }).getByRole('radio', { name: 'Instant booking', exact: true }).getAttribute('aria-checked'), 'true');
     await ap.goto(unitUrl); await ap.getByRole('button', { name: 'Reserve', exact: true }).first().waitFor();
     report.bookingModes.finalInstantModeVerified = true;
+  });
+  await step('A real protective block disables guest card and direct review until the dates reopen', fp, async () => {
+    const before = await db.booking.count({ where: { unitId: fixture.unitId } });
+    const note = 'Synthetic browser occupancy protection; no payment imported';
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    const blockForm = fp.locator('form').filter({ has: fp.getByRole('button', { name: 'Block these dates', exact: true }) });
+    await blockForm.getByLabel('Start date', { exact: true }).fill(fixture.startDate);
+    await blockForm.getByLabel('End date', { exact: true }).fill(fixture.endDate);
+    await blockForm.getByRole('combobox').selectOption('other');
+    await blockForm.getByLabel('Note (optional)', { exact: true }).fill(note);
+    const savedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/units/${fixture.unitId}/availability-blocks`) && r.request().method() === 'POST');
+    savedResponse.catch(() => {});
+    await blockForm.getByRole('button', { name: 'Block these dates', exact: true }).click();
+    const saved = await savedResponse; assert.equal(saved.status(), 201);
+    const block = await saved.json(); assert.equal(block.note, note);
+    await fp.locator('li').filter({ hasText: note }).waitFor();
+    const unavailableQuote = await publicQuote(ap); assert.equal(unavailableQuote.isAvailable, false);
+    await requestCalendar(/Blocked/);
+    const reviewUrl = `/book/review?${new URLSearchParams({ unitId: fixture.unitId, projectId: fixture.projectId,
+      startDate: fixture.startDate, endDate: fixture.endDate, adults: '2', children: '0', instantBook: '1' })}`;
+    const unavailableCopy = 'This home cannot be booked for these dates. Please choose other dates.';
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+      await ap.setViewportSize(viewport);
+      await ap.goto(unitUrl);
+      await ap.getByText(unavailableCopy, { exact: true }).waitFor();
+      const actions = ap.getByRole('button', { name: 'Reserve', exact: true });
+      assert.equal(await actions.count(), 1, 'Unavailable quote must not render the sticky reserve action');
+      assert.equal(await actions.isEnabled(), false);
+      assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
+      assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      await ap.screenshot({ path: `${out}/blocked-unit-${viewport.width}.png`, fullPage: true });
+      await ap.goto(reviewUrl);
+      await ap.getByText(unavailableCopy, { exact: true }).waitFor();
+      assert.equal(await ap.getByRole('checkbox').isEnabled(), false);
+      assert.equal(await ap.getByRole('button', { name: 'Confirm booking', exact: true }).isEnabled(), false);
+      assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
+      assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      await ap.screenshot({ path: `${out}/blocked-review-${viewport.width}.png`, fullPage: true });
+    }
+    // Supplemental authenticated HTTP negative probe: a hand-crafted attempt
+    // must still fail under the canonical writer, even if a client ignores UI.
+    const refused = await gp.request.post('/api/bookings', { data: {
+      unitId: fixture.unitId, projectId: fixture.projectId, startDate: fixture.startDate, endDate: fixture.endDate,
+      adultsCount: 2, childrenCount: 0, instantBook: true, paymentMethod: 'cash',
+      acceptedTotalSatang: unavailableQuote.acceptedTotalSatang, idempotencyKey: randomUUID(),
+    } });
+    assert.equal(refused.status(), 409);
+    const refusal = await refused.json();
+    assert.equal(refusal.code, 'DOUBLE_BOOK');
+    assert.match(refusal.error, /unit is blocked \(other\)/);
+    assert.equal(await db.booking.count({ where: { unitId: fixture.unitId } }), before);
+    await fp.goto(`/app/admin/units/${fixture.unitId}`);
+    const removedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/units/${fixture.unitId}/availability-blocks/${block.id}`) && r.request().method() === 'DELETE');
+    removedResponse.catch(() => {});
+    await fp.locator('li').filter({ hasText: note }).getByRole('button', { name: 'Remove', exact: true }).click();
+    assert.equal((await removedResponse).status(), 200);
+    assert.equal((await publicQuote(ap)).isAvailable, true);
+    await ap.goto(unitUrl); await ap.getByRole('button', { name: 'Reserve', exact: true }).first().waitFor();
+    await poll(() => ap.getByRole('button', { name: 'Reserve', exact: true }).first().isEnabled(), 'Released dates must become bookable again');
+    await ap.goto(reviewUrl);
+    await ap.getByText('Total', { exact: true }).waitFor();
+    assert.equal(await ap.getByRole('checkbox').isChecked(), false);
+    assert.equal(await ap.getByRole('button', { name: 'Confirm booking', exact: true }).isEnabled(), false);
+    await ap.setViewportSize({ width: 1440, height: 1000 });
+    report.protectiveBlock = { blockId: block.id, disabledCardAndReview: true, rejectedCanonicalWrite: 409,
+      testedViewports: ['1440x900', '390x844'], removedThroughUi: true, newBookings: 0 };
   });
   assert.deepEqual(report.blockedBrowserOrigins, [], 'Unexpected external browser requests');
   assert.deepEqual(report.serverErrors, [], 'Unexpected local 5xx responses');

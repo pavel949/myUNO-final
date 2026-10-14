@@ -218,6 +218,7 @@ export default function UnitDetailClient({
           throw new Error(body?.code === 'stay_unquotable' ? labels.unavailableForDates : labels.errorPrice);
         }
         const data = await response.json();
+        if (data.isAvailable !== true) throw new Error(labels.unavailableForDates);
         if (!controller.signal.aborted) setBreakdown(data);
       } catch (err) {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : labels.errorPrice);

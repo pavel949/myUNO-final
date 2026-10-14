@@ -9,7 +9,7 @@ vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: () => mockUser(
 vi.mock('@/lib/prisma', async () => ({ prisma: (await import('@/test/util')).db }));
 vi.mock('@/app/libs/bookingConfirmed', () => ({ notifyBookingConfirmed: vi.fn() }));
 import { POST } from './route';
-import { POST as recordCash } from '../record-cash-payment/route';
+import { POST as recordCash } from '@/app/api/bookings/[id]/record-cash-payment/route';
 
 async function fixture() {
   const project = await createProject({ status: 'live' });

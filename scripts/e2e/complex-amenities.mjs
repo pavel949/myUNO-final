@@ -82,7 +82,8 @@ try {
     originalExistingPeople = clone(await db.identity.findMany({ select: { id: true, email: true, isAdmin: true, status: true }, orderBy: { id: 'asc' } }));
     originalExistingRoles = clone(await db.roleAssignment.findMany({ orderBy: { id: 'asc' } }));
     assert.equal(await db.project.count({ where: { slug: 'synthetic-amenities-complex' } }), 0, 'No reset or reuse of modified fixtures');
-    const data = { name: 'Synthetic Amenities Complex', projectType: 'condominium', areaLabelKey: 'browser.amenities.area',
+    const localCover = await db.mediaAsset.findUniqueOrThrow({ where: { storageKey: '/browser-acceptance/project-0.png' } });
+    const data = { coverMediaId: localCover.id, name: 'Synthetic Amenities Complex', projectType: 'condominium', areaLabelKey: 'browser.amenities.area',
       descriptionKey: 'browser.amenities.description', handbookKey: 'browser.amenities.handbook', latitude: '8.01', longitude: '98.30',
       address: 'Synthetic amenity address only', timezone: 'Asia/Bangkok', status: 'draft' };
     project = await db.project.create({ data: { ...data, slug: 'synthetic-amenities-complex' } });
@@ -168,6 +169,18 @@ try {
     const row = await db.projectAmenity.findUniqueOrThrow({ where: { projectId_slug: { projectId: project.id, slug: 'sauna' } } });
     assert.equal(row.published, false); assert.equal(row.bookingMode, 'none'); assert.equal(row.bookingRequired, false);
     assert.equal(row.pricingType, 'not_specified'); assert.equal(row.priceThb, null);
+  });
+  await step('Administrator can edit and save on 320, 390 and 430px screens', sp, async () => {
+    await select(sp, reception.name);
+    for (const width of [320, 390, 430]) {
+      await sp.setViewportSize({ width, height: 844 });
+      await editor(sp).getByLabel('Location / floor inside complex', { exact: true }).fill('Floor 1');
+      await save(sp, reception.id);
+      assert.equal((await canonical(reception.id)).locationLabel, 'Floor 1');
+      assert.ok(await sp.locator('body').evaluate(node => node.scrollWidth <= window.innerWidth), `Editor must fit ${width}px`);
+      await sp.screenshot({ path: `browser-results/complex-amenities-editor-${width}.png`, fullPage: true });
+    }
+    await sp.setViewportSize({ width: 1440, height: 1000 });
   });
   await step('Managed draft public complex and linked unit show canonical shared facilities on mobile', pp, async () => {
     await pp.goto(`/projects/${project.slug}`); await pp.getByRole('heading', { name: project.name, exact: true }).waitFor();

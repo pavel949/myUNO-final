@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import UnitDetailClient, { type UnitDetailLabels } from './unit-client';
 
 const mocks = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), available: true as boolean | undefined,
-  unquotable: false, params: new URLSearchParams() }));
+  unquotable: false, bathrooms: undefined as number | null | undefined, params: new URLSearchParams() }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push, replace: mocks.replace }),
   usePathname: () => '/units/request-unit',
@@ -32,13 +32,13 @@ const labels = {
 } as UnitDetailLabels;
 
 beforeEach(() => {
-  vi.clearAllMocks(); mocks.available = true; mocks.unquotable = false;
+  vi.clearAllMocks(); mocks.available = true; mocks.unquotable = false; mocks.bathrooms = undefined;
   mocks.params = new URLSearchParams('startDate=2027-01-10&endDate=2027-01-13&adults=2');
   vi.stubGlobal('fetch', vi.fn(async (input: string) => {
     if (input.startsWith('/api/units/')) {
       const id = input.split('/').at(-1)!;
       return { ok: true, json: async () => ({ id, name: id, projectId: 'project', baseNightlyThb: 123400,
-        instantBook: id === 'instant-unit', maxGuests: 4, bedrooms: 2, minNights: 1 }) };
+        instantBook: id === 'instant-unit', maxGuests: 4, bedrooms: 2, minNights: 1, bathrooms: mocks.bathrooms, inventoryCategory: { id: 'category-a', categoryKey: 'two-bedroom', name: 'Two-bedroom' } }) };
     }
     if (mocks.unquotable) return { ok: false, json: async () => ({ code: 'stay_unquotable' }) };
     return { ok: true, json: async () => ({ isAvailable: mocks.available, nights: 3, nightlyRate: 1234,
@@ -115,4 +115,49 @@ describe('unit primary booking actions follow the fetched canonical mode', () =>
     expect(screen.queryByText('Dates unavailable')).not.toBeInTheDocument();
     expect(mocks.push).not.toHaveBeenCalled();
   });
+});
+
+
+describe('unit facts and return context', () => {
+  it.each([undefined, null, 0, -1, Number.NaN])('omits unknown bathroom count %s', async (bathrooms) => {
+    mocks.bathrooms = bathrooms;
+    render(<UnitDetailClient unitId="request-unit" labels={labels} />);
+    await readyActions('Request to book');
+    expect(screen.queryByText(/bathrooms/)).not.toBeInTheDocument();
+  });
+
+  it('shows a known bathroom count', async () => {
+    mocks.bathrooms = 2;
+    render(<UnitDetailClient unitId="request-unit" labels={labels} />);
+    await readyActions('Request to book');
+    expect(screen.getByText('2 bathrooms')).toBeInTheDocument();
+  });
+
+  it('carries only supported search filters into review with the canonical project', async () => {
+    mocks.params.set('projectId', 'unrelated-project');
+    mocks.params.set('areaSlug', 'layan');
+    mocks.params.set('inventoryCategoryId', 'unrelated-category');
+    mocks.params.set('bedrooms', '2');
+    mocks.params.set('sort', 'price_asc');
+    mocks.params.set('bookingIntent', 'old-attempt');
+    mocks.params.set('next', 'https://example.invalid');
+    render(<UnitDetailClient unitId="request-unit" labels={labels} />);
+    fireEvent.click((await readyActions('Request to book'))[0]);
+    const query = new URL(mocks.push.mock.calls.at(-1)![0], 'http://localhost').searchParams;
+    expect(query.get('projectId')).toBe('project');
+    expect(query.get('areaSlug')).toBe('layan');
+    expect(query.get('bedrooms')).toBe('2');
+    expect(query.get('sort')).toBe('price_asc');
+    expect(query.has('inventoryCategoryId')).toBe(false);
+    expect(query.has('bookingIntent')).toBe(false);
+    expect(query.has('next')).toBe(false);
+  });
+});
+
+it('preserves a search category that matches the loaded unit', async () => {
+  mocks.params.set('inventoryCategoryId', 'category-a');
+  render(<UnitDetailClient unitId="request-unit" labels={labels} />);
+  fireEvent.click((await readyActions('Request to book'))[0]);
+  const query = new URL(mocks.push.mock.calls.at(-1)![0], 'http://localhost').searchParams;
+  expect(query.get('inventoryCategoryId')).toBe('category-a');
 });

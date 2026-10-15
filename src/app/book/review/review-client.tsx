@@ -7,6 +7,8 @@ import { Button } from '@/components/Button';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { Select } from '@/components/Select';
+import { BookingSteps, type BookingStepsLabels } from '@/components/BookingSteps';
+import { discoveryContext } from '@/lib/discovery-navigation';
 import { LocalDate } from '@/components/LocalDate';
 
 type PaymentMethod = 'cash' | 'bank_transfer' | 'card_provider';
@@ -62,11 +64,13 @@ export default function BookingReviewClient({
   labels,
   methods,
   defaultPolicy,
+  stepsLabels,
   projectId: resolvedProjectId,
 }: {
   labels: ReviewLabels;
   methods: PaymentMethod[];
   defaultPolicy: string;
+  stepsLabels?: BookingStepsLabels & { approval: string };
   projectId: string;
 }) {
   const router = useRouter();
@@ -84,7 +88,7 @@ export default function BookingReviewClient({
   const [instantBook, setInstantBook] = useState<boolean | null>(null);
 
   const [headline, setHeadline] = useState(categoryKey || '');
-  const [policyText] = useState(defaultPolicy);
+  const policyText = defaultPolicy;
   const [breakdown, setBreakdown] = useState<Breakdown | null>(null);
   const [categoryQuoteToken, setCategoryQuoteToken] = useState<string | null>(null);
   const [acceptedTotalSatang, setAcceptedTotalSatang] = useState<number | null>(null);
@@ -101,6 +105,11 @@ export default function BookingReviewClient({
   const stayKey = JSON.stringify([unitId, inventoryCategoryId, projectId, startDate, endDate, adults, children]);
   const reviewQuery = searchParams?.toString() || '';
   const creationQueryRef = useRef<{ query: string; key: string } | null>(null);
+
+  useEffect(() => {
+    // A refreshed server policy (including locale changes) needs fresh consent.
+    setConsented(false);
+  }, [defaultPolicy]);
 
   useEffect(() => {
     const query = new URLSearchParams(reviewQuery);
@@ -128,22 +137,15 @@ export default function BookingReviewClient({
     return () => controller.abort();
   }, [reviewQuery, router]);
 
-  const backHref = unitId
-    ? `/units/${unitId}?${new URLSearchParams({
-        startDate: startDate || '',
-        endDate: endDate || '',
-        adults: String(adults),
-        children: String(children),
-      })}`
-    : `/search?${new URLSearchParams({
-        startDate: startDate || '',
-        endDate: endDate || '',
-        adults: String(adults),
-        children: String(children),
-        ...(projectId ? { projectId } : {}),
-        ...(inventoryCategoryId ? { inventoryCategoryId } : {}),
-        ...(!inventoryCategoryId && categoryKey ? { categoryKey } : {}),
-      })}`;
+  // Carry supported discovery filters back, never the payment attempt or
+  // arbitrary URL parameters. The server-resolved project wins on return.
+  const returnContext = discoveryContext(Object.fromEntries(searchParams?.entries() ?? []), {
+    startDate: startDate || '', endDate: endDate || '',
+    adults: String(adults), children: String(children), projectId: resolvedProjectId,
+    ...(inventoryCategoryId ? { inventoryCategoryId } : {}),
+    ...(!inventoryCategoryId && categoryKey ? { categoryKey } : {}),
+  });
+  const backHref = `${unitId ? `/units/${encodeURIComponent(unitId)}` : '/search'}?${returnContext}`;
 
   useEffect(() => {
     if (inventoryCategoryId && !unitId && startDate && endDate) {
@@ -260,8 +262,10 @@ export default function BookingReviewClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           unitId: unitId || undefined,
-          inventoryCategoryId: inventoryCategoryId || undefined,
-          categoryKey: !inventoryCategoryId ? categoryKey || undefined : undefined,
+          // A category may survive as return-navigation context for an exact
+          // unit. The booking API must still receive exactly one selector.
+          inventoryCategoryId: !unitId ? inventoryCategoryId || undefined : undefined,
+          categoryKey: !unitId && !inventoryCategoryId ? categoryKey || undefined : undefined,
           projectId,
           startDate,
           endDate,
@@ -340,6 +344,11 @@ export default function BookingReviewClient({
   }));
 
   return (
+    <>
+    {stepsLabels && instantBook !== null && quotedStay === stayKey && (
+      <BookingSteps current={1} labels={stepsLabels}
+        approvalLabel={instantBook === false ? stepsLabels.approval : undefined} />
+    )}
     <main className="stitch-workspace px-20 py-24 md:px-32 md:py-32">
       <div className="mx-auto max-w-content">
         <p className="mb-16">
@@ -467,5 +476,6 @@ export default function BookingReviewClient({
         </div>
       </div>
     </main>
+    </>
   );
 }

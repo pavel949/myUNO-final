@@ -74,7 +74,7 @@ export interface UnitJsonLdInput {
   name: string;
   description: string | null;
   bedrooms: number;
-  bathrooms: number;
+  bathrooms?: number | null;
   maxGuests: number;
   sizeSqm: number | null;
   baseNightlyThb: number;
@@ -104,7 +104,8 @@ export function unitJsonLd(unit: UnitJsonLdInput): Record<string, unknown> {
     name: unit.name,
     ...(unit.description ? { description: unit.description } : {}),
     numberOfBedrooms: unit.bedrooms,
-    numberOfBathroomsTotal: unit.bathrooms,
+    ...(typeof unit.bathrooms === 'number' && Number.isFinite(unit.bathrooms) && unit.bathrooms > 0
+      ? { numberOfBathroomsTotal: unit.bathrooms } : {}),
     occupancy: {
       '@type': 'QuantitativeValue',
       maxValue: unit.maxGuests,

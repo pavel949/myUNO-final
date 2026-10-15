@@ -1,5 +1,6 @@
 'use client';
 
+import { discoveryContext } from '@/lib/discovery-navigation';
 import { SimilarAvailableHomes } from '@/components/property/SimilarAvailableHomes';
 import { guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
 
@@ -42,7 +43,7 @@ interface Unit {
   maxGuests?: number;
   minNights?: number;
   bedrooms?: number;
-  bathrooms?: number;
+  bathrooms?: number | null;
   instantBook?: boolean;
   cancellationPolicyKey?: string;
   projectId: string;
@@ -80,7 +81,7 @@ export interface UnitDetailLabels {
   minNightsCount: string;
   sizeUnit: string;
   floor: string;
-  notChargedYet: string;
+  paymentMethodsSummary?: string;
   fewerGuests: string;
   moreGuests: string;
   checkIn: string;
@@ -257,7 +258,7 @@ export default function UnitDetailClient({
 
   const goToReview = () => {
     if (!startDate || !endDate || !unit || !breakdown || quoting) return;
-    const next = new URLSearchParams({
+    const next = new URLSearchParams(discoveryContext(Object.fromEntries(searchParams?.entries() ?? []), {
       unitId: unit.id,
       projectId: unit.projectId,
       startDate,
@@ -265,7 +266,10 @@ export default function UnitDetailClient({
       adults: String(adults),
       children: String(children),
       instantBook: bookingType === 'instant' ? '1' : '0',
-    });
+    }));
+    // A search filter is not a second booking target. Keep it only when it
+    // matches the loaded unit's canonical category.
+    if (next.get('inventoryCategoryId') !== unit.inventoryCategory?.id) next.delete('inventoryCategoryId');
     router.push(`/book/review?${next.toString()}`);
   };
 
@@ -351,7 +355,7 @@ export default function UnitDetailClient({
                     {formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale)}
                   </Chip>
                 )}
-                {unit.bathrooms !== undefined && <Chip variant="neutral">{unit.bathrooms} {labels.bathrooms}</Chip>}
+                {typeof unit.bathrooms === 'number' && Number.isFinite(unit.bathrooms) && unit.bathrooms > 0 && <Chip variant="neutral">{unit.bathrooms} {labels.bathrooms}</Chip>}
                 <Chip variant="neutral">
                   {formatPropertyCount(labels.minNightsCount, unit.minNights || 1, locale)}
                 </Chip>
@@ -541,9 +545,9 @@ export default function UnitDetailClient({
               >
                 {bookingType === 'request' ? labels.requestToBook : labels.reserve}
               </Button>
-              <p className="text-small text-text-stone text-center mt-12 mb-0">
-                {labels.notChargedYet}
-              </p>
+              {labels.paymentMethodsSummary && <p className="text-small text-text-stone text-center mt-12 mb-0">
+                {labels.paymentMethod}: {labels.paymentMethodsSummary}
+              </p>}
               </>
               )}
             </div>

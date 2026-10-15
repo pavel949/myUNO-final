@@ -1,3 +1,5 @@
+import { BOOKING_STEPS_DRAFTS, BOOKING_STEPS_KEYS } from '@/modules/content/booking-steps.seed';
+import { GUEST_BOOKING_DRAFTS } from '@/modules/content/guest-booking-drafts';
 import { BOOKING_MODE_RELIABILITY_DRAFTS } from '@/modules/content/booking-mode-reliability.seed';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
@@ -47,12 +49,13 @@ export default async function BookingReviewPage({
     projectId = category.projectId;
   }
 
-  if (!projectId && searchParams.unitId) {
+  if (searchParams.unitId) {
     const unit = await prisma.unit.findUnique({
       where: { id: searchParams.unitId },
       select: { projectId: true },
     });
-    projectId = unit?.projectId;
+    if (!unit || (projectId && projectId !== unit.projectId)) redirect('/search');
+    projectId = unit.projectId;
   }
 
   // Legacy categoryKey requests still need an explicit project because the key
@@ -97,6 +100,7 @@ export default async function BookingReviewPage({
     }
   ).catch(() => null);
 
+  const steps = await getLabels(Object.fromEntries(BOOKING_STEPS_KEYS.map(row => [row.key, row.en])), undefined, BOOKING_STEPS_DRAFTS);
   const labels = await getLabels({
     'booking.review.title': 'Review and confirm',
     'booking.review.request_title': 'Review your booking request',
@@ -142,11 +146,16 @@ export default async function BookingReviewPage({
     'listing.cleaning_fee': 'Cleaning',
     'listing.occupancy_tax': 'Occupancy tax',
     'listing.cancellation_default': 'The cancellation terms for this home apply.',
-  }, undefined, { ...BOOKING_MODE_RELIABILITY_DRAFTS, ...REVIEW_CHECKOUT_DRAFTS });
+  }, undefined, { ...BOOKING_MODE_RELIABILITY_DRAFTS, ...REVIEW_CHECKOUT_DRAFTS, ...GUEST_BOOKING_DRAFTS });
 
   return (
     <Suspense>
       <BookingReviewClient
+        stepsLabels={{
+          aria: steps['booking.steps.aria'], review: steps['booking.steps.review'],
+          pay: steps['booking.steps.pay'], confirmed: steps['booking.steps.confirmed'],
+          current: steps['booking.steps.current'], approval: steps['booking.steps.approval'],
+        }}
         projectId={projectId}
         methods={enabled}
         defaultPolicy={

@@ -210,13 +210,31 @@ try {
     await fp.goto(`/ops/reservations?${new URLSearchParams({ spaceId: fixture.operatingSpaceId })}`);
     const form = fp.locator('form').filter({ has: fp.getByRole('heading', { name: 'Create reservation', exact: true }) });
     await form.locator('select[name=unitId]').selectOption(fixture.unitId);
-    await form.locator('select[name=guestIdentityId]').selectOption(fixture.guestId);
     await form.getByLabel('Check-in', { exact: true }).fill(fixture.manualStartDate);
     await form.getByLabel('Check-out', { exact: true }).fill(fixture.manualEndDate);
     await form.getByLabel('Adults', { exact: true }).fill('2');
     await form.getByLabel('Children', { exact: true }).fill('0');
     await form.getByLabel('Pets', { exact: true }).fill('0');
     await form.getByPlaceholder('Notes', { exact: true }).fill('Synthetic founder-entered reservation.');
+    await form.getByRole('button', { name: 'Add a new guest', exact: true }).click();
+    const contactForm = fp.getByRole('form', { name: 'Add a new guest', exact: true });
+    await contactForm.getByLabel('First name', { exact: true }).fill('Manual');
+    await contactForm.getByLabel('Last name', { exact: true }).fill('Guest');
+    await contactForm.getByLabel('Email (optional if phone provided)', { exact: true }).fill(`manual-${fixture.unitId}@example.test`);
+    const contactResponse = fp.waitForResponse(r => r.url().endsWith('/api/ops/reservation-guests') && r.request().method() === 'POST');
+    contactResponse.catch(() => {});
+    await contactForm.getByRole('button', { name: 'Save guest', exact: true }).click();
+    const savedContact = await contactResponse;
+    assert.equal(savedContact.status(), 201);
+    const contact = (await savedContact.json()).guest;
+    await poll(async () => await form.locator('select[name=guestIdentityId]').inputValue() === contact.id, 'New guest was not selected');
+    assert.equal(await form.getByLabel('Check-in', { exact: true }).inputValue(), fixture.manualStartDate);
+    assert.equal(await form.getByPlaceholder('Notes', { exact: true }).inputValue(), 'Synthetic founder-entered reservation.');
+    assert.equal(await db.authAccount.count({ where: { identityId: contact.id } }), 0);
+    assert.equal(await db.roleAssignment.count({ where: { identityId: contact.id } }), 0);
+    assert.equal(await db.oneTimeToken.count({ where: { identityId: contact.id } }), 0);
+    report.manualGuest = { id: contact.id, contactOnly: true, roles: 0, tokens: 0, registrationNotRequired: true };
+
     const response = fp.waitForResponse(r => r.url().endsWith('/api/ops/reservations') && r.request().method() === 'POST');
     response.catch(() => {});
     await form.getByRole('button', { name: 'Create reservation', exact: true }).click();
@@ -227,7 +245,7 @@ try {
     assert.equal(reservations.length, 1, 'One form submission must create exactly one canonical manual booking');
     const reservation = reservations[0];
     assert.equal(reservation.id, result.booking?.id);
-    assert.equal(reservation.guestIdentityId, fixture.guestId);
+    assert.equal(reservation.guestIdentityId, contact.id);
     assert.equal(reservation.startDate.toISOString().slice(0, 10), fixture.manualStartDate);
     assert.equal(reservation.endDate.toISOString().slice(0, 10), fixture.manualEndDate);
     assert.equal(reservation.totalThb, 370200, 'Manual reservation must use the saved 1234 THB nightly tariff');
@@ -264,7 +282,7 @@ try {
     }, 'Reservation committed, but the manual form stayed busy or failed to reset');
     const row = fp.locator('article').filter({ has: fp.locator(`a[href="/ops/stays/${reservation.id}"]`) });
     await row.waitFor();
-    assert.match(await row.innerText(), /Synthetic Guest/);
+    assert.match(await row.innerText(), /Manual Guest/);
     assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 1);
     report.manualReservation.formVerified = true;
   });
@@ -481,6 +499,25 @@ try {
     report.seasonalTariff.bookingTotalSatang = reservation.totalThb;
     report.seasonalTariff.calendarVerified = true;
   });
+  // Synthetic fixture enrollment happens only after proving contact creation itself
+  // issued no credentials, tokens or roles. Authentication still uses the real UI.
+  const manualContact = await db.identity.findUniqueOrThrow({ where: { id: report.manualGuest.id } });
+  assert.equal(manualContact.hashedPassword, null);
+  const { hash } = require('bcryptjs');
+  await db.identity.update({ where: { id: manualContact.id }, data: {
+    hashedPassword: await hash(fixture.password, 10), emailVerifiedAt: new Date(),
+  } });
+  const manualGuestContext = await context('manual-guest');
+  const mgp = await manualGuestContext.newPage();
+  await step('Manual guest signs in; a different guest cannot read this booking', mgp, async () => {
+    await login(mgp, manualContact.email, '/trips');
+    const id = report.manualReservation.bookingId;
+    assert.equal((await gp.request.get(`/api/bookings/${id}`)).status(), 404);
+    await gp.goto(`/trips/${id}`);
+    await gp.getByText('Booking not found', { exact: true }).waitFor();
+    report.manualGuest.syntheticEnrollment = true;
+    report.manualGuest.foreignGuestDenied = true;
+  });
   await step('Operator confirms the manual commitment with payment still outstanding', fp, async () => {
     const id = report.manualReservation.bookingId;
     const original = await db.booking.findUniqueOrThrow({ where: { id } });
@@ -510,11 +547,11 @@ try {
     await fp.reload();
     await fp.getByText(/^Reservation confirmed\. Payment is still outstanding\./).waitFor();
     await fp.screenshot({ path: `${out}/manual-confirmed-unpaid.png`, fullPage: true });
-    await gp.goto(`/trips/${id}`);
-    await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
+    await mgp.goto(`/trips/${id}`);
+    await mgp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
     const displayedBalance = (original.totalThb / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    assert.ok((await body(gp)).includes(`Outstanding balance: ฿${displayedBalance}`));
-    await gp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
+    assert.ok((await body(mgp)).includes(`Outstanding balance: ฿${displayedBalance}`));
+    await mgp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
     const { execFileSync } = await import('node:child_process');
     execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e/expire-synthetic-holds.ts', id], { env: process.env, stdio: 'pipe' });
     report.unpaidExpiry = JSON.parse(await readFile(`${out}/unpaid-expiry.json`, 'utf8'));
@@ -560,9 +597,9 @@ try {
     assert.equal((await fp.request.post(`/api/bookings/${id}/record-cash-payment`, { data: { receiptRef } })).status(), 400);
     assert.equal(await db.payment.count({ where: { bookingId: id } }), 1);
     assert.equal(await db.ledgerEntry.count({ where: { bookingId: id } }), 1);
-    await gp.reload();
-    await gp.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
-    assert.equal(await gp.getByText('Reservation confirmed — payment outstanding', { exact: true }).count(), 0);
+    await mgp.reload();
+    await mgp.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
+    assert.equal(await mgp.getByText('Reservation confirmed — payment outstanding', { exact: true }).count(), 0);
     report.manualReservation.receipt = { synthetic: true, paymentId: payment.id, amountSatang: payment.amountThb, ledgerId: ledger[0].id, outstandingSatang: 0 };
   });
   let requestPage;

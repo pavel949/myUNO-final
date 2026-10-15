@@ -5,6 +5,10 @@ import ManualReservationForm from './ManualReservationForm';
 const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
 const labels = {
+  'reservations.guest_entry.add':'Add a new guest','reservations.guest_entry.save':'Save guest','reservations.guest_entry.saving':'Saving guest…',
+  'reservations.guest_entry.first':'First name','reservations.guest_entry.last':'Last name','reservations.guest_entry.email':'Email','reservations.guest_entry.phone':'Phone',
+  'reservations.guest_entry.failed':'Guest save failed','reservations.guest_entry.saved':'Guest saved',
+  'reservations.guest_entry.created':'Reservation created','reservations.guest_entry.open':'Open reservation →',
   'reservations.create': 'Create reservation',
   'reservations.create_action': 'Create reservation',
   'reservations.creating': 'Creating…',
@@ -69,5 +73,35 @@ describe('manual reservation submission', () => {
     expect(screen.getByRole('button', { name: 'Create reservation' })).toBeEnabled();
     expect(screen.getByRole('combobox', { name: /^Property/ })).toHaveValue('unit');
     expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe('new guest entry keeps the reservation draft',()=>{
+  it('saves and selects a contact without losing dates, villa or notes',async()=>{
+    const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({guest:{id:'new-guest',firstName:'New',lastName:'Person',email:'new@example.test',phone:null}})});
+    vi.stubGlobal('fetch',fetchMock);setup();
+    fireEvent.click(screen.getByRole('button',{name:'Add a new guest'}));
+    fireEvent.change(screen.getByLabelText('First name'),{target:{value:'New'}});
+    fireEvent.change(screen.getByLabelText('Last name'),{target:{value:'Person'}});
+    fireEvent.change(screen.getByLabelText('Email'),{target:{value:'new@example.test'}});
+    fireEvent.submit(screen.getByRole('form',{name:'Add a new guest'}));
+    await waitFor(()=>expect(screen.getByRole('combobox',{name:/^Guest/})).toHaveValue('new-guest'));
+    expect(screen.getByLabelText('Check-in')).toHaveValue('2027-01-10');
+    expect(screen.getByRole('combobox',{name:/^Property/})).toHaveValue('unit');
+    expect(screen.getByPlaceholderText('Notes')).toHaveValue('Accepted dates');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/ops/reservation-guests');
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+  it('preserves contact fields on network failure and suppresses repeated saves',async()=>{
+    let reject!:(error:Error)=>void;
+    const fetchMock=vi.fn().mockReturnValue(new Promise((_resolve,no)=>{reject=no;}));
+    vi.stubGlobal('fetch',fetchMock);setup();
+    fireEvent.click(screen.getByRole('button',{name:'Add a new guest'}));
+    fireEvent.change(screen.getByLabelText('First name'),{target:{value:'New'}});
+    const form=screen.getByRole('form',{name:'Add a new guest'});
+    fireEvent.submit(form);fireEvent.submit(form);expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async()=>reject(new Error('offline')));
+    expect(screen.getByLabelText('First name')).toHaveValue('New');
+    expect(screen.getByRole('alert')).toHaveTextContent('Guest save failed');
   });
 });

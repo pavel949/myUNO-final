@@ -113,6 +113,7 @@ describe('public booking payment methods follow the asset project', () => {
   it.each([false, true])('preserves the authorized manual route when unit.instantBook=%s', async (instantBook) => {
     const { project, unit } = await fixture(['card_provider'], instantBook);
     const organization = await createOrganization('Synthetic operating company', project.id);
+    await db.projectOrganizationRole.create({ data: { projectId: project.id, organizationId: organization.id, roleKey: 'operator', provenance: 'verified' } });
     const space = await db.operatingSpace.create({ data: { key: 'payment-scope', name: 'Payment scope', organizationId: organization.id } });
     await db.operatingSpaceUnit.create({ data: { operatingSpaceId: space.id, unitId: unit.id } });
     const admin = await createIdentity({ isAdmin: true });

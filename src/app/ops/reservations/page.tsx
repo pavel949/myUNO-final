@@ -1,3 +1,5 @@
+import { registeredReservationGuestIds } from '@/modules/ops/reservation-guests.service';
+import { RESERVATION_GUEST_LABELS, RESERVATION_GUEST_DRAFTS } from '@/modules/content/reservation-guest.seed';
 import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
@@ -38,6 +40,7 @@ export default async function ReservationDesk({
   const status=requestedStatus&&allowedStatuses.includes(requestedStatus)?requestedStatus:undefined;
   const now=new Date();
 
+  const registeredGuestIds=await registeredReservationGuestIds(prisma,spaceId,authorizedUnitIds);
   const [units,guests,groups,bookings]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds},status:{not:'offboarded'}},
@@ -48,6 +51,7 @@ export default async function ReservationDesk({
       where:{
         status:'active',
         OR:[
+          {id:{in:registeredGuestIds}},
           ...(access.isAdmin ? [{roleAssignments:{some:{role:{in:['guest' as const,'resident' as const,'buyer' as const]},status:'active' as const}}},{bookingsAsGuest:{some:{}}}] : [{bookingsAsGuest:{some:{unitId:{in:authorizedUnitIds}}}}]),
         ],
       },
@@ -87,6 +91,7 @@ export default async function ReservationDesk({
 
   const locale=getRequestLocale();
   const labels=await getLabels({
+    ...RESERVATION_GUEST_LABELS,
     ...enumLabelDefaults('bookingStatus','bookingChannel'),
     'reservations.back':'← Operating space',
     'reservations.kicker':'RESERVATION DESK',
@@ -119,7 +124,7 @@ export default async function ReservationDesk({
     'reservations.all':'All',
     'reservations.paid':'Paid',
     'reservations.group_summary':'{count} reservations · ฿{amount}',
-  });
+  },locale,RESERVATION_GUEST_DRAFTS);
 
   const bangkokDay=new Intl.DateTimeFormat('en-CA',{
     timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit',

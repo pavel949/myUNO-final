@@ -12,11 +12,17 @@ async function main() {
   try {
     const fixture = JSON.parse(await readFile('browser-results/fixture.json', 'utf8'));
     const bookingId = process.argv[2];
+    const report = JSON.parse(await readFile('browser-results/result.json', 'utf8'));
+    assert.equal(report.synthetic, true);
+    assert.equal(report.manualReservation.bookingId, bookingId);
+    assert.equal(report.manualGuest.contactOnly, true);
     assert.match(bookingId ?? '', /^[0-9a-f-]{36}$/);
     const name = await db.$queryRaw<Array<{ name: string }>>`SELECT current_database() AS name`;
     assert.equal(name[0]?.name, 'myuno_browser_test');
     const before = await db.booking.findUniqueOrThrow({ where: { id: bookingId } });
-    assert.equal(before.unitId, fixture.unitId); assert.equal(before.guestIdentityId, fixture.guestId);
+    assert.equal(before.unitId, fixture.unitId); assert.equal(before.guestIdentityId, report.manualGuest.id);
+    const guest = await db.identity.findUniqueOrThrow({ where: { id: before.guestIdentityId } });
+    assert.equal(guest.email, `manual-${fixture.unitId}@example.test`);
     assert.equal(before.channel, 'manual'); assert.equal(before.status, 'confirmed');
     assert.equal(before.holdExpiresAt, null); assert.equal(before.balanceDueThb, before.totalThb);
     const cutoff = new Date(Date.now() + 31 * 60_000);

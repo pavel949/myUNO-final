@@ -1,3 +1,4 @@
+import { RESERVATION_GUEST_KEYS } from './reservation-guest.seed';
 import { INQUIRY_CONTENT_KEYS } from './inquiry-copy';
 import { PROPERTY_ONBOARDING_KEYS } from './property-onboarding.seed';
 import { PROPERTY_LISTINGS_KEYS } from './property-listings.seed';
@@ -49,6 +50,7 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  ...RESERVATION_GUEST_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
   { key: 'homes.detail.show_all_photos', namespace: 'homes', description: 'Commercial home detail: show all photos', en: 'Show all {count} photos', ru: 'Показать все фото ({count})', th: 'ดูรูปทั้งหมด {count} รูป', status: 'needs_review' },

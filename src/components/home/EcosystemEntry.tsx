@@ -7,29 +7,24 @@ import { matchPlaces, type PlaceOption } from '@/lib/place-search';
 
 type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner' | 'partner';
 
-export function EcosystemEntry({ locale, places }: { locale: string; places: PlaceOption[] }) {
+export function EcosystemEntry({ locale, places, copy }: { locale: string; places: PlaceOption[]; copy: Record<string, string> }) {
   const router = useRouter();
-  const ru = locale === 'ru';
+  
   const [query, setQuery] = useState('');
-  const routes: { key: RouteKey; title: string; detail: string; href: string }[] = ru
-    ? [
-      { key: 'stay', title: 'Забронировать жильё', detail: 'Виллы и апартаменты', href: '/search' },
-      { key: 'monthly', title: 'Арендовать надолго', detail: 'Жильё для жизни', href: '/homes?intent=rent' },
-      { key: 'buy', title: 'Купить недвижимость', detail: 'Каталог предложений', href: '/homes?intent=buy' },
-      { key: 'move', title: 'Переехать', detail: 'Жильё и организация переезда', href: '/relocation' },
-      { key: 'services', title: 'Найти услугу', detail: 'Для отдыха и жизни', href: '/services' },
-      { key: 'owner', title: 'Владельцам', detail: 'Сдать, продать, управлять', href: '/owners' },
-      { key: 'partner', title: 'Партнёрам', detail: 'Агентам, девелоперам и поставщикам', href: '/partners' },
-    ]
-    : [
-      { key: 'stay', title: 'Book a stay', detail: 'Villas and apartments', href: '/search' },
-      { key: 'monthly', title: 'Rent long-term', detail: 'Homes for living', href: '/homes?intent=rent' },
-      { key: 'buy', title: 'Buy property', detail: 'Properties for sale', href: '/homes?intent=buy' },
-      { key: 'move', title: 'Relocate', detail: 'Homes and moving support', href: '/relocation' },
-      { key: 'services', title: 'Find a service', detail: 'For everyday life and holidays', href: '/services' },
-      { key: 'owner', title: 'For owners', detail: 'Rent, sell or manage', href: '/owners' },
-      { key: 'partner', title: 'For partners', detail: 'Agents, developers and providers', href: '/partners' },
-    ];
+  const routeConfig: { key: RouteKey; href: string }[] = [
+    { key: 'stay', href: '/search' },
+    { key: 'monthly', href: '/homes?intent=rent' },
+    { key: 'buy', href: '/homes?intent=buy' },
+    { key: 'move', href: '/relocation' },
+    { key: 'services', href: '/services' },
+    { key: 'owner', href: '/owners' },
+    { key: 'partner', href: '/partners' },
+  ];
+  const routes = routeConfig.map((route) => ({
+    ...route,
+    title: copy['route.' + route.key + '.title'],
+    detail: copy['route.' + route.key + '.detail'],
+  }));
   const matches = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
     if (term.length < 2) return [];
@@ -55,14 +50,14 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
   }
 
   return (
-    <section aria-label={ru ? 'Выберите свою цель' : 'Choose your goal'} className="rounded-xl border border-border-line bg-surface-paper p-16 shadow-card md:p-24">
-      <h2 className="font-display text-title font-semibold text-text-ink">{ru ? 'Что вы хотите сделать на Пхукете?' : 'What would you like to do in Phuket?'}</h2>
+    <section aria-label={copy.aria} className="rounded-xl border border-border-line bg-surface-paper p-16 shadow-card md:p-24">
+      <h2 className="font-display text-title font-semibold text-text-ink">{copy.heading}</h2>
       <form onSubmit={submit} role="search" className="mt-16 flex flex-col gap-8 sm:flex-row">
-        <label className="sr-only" htmlFor="ecosystem-query">{ru ? 'Поиск по myUNO' : 'Search myUNO'}</label>
-        <input id="ecosystem-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ru ? 'Вилла, цветы, школа, район или услуга…' : 'Villa, flowers, school, area or service…'} className="min-h-48 min-w-0 flex-1 rounded-lg border border-border-line bg-surface-ivory px-16 text-text-ink" />
-        <button type="submit" className="min-h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white">{ru ? 'Найти' : 'Search'}</button>
+        <label className="sr-only" htmlFor="ecosystem-query">{copy.searchLabel}</label>
+        <input id="ecosystem-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.placeholder} className="min-h-48 min-w-0 flex-1 rounded-lg border border-border-line bg-surface-ivory px-16 text-text-ink" />
+        <button type="submit" className="min-h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white">{copy.submit}</button>
       </form>
-      {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={ru ? 'Совпадения по месту' : 'Matching places'}>
+      {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={copy.matches}>
         {matches.map((place) => <Link key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? '/projects/' + encodeURIComponent(place.id) : '/search?areaSlug=' + encodeURIComponent(place.slug)}>{place.name}</Link>)}
       </div>}
       <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">

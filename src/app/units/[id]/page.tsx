@@ -1,3 +1,4 @@
+import UnitProjectAmenities from '@/components/projects/UnitProjectAmenities';
 import { getConfig } from '@/modules/config';
 import { GUEST_BOOKING_DRAFTS } from '@/modules/content/guest-booking-drafts';
 import { getGalleryCopy } from '@/lib/gallery-copy';
@@ -214,6 +215,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
       <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float lg:hidden">
         <a href="#lead-form" className="flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-24 font-semibold text-white">{copy.ask}</a>
       </div>
+      <UnitProjectAmenities unitId={unit.id} />
       <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} unitId={unit.id} contextLabel={`${unit.name} · ${unit.project.name}`} initialMessage={`${unit.project.name} — ${unit.name}`} />
     </main>;
   }
@@ -331,6 +333,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         }}
       />
       </SavedHomesProvider>
+      <UnitProjectAmenities unitId={unit.id} />
     </Suspense>
   );
 }

@@ -182,8 +182,8 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           <div className="flex min-w-0 items-center gap-8 md:gap-12">
             <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
             {user ? <>
-              <details className="relative">
-                <summary className="max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName}</summary>
+              <details className="relative min-w-0">
+                <summary className="max-w-[96px] sm:max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName}</summary>
                 <div className="absolute right-0 top-full z-50 mt-8 flex max-h-[70vh] min-w-[240px] flex-col gap-4 overflow-y-auto rounded-lg border border-border-line bg-surface-paper p-12 shadow-float">
                   {userLinks.map(link => <Link key={link.href} href={link.href} className="stitch-list-row text-small">{link.label}</Link>)}
                   <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>{labels.logout}</Button>

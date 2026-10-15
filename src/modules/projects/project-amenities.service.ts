@@ -1,15 +1,16 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { managedImportedInventoryIds } from './public-managed-import';
 import { tMany, type Locale } from '@/modules/content';
 
 export const PROJECT_AMENITY_ACCESS_TYPES = [
-  'open', 'room_key', 'key_card', 'wristband', 'staff_assisted',
+  'not_specified', 'open', 'room_key', 'key_card', 'wristband', 'staff_assisted',
   'reservation', 'membership', 'other',
 ] as const;
 export const PROJECT_AMENITY_BOOKING_MODES = [
   'none', 'reception', 'request', 'time_slot', 'external_link', 'other',
 ] as const;
 export const PROJECT_AMENITY_PRICING_TYPES = [
-  'included', 'free', 'paid', 'deposit', 'mixed',
+  'not_specified', 'included', 'free', 'paid', 'deposit', 'mixed',
 ] as const;
 
 export const PROJECT_AMENITY_CONTENT_FIELDS = [
@@ -50,9 +51,10 @@ export function projectAmenityData(body: Record<string, unknown>) {
   const slug = amenitySlug(typeof body.slug === 'string' && body.slug.trim() ? body.slug : name);
   if (!slug) throw new Error('Amenity slug is required');
   const bookingRequired = body.bookingRequired === true;
-  const pricingType = optionalString(body.pricingType, 40) ?? 'included';
-  const accessType = optionalString(body.accessType, 40) ?? 'open';
-  const bookingMode = bookingRequired ? (optionalString(body.bookingMode, 40) ?? 'request') : 'none';
+  const pricingType = optionalString(body.pricingType, 40) ?? 'not_specified';
+  const accessType = optionalString(body.accessType, 40) ?? 'not_specified';
+  const requestedMode = optionalString(body.bookingMode, 40);
+  const bookingMode = bookingRequired ? (!requestedMode || requestedMode === 'none' ? 'other' : requestedMode) : 'none';
   const priceBaht = body.priceBaht === '' || body.priceBaht == null ? null : Number(body.priceBaht);
   if (priceBaht !== null && (!Number.isFinite(priceBaht) || priceBaht < 0 || priceBaht > 100_000_000)) {
     throw new Error('Amenity price must be a valid non-negative THB amount');
@@ -134,17 +136,27 @@ export async function listPublicProjectAmenities(db: PrismaClient, projectId: st
 }
 
 
+/** Same read-only project eligibility as the canonical Project Portal. No booking authority. */
+export async function getPublicAmenityProjectBySlug(db: PrismaClient, projectSlug: string) {
+  const project = await db.project.findUnique({
+    where: { slug: projectSlug },
+    select: { id: true, slug: true, name: true, status: true, address: true },
+  });
+  if (!project) return null;
+  if (project.status === 'live') return project;
+  if (project.status !== 'draft') return null;
+  const imported = await managedImportedInventoryIds(db);
+  return imported.projectIds.includes(project.id) ? project : null;
+}
+
 export async function getPublicProjectAmenityBySlug(
   db: PrismaClient,
   projectSlug: string,
   amenitySlugValue: string,
   locale: Locale = 'en'
 ) {
-  const project = await db.project.findUnique({
-    where: { slug: projectSlug },
-    select: { id: true, slug: true, name: true, status: true, address: true },
-  });
-  if (!project || project.status !== 'live') return null;
+  const project = await getPublicAmenityProjectBySlug(db, projectSlug);
+  if (!project) return null;
 
   const row = await db.projectAmenity.findFirst({
     where: { projectId: project.id, slug: amenitySlugValue, published: true },

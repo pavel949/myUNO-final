@@ -21,6 +21,7 @@ vi.mock('@/components/UnitPhotoMosaic', () => ({ UnitPhotoMosaic: () => null }))
 vi.mock('@/components/units/PublicSleepingSummary', () => ({ PublicSleepingSummary: () => null }));
 vi.mock('@/app/(public)/lead-form-section', () => ({ LeadFormSection: () => null }));
 vi.mock('./unit-client', () => ({ default: () => null }));
+vi.mock('@/components/projects/UnitProjectAmenities', () => ({ default: () => null }));
 import UnitDetailPage from './page';
 
 describe('rendered inquiry-only unit detail counts', () => {

@@ -19,7 +19,9 @@ export async function getUnitPublicationReadiness(unitId: string): Promise<UnitP
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
     select: {
-      id: true, descriptionKey: true, sizeSqm: true, grossAreaSqm: true,\n      ownerIdentityId: true, inventoryCategoryId: true, baseNightlyThb: true, coverMediaId: true,\n      media: { select: { mediaId: true } },
+      id: true, descriptionKey: true, sizeSqm: true, grossAreaSqm: true,
+      ownerIdentityId: true, inventoryCategoryId: true, baseNightlyThb: true, coverMediaId: true,
+      media: { select: { mediaId: true } },
       project: { select: { status: true } },
       sleepingSpaces: { select: { beds: { select: { count: true } } } },
     },

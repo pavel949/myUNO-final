@@ -41,6 +41,13 @@ async function main() {
     const managedUnit = await createUnit({ projectId: fixture.projectId, ownerIdentityId: target.ownerIdentityId,
       name: 'Synthetic Limited Manager Home', status: 'draft', categoryKey: 'synthetic_manager_scope', instantBook: true });
     const foreignProject = await createProject({ slug: 'synthetic-foreign-manager-scope', name: 'Synthetic Foreign Scope', status: 'live' });
+    // This live authorization sentinel also appears on the public homepage.
+    // Reuse the seeded local project PNGs so a later redirect to / stays isolated.
+    const localPhotos = await db.projectMedia.findMany({ where: { projectId: fixture.projectId },
+      orderBy: { sort: 'asc' }, take: 3, select: { mediaId: true, sort: true } });
+    assert.equal(localPhotos.length, 3);
+    await db.projectMedia.createMany({ data: localPhotos.map(photo => ({ ...photo, projectId: foreignProject.id })) });
+    await db.project.update({ where: { id: foreignProject.id }, data: { coverMediaId: localPhotos[0].mediaId } });
     const foreignUnit = await createUnit({ projectId: foreignProject.id, ownerIdentityId: target.ownerIdentityId,
       name: 'Synthetic Foreign Home', status: 'draft', categoryKey: 'synthetic_foreign_scope', instantBook: true });
     const evidence = await createRegulatoryEvidence(founder.id);

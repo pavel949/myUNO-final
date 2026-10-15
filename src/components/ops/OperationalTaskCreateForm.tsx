@@ -12,8 +12,8 @@ type Team={id:string;name:string};
 type Member={identity:{id:string;firstName:string;lastName:string}};
 
 export default function OperationalTaskCreateForm({
-  operatingSpaceId,timeZone,units,teams,members,labels,
-}:{operatingSpaceId:string;timeZone:string;units:Unit[];teams:Team[];members:Member[];labels:Record<string,string>}){
+  operatingSpaceId,timeZone,units,teams,members,labels,initialUnitId,
+}:{initialUnitId?:string;operatingSpaceId:string;timeZone:string;units:Unit[];teams:Team[];members:Member[];labels:Record<string,string>}){
   const router=useRouter();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
@@ -59,7 +59,7 @@ export default function OperationalTaskCreateForm({
   const taskTypes=['custom','turnover_cleaning','turnover_inspection','maintenance_followup','preventive_maintenance','deep_cleaning','restocking','guest_request','prearrival','owner_request','utilities','pool','garden','pest_control','compliance'];
   return <form onSubmit={submit} className="mb-20 grid gap-12 stitch-panel p-16 md:grid-cols-2 xl:grid-cols-4">
     <input required name="title" placeholder={labels['staff.task_form.title']} className="h-44 rounded-md border border-border-line px-12"/>
-    <select required name="unitId" className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.property']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
+    <select required name="unitId" defaultValue={units.some(unit=>unit.id===initialUnitId)?initialUnitId:''} className="h-44 rounded-md border border-border-line px-12"><option value="">{labels['staff.task_form.property']}</option>{units.map(u=><option key={u.id} value={u.id}>{u.project.name} · {u.name}</option>)}</select>
     <select name="taskType" defaultValue={'custom'} className="h-44 rounded-md border border-border-line px-12">
       {taskTypes.map(t=><option key={t} value={t}>{enumLabel(labels,'taskType',t)}</option>)}
     </select>
@@ -81,4 +81,5 @@ export default function OperationalTaskCreateForm({
     {error?<p role="alert" className="text-small text-state-error md:col-span-2 xl:col-span-4">{error}</p>:null}
   </form>;
 }
+
 

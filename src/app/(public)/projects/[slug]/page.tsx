@@ -52,13 +52,15 @@ export async function generateMetadata({
   // real 404 status — thrown during page streaming it would soft-404 as 200.
   if (!project) notFound();
   const description = await resolveKey(project.descriptionKey);
+  // A missing CMS translation must not leave an indexed project without a description.
+  const metaDescription = (description.trim() || `Explore ${project.name} on myUNO. View published homes, property details, location and available services.`).slice(0, 160);
   return {
     title: `${project.name} | myUNO`,
-    description: description.slice(0, 160) || undefined,
+    description: metaDescription,
     alternates: publicPageAlternates(`/projects/${project.slug}`),
     openGraph: {
       title: project.name,
-      description: description.slice(0, 160) || undefined,
+      description: metaDescription,
       images: project.coverUrl ? [project.coverUrl] : undefined,
     },
   };

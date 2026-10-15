@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 /** English fallbacks for the reservations import panel (content keys, doc 05). */
 const IMPORT_LABELS = {
   'admin.layantara_import.title': 'Import reservations workbook',
-  'admin.layantara_import.body': 'Upload the reservations .xlsx to review every stay without saving. Import requires every source row to explicitly report Unpaid and zero amount paid, and no overlapping calendar protections. Other payment states and protected dates require reconciliation first. Source payment values are unverified; this import never records receipts or converts calendar blocks. System tariffs remain the pricing authority.',
+  'admin.layantara_import.body_reconciliation': 'Upload the reservations .xlsx to review every stay without saving. Import requires every source row to explicitly report Unpaid and zero amount paid, and no overlapping calendar protections. Other payment states and protected dates require reconciliation first. Source payment values are unverified; this import never records receipts or converts calendar blocks. System tariffs remain the pricing authority.',
   'admin.layantara_import.choose': 'Choose .xlsx file',
   'admin.layantara_import.check': 'Check file',
   'admin.layantara_import.checking': 'Checking…',

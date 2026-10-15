@@ -76,7 +76,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
   return (
     <section className="stitch-panel p-20" aria-labelledby="layantara-import-title">
       <h2 id="layantara-import-title" className="font-display text-heading-3 font-semibold text-text-ink">{L('admin.layantara_import.title')}</h2>
-      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('admin.layantara_import.body')}</p>
+      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('admin.layantara_import.body_reconciliation')}</p>
 
       <div className="mt-16 flex flex-wrap items-center gap-12">
         <label className="stitch-control inline-flex cursor-pointer items-center gap-8 px-16 py-8 text-small text-text-ink">

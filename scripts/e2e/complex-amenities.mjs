@@ -108,7 +108,7 @@ try {
   await step('Administrator opens the real editor and unchanged midnight schedule round-trips', sp, async () => {
     await login(sp, fixture.founderEmail, path);
     await sp.getByRole('heading', { name: project.name, exact: true }).waitFor();
-    assert.equal(await editor(sp).getByLabel('Schedule format', { exact: true }).inputValue(), 'daily');
+    assert.equal(await editor(sp).getByRole('combobox', { name: /^Schedule format/ }).inputValue(), 'daily');
     assert.equal(await editor(sp).getByLabel('Open / accessible 24 hours', { exact: true }).isChecked(), true);
     assert.equal(await editor(sp).getByLabel('Staff contact until (optional)', { exact: true }).inputValue(), '00:00');
     await save(sp, reception.id);
@@ -135,7 +135,7 @@ try {
   });
   await step('Existing weekly split schedule remains custom and unchanged on an unrelated descriptive edit', sp, async () => {
     await select(sp, gym.name);
-    assert.equal(await editor(sp).getByLabel('Schedule format', { exact: true }).inputValue(), 'custom');
+    assert.equal(await editor(sp).getByRole('combobox', { name: /^Schedule format/ }).inputValue(), 'custom');
     await editor(sp).getByLabel('Full guest description', { exact: true }).fill('Bring your own exercise equipment.');
     await save(sp, gym.id); assert.deepEqual((await canonical(gym.id)).openingHours, customHours);
   });
@@ -146,7 +146,7 @@ try {
     await editor(sp).getByLabel('Advance booking / reservation required', { exact: true }).check();
     await editor(sp).getByLabel('Booking method', { exact: true }).fill('none');
     await editor(sp).getByLabel('Minimum booking notice', { exact: true }).fill('1');
-    await editor(sp).getByLabel('Notice unit', { exact: true }).selectOption('1440');
+    await editor(sp).getByRole('combobox', { name: /^Notice unit/ }).selectOption('1440');
     await editor(sp).getByLabel('Visitor and usage rules', { exact: true }).fill('Bring your own streaming account.\nNo food or drinks.');
     await save(sp, cinema.id); const row = await canonical(cinema.id);
     assert.equal(row.bookingRequired, true); assert.equal(row.bookingMode, 'other'); assert.equal(row.reservationConfig.minLeadMinutes, 1440);
@@ -155,7 +155,7 @@ try {
   });
   await step('Common facility picker creates only an unpublished draft with unknown costs and no native booking', sp, async () => {
     const form = sp.locator('form').filter({ has: sp.getByRole('button', { name: 'Add draft', exact: true }) });
-    await form.getByLabel('Choose a common facility (optional)', { exact: true }).selectOption('Sauna');
+    await form.getByRole('combobox', { name: /^Choose a common facility/ }).selectOption('Sauna');
     const response = sp.waitForResponse(res => new URL(res.url()).pathname === `/api/admin/projects/${project.id}/amenities` && res.request().method() === 'POST');
     await form.getByRole('button', { name: 'Add draft', exact: true }).click(); assert.equal((await response).status(), 201);
     await sp.getByRole('status').filter({ hasText: 'Amenity created as draft.' }).waitFor();

@@ -44,6 +44,8 @@ export function SearchResultsMap({
         (project) =>
           Number.isFinite(project.latitude) &&
           Number.isFinite(project.longitude) &&
+          Math.abs(project.latitude) <= 90 &&
+          Math.abs(project.longitude) <= 180 &&
           !(project.latitude === 0 && project.longitude === 0)
       ),
     [projects]
@@ -162,7 +164,7 @@ export function SearchResultsMap({
       button.type = 'button';
       button.setAttribute('aria-label', project.name);
       button.className =
-        'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
+        'max-w-[160px] truncate rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card sm:max-w-[240px]';
       button.textContent = project.name + (project.unitCount > 1 ? ` · ${project.unitCount}` : '');
       button.title = project.name;
       button.onclick = () => {
@@ -196,8 +198,8 @@ export function SearchResultsMap({
     for (const [projectId, entry] of markerRefs.current.entries()) {
       entry.element.className =
         projectId === selectedProjectId
-          ? 'rounded-full border-2 border-brand-sun bg-brand-deep px-12 py-4 text-small font-semibold text-surface-paper shadow-float'
-          : 'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
+          ? 'max-w-[160px] truncate rounded-full border-2 border-brand-sun bg-brand-deep px-12 py-4 text-small font-semibold text-surface-paper shadow-float sm:max-w-[240px]'
+          : 'max-w-[160px] truncate rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card sm:max-w-[240px]';
     }
   }, [selectedProjectId]);
 

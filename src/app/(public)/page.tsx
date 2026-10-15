@@ -219,6 +219,12 @@ export default async function LandingPage({
       slug: area.slug,
       name: area.displayName,
     })),
+    ...stayUnits.map((unit) => ({
+      kind: 'unit' as const,
+      id: unit.id,
+      name: unit.name,
+      areaName: unit.project.name,
+    })),
     ...projects.map((project) => ({
       kind: 'project' as const,
       id: project.id,

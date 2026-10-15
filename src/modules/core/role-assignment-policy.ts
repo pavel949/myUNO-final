@@ -24,8 +24,11 @@ export function validateRoleAssignmentScope(input: RoleAssignmentScope): void {
   if (input.scopeType === 'platform' && (input.projectId != null || input.unitId != null)) {
     throw new Error('Platform-scoped roles cannot include projectId or unitId');
   }
-  if (input.scopeType === 'project' && (!input.projectId || input.unitId != null)) {
-    throw new Error('Project-scoped roles require projectId and cannot include unitId');
+  if (input.scopeType === 'project' && !input.projectId) {
+    throw new Error('projectId is required for project-scoped roles');
+  }
+  if (input.scopeType === 'project' && input.unitId != null) {
+    throw new Error('Project-scoped roles cannot include unitId');
   }
   if (input.scopeType === 'unit' && (!input.projectId || !input.unitId)) {
     throw new Error('Unit-scoped roles require projectId and unitId');

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const h = vi.hoisted(() => ({
   project: vi.fn(), unit: vi.fn(), categories: vi.fn(), contentKey: vi.fn(), copy: vi.fn(),
@@ -138,7 +139,7 @@ describe('existing CMS title editor target', () => {
 });
 
 it.each(['reconcile-layantara-a13', 'audit-layantara-public-copy', 'reconcile-layantara-public-content'])('keeps maintenance reader %s pointer-aware without a backfill', name => {
-  const source = readFileSync(new URL(`../../../scripts/${name}.ts`, import.meta.url), 'utf8');
+  const source = readFileSync(resolve(process.cwd(), 'scripts', `${name}.ts`), 'utf8');
   expect(source).toContain('marketingTitleKey: true');
   expect(source).toContain('const titleKey = resolveUnitMarketingTitleKey(unit)');
   expect(source).not.toContain("descriptionKey.replace(/\\.description$/");

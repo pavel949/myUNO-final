@@ -86,7 +86,7 @@ function record<const Keys extends readonly string[]>(
   for (const key of keys) {
     if (typeof key !== 'string' || !expectedKeys.includes(key)) invalid();
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) invalid();
+    if (!descriptor || !descriptor.enumerable || !Object.prototype.hasOwnProperty.call(descriptor, 'value')) invalid();
     result[key as Keys[number]] = descriptor.value;
   }
   return result;
@@ -129,7 +129,7 @@ function arrayValues(value: unknown, maximum: number): unknown[] {
   const result: unknown[] = [];
   for (let index = 0; index < value.length; index += 1) {
     const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) invalid();
+    if (!descriptor || !descriptor.enumerable || !Object.prototype.hasOwnProperty.call(descriptor, 'value')) invalid();
     result.push(descriptor.value);
   }
   return result;

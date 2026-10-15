@@ -8,6 +8,7 @@ import {
 import { CONTENT_UI_LABELS } from './UI-labels';
 
 const API = '/api/property-content-proposals';
+const TARGET_API = '/api/property-content-proposals/target';
 const LOCALES: ContentLocale[] = ['en', 'ru', 'th', 'zh'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -235,7 +236,7 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
     const target = targets.find(item => `${item.scope}:${item.id}` === choice);
     if (!target || !confirmDiscard()) return;
     void run('loading', async (signal, active) => {
-      const result = object(await requestTarget(`${API}/target?scope=${target.scope}&id=${encodeURIComponent(target.id)}`, signal));
+      const result = object(await requestTarget(`${TARGET_API}?scope=${target.scope}&id=${encodeURIComponent(target.id)}`, signal));
       const actual = readTarget(result.target);
       if (actual.scope !== target.scope || actual.id !== target.id) throw new RequestError('invalid_response');
       const snapshot = readSnapshot(actual.scope, result.snapshot);
@@ -306,7 +307,7 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
           throw reason;
         }
       } else {
-        const result = object(await requestTarget(`${API}/target?scope=${editor.scope}&id=${encodeURIComponent(editor.targetId)}`, signal));
+        const result = object(await requestTarget(`${TARGET_API}?scope=${editor.scope}&id=${encodeURIComponent(editor.targetId)}`, signal));
         const target = readTarget(result.target);
         if (target.scope !== editor.scope || target.id !== editor.targetId) throw new RequestError('invalid_response');
         const snapshot = readSnapshot(target.scope, result.snapshot);

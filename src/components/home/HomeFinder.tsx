@@ -59,6 +59,11 @@ export function HomeFinder({
     event.preventDefault();
     setError('');
 
+    if (place?.kind === 'unit') {
+      router.push('/units/' + encodeURIComponent(place.id));
+      return;
+    }
+
     if (intent === 'buy' || intent === 'monthly') {
       trackPublicInteraction('search_submitted', {
         destination,

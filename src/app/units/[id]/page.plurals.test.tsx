@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({ locale: 'ru', bedrooms: 1, guests: 1 }));
+vi.mock('@/modules/config', () => ({ getConfig: vi.fn() }));
 vi.mock('@/modules/projects', () => ({ getPublicUnitById: vi.fn(async () => null) }));
 vi.mock('@/modules/projects/public-discovery', () => ({ listPublicDiscoveryUnits: vi.fn(async () => [{
   id: 'synthetic-unit', name: 'Synthetic home', project: { id: 'synthetic-project', name: 'Synthetic project', slug: 'synthetic-project' },

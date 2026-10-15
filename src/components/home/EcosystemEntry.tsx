@@ -7,7 +7,7 @@ import { matchPlaces, type PlaceOption } from '@/lib/place-search';
 
 type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner' | 'partner';
 
-export function EcosystemEntry({ locale, places, copy }: { locale: string; places: PlaceOption[]; copy: Record<string, string> }) {
+export function EcosystemEntry({ places, copy }: { places: PlaceOption[]; copy: Record<string, string> }) {
   const router = useRouter();
   
   const [query, setQuery] = useState('');
@@ -58,7 +58,7 @@ export function EcosystemEntry({ locale, places, copy }: { locale: string; place
         <button type="submit" className="min-h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white">{copy.submit}</button>
       </form>
       {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={copy.matches}>
-        {matches.map((place) => <Link key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? '/projects/' + encodeURIComponent(place.id) : '/search?areaSlug=' + encodeURIComponent(place.slug)}>{place.name}</Link>)}
+        {matches.map((place) => <Link key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? '/projects/' + encodeURIComponent(place.id) : '/search?areaSlug=' + encodeURIComponent(place.slug ?? '')}>{place.name}</Link>)}
       </div>}
       <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">
         {routes.map((route) => <Link key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">

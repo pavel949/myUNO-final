@@ -82,8 +82,7 @@ try {
     originalExistingPeople = clone(await db.identity.findMany({ select: { id: true, email: true, isAdmin: true, status: true }, orderBy: { id: 'asc' } }));
     originalExistingRoles = clone(await db.roleAssignment.findMany({ orderBy: { id: 'asc' } }));
     assert.equal(await db.project.count({ where: { slug: 'synthetic-amenities-complex' } }), 0, 'No reset or reuse of modified fixtures');
-    const localCover = await db.mediaAsset.findUniqueOrThrow({ where: { storageKey: '/browser-acceptance/project-0.png' } });
-    const data = { coverMediaId: localCover.id, name: 'Synthetic Amenities Complex', projectType: 'condominium', areaLabelKey: 'browser.amenities.area',
+    const data = { name: 'Synthetic Amenities Complex', projectType: 'condominium', areaLabelKey: 'browser.amenities.area',
       descriptionKey: 'browser.amenities.description', handbookKey: 'browser.amenities.handbook', latitude: '8.01', longitude: '98.30',
       address: 'Synthetic amenity address only', timezone: 'Asia/Bangkok', status: 'draft' };
     project = await db.project.create({ data: { ...data, slug: 'synthetic-amenities-complex' } });
@@ -244,7 +243,7 @@ try {
     // can reach the real writer. Neither draft nor archived target is made live.
     const controlProject = await db.project.create({ data: { slug: 'synthetic-amenities-live-control', name: 'Synthetic live control',
       areaLabelKey: 'browser.amenities.area', descriptionKey: 'browser.amenities.description', handbookKey: 'browser.amenities.handbook',
-      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live', coverMediaId: project.coverMediaId } });
+      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live' } });
     const controlAmenity = await db.projectAmenity.create({ data: { projectId: controlProject.id, slug: 'control', name: 'Synthetic reservation control',
       published: true, bookingRequired: true, bookingMode: 'time_slot', reservationConfig: { slotMinutes: 60, autoConfirm: true } } });
     const controlPath = `/projects/${controlProject.slug}/amenities/${controlAmenity.slug}/book`;

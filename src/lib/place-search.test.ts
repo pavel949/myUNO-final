@@ -7,6 +7,7 @@ const options: PlaceOption[] = [
   { kind: 'project', id: 'p1', name: 'The Title Legendary', areaName: 'Rawai' },
   { kind: 'project', id: 'p2', name: 'Layantara Villa Resort', areaName: 'Лаян' },
   { kind: 'project', id: 'p3', name: 'Oceanstone', areaName: 'Банг Тао' },
+  { kind: 'unit', id: 'u1', name: 'Villa A19', areaName: 'Layantara Villa Resort' },
 ];
 
 describe('place search', () => {
@@ -27,7 +28,12 @@ describe('place search', () => {
   });
 
   it('lists areas before complexes when the query is empty', () => {
-    expect(matchPlaces(options, '').map((o) => o.kind)).toEqual(['area', 'area', 'project', 'project', 'project']);
+    expect(matchPlaces(options, '').map((o) => o.kind)).toEqual(['area', 'area', 'project', 'project', 'project', 'unit']);
+  });
+
+  it('finds an exact villa and its complex context', () => {
+    expect(matchPlaces(options, 'A19')[0]).toMatchObject({ id: 'u1', kind: 'unit' });
+    expect(matchPlaces(options, 'Layantara').map((item) => item.id)).toContain('u1');
   });
 
   it('returns nothing for an unknown place rather than guessing', () => {

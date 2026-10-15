@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
@@ -10,7 +11,11 @@ export const dynamic = 'force-dynamic';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) {
-    redirect('/login?next=/app/admin');
+    const pathname = headers().get('x-myuno-request-path') ?? '';
+    const safePath = pathname === '/app/admin' || pathname.startsWith('/app/admin/')
+      ? pathname
+      : '/app/admin';
+    redirect('/login?next=' + encodeURIComponent(safePath));
   }
   if (!user.isAdmin) {
     redirect('/');

@@ -23,6 +23,9 @@ export function middleware(request: NextRequest) {
   // so the browser, the client and any proxy log see the same id.
   const forwardedHeaders = new Headers(request.headers);
   forwardedHeaders.set(CORRELATION_ID_HEADER, correlationId);
+  // Internal-only navigation context: overwrite any client-supplied value.
+  // Admin layout uses this to return signed-out users to their exact page.
+  forwardedHeaders.set('x-myuno-request-path', request.nextUrl.pathname);
 
   const response = NextResponse.next({ request: { headers: forwardedHeaders } });
   response.headers.set(CORRELATION_ID_HEADER, correlationId);

@@ -1,7 +1,7 @@
 import { PrismaClient, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
 import type { SourceBookingTerms } from './commercial-booking-terms';
 import { getConfig, type SeasonPeriod } from '@/modules/config';
-import { daysBetween, toCalendarDay } from '@/lib/date';
+import { daysBetween, startOfUtcDay, toCalendarDay } from '@/lib/date';
 import { blockingBookingConditions, isActiveBookingHold } from './booking-occupancy';
 
 /**
@@ -228,7 +228,10 @@ export async function createManualBlock(
   db: PrismaClient,
   input: CreateManualBlockInput
 ): Promise<BlockedDate> {
-  const { unitId, startDate, endDate, reason, note, createdByIdentityId } = input;
+  const { unitId, reason, note, createdByIdentityId } = input;
+  const startDate = startOfUtcDay(input.startDate);
+  const endDate = startOfUtcDay(input.endDate);
+  const normalizedNote = note || null;
 
   if (!(startDate < endDate)) {
     throw new Error('endDate must be after startDate');
@@ -261,13 +264,31 @@ export async function createManualBlock(
       throw err;
     }
 
+    // A retry (including simultaneous submits) reuses only the same manual
+    // block, after the booking check and while holding the shared unit lock.
+    // Imported/reschedule and signed-lease blocks retain their own identity.
+    const existing = await tx.blockedDate.findFirst({
+      where: {
+        unitId,
+        startDate,
+        endDate,
+        reason,
+        note: normalizedNote,
+        createdByIdentityId,
+        externalRef: null,
+        propertyDealId: null,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    if (existing) return existing;
+
     return tx.blockedDate.create({
       data: {
         unitId,
         startDate,
         endDate,
         reason,
-        note: note || null,
+        note: normalizedNote,
         createdByIdentityId,
       },
     });

@@ -91,6 +91,7 @@ jobs:
           node scripts/e2e/guest-ux-completion.mjs
           node scripts/e2e/property-submission-description.mjs
           node scripts/e2e/content-contributor.mjs
+          node scripts/e2e/complex-amenities.mjs
           test ! -s browser-results/blocked-server-egress.log
       - name: Upload synthetic screenshots and step evidence
         if: always()
@@ -102,6 +103,7 @@ jobs:
             browser-results/guest-ux-result.json
             browser-results/property-submission-result.json
             browser-results/content-contributor-result.json
+            browser-results/complex-amenities-result.json
             browser-results/*.png
             browser-results/server.log
             browser-results/blocked-server-egress.log
@@ -115,3 +117,4 @@ jobs:
           path: browser-results/trace-*.zip
           retention-days: 7
           if-no-files-found: warn
+

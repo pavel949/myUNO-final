@@ -1,5 +1,12 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 
+// Domain unavailability is expected, public-safe traffic, not an internal server failure.
+export class ProjectAmenityUnavailableError extends Error {
+  readonly statusCode = 404;
+  readonly isPublic = true;
+  constructor() { super('Amenity not available'); this.name = 'ProjectAmenityUnavailableError'; }
+}
+
 export type AmenityReservationPolicy = {
   slotMinutes?: number;
   minLeadMinutes?: number;
@@ -112,7 +119,7 @@ export async function createProjectAmenityReservation(
             capacity: true, project: { select: { status: true } },
           },
         });
-        if (!amenity || !amenity.published || amenity.project.status !== 'live') throw new Error('Amenity not available');
+        if (!amenity || !amenity.published || amenity.project.status !== 'live') throw new ProjectAmenityUnavailableError();
         if (!amenity.bookingRequired || !['time_slot', 'request', 'reception'].includes(amenity.bookingMode)) {
           throw new Error('This amenity does not use native reservations');
         }

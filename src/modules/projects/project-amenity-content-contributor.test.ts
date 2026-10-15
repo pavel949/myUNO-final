@@ -38,12 +38,12 @@ describe('content contributor does not confer project amenity occupancy', () => 
 
 it.each(['draft', 'archived'])('rejects direct native reservation writes for a %s project even with an eligible stay', async projectStatus => {
   const h = fixture('owner', 'unit-a', 'project-a', true, projectStatus);
-  await expect(createProjectAmenityReservation(h.db, h.input)).rejects.toThrow('Amenity not available');
+  await expect(createProjectAmenityReservation(h.db, h.input)).rejects.toMatchObject({ message: 'Amenity not available', statusCode: 404, isPublic: true });
   expect(h.db.booking.findFirst).not.toHaveBeenCalled();
   expect(h.db.projectAmenityReservation.create).not.toHaveBeenCalled();
 });
 it('does not let privileged reservation callers bypass an unpublished project', async () => {
   const h = fixture('staff_ops', null, 'project-a', false, 'draft');
-  await expect(createProjectAmenityReservation(h.db, { ...h.input, privileged: true })).rejects.toThrow('Amenity not available');
+  await expect(createProjectAmenityReservation(h.db, { ...h.input, privileged: true })).rejects.toMatchObject({ message: 'Amenity not available', statusCode: 404, isPublic: true });
   expect(h.db.projectAmenityReservation.create).not.toHaveBeenCalled();
 });

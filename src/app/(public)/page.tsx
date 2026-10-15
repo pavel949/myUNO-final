@@ -313,7 +313,7 @@ export default async function LandingPage({
 
       <HomeIntentProvider initialIntent={initialIntent} locale={locale} destination={activeDestination.key}>
         <section
-          className="relative isolate min-h-[calc(100svh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px]"
+          className="relative isolate min-h-[640px] overflow-hidden bg-surface-paper text-text-ink md:min-h-[760px]"
           aria-labelledby="home-title"
         >
           <Image
@@ -322,12 +322,12 @@ export default async function LandingPage({
             fill
             priority
             sizes={['100', 'vw'].join('')}
-            className="object-cover saturate-[1.08]"
+            className="object-cover saturate-[0.94] contrast-[1.03]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/85 via-surface-paper/30 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/20 via-transparent to-transparent" />
 
-          <div className="relative mx-auto flex min-h-[calc(100svh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-32 md:min-h-[720px] md:px-32 md:pb-56">
+          <div className="relative mx-auto flex min-h-[640px] max-w-content flex-col justify-end px-20 pb-24 pt-32 md:min-h-[760px] md:px-32 md:pb-48">
             <div className="max-w-2xl">
               <h1
                 id="home-title"
@@ -340,9 +340,9 @@ export default async function LandingPage({
               </p>
             </div>
 
-            <div className="mt-32 max-w-content">
+            <div className="mt-24 max-w-content rounded-xl bg-surface-paper/95 p-12 shadow-float backdrop-blur-md md:p-20">
               <EcosystemEntry locale={locale} places={places} />
-              <div className="mt-16"><HomeFinder
+              <details className="mt-12 rounded-lg border border-border-line bg-surface-paper p-12"><summary className="cursor-pointer text-small font-semibold text-brand-andaman">{locale === 'ru' ? 'Расширенный поиск жилья: даты, гости, район и комплекс' : 'Advanced property search: dates, guests, area and complex'}</summary><div className="mt-12"><HomeFinder
                 locale={locale}
                 places={places}
                 labels={{
@@ -400,7 +400,7 @@ export default async function LandingPage({
                   },
                 }}
               />
-              </div>
+              </div></details>
               <p className="mt-12 px-4 text-small text-text-ink">
                 {labels['landing.hp.hero.dates_note']}{' '}
                 <Link href="/search" className="font-semibold text-brand-andaman hover:underline">

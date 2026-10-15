@@ -7,6 +7,7 @@ import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { HomeFinder } from '@/components/home/HomeFinder';
+import { EcosystemEntry } from '@/components/home/EcosystemEntry';
 import { PublicAnalyticsLink } from '@/components/PublicAnalyticsLink';
 import { PUBLIC_ANALYTICS_EVENTS } from '@/components/public-analytics';
 import { HomeIntentProvider } from '@/components/home/HomeIntentProvider';
@@ -340,7 +341,8 @@ export default async function LandingPage({
             </div>
 
             <div className="mt-32 max-w-content">
-              <HomeFinder
+              <EcosystemEntry locale={locale} places={places} />
+              <div className="mt-16"><HomeFinder
                 locale={locale}
                 places={places}
                 labels={{
@@ -398,6 +400,7 @@ export default async function LandingPage({
                   },
                 }}
               />
+              </div>
               <p className="mt-12 px-4 text-small text-text-ink">
                 {labels['landing.hp.hero.dates_note']}{' '}
                 <Link href="/search" className="font-semibold text-brand-andaman hover:underline">

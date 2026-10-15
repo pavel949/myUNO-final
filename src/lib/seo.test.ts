@@ -150,6 +150,10 @@ describe('SEO structured data (T-035, doc 08 §7)', () => {
       });
     });
 
+    it.each([0, null, undefined, -1, Number.NaN])('omits unknown bathroom count %s', (bathrooms) => {
+      expect(unitJsonLd({ ...unit, bathrooms })).not.toHaveProperty('numberOfBathroomsTotal');
+    });
+
     it('prices the offer in THB from the unit-s own nightly rate', () => {
       const graph = unitJsonLd(unit) as { offers: Record<string, unknown> };
 

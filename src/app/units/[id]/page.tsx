@@ -1,3 +1,5 @@
+import { getConfig } from '@/modules/config';
+import { GUEST_BOOKING_DRAFTS } from '@/modules/content/guest-booking-drafts';
 import { getGalleryCopy } from '@/lib/gallery-copy';
 import { GUEST_SEARCH_UX_KEYS, guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
 import { ShareStayOffer } from '@/components/property/ShareStayOffer';
@@ -111,7 +113,6 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'listing.floor': 'Floor {value}',
     'listing.min_nights_count': 'Min {count} nights',
     'homes.detail.size_unit': 'sqm',
-    'listing.not_charged_yet': 'You are not charged yet. Card, transfer or cash on arrival.',
     'listing.fewer_guests': 'Fewer adults',
     'listing.more_guests': 'More adults',
     'search.bar_check_in': 'Check-in',
@@ -138,6 +139,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'listing.payment_method': 'Payment method',
     'listing.pay_cash': 'Cash on arrival',
     'listing.pay_card': 'Card (online)',
+    'listing.pay_transfer': 'Bank transfer',
     'listing.guest_note': 'Guest note (optional)',
     'listing.guest_note_placeholder': 'Any special requests…',
     'listing.reserve': 'Reserve',
@@ -182,8 +184,8 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'catalog.cancellation_policies.flexible.label': 'Flexible',
     'catalog.cancellation_policies.moderate.label': 'Moderate',
     'catalog.cancellation_policies.strict.label': 'Strict',
-    'catalog.cancellation_policies.season.label': 'By season of arrival',
-  });
+    'catalog.cancellation_policies.season.label': 'Season terms',
+  }, undefined, GUEST_BOOKING_DRAFTS);
 
   const breadcrumbs = [
     { label: labels['units.breadcrumb_home'], href: '/' },
@@ -216,6 +218,12 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     </main>;
   }
 
+  // Match review's project-scoped enabled methods. Do not repeat the legacy
+  // static CMS promise, which may name payment rails this property lacks.
+  const enabledMethods = (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId: unit.project.id })) ?? ['cash', 'bank_transfer'];
+  const paymentLabels = { cash: labels['listing.pay_cash'], bank_transfer: labels['listing.pay_transfer'], card_provider: labels['listing.pay_card'] };
+  const paymentMethodsSummary = enabledMethods.map(method => paymentLabels[method]).join(' · ');
+
   return (
     <Suspense>
       <Breadcrumb items={breadcrumbs} />
@@ -242,7 +250,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
           floor: labels['listing.floor'],
           minNightsCount: labels['listing.min_nights_count'],
           sizeUnit: labels['homes.detail.size_unit'],
-          notChargedYet: labels['listing.not_charged_yet'],
+          paymentMethodsSummary,
           fewerGuests: labels['listing.fewer_guests'],
           moreGuests: labels['listing.more_guests'],
           checkIn: labels['search.bar_check_in'],

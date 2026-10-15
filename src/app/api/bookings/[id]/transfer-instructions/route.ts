@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       projectId: true,
       guestIdentityId: true,
       totalThb: true,
-      balanceDueThb: true,
+      receivableStatus: true, balanceDueThb: true,
       status: true,
       holdExpiresAt: true,
     },
@@ -39,6 +39,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
   if (!canViewTransferInstructions(access)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  if (booking.receivableStatus !== 'collectible') {
+    return NextResponse.json({ code: 'BOOKING_RECEIVABLE_RECONCILIATION_REQUIRED',
+      error: 'The source payment and guest balance need reconciliation before collecting money.' }, { status: 409 });
   }
 
   // A request has not been accepted, and terminal/expired reservations must
@@ -95,4 +100,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     );
   }
 }
+
 

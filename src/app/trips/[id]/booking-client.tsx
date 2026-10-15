@@ -21,6 +21,7 @@ interface BookingDetail {
   totalThb: number;
   /** Unlike totalThb's display-baht boundary, the API balance is raw satang. */
   balanceDueThb?: number;
+  receivableStatus: string;
   holdExpiresAt?: string | null;
   paymentMethod?: string | null;
   refundAccruedThb?: number | null;
@@ -368,9 +369,10 @@ export default function BookingDetailClient({
     );
   }
 
-  const outstandingSatang = ['confirmed', 'checked_in', 'checked_out'].includes(booking.status) &&
+  const sourceReviewRequired = booking.receivableStatus === 'pending_reconciliation';
+  const outstandingSatang = !sourceReviewRequired && ['confirmed', 'checked_in', 'checked_out'].includes(booking.status) &&
     Number.isSafeInteger(booking.balanceDueThb) && (booking.balanceDueThb ?? 0) > 0 ? booking.balanceDueThb! : 0;
-  const paid = outstandingSatang === 0 && booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
+  const paid = !sourceReviewRequired && outstandingSatang === 0 && booking.payments.some((p) => p.status === 'succeeded' && !p.reconciliationReason);
   const succeededPayment = booking.payments.find((p) => p.status === 'succeeded' && !p.reconciliationReason);
   const statusLabel =
     labels[`booking.detail.status.${booking.status}`] || booking.status.replace(/_/g, ' ');
@@ -632,7 +634,12 @@ export default function BookingDetailClient({
           <h2 className="text-heading-3 font-bold text-text-ink mb-12">
             {labels['booking.detail.payment_title']}
           </h2>
-          {booking.paymentReviewRequired ? (
+          {sourceReviewRequired ? (
+            <div className="rounded-lg border border-state-warning p-16 text-body" role="status">
+              <p className="font-semibold mb-8">{labels['booking.detail.source_review_title']}</p>
+              <p>{labels['booking.detail.source_review_body']}</p>
+            </div>
+          ) : booking.paymentReviewRequired ? (
             <div role="status" className="text-body text-state-warning">
               <p className="font-semibold mb-8">{labels['booking.detail.payment_review_title']}</p>
               <p>{labels['booking.detail.payment_review_body']}</p>
@@ -1035,3 +1042,4 @@ export default function BookingDetailClient({
     </div>
   );
 }
+

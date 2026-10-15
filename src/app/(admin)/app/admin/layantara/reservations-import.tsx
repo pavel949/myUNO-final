@@ -10,7 +10,7 @@ type Stay = {
   key: string; ref: string; unitCode: string; guestName: string; channel: string; sourceChannelName: string | null;
   startDate: string; endDate: string; totalSatang: number; paidSatang: number; action: Action; reason: string | null;
   sourcePaymentStatus: string; sourcePaymentAmountRaw: string;
-  completeAfterImport: boolean;
+  completeAfterImport: boolean; partyUnknown: boolean; receivableStatus: string | null;
 };
 type Applied = { key: string; status: string; code?: string };
 type Result = {
@@ -37,6 +37,7 @@ const fill = (t: string, v: Record<string, string | number>) =>
  */
 export function ReservationsImport({ labels }: { labels: Record<string, string> }) {
   const [file, setFile] = useState<File | null>(null);
+  const [reviewedSource, setReviewedSource] = useState(false);
   const [busy, setBusy] = useState<'preview' | 'apply' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -52,6 +53,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
       const form = new FormData();
       form.set('file', file);
       form.set('mode', mode);
+      if (reviewedSource) form.set('sourceMode', 'reviewed_source');
       const res = await fetch('/api/admin/layantara/reservations-import', { method: 'POST', body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data) {
@@ -76,8 +78,13 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
   return (
     <section className="stitch-panel p-20" aria-labelledby="layantara-import-title">
       <h2 id="layantara-import-title" className="font-display text-heading-3 font-semibold text-text-ink">{L('admin.layantara_import.title')}</h2>
-      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('admin.layantara_import.body_reconciliation')}</p>
+      <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('admin.layantara_import.body_reviewed')}</p>
 
+      <label className="mt-12 flex items-center gap-8 text-small">
+        <input type="checkbox" checked={reviewedSource} disabled={busy !== null}
+          onChange={e => { setReviewedSource(e.target.checked); setResult(null); setError(null); }} />
+        {L('admin.layantara_import.reviewed_mode')}
+      </label>
       <div className="mt-16 flex flex-wrap items-center gap-12">
         <label className="stitch-control inline-flex cursor-pointer items-center gap-8 px-16 py-8 text-small text-text-ink">
           <span>{file ? file.name : L('admin.layantara_import.choose')}</span>
@@ -174,11 +181,11 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
                     <tr key={s.key} className="stitch-list-row border-b border-border-line last:border-0">
                       <td className="py-8 pr-12 font-semibold text-text-ink">{s.ref}</td>
                       <td className="py-8 pr-12">{s.unitCode}</td>
-                      <td className="py-8 pr-12">{s.guestName}</td>
+                      <td className="py-8 pr-12">{s.guestName}{s.partyUnknown ? <span className="block text-text-secondary">{L('admin.layantara_import.party_unknown')}</span> : null}</td>
                       <td className="py-8 pr-12">{s.sourceChannelName ?? L('common.channel.' + s.channel)}</td>
                       <td className="py-8 pr-12 tabular-nums"><LocalDate value={s.startDate} /> – <LocalDate value={s.endDate} /></td>
-                      <td className="py-8 pr-12 text-right"><MoneyAmount satang={s.totalSatang} /></td>
-                      <td className="py-8 pr-12 text-right">{s.sourcePaymentStatus || '—'} · {s.sourcePaymentAmountRaw || '—'}</td>
+                      <td className="py-8 pr-12 text-right">{s.reason === 'source_unit_allocation_required' ? L('admin.layantara_import.allocation_required') : <MoneyAmount satang={s.totalSatang} />}</td>
+                      <td className="py-8 pr-12 text-right">{s.sourcePaymentStatus || '—'} · {s.sourcePaymentAmountRaw || '—'}{s.receivableStatus ? <span className="block text-text-secondary">{L('admin.layantara_import.source_only')}</span> : null}</td>
                       <td className="py-8">
                         <span className={problem ? 'text-state-warning' : 'text-text-ink'}>
                           {L('admin.layantara_import.action.' + s.action)}

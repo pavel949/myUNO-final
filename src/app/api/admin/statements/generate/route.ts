@@ -1,3 +1,4 @@
+import { StatementReceivableReviewError } from '@/modules/finance/statement-snapshot';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
@@ -545,9 +546,11 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
+    if (error instanceof StatementReceivableReviewError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     if (error instanceof StatementConflict) {
       return NextResponse.json(error.body, { status: error.status })
     }
     return handleError(error)
   }
 }
+

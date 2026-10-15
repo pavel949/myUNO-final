@@ -44,6 +44,7 @@ interface Booking {
   adults: number;
   children: number;
   balanceDueThb: number;
+  receivableStatus: string;
 }
 
 interface ActiveOrder {
@@ -104,6 +105,7 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
 
   const inStay = booking.status === 'checked_in';
   const paidInFull =
+    booking.receivableStatus === 'collectible' &&
     booking.balanceDueThb === 0 &&
     (booking.status === 'confirmed' || booking.status === 'checked_in');
 
@@ -382,3 +384,4 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
     </div>
   );
 };
+

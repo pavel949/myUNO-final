@@ -1,3 +1,4 @@
+import { assertStatementReceivablesResolved } from './statement-snapshot';
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
 
@@ -31,6 +32,10 @@ interface ProviderPayoutInput extends CommonPayoutInput {
  */
 export async function recordOwnerPayoutAtomic(db: PrismaClient, input: OwnerPayoutInput) {
   return db.$transaction(async (tx) => {
+    const statement = await tx.ownerStatement.findUniqueOrThrow({ where: { id: input.ownerStatementId } });
+    if (statement.unitId !== input.unitId) throw new Error('Payout statement unit mismatch');
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${statement.unitId}))`;
+    await assertStatementReceivablesResolved(tx, statement);
     const payout = await tx.payout.create({
       data: {
         payeeType: 'owner',
@@ -94,3 +99,4 @@ export async function recordProviderPayoutAtomic(db: PrismaClient, input: Provid
     return payout;
   });
 }
+

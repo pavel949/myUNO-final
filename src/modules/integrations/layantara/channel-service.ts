@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { channelPayloadHash, type ChannelEvent } from './channel-contract';
+import { reviewedEntryForEvent, type WorkbookReviewContext } from './reviewed-workbook';
 import { blockingBookingConditions } from '@/modules/core/booking-occupancy';
 
 type Tx = Prisma.TransactionClient;
@@ -40,10 +41,14 @@ export async function applyChannelEvent(
      * audit rather than a signed adapter. Public sale stays gated by the
      * readiness checks; nothing here makes a unit sellable.
      */
-    operatingRecord?:boolean},
+    operatingRecord?:boolean; workbookReview?:WorkbookReviewContext},
 ):Promise<Outcome> {
   const {event:e,rawBody,environment}=input,hash=channelPayloadHash(rawBody);
   const operatingRecord=input.operatingRecord===true;
+  if(input.workbookReview&&!operatingRecord) return{status:'quarantined',bookingId:null,code:'workbook_review_context_required'};
+  if((e.eventType==='booking.confirmed'||e.eventType==='booking.changed') &&
+     (!Number.isInteger(e.adults)||(e.adults ?? 0)<1) && !input.workbookReview)
+    return{status:'quarantined',bookingId:null,code:'invalid_booking_contract'};
   // A workbook payment label is not evidence of an operator receipt.
   // Refuse before creating even an inbox record; verified channel intake
   // retains its separate receipt contract below.
@@ -63,6 +68,18 @@ export async function applyChannelEvent(
   return db.$transaction(async(tx)=>{
     // Version order is serialized per external reservation.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${system.id+':'+e.externalBookingId}))`;
+    // Reload the private review inside the transaction; a preview is never authority.
+    let reviewed: ReturnType<typeof reviewedEntryForEvent> | undefined;
+    if(input.workbookReview){
+      await tx.$queryRaw`SELECT id FROM external_system WHERE id = ${system.id} FOR UPDATE`;
+      const freshSystem=await tx.externalSystem.findUnique({where:{id:system.id}});
+      const freshConfig=freshSystem?.config as Record<string,unknown>|undefined;
+      if(!freshSystem || !['active','staging'].includes(freshSystem.status) || freshSystem.environment!==environment ||
+         freshConfig?.bookingAuthority!=='myuno'||freshConfig?.cutoverVerified!==true)
+        return{status:'quarantined',bookingId:null,code:'authority_not_enabled'};
+      try { reviewed=reviewedEntryForEvent(freshConfig,input.workbookReview,e); }
+      catch { return{status:'quarantined',bookingId:null,code:'workbook_review_changed'}; }
+    }
     const prior=await tx.externalEventInbox.findFirst({where:{
       external_system_id:system.id,event_id:e.eventId,
     }});
@@ -75,7 +92,7 @@ export async function applyChannelEvent(
       external_system_id:system.id,event_id:e.eventId,aggregate_type:'booking',
       aggregate_external_id:e.externalBookingId,event_type:e.eventType,
       event_version:BigInt(e.eventVersion),occurred_at:new Date(e.occurredAt),
-      payload:e as unknown as Prisma.InputJsonValue,payload_hash:hash,status:'received',
+      payload:{...e,...(reviewed?{sourceReview:{...input.workbookReview,provenance:reviewed.manifest.provenance,entry:reviewed.entry}}:{})} as unknown as Prisma.InputJsonValue,payload_hash:hash,status:'received',
     }});
     const quarantine=async(code:string):Promise<Outcome>=>{
       await tx.externalEventInbox.update({where:{id:inbox.id},data:{
@@ -102,6 +119,7 @@ export async function applyChannelEvent(
       select:{id:true,projectId:true,inventoryCategoryId:true,status:true}});
     if(!unit||!unit.inventoryCategoryId||unit.status==='offboarded')return quarantine('unit_not_onboarded');
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${unit.id}))`;
+    if(reviewed&&reviewed.entry.unitId!==unit.id)return quarantine('workbook_review_unit_mismatch');
     const bookingMapping=await mapping(tx,system.id,'booking',e.externalBookingId);
     let bookingId=bookingMapping?.internal_id??null;
     if(e.eventType==='occupancy.protect'){
@@ -142,19 +160,25 @@ export async function applyChannelEvent(
       const start=day(e.startDate),end=day(e.endDate);
       if(await hasBookingConflict(tx,unit.id,start,end,bookingId??undefined))
         return quarantine('inventory_conflict');
-      const ref=e.occupancyId?'layantara:occupancy:'+e.occupancyId:null;
+      const ref=reviewed?.entry.block.externalRef ?? (e.occupancyId?'layantara:occupancy:'+e.occupancyId:null);
+      if(reviewed) await tx.$queryRaw`SELECT id FROM blocked_date WHERE id = ${reviewed.entry.block.id} FOR UPDATE`;
       const blocks=await tx.blockedDate.findMany({where:{
         unitId:unit.id,startDate:{lt:end},endDate:{gt:start},
       }});
       // Workbook row dates do not prove ownership of source protection.
       // This check runs under the unit lock, including blocks added after
       // preview. Never consume one based on an inferred occupancyId.
-      if(operatingRecord&&blocks.length)
+      if(operatingRecord&&blocks.length&&!reviewed)
         return quarantine('workbook_occupancy_reconciliation_required');
-      if(blocks.some(b=>!ref||b.externalRef!==ref||
+      if(reviewed && ((!bookingId && blocks.length!==1) || blocks.some(b=>
+        b.id!==reviewed.entry.block.id || b.externalRef!==reviewed.entry.block.externalRef || b.reason!==reviewed.entry.block.reason ||
+        (reviewed.entry.block.externalRef===null && b.note!==reviewed.entry.block.note))))
+        return quarantine('workbook_review_block_changed');
+      if(blocks.some(b=>(!reviewed&&(!ref||b.externalRef!==ref))||
          b.startDate.getTime()!==start.getTime()||b.endDate.getTime()!==end.getTime()))
         return quarantine('unreconciled_inventory_block');
       if(bookingId){
+        if(reviewed)return quarantine('workbook_existing_booking_requires_review');
         const current=await tx.booking.findUnique({where:{id:bookingId},include:{
           payments:{where:{status:'succeeded'},select:{amountThb:true,refunds:{
             where:{status:{in:['requested','processing','succeeded']}},select:{amountThb:true},
@@ -223,7 +247,7 @@ export async function applyChannelEvent(
           guestId=guest.id;
           await tx.externalMapping.create({data:{
             external_system_id:system.id,entity_type:'guest',internal_id:guest.id,
-            external_id:e.guestExternalId,metadata:{verified:true,source:'signed_channel_event'},
+            external_id:e.guestExternalId,metadata:{verified:true,source:reviewed?'reviewed_operator_workbook':'signed_channel_event'},
           }});
         }
         if(blocks.length)await tx.blockedDate.delete({where:{id:blocks[0].id}});
@@ -233,10 +257,20 @@ export async function applyChannelEvent(
           externalRef:externalKey(environment,e.externalBookingId),
           status:'confirmed',startDate:start,endDate:end,adults:e.adults,children:e.children,
           totalThb:e.totalSatang,balanceDueThb:e.totalSatang,
+          ...(reviewed?{receivableStatus:'pending_reconciliation' as const,
+            partyDetailsStatus:reviewed.entry.adults===null||reviewed.entry.children===null
+              ? 'source_unknown' as const : 'known' as const}:{}),
           priceBreakdown:{source:'layantara',externalBookingId:e.externalBookingId,
             currency:'THB',totalSatang:e.totalSatang,sourceVersion:e.eventVersion,
             ...(e.sourceChannelName?{sourceChannelName:e.sourceChannelName}:{}),
-            ...(operatingRecord?{importedFrom:'operator_workbook'}:{})},
+            ...(operatingRecord?{importedFrom:'operator_workbook'}:{}),
+            ...(reviewed?{
+              sourcePaymentEvidence:{rawStatus:reviewed.entry.rawStatus,
+                reportedPaidSatang:reviewed.entry.reportedPaidSatang,provenance:reviewed.manifest.provenance},
+              sourcePartyEvidence:{adults:reviewed.entry.adults,children:reviewed.entry.children,
+                provenance:reviewed.manifest.provenance},
+              sourceStayEvidence:{status:'confirmed',provenance:reviewed.manifest.provenance},
+            }:{})},
         }});
         bookingId=created.id;
         await tx.externalMapping.create({data:{

@@ -26,6 +26,7 @@ export interface InStayHomeSpaceData {
     adults: number;
     children: number;
     balanceDueThb: number;
+    receivableStatus: string;
   };
   /** True only when at least one TM30 for this stay has been filed. */
   tm30Filed: boolean;
@@ -253,6 +254,7 @@ export async function getInStayHomeSpace(
       adults: booking.adults,
       children: booking.children,
       balanceDueThb: booking.balanceDueThb,
+      receivableStatus: booking.receivableStatus,
     },
     activeOrders: activeOrdersWithRatings,
     announcements: announcements.map((a) => ({
@@ -264,3 +266,4 @@ export async function getInStayHomeSpace(
     })),
   };
 }
+

@@ -5,7 +5,7 @@ export type StayWorkPhase='request'|'payment'|'prearrival'|'arrival'|'in_house'|
 export interface StaySnapshot {
   id:string;projectId:string;unitId:string;unitName:string;
   guestName:string;status:string;startDate:string;endDate:string;
-  totalSatang:number;paidSatang:number;refundAccruedSatang:number;
+  totalSatang:number;paidSatang:number;refundAccruedSatang:number;receivableStatus:string;
 }
 export interface StayWorkItem {
   id:string;bookingId:string;phase:StayWorkPhase;
@@ -19,14 +19,16 @@ export function deriveStayWorkItems(booking:StaySnapshot,today:string):StayWorkI
       actionKey,severity:attention||dueDate<today?'attention':'normal',
       unitId:booking.unitId,guestName:booking.guestName,unitName:booking.unitName});
   };
+  const needsReview=booking.receivableStatus==='pending_reconciliation';
+  if(needsReview)add('payment','finance',today,'reconcile_source',true);
   switch(booking.status){
     case'requested':add('request','reservations',today,'respond');break;
-    case'pending_payment':add('payment','finance',today,'collect');break;
+    case'pending_payment':if(!needsReview)add('payment','finance',today,'collect');break;
     case'confirmed':
       add('prearrival','front_desk',booking.startDate,'prearrival');
       add('prearrival','housekeeping',booking.startDate,'prepare_home');
       if(booking.startDate<=today)add('arrival','front_desk',booking.startDate,'check_in',booking.startDate<today);
-      if(booking.totalSatang>booking.paidSatang)add('payment','finance',booking.startDate,'balance');
+      if(!needsReview&&booking.totalSatang>booking.paidSatang)add('payment','finance',booking.startDate,'balance');
       break;
     case'checked_in':
       add('in_house','guest_care',today,'care');
@@ -47,3 +49,4 @@ export function deriveStayWorkItems(booking:StaySnapshot,today:string):StayWorkI
 export const stayWorkDepartments:StayWorkDepartment[]=[
   'reservations','finance','front_desk','housekeeping','guest_care',
 ];
+

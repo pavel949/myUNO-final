@@ -101,7 +101,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 1,
           children: 0,
-          totalThb: 13000,
+          totalThb: 1300000, // satang
           status: BookingStatus.confirmed,
         },
       });
@@ -117,7 +117,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 2,
           children: 1,
-          totalThb: 8000,
+          totalThb: 800000, // satang
           status: BookingStatus.cancelled,
         },
       });
@@ -160,7 +160,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-14'),
           adults: 1,
           children: 0,
-          totalThb: 8000,
+          totalThb: 800000, // satang
           status: BookingStatus.confirmed,
         },
       });
@@ -215,7 +215,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 1,
           children: 0,
-          totalThb: 5000,
+          totalThb: 500000, // satang
           status: BookingStatus.confirmed,
         },
       });
@@ -254,7 +254,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 1,
           children: 0,
-          totalThb: 5000,
+          totalThb: 500000, // satang
           status: BookingStatus.cancelled,
         },
       });
@@ -294,7 +294,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-16'),
           adults: 1,
           children: 0,
-          totalThb: 5000,
+          totalThb: 500000, // satang
           status: BookingStatus.confirmed,
         },
       });
@@ -359,7 +359,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-01-12'),
           adults: 1,
           children: 0,
-          totalThb: 6000,
+          totalThb: 600000, // satang
           status: BookingStatus.confirmed,
         },
       });
@@ -398,7 +398,7 @@ describe('Analytics Module', () => {
           endDate: new Date('2025-03-06'),
           adults: 1,
           children: 0,
-          totalThb: 2500,
+          totalThb: 250000, // satang
           status: BookingStatus.confirmed,
         },
       });

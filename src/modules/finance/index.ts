@@ -9,6 +9,7 @@ export {
   CheckoutStateError,
   verifyAndConfirm,
   refund,
+  processRequestedCardRefund,
   markRefundFailed,
   markRefundSucceeded,
   settleManualRefund,

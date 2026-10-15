@@ -451,7 +451,7 @@ try {
     await fp.getByRole('link', { name: /Review publication and bookings/ }).click();
     assert.equal(await fp.getByRole('link', { name: /View public listing/ }).getAttribute('href'), `/units/${fixture.tariffUnitId}`);
     await gp.goto(`/units/${fixture.tariffUnitId}?adults=2&children=0`);
-    await gp.locator('button[aria-haspopup=dialog]').first().click();
+    await gp.getByRole('button', { name: 'Check-in → Check-out', exact: true }).click();
     const picker = gp.getByRole('dialog', { name: /Check-in.*Check-out/ });
     const dayLabel = day => new Date(`${day}T12:00:00Z`).toLocaleDateString('en', { dateStyle: 'full', timeZone: 'UTC' });
     for (let month = 0; month < 14 && await picker.getByRole('button', { name: dayLabel(fixture.tariffStartDate), exact: true }).count() === 0; month++) {

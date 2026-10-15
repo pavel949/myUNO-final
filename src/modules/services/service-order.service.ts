@@ -3,7 +3,7 @@ import { PrismaClient, ServiceOrderStatus, RoleType, RefundReason } from '@prism
 import { getConfig } from '@/modules/config';
 import { createNotification, raiseTicket } from '@/modules/comms';
 import { track } from '@/modules/analytics';
-import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
+import { recordServiceCommission, processRequestedCardRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 import { resolveProjectServiceOffer } from './project-service-offer';
 import { StandaloneServiceContext, parseStandaloneContext, validateStandaloneServiceContext, standaloneOrganizationId } from './standalone-context';
@@ -41,87 +41,82 @@ export interface ServiceOrderDetails {
 }
 
 async function issueServiceOrderRefunds(input: {
-  db: PrismaClient;
-  serviceOrderId: string;
-  initiatedByIdentityId: string;
-  reason: RefundReason;
-  targetRefundThb: number;
+  db: PrismaClient; serviceOrderId: string; initiatedByIdentityId: string; reason: RefundReason; targetRefundThb: number;
 }) {
-  if (input.targetRefundThb <= 0) {
-    return { issuedRefundThb: 0, recordsCreated: 0 };
-  }
-
-  const succeededPayments = await input.db.payment.findMany({
-    where: {
-      serviceOrderId: input.serviceOrderId,
-      status: 'succeeded',
-      purpose: 'service_order',
-    },
-    include: {
-      refunds: {
-        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
-        select: { amountThb: true },
-      },
-    },
-    orderBy: { createdAt: 'asc' },
+  if (input.targetRefundThb <= 0) return { issuedRefundThb: 0, recordsCreated: 0 };
+  const reserved = await input.db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.serviceOrderId}))`;
+    await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${input.serviceOrderId} FOR UPDATE`;
+    const payments = await tx.payment.findMany({ where: { serviceOrderId: input.serviceOrderId, status: 'succeeded', purpose: 'service_order' }, orderBy: { createdAt: 'asc' }, include: { refunds: true } });
+    if (payments.some(payment => payment.refunds.some(refund => refund.status === 'failed'))) {
+      // Known failed attempts require operator review, never an endless new-refund cron loop.
+      return { dispatch: [] as string[], issuedRefundThb: input.targetRefundThb, recordsCreated: 0 };
+    }
+    let active = payments.reduce((sum, payment) => sum + payment.refunds.filter(refund => ['requested', 'processing', 'succeeded'].includes(refund.status)).reduce((value, refund) => value + refund.amountThb, 0), 0);
+    let remaining = Math.max(0, input.targetRefundThb - active);
+    const dispatch: string[] = payments.flatMap(payment => payment.refunds.filter(refund => refund.method === 'card_provider' && refund.status === 'requested').map(refund => refund.id));
+    let created = 0;
+    for (const payment of payments) {
+      if (remaining <= 0) break;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${payment.id}))`;
+      // Re-read after payment lock, matching every finance refund writer's source/payment order.
+      const current = await tx.refund.findMany({ where: { paymentId: payment.id, status: { in: ['requested', 'processing', 'succeeded'] } }, select: { amountThb: true } });
+      const aggregate = await tx.refund.aggregate({ where: { payment: { serviceOrderId: input.serviceOrderId }, status: { in: ['requested', 'processing', 'succeeded'] } }, _sum: { amountThb: true } });
+      active = aggregate._sum.amountThb ?? 0;
+      remaining = Math.max(0, input.targetRefundThb - active);
+      const existing = current.reduce((sum, refund) => sum + refund.amountThb, 0);
+      const amount = Math.min(remaining, Math.max(0, payment.amountThb - existing));
+      if (amount <= 0) continue;
+      const card = payment.method === 'card_provider';
+      const refund = await tx.refund.create({ data: { paymentId: payment.id, method: card ? 'card_provider' : 'cash', amountThb: amount, reason: input.reason, status: 'requested', initiatedByIdentityId: input.initiatedByIdentityId } });
+      if (card) dispatch.push(refund.id);
+      else await tx.ledgerEntry.create({ data: { entryType: 'refund_out', amountThb: -amount, serviceOrderId: input.serviceOrderId, paymentId: payment.id, refundId: refund.id, occurredOn: new Date(), description: `Service-order refund requested: ${input.reason}` } });
+      active += amount; remaining -= amount; created++;
+    }
+    return { dispatch, issuedRefundThb: Math.min(input.targetRefundThb, active), recordsCreated: created };
   });
+  for (const id of reserved.dispatch) await processRequestedCardRefund(input.db, id);
+  return reserved;
+}
 
-  let remaining = input.targetRefundThb;
-  let issuedRefundThb = 0;
-  let recordsCreated = 0;
-
-  for (const payment of succeededPayments) {
-    if (remaining <= 0) {
-      break;
-    }
-
-    const alreadyRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
-    const refundableOnPayment = Math.max(0, payment.amountThb - alreadyRefunded);
-    const refundAmount = Math.min(refundableOnPayment, remaining);
-    if (refundAmount <= 0) {
-      continue;
-    }
-
-    if (payment.method === 'card_provider') {
-      await requestPaymentRefund(
-        input.db,
-        payment.id,
-        refundAmount,
-        input.reason,
-        input.initiatedByIdentityId
-      );
-    } else {
-      // For cash/manual rails this records the refund obligation; a real
-      // operator payout marks it succeeded later through finance flows.
-      const refund = await input.db.refund.create({
-        data: {
-          paymentId: payment.id,
-          method: 'cash',
-          amountThb: refundAmount,
-          reason: input.reason,
-          status: 'requested',
-          initiatedByIdentityId: input.initiatedByIdentityId,
-        },
+type TerminalClaim = { status: 'cancelled' | 'failed' | 'declined' | 'expired'; actorIdentityId?: string; providerId?: string; reason?: string; cutoff?: Date };
+/** Commit the winning terminal state and its refund obligation before any irreversible gateway request. */
+async function claimTerminalOrder(db: PrismaClient, id: string, claim: TerminalClaim) {
+  return db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+    await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${id} FOR UPDATE`;
+    const order = await tx.serviceOrder.findUniqueOrThrow({ where: { id }, include: { service: true, provider: true, payments: true } });
+    const allowed = claim.status === 'cancelled' ? ['placed', 'paid', 'accepted'] : claim.status === 'failed' ? ['accepted'] : ['placed', 'paid'];
+    if (!allowed.includes(order.status)) throw new Error(`Cannot ${claim.status === 'cancelled' ? 'cancel' : claim.status === 'failed' ? 'report no-show for' : claim.status === 'declined' ? 'decline' : 'expire'} order in ${order.status} status`);
+    if (claim.providerId && order.provider_id !== claim.providerId) throw new Error('Only the service provider can decline an order');
+    if (claim.status === 'failed' && order.orderer_identity_id !== claim.actorIdentityId) throw new Error('Only the orderer can report a provider no-show');
+    if (claim.status === 'failed' && new Date() < order.scheduled_start) throw new Error('The scheduled time has not started yet');
+    if (claim.cutoff && order.createdAt >= claim.cutoff) throw new Error('Cannot expire order before its SLA');
+    const paid = order.payments.filter(payment => payment.status === 'succeeded' && payment.purpose === 'service_order').reduce((sum, payment) => sum + payment.amountThb, 0);
+    let pct = 100;
+    if (claim.status === 'cancelled') {
+      const snapshot = order.terms_snapshot as Record<string, unknown> | null;
+      const window = typeof snapshot?.cancellationWindowHours === 'number' ? snapshot.cancellationWindowHours : Number(await getConfig(tx as unknown as PrismaClient, 'service.cancel_window_hours', { projectId: order.project_id ?? undefined }) ?? 24);
+      if (!Number.isFinite(window) || window < 0) throw new Error('Configured cancellation window is invalid');
+      pct = order.scheduled_start.getTime() - Date.now() > window * 3600000 ? 100 : 0;
+    } else if (claim.status === 'failed') pct = Number(await getConfig(tx as unknown as PrismaClient, 'service.provider_no_show_refund_pct', { projectId: order.project_id ?? undefined }) ?? 100);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error('Configured refund percentage is invalid');
+    const target = claim.status === 'declined' ? paid : Math.min(paid, Math.round(order.total_thb * pct / 100));
+    await tx.serviceOrder.update({ where: { id }, data: { status: claim.status, refund_accrued_thb: target, ...(claim.status === 'cancelled' ? { cancelled_at: new Date(), cancelled_by_identity_id: claim.actorIdentityId, cancellation_reason: claim.reason } : {}), ...(claim.status === 'failed' ? { cancellation_reason: claim.reason || 'provider_no_show' } : {}), ...(claim.status === 'expired' ? { expired_at: new Date() } : {}) } });
+    let ticketId: string | undefined;
+    if (claim.status === 'failed') {
+      const ticket = await raiseTicket(tx as unknown as PrismaClient, {
+        projectId: order.project_id, serviceOrderId: order.id,
+        ...(order.project_id ? {} : { responsibleOrganizationId: standaloneOrganizationId(order.service_context) }),
+        unitId: order.unit_id ?? undefined, raisedByIdentityId: order.orderer_identity_id,
+        raisedByRole: order.orderer_role, categoryKey: 'complaint',
+        title: `Provider no-show: ${order.service?.title || 'Service'}`,
+        description: claim.reason || `Order ${order.id}: the provider did not arrive for the scheduled service.`, priority: 'high',
       });
-      await input.db.ledgerEntry.create({
-        data: {
-          entryType: 'refund_out',
-          amountThb: -refundAmount,
-          serviceOrderId: input.serviceOrderId,
-          paymentId: payment.id,
-          refundId: refund.id,
-          occurredOn: new Date(),
-          description: `Service-order refund requested: ${input.reason}`,
-        },
-      });
+      ticketId = ticket.id;
     }
-
-    issuedRefundThb += refundAmount;
-    recordsCreated += 1;
-    remaining -= refundAmount;
-  }
-
-  return { issuedRefundThb, recordsCreated };
+    return { order, target, ticketId };
+  });
 }
 
 /**
@@ -333,11 +328,14 @@ async function createServiceOrderOnce(
  * Accept a service order (placed/paid → accepted).
  * Provider confirms they will fulfill. Notifies orderer.
  */
-export async function acceptServiceOrder(
-  db: PrismaClient,
-  serviceOrderId: string,
-  acceptedByProviderId: string
-): Promise<void> {
+export async function acceptServiceOrder(db: PrismaClient, serviceOrderId: string, acceptedByProviderId: string): Promise<void> {
+  await db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
+    await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
+    await acceptServiceOrderOnce(tx as unknown as PrismaClient, serviceOrderId, acceptedByProviderId);
+  });
+}
+async function acceptServiceOrderOnce(db: PrismaClient, serviceOrderId: string, acceptedByProviderId: string): Promise<void> {
   const order = await db.serviceOrder.findUnique({
     where: { id: serviceOrderId },
     include: { service: true, provider: true },
@@ -393,33 +391,13 @@ export async function declineServiceOrder(
   declinedByProviderId: string,
   reason?: string
 ): Promise<void> {
-  const order = await db.serviceOrder.findUnique({
-    where: { id: serviceOrderId },
-    include: { service: true, provider: true, payments: true },
-  });
-
-  if (!order) {
-    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
-  }
-
-  if (order.provider_id !== declinedByProviderId) {
-    throw new Error('Only the service provider can decline an order');
-  }
-
-  if (order.status !== 'placed' && order.status !== 'paid') {
-    throw new Error(`Cannot decline order in ${order.status} status`);
-  }
-
-  // Find paid payment if any
-  const paidAmount = order.payments
-    .filter((payment) => payment.status === 'succeeded')
-    .reduce((sum, payment) => sum + payment.amountThb, 0);
+  const { order, target } = await claimTerminalOrder(db, serviceOrderId, { status: 'declined', providerId: declinedByProviderId });
   const { issuedRefundThb } = await issueServiceOrderRefunds({
     db,
     serviceOrderId: order.id,
     initiatedByIdentityId: order.orderer_identity_id,
     reason: 'provider_no_show',
-    targetRefundThb: paidAmount,
+    targetRefundThb: target,
   });
 
   // Update order status
@@ -458,6 +436,7 @@ export async function declineServiceOrder(
  */
 export async function fulfillServiceOrder(db: PrismaClient, serviceOrderId: string, fulfilledByProviderId: string): Promise<void> {
   await db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${serviceOrderId}))`;
     await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
     await fulfillServiceOrderOnce(tx as unknown as PrismaClient, serviceOrderId, fulfilledByProviderId);
   });
@@ -531,41 +510,13 @@ export async function reportProviderNoShow(
   reportedByIdentityId: string,
   note?: string
 ): Promise<{ ticketId: string; refundThb: number }> {
-  const order = await db.serviceOrder.findUnique({
-    where: { id: serviceOrderId },
-    include: { service: true, provider: true, payments: true },
-  });
-
-  if (!order) {
-    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
-  }
-
-  if (order.orderer_identity_id !== reportedByIdentityId) {
-    throw new Error('Only the orderer can report a provider no-show');
-  }
-
-  if (order.status !== 'accepted') {
-    throw new Error(`Cannot report no-show for an order in ${order.status} status`);
-  }
-
-  const now = new Date();
-  if (now < order.scheduled_start) {
-    throw new Error('The scheduled time has not started yet');
-  }
-
-  const refundPct =
-    ((await getConfig(db, 'service.provider_no_show_refund_pct', {
-      projectId: order.project_id ?? undefined,
-    })) as number | undefined) ?? 100;
-
-  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
-
+  const { order, target, ticketId } = await claimTerminalOrder(db, serviceOrderId, { status: 'failed', actorIdentityId: reportedByIdentityId, reason: note?.trim() });
   const { issuedRefundThb } = await issueServiceOrderRefunds({
     db,
     serviceOrderId: order.id,
     initiatedByIdentityId: reportedByIdentityId,
     reason: 'provider_no_show',
-    targetRefundThb: refundTargetThb,
+    targetRefundThb: target,
   });
 
   await db.serviceOrder.update({
@@ -578,19 +529,6 @@ export async function reportProviderNoShow(
   });
 
   const serviceTitle = order.service?.title || 'Service';
-  const { id: ticketId } = await raiseTicket(db, {
-    projectId: order.project_id,
-    ...(order.project_id ? {} : { serviceOrderId: order.id, responsibleOrganizationId: standaloneOrganizationId(order.service_context) }),
-    unitId: order.unit_id ?? undefined,
-    raisedByIdentityId: reportedByIdentityId,
-    raisedByRole: order.orderer_role,
-    categoryKey: 'complaint',
-    title: `Provider no-show: ${serviceTitle}`,
-    description:
-      note?.trim() ||
-      `Order ${order.id}: the provider did not arrive for the scheduled service.`,
-    priority: 'high',
-  });
 
   await createNotification(db, {
     identityId: order.orderer_identity_id,
@@ -622,7 +560,7 @@ export async function reportProviderNoShow(
     refundThb: issuedRefundThb,
   });
 
-  return { ticketId, refundThb: issuedRefundThb };
+  return { ticketId: ticketId!, refundThb: issuedRefundThb };
 }
 
 /**
@@ -635,39 +573,14 @@ export async function cancelServiceOrder(
   cancelledByIdentityId: string,
   reason?: string
 ): Promise<void> {
-  const order = await db.serviceOrder.findUnique({
-    where: { id: serviceOrderId },
-    include: { service: true, project: true, payments: true },
-  });
-
-  if (!order) {
-    throw new Error(`ServiceOrder ${serviceOrderId} not found`);
-  }
-
-  if (order.status === 'cancelled' || order.status === 'closed') {
-    throw new Error(`Cannot cancel order in ${order.status} status`);
-  }
-
-  // Get cancellation window from config
-  const snapshot = order.terms_snapshot as Record<string, unknown> | null;
-  const cancelWindowHours = typeof snapshot?.cancellationWindowHours === 'number' ? snapshot.cancellationWindowHours : ((await getConfig(db, 'service.cancel_window_hours', {
-    projectId: order.project_id ?? undefined,
-  })) as number | undefined) || 24;
-
+  const { order, target } = await claimTerminalOrder(db, serviceOrderId, { status: 'cancelled', actorIdentityId: cancelledByIdentityId, reason });
   const now = new Date();
-  const cancelWindowMs = cancelWindowHours * 60 * 60 * 1000;
-  // Cancelling with more than the window's notice before the scheduled start
-  // earns a full refund; cancelling inside the window earns nothing.
-  const refundPct =
-    order.scheduled_start.getTime() - now.getTime() > cancelWindowMs ? 100 : 0;
-
-  const refundTargetThb = Math.round((order.total_thb * refundPct) / 100);
   const { issuedRefundThb } = await issueServiceOrderRefunds({
     db,
     serviceOrderId: order.id,
     initiatedByIdentityId: cancelledByIdentityId,
     reason: 'cancellation',
-    targetRefundThb: refundTargetThb,
+    targetRefundThb: target,
   });
 
   // Update order
@@ -848,22 +761,18 @@ export async function expireStaleServiceOrders(
 
   let refunded = 0;
 
+  let expired = 0;
   for (const order of expiredOrders) {
-    // Mark as expired
-    await db.serviceOrder.update({
-      where: { id: order.id },
-      data: {
-        status: 'expired' as ServiceOrderStatus,
-        expired_at: new Date(),
-      },
-    });
+    let target: number;
+    try { ({ target } = await claimTerminalOrder(db, order.id, { status: 'expired', cutoff: cutoffTime })); expired++; }
+    catch (error) { if (error instanceof Error && error.message.startsWith('Cannot ')) continue; throw error; }
 
     const { issuedRefundThb } = await issueServiceOrderRefunds({
       db,
       serviceOrderId: order.id,
       initiatedByIdentityId: order.orderer_identity_id,
       reason: 'provider_no_show',
-      targetRefundThb: order.total_thb,
+      targetRefundThb: target,
     });
     if (issuedRefundThb > 0) {
       await db.serviceOrder.update({
@@ -878,8 +787,21 @@ export async function expireStaleServiceOrders(
     // Note: order expired due to no response; provider sees it in queue (status=expired)
   }
 
+  const pending = await db.$queryRaw<Array<{ id: string; status: string; orderer_identity_id: string; cancelled_by_identity_id: string | null; refund_accrued_thb: number }>>`
+    SELECT o.id, o.status, o.orderer_identity_id, o.cancelled_by_identity_id, o.refund_accrued_thb
+    FROM service_order o
+    LEFT JOIN payment p ON p.service_order_id = o.id AND p.status = 'succeeded' AND p.purpose = 'service_order'
+    LEFT JOIN refund r ON r.payment_id = p.id AND r.status IN ('requested', 'processing', 'succeeded')
+    WHERE o.status IN ('cancelled', 'failed', 'declined', 'expired') AND o.refund_accrued_thb > 0
+      AND NOT EXISTS (SELECT 1 FROM refund failed_refund JOIN payment failed_payment ON failed_payment.id = failed_refund.payment_id WHERE failed_payment.service_order_id = o.id AND failed_refund.status = 'failed')
+    GROUP BY o.id
+    HAVING COALESCE(SUM(r.amount_thb), 0) < o.refund_accrued_thb OR BOOL_OR(r.method = 'card_provider' AND r.status = 'requested')
+    ORDER BY o.updated_at ASC LIMIT 100`;
+
+  for (const order of pending) await issueServiceOrderRefunds({ db, serviceOrderId: order.id, initiatedByIdentityId: order.cancelled_by_identity_id ?? order.orderer_identity_id, reason: order.status === 'cancelled' ? 'cancellation' : 'provider_no_show', targetRefundThb: order.refund_accrued_thb });
+
   return {
-    expired: expiredOrders.length,
+    expired,
     refunded,
   };
 }

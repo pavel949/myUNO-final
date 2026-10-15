@@ -10,6 +10,8 @@ interface CheckoutPageProps {
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const labels = await getLabels({
+    'payments.checkout.order_reconciliation_body': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.order_reconciliation_body'].en,
+    'payments.checkout.order_refunded_body': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.order_refunded_body'].en,
     'payments.checkout.title': 'Complete payment',
     'payments.checkout.loading': 'Loading checkout…',
     'payments.checkout.not_found': 'Checkout session not found',

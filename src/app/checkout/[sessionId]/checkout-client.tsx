@@ -140,7 +140,7 @@ export default function CheckoutClient({
       <div className="stitch-workspace flex min-h-screen items-center justify-center px-20 py-40">
         <div className="stitch-panel w-full max-w-lg p-32 text-center" role="status">
           <h1 className="font-display text-display-xl font-semibold mb-12">{labels[reconciliationRefunded ? 'payments.checkout.refunded_title' : 'payments.checkout.reconciliation_title']}</h1>
-          <p className="text-body text-text-secondary mb-24">{labels[reconciliationRefunded ? 'payments.checkout.refunded_body' : 'payments.checkout.reconciliation_body']}</p>
+          <p className="text-body text-text-secondary mb-24">{labels[session?.serviceOrder ? (reconciliationRefunded ? 'payments.checkout.order_refunded_body' : 'payments.checkout.order_reconciliation_body') : (reconciliationRefunded ? 'payments.checkout.refunded_body' : 'payments.checkout.reconciliation_body')]}</p>
           <Link href={tripUrl}>{continueLabel}</Link>
         </div>
       </div>

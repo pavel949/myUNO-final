@@ -33,7 +33,7 @@ The remaining guest surfaces are implemented in the same PR:
 
 ## Migration and rollout
 
-`20261015070000_standalone_service_support` is additive: nullable ticket property scope, real order/organization foreign keys, scoped indexes/check, immutable standalone snapshot trigger, nullable retry fields and per-customer unique request key. Historical records are not rewritten. RLS and grants are unchanged. Roll back code independently; retain additive columns and accepted order snapshots.
+`20261015070000_standalone_service_support` is additive: nullable ticket property scope, real order/organization foreign keys, scoped indexes/check, immutable standalone snapshot trigger, nullable retry fields and per-customer unique request key. Migration replay and drift verification passed in PostgreSQL CI. The exact migration was applied to the verified MyUno-final database, recorded in Prisma history with SHA-256 `5376743ad871b20f29feece8a5b4b0ab024e502e4333024b73a9978e1c25948e`, and its columns/default-disabled offers were read back. Both affected tables had zero records before and after. Historical records were not rewritten. RLS and grants are unchanged. Roll back code independently; retain additive columns and accepted order snapshots.
 
 `services.standalone_offers` defaults to `[]`. Production supply remains disabled until actual service IDs, live areas, responsible organization and reviewed terms are configured. The browser fixture configures synthetic supply only in its disposable isolated database.
 

@@ -42,3 +42,17 @@ describe('description language at administrative conversion', () => {
     expect(screen.getByRole('button', { name: 'Create canonical draft →' })).toBeEnabled();
   });
 });
+
+it('keeps every reviewer select discoverable by its exact label when populated', () => {
+  render(<ConvertPropertySubmission {...props} existingProjectId={null} descriptionLocale="ru" applicantKind="management" requestedManagementCompanyName="Synthetic company" organizations={[{ id: 'org', name: 'Verified company', projectId: null }]} areas={[{ id: 'area', slug: 'Synthetic area' }]} />);
+  expect(screen.getByLabelText('Description language', { exact: true })).toHaveValue('ru');
+  const area = screen.getByLabelText('Canonical area', { exact: true });
+  fireEvent.change(area, { target: { value: 'area' } });
+  expect(screen.getByLabelText('Canonical area', { exact: true })).toHaveValue('area');
+  const companyLabel = 'Verified management company (requested: Synthetic company)';
+  fireEvent.change(screen.getByLabelText(companyLabel, { exact: true }), { target: { value: 'org' } });
+  expect(screen.getByLabelText(companyLabel, { exact: true })).toHaveValue('org');
+  const projectLabel = 'Match this submission to an existing complex, or leave blank to create a new draft project.';
+  fireEvent.change(screen.getByLabelText(projectLabel, { exact: true }), { target: { value: 'project' } });
+  expect(screen.getByLabelText(projectLabel, { exact: true })).toHaveValue('project');
+});

@@ -1,6 +1,7 @@
 import { PrismaClient, Identity, RoleAssignment, Organization, RoleType, RoleScopeType, OrganizationType } from '@prisma/client';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { validateRoleAssignmentScope } from './role-assignment-policy';
 
 interface SearchIdentitiesInput {
   query?: string;
@@ -170,23 +171,24 @@ export async function searchIdentities(
 export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promise<RoleAssignment> {
   const { identityId, role, scopeType, projectId, unitId, organizationId, providerId, grantedByIdentityId } = input;
 
+  validateRoleAssignmentScope(input);
+
+  // This is a draft-content relationship only. It must never be self-granted
+  // or piggyback on an owner/MC/operational invitation path.
+  if (role === 'content_contributor') {
+    const granter = await db.identity.findUnique({
+      where: { id: grantedByIdentityId },
+      select: { isAdmin: true, status: true },
+    });
+    if (!granter?.isAdmin || granter.status !== 'active') {
+      throw new Error('Only active admins can grant content contributor roles');
+    }
+  }
+
   // Verify identity exists
   const identity = await db.identity.findUnique({ where: { id: identityId } });
   if (!identity) {
     throw new Error(`Identity ${identityId} not found`);
-  }
-
-  if (scopeType === 'project' && !projectId) {
-    throw new Error('projectId is required for project-scoped roles');
-  }
-
-  if (scopeType === 'unit') {
-    if (!projectId) {
-      throw new Error('projectId is required for unit-scoped roles');
-    }
-    if (!unitId) {
-      throw new Error('unitId is required for unit-scoped roles');
-    }
   }
 
   const normalizedProjectId = scopeType === 'platform' ? null : (projectId ?? null);

@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from './unit-marketing-title';
 import { PUBLIC_SLEEPING_SPACES_QUERY, publicSleepingSpaces, type PublicSleepingSpace } from './public-sleeping';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
@@ -424,7 +425,7 @@ export async function getPublicProjectBySlug(
     units: publicUnits.map(({ unit: u, media, bookable }) => ({
       id: u.id,
       name: u.name,
-      titleKey: u.descriptionKey ? u.descriptionKey.replace(/\.description$/, '.title') : null,
+      titleKey: resolveUnitMarketingTitleKey(u),
       descriptionKey: u.descriptionKey,
       unitType: u.unitType,
       categoryKey: u.inventoryCategory?.categoryKey ?? u.categoryKey,
@@ -645,7 +646,7 @@ export async function getPublicUnitById(id: string): Promise<PublicUnitDetail | 
     sleepingSpaces: publicSleepingSpaces(unit.sleepingSpaces),
     id: unit.id,
     name: unit.name,
-    titleKey: unit.descriptionKey ? unit.descriptionKey.replace(/\.description$/, '.title') : null,
+    titleKey: resolveUnitMarketingTitleKey(unit),
     descriptionKey: unit.descriptionKey,
     unitType: unit.unitType,
     categoryKey: unit.inventoryCategory?.categoryKey ?? unit.categoryKey,
@@ -728,3 +729,4 @@ export async function listPublicUnitIds(): Promise<string[]> {
     }).ready)
     .map((unit) => unit.id);
 }
+

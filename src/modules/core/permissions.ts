@@ -82,6 +82,9 @@ const ADMIN_ONLY_ACTIONS = new Set([
  * Note: 'admin' is not included here because admin access is handled via Identity.isAdmin flag,
  * which bypasses all permission checks in the can() function.
  */
+// content_contributor intentionally has NO entries here. Its project scope is
+// shared-complex draft content only, never all units or operational authority.
+// Dedicated proposal services enforce that narrower content boundary.
 export const PERMISSIONS: PermissionEntry[] = [
   // Projects & units — 6 capabilities
   // NOTE: 'projects:edit_and_set_live' is admin-only per doc 03 §3 (row:

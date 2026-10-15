@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from '@/modules/projects/unit-marketing-title';
 import { PrismaClient } from '@prisma/client';
 
 const db = new PrismaClient();
@@ -40,7 +41,7 @@ async function translationExists(key: string, locale: string) {
 async function main() {
   const units = await db.unit.findMany({
     where: { projectId: PROJECT_ID },
-    select: { id: true, name: true, descriptionKey: true, inventoryCategoryId: true },
+    select: { id: true, name: true, descriptionKey: true, marketingTitleKey: true, inventoryCategoryId: true },
     orderBy: { name: 'asc' },
   });
   const categories = await db.inventoryCategory.findMany({
@@ -63,9 +64,9 @@ async function main() {
       failures.push(`MISSING_DESCRIPTION_KEY: ${unit.name}`);
       continue;
     }
-    const titleKey = unit.descriptionKey.replace(/\.description$/, '.title');
+    const titleKey = resolveUnitMarketingTitleKey(unit);
     for (const locale of ['en', 'ru']) {
-      if (!(await translationExists(titleKey, locale))) {
+      if (!titleKey || !(await translationExists(titleKey, locale))) {
         failures.push(`MISSING_UNIT_TITLE_${locale.toUpperCase()}: ${unit.name}`);
       }
       if (!(await translationExists(unit.descriptionKey, locale))) {
@@ -109,3 +110,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   });
+

@@ -14,3 +14,22 @@ export {
   type RequestedOffer,
   type RequestedOperatingModel,
 } from './canonical-onboarding';
+export {
+  CONTENT_PROPOSAL_SOURCE,
+  ContentProposalError,
+  contentProposalFailure,
+  createContentProposalService,
+  type ContentSnapshot,
+  type ContentTarget,
+} from './content-proposal.service';
+export {
+  ContentProposalValidationError,
+  parseContentProposal,
+  parseScope,
+  parseTargetId,
+  UNIT_FACT_KEYS,
+  PROJECT_FACT_KEYS,
+  type ContentFacts,
+  type ContentProposal,
+  type ContentScope,
+} from './content-proposal.schema';

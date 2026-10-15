@@ -91,6 +91,7 @@ enum RoleType {
   juristic_member
   staff_ops
   onsite_host
+  content_contributor
 }
 
 enum RoleScopeType {
@@ -1057,6 +1058,8 @@ model Project {
 }
 
 model Unit {
+  /// Stable public marketing title; null retains the legacy description-derived key.
+  marketingTitleKey String? @map("marketing_title_key")
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
   operatingSpaces OperatingSpaceUnit[]
   accessInstruction UnitAccessInstruction?
@@ -4094,4 +4097,5 @@ model RateLimitBucket {
   @@index([resetAt])
   @@map("rate_limit_bucket")
 }
+
 

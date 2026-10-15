@@ -1,6 +1,7 @@
 import { requireAdminPage } from '@/app/libs/requireAdminPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
+import { CONTENT_CONTRIBUTOR_ROLE_KEYS, CONTENT_CONTRIBUTOR_ROLE_LOCALE_DRAFTS } from '@/modules/content/content-contributor-role.seed';
 import PeopleAdminClient from './people-client';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,7 @@ export default async function AdminPeoplePage() {
     'admin.people.scope_platform': 'Whole platform',
     'admin.people.scope_project': 'One project',
     'admin.people.project': 'Project',
+    ...Object.fromEntries(CONTENT_CONTRIBUTOR_ROLE_KEYS.map(({ key, en }) => [key, en])),
     'admin.people.grant_submit': 'Grant',
     'admin.people.revoke': 'Revoke',
     'admin.people.granting': 'Granting…',
@@ -62,7 +64,7 @@ export default async function AdminPeoplePage() {
       'The link works once, and only until it expires. Sending a new invitation cancels this one.',
     'admin.people.invite_already_active':
       'That email already has a working account. Nothing was sent — grant them the role below and they are in.',
-  });
+  }, undefined, CONTENT_CONTRIBUTOR_ROLE_LOCALE_DRAFTS);
 
   return <PeopleAdminClient projects={projects} labels={labels} />;
 }

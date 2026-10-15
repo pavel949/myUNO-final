@@ -77,7 +77,9 @@ export async function POST(req: NextRequest) {
 
     // Stake check: role in project / own unit / guest of the booking
     let raisedByRole = user.roles.find(
-      (r) => r.projectId === projectId || r.projectId === null
+      // Draft-content scope does not establish a property-support relationship.
+      // The independent booking and ownership checks below still apply.
+      (r) => r.role !== 'content_contributor' && (r.projectId === projectId || r.projectId === null)
     )?.role;
 
     if (bookingId) {

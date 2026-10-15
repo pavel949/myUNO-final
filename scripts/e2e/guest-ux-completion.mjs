@@ -112,6 +112,9 @@ try {
     assert.equal(ticket.projectId, null); assert.equal(ticket.serviceOrderId, orderId);
     assert.equal(ticket.responsibleOrganizationId, fixture.standaloneOrganizationId);
     assert.equal((await cp.request.get(`/api/tickets/${ticketId}`)).status(), 200);
+    assert.equal(await cp.getByRole('link', { name: 'View your order', exact: true }).getAttribute('href'), `/services/orders/${orderId}`);
+    assert.equal(await cp.getByText('Project', { exact: true }).count(), 0);
+    assert.equal(await cp.getByText('Unit', { exact: true }).count(), 0);
     report.ticketId = ticketId;
   });
   assert.deepEqual(report.pageErrors, []); assert.deepEqual(report.serverErrors, []); assert.deepEqual(report.blockedBrowserOrigins, []);

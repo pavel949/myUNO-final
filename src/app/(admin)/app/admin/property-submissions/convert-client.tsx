@@ -51,12 +51,12 @@ export default function ConvertPropertySubmission({
     finally { setBusy(false); }
   }}>
     <h3 className="font-semibold">Review and convert to canonical draft</h3>
-    {hasDescription && <label className="block text-small">Description language
-      <select value={reviewLocale} disabled={Boolean(sourceLocale)} onChange={e => setReviewLocale(e.target.value)} className="mt-4 block w-full rounded-lg border border-border-line p-12">
+    {hasDescription && <div className="block text-small"><label htmlFor={`description-language-${id}`}>Description language</label>
+      <select id={`description-language-${id}`} value={reviewLocale} disabled={Boolean(sourceLocale)} onChange={e => setReviewLocale(e.target.value)} className="mt-4 block w-full rounded-lg border border-border-line p-12">
         <option value="">Choose the language of the submitted description</option>
         {LOCALES.map(locale => <option key={locale} value={locale}>{locale.toUpperCase()}</option>)}
       </select>
-    </label>}
+    </div>}
     <label className="block text-small">Match this submission to an existing complex, or leave blank to create a new draft project.
       <select value={projectId} onChange={e => setProjectId(e.target.value)} className="mt-4 block w-full rounded-lg border border-border-line p-12">
         <option value="">Create a new complex from the submitted project details</option>

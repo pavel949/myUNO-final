@@ -63,10 +63,10 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
       {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={ru ? 'Совпадения по месту' : 'Matching places'}>
         {matches.map((place) => <Link key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? '/projects/' + encodeURIComponent(place.id) : '/search?areaSlug=' + encodeURIComponent(place.slug)}>{place.name}</Link>)}
       </div>}
-      <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {routes.map((route) => <Link key={route.key} href={route.href} className="group rounded-lg border border-border-line bg-surface-ivory p-16 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman">
-          <div className="flex items-center justify-between gap-8"><span className="font-semibold text-text-ink">{route.title}</span><span aria-hidden="true" className="text-brand-andaman">→</span></div>
-          <p className="mt-4 text-small text-text-secondary">{route.detail}</p>
+      <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">
+        {routes.map((route) => <Link key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
+          <div className="flex min-w-0 items-start justify-between gap-4"><span className="min-w-0 break-normal text-small font-semibold leading-snug text-text-ink sm:text-body">{route.title}</span><span aria-hidden="true" className="shrink-0 text-brand-andaman">→</span></div>
+          <p className="mt-6 hidden text-small leading-relaxed text-text-secondary sm:block">{route.detail}</p>
         </Link>)}
       </div>
     </section>

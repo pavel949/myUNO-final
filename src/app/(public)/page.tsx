@@ -249,6 +249,7 @@ export default async function LandingPage({
     ...projects.map((project) => ({
       kind: 'project' as const,
       id: project.id,
+      slug: project.slug,
       name: project.name,
       areaName: project.areaName,
     })),
@@ -360,8 +361,8 @@ export default async function LandingPage({
               </p>
             </div>
 
-            <div className="mt-24 max-w-content rounded-xl bg-surface-paper/95 p-8 shadow-float backdrop-blur-md sm:p-12 md:p-20">
-              <EcosystemEntry locale={locale} places={places} copy={{
+            <div className="mt-24 max-w-content rounded-lg bg-surface-paper/95 p-8 shadow-float backdrop-blur-md sm:p-12 md:p-20">
+              <EcosystemEntry places={places} copy={{
                 "aria": labels['landing.hp.ecosystem.aria'],
                 "heading": labels['landing.hp.ecosystem.heading'],
                 "searchLabel": labels['landing.hp.ecosystem.searchLabel'],

@@ -108,6 +108,8 @@ describe('Stitch system-wide surface coverage', () => {
     ]) {
       expect(css).toContain(token);
     }
+    expect(css).toContain('overflow-wrap: break-word');
+    expect(css).toContain('max-width: 100%');
     expect(shells).toContain('StitchWorkspaceShell');
     expect(shells).toContain('StitchConsumerShell');
     expect(premium).toContain('RecordPageHeader');

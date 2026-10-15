@@ -37,6 +37,7 @@ export default async function PropertyOnboardPage({ searchParams }: { searchPara
     : undefined;
   return <PropertySubmissionWizard
     labels={labels}
+    initialLocale={locale}
     projects={projects}
     areas={areas.map(area => ({ id: area.id, slug: area.slug, name: areaNames[area.nameKey] ?? area.slug }))}
     initialSubmissionId={searchParams?.submissionId}

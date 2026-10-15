@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { setUnitOwnerTx } from '@/modules/projects';
 import { createDraftUnitEngagementTx } from '@/modules/core';
+import { createSubmissionDescriptionTx, resolveSubmissionDescription } from '@/modules/onboarding/submission-description';
 import {
   ensureDraftCommercialOfferingsTx,
   resolveCanonicalUnitTx,
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         return { projectId: String(data.canonicalProjectId), unitId: data.canonicalUnitId ? String(data.canonicalUnitId) : null, alreadyConverted: true };
       }
       if (data.status !== 'submitted') throw new Error('Only submitted applications can be converted.');
+      const description = resolveSubmissionDescription(data, review.descriptionLocale);
       const applicant = await tx.identity.findUnique({
         where: { id: application.identityId },
         select: { id: true },
@@ -83,6 +85,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           select: { id: true },
         });
         projectId = project.id;
+        // A complex-only application describes the project. A home application
+        // describes its Unit, even when it also proposes a new complex.
+        if (!unitName && description) {
+          await createSubmissionDescriptionTx(tx, {
+            key: `project.${slug}.description`, namespace: 'project',
+            ...description, actorIdentityId: guard.actorIdentityId,
+          });
+        }
         const projectPhotos = Array.isArray(data.projectPhotos) ? data.projectPhotos.filter((id): id is string => typeof id === 'string') : [];
         if (projectPhotos.length) {
           const count = await tx.mediaAsset.count({ where: { id: { in: projectPhotos }, uploadedByIdentityId: applicant.id, kind: 'photo', encrypted: false } });
@@ -156,6 +166,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             select: { id: true },
           });
           unitId = unit.id;
+          if (description) {
+            await createSubmissionDescriptionTx(tx, {
+              key: `unit.${application.id.replace(/-/g, '')}.description`, namespace: 'unit',
+              ...description, actorIdentityId: guard.actorIdentityId,
+            });
+          }
         }
 
         const ownerIdentityId = review.verifiedOwner === true ? applicant.id : null;
@@ -209,6 +225,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const result = {
         ...data,
         status: 'converted',
+        ...(description ? { descriptionLocale: description.locale } : {}),
         canonicalProjectId: projectId,
         canonicalUnitId: unitId,
         onboardingState: readiness.state,

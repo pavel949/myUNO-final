@@ -2,10 +2,12 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 import { useState } from 'react';
 import Link from 'next/link';
+import { LOCALES } from '@/modules/content/types';
 
 export default function ConvertPropertySubmission({
-  id, status, existingProjectId, projects, organizations, areas, proposedAddress, proposedAreaId, proposedLatitude, proposedLongitude, applicantKind, operatingModel, requestedManagementCompanyName, canonicalProjectId, canonicalUnitId,
+  descriptionLocale, hasDescription, id, status, existingProjectId, projects, organizations, areas, proposedAddress, proposedAreaId, proposedLatitude, proposedLongitude, applicantKind, operatingModel, requestedManagementCompanyName, canonicalProjectId, canonicalUnitId,
 }: {
+  descriptionLocale: string | null; hasDescription: boolean;
   id: string; status: string; existingProjectId: string | null;
   projects: { id: string; name: string }[];
   organizations: { id: string; name: string; projectId: string | null }[];
@@ -17,6 +19,8 @@ export default function ConvertPropertySubmission({
   proposedLatitude: number | null; proposedLongitude: number | null;
   canonicalProjectId?: string | null; canonicalUnitId?: string | null;
 }) {
+  const sourceLocale = LOCALES.find(locale => locale === descriptionLocale);
+  const [reviewLocale, setReviewLocale] = useState<string>(sourceLocale || '');
   const [projectId, setProjectId] = useState(existingProjectId || '');
   const [organizationId, setOrganizationId] = useState('');
   const [address, setAddress] = useState(proposedAddress);
@@ -38,7 +42,7 @@ export default function ConvertPropertySubmission({
     try {
       const response = await fetch(`/api/admin/property-submissions/${id}/convert`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: projectId || null, verifiedAuthority: authority, checkedDuplicates: duplicates, checkedMedia: media, verifiedOwner: owner, organizationId: organizationId || null, projectAddress: address, areaId: areaId || null, latitude, longitude }),
+        body: JSON.stringify({ descriptionLocale: reviewLocale || null, projectId: projectId || null, verifiedAuthority: authority, checkedDuplicates: duplicates, checkedMedia: media, verifiedOwner: owner, organizationId: organizationId || null, projectAddress: address, areaId: areaId || null, latitude, longitude }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Conversion failed');
@@ -47,6 +51,12 @@ export default function ConvertPropertySubmission({
     finally { setBusy(false); }
   }}>
     <h3 className="font-semibold">Review and convert to canonical draft</h3>
+    {hasDescription && <label className="block text-small">Description language
+      <select value={reviewLocale} disabled={Boolean(sourceLocale)} onChange={e => setReviewLocale(e.target.value)} className="mt-4 block w-full rounded-lg border border-border-line p-12">
+        <option value="">Choose the language of the submitted description</option>
+        {LOCALES.map(locale => <option key={locale} value={locale}>{locale.toUpperCase()}</option>)}
+      </select>
+    </label>}
     <label className="block text-small">Match this submission to an existing complex, or leave blank to create a new draft project.
       <select value={projectId} onChange={e => setProjectId(e.target.value)} className="mt-4 block w-full rounded-lg border border-border-line p-12">
         <option value="">Create a new complex from the submitted project details</option>
@@ -61,6 +71,6 @@ export default function ConvertPropertySubmission({
     <label className="flex items-start gap-8 text-small"><input type="checkbox" checked={owner} onChange={e => setOwner(e.target.checked)}/>The applicant is independently verified as the unit owner; record their ownership history (leave unchecked for managers and representatives).</label>
     <p className="text-small text-text-secondary">Conversion creates draft records only. No booking, sale or rental is activated by this action.</p>
     {error && <p role="alert" className="text-state-error">{error}</p>}
-    <button type="submit" disabled={busy || !authority || !duplicates || !media} className="rounded-lg bg-brand-andaman px-20 py-12 font-semibold text-white disabled:opacity-40">{busy ? 'Creating…' : 'Create canonical draft →'}</button>
+    <button type="submit" disabled={busy || !authority || !duplicates || !media || (hasDescription && !reviewLocale)} className="rounded-lg bg-brand-andaman px-20 py-12 font-semibold text-white disabled:opacity-40">{busy ? 'Creating…' : 'Create canonical draft →'}</button>
   </form>;
 }

@@ -16,17 +16,29 @@ import {
  */
 describe('SEO structured data (T-035, doc 08 §7)', () => {
   const originalUrl = process.env.NEXTAUTH_URL;
+  const originalPublicUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
     process.env.NEXTAUTH_URL = 'https://myuno.app';
   });
 
   afterEach(() => {
+    if (originalPublicUrl === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = originalPublicUrl;
     if (originalUrl === undefined) delete process.env.NEXTAUTH_URL;
     else process.env.NEXTAUTH_URL = originalUrl;
   });
 
   describe('siteUrl', () => {
+    it('uses the explicit public origin over the authentication origin', () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://example.org/';
+      expect(siteUrl()).toBe('https://example.org');
+    });
+    it('rejects non-http canonical schemes', () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'javascript:alert(1)';
+      expect(siteUrl()).toBe('http://localhost:3000');
+    });
     it('strips a trailing slash so joined paths never double up', () => {
       process.env.NEXTAUTH_URL = 'https://myuno.app/';
       expect(siteUrl()).toBe('https://myuno.app');

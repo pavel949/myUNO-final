@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { db, resetDb, createProject, createUnit } from '@/test/util';
 import { buildReservationsWorkbook } from '@/test/xlsx-fixture';
 import {
@@ -214,15 +214,25 @@ describe('Layantara reservations workbook import', () => {
     await db.blockedDate.create({ data: { unitId: a10, startDate: new Date('2026-09-02'),
       endDate: new Date('2026-09-03'), reason: 'owner_hold' } });
     // Simulate a block arriving just after the read-only preflight; the intake lock must see it.
-    const preflight = vi.spyOn(db.blockedDate, 'findMany').mockResolvedValueOnce([]);
-    try {
-      const result = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
-      expect(result.applied[0].status).toBe('quarantined');
-      expect(result.completed).toBe(0);
-      expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('confirmed');
-    } finally {
-      preflight.mockRestore();
-    }
+    // Wrap only this caller. Spying on a shared Prisma delegate can remove
+    // its dynamic method during restoration and corrupt subsequent suites.
+    const stalePreflightDb = new Proxy(db, {
+      get(target, key) {
+        if (key === 'blockedDate') return new Proxy(target.blockedDate, {
+          get(model, method) {
+            if (method === 'findMany') return async () => [];
+            return Reflect.get(model, method);
+          },
+        });
+        const value = Reflect.get(target, key);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    const result = await applyWorkbookImport(stalePreflightDb, plan, { actorIdentityId: admin, now: TODAY });
+    expect(result.applied[0].status).toBe('quarantined');
+    expect(result.completed).toBe(0);
+    expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('confirmed');
+    expect(typeof db.blockedDate.findMany).toBe('function');
   });
 
 });

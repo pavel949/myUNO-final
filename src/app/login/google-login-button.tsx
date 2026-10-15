@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { Button } from '@/components/Button';
 
-export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: string }) {
+export function GoogleLoginButton({ label = 'Continue with Google', next }: { label?: string; next?: string | null }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const issueOAuthState = () => {
@@ -14,6 +15,8 @@ export function GoogleLoginButton({ label = 'Continue with Google' }: { label?: 
     document.cookie = `google_oauth_state=${encodeURIComponent(
       state
     )}; Path=/; Max-Age=600; SameSite=Lax${secure}`;
+    const returnPath = safeNextPath(next);
+    document.cookie = `google_oauth_next=${encodeURIComponent(returnPath || '')}; Path=/; Max-Age=${returnPath ? 600 : 0}; SameSite=Lax${secure}`;
     return state;
   };
 

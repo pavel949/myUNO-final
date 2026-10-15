@@ -3,7 +3,8 @@ import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { PROPERTY_CATEGORY_UI_DRAFTS } from '@/modules/content/property-category-ui-drafts';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
+import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
@@ -83,7 +84,7 @@ export default async function ProjectCategoryPage({
           </Link>
         ) : (
           <Link
-            href={`/projects/${project.slug}#lead-form`}
+            href={`/projects/${project.slug}?${context}#lead-form`}
             className="mt-20 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 font-semibold text-surface-ivory hover:bg-brand-deep"
           >
             {labels['project_category.inquiry_unit']}
@@ -94,20 +95,21 @@ export default async function ProjectCategoryPage({
 
     {category.galleryUrls.length > 0 ? <section className="stitch-panel p-20 md:p-24">
       <h2 className="mb-16 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.gallery']}</h2>
-      <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-        {category.galleryUrls.slice(0,8).map((src,index)=><Image key={src+index} src={src} alt={category.name} width={640} height={420} className={`w-full rounded-lg object-cover ${index===0?'col-span-2 row-span-2 aspect-[4/3]':'aspect-video'}`}/>)}
-      </div>
+      <UnitPhotoMosaic images={category.galleryUrls} alt={category.name}
+        showAllLabel={labels['project_category.gallery']}
+        emptyLabel={discovery.photos} />
     </section> : null}
 
     <section className="stitch-panel p-20 md:p-24">
       <h2 className="mb-20 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.units']}</h2>
+      {!units.length ? <p role="status" className="text-body text-text-secondary">{discovery.empty}</p> : null}
       <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
         {units.map(unit => <Link
           key={unit.id}
           href={`/units/${unit.id}?${context}`}
           className="stitch-panel-soft overflow-hidden transition hover:border-brand-andaman hover:shadow-card"
         >
-          {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-subtle px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
+          {unit.coverUrl ? <PropertyImage fallbackLabel={discovery.photos} src={unit.coverUrl} alt={unit.name} width={640} height={360} className="aspect-video w-full object-cover"/> : <div className="flex aspect-video items-center justify-center bg-surface-subtle px-16 text-center text-small text-text-secondary">{labels['project_category.pending']}</div>}
           <div className="p-16">
             <p className="text-small text-brand-andaman">{category.name}</p>
             {unit.photoScope === 'room_type' ? (

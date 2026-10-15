@@ -107,7 +107,7 @@ export default function TripsList({ labels }: TripsListProps) {
         </div>
 
         {error && (
-          <div className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
+          <div role="alert" className="bg-state-error-soft border border-state-error rounded-lg p-16 mb-24">
             <p className="text-body text-state-error">{error}</p>
           </div>
         )}
@@ -134,7 +134,7 @@ export default function TripsList({ labels }: TripsListProps) {
                 href={`/trips/${trip.id}`}
                 className="block stitch-panel p-24 hover:shadow-card transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-andaman"
               >
-                <div className="flex items-start justify-between mb-16">
+                <div className="flex flex-wrap items-start justify-between gap-12 mb-16">
                   <div>
                     <h3 className="text-subtitle font-semibold text-text-ink">
                       {trip.unit.name}
@@ -196,13 +196,6 @@ export default function TripsList({ labels }: TripsListProps) {
                     </div>
                   )}
 
-                  {trip.status === 'confirmed' && (
-                    <div className="text-right">
-                      <p className="text-small text-state-success font-semibold">
-                        {labels['booking.trips.ready_checkin']}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {trip.guestNote && (

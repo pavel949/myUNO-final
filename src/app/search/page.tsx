@@ -1,3 +1,5 @@
+import { SavedHomesProvider } from '@/components/property/SaveHomeButton';
+import { STAY_UX_KEYS, stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
 import { Suspense } from 'react';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_SORTS } from '@/modules/browse';
@@ -22,8 +24,13 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
     Object.fromEntries(UNIT_SORTS.map((sort) => [sort.labelKey, sort.key]))
   );
 
+  const uxLocale = getRequestLocale();
+  const uxLabels = await getLabels(Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const uxCopy = Object.fromEntries(Object.keys(stayUxDefaults(uxLocale)).map(key => [key, uxLabels[`stay_ux.${key}`]])) as StayUxCopy;
   const labels = await getLabels({
     'search.filters.bedrooms': 'Bedrooms',
+    'listing.guests_count': '{count} guests',
+    'listing.bedrooms_count': '{count} bedrooms',
     'search.title': 'Find your stay',
     'search.results_summary': '{from} to {to} · {guests} guests',
     'search.prompt': 'Choose your dates to see available homes.',
@@ -72,10 +79,13 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
         </div>
       }
     >
-      <SearchResults
+      <SavedHomesProvider enabled={hasDates}><SearchResults
+        uxCopy={uxCopy}
         locale={locale}
         labels={{
           title: labels['search.title'],
+          guestsCount: labels['listing.guests_count'],
+          bedroomsCount: labels['listing.bedrooms_count'],
           resultsSummary: labels['search.results_summary'],
           prompt: labels['search.prompt'],
           loading: labels['search.loading'],
@@ -123,6 +133,7 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
           label: sortLabels[sort.labelKey],
         }))}
       />
+      </SavedHomesProvider>
       {!hasDates && <DiscoveryHomes units={browse} context={context} />}
     </Suspense>
   );

@@ -28,7 +28,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
   const next = safeNextPath(searchParams?.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams?.get('error') ? labels.errorGeneric : null);
   const [loading, setLoading] = useState(false);
 
   const errorMessageFromResponse = (body: unknown) => {
@@ -46,6 +46,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -53,7 +54,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (!response.ok) {
@@ -73,7 +74,8 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-24">
-      <GoogleLoginButton label={labels.googleButton} />
+      {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && <>
+      <GoogleLoginButton label={labels.googleButton} next={next} />
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -83,6 +85,7 @@ export function LoginForm({ labels }: { labels: LoginFormLabels }) {
           <span className="px-8 bg-surface-paper text-text-secondary">{labels.divider}</span>
         </div>
       </div>
+      </>}
 
       <Input
         label={labels.email}

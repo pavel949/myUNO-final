@@ -1,3 +1,7 @@
+import { GUEST_CHECKOUT_KEYS } from './guest-checkout.seed';
+import { GUEST_AUTH_SUPPORT_KEYS } from './guest-auth-support.seed';
+import { GUEST_SERVICE_CONTEXT_KEYS } from './guest-service-context.seed';
+import { STAY_UX_KEYS } from './stay-ux.seed';
 import { RESERVATION_GUEST_KEYS } from './reservation-guest.seed';
 import { INQUIRY_CONTENT_KEYS } from './inquiry-copy';
 import { PROPERTY_ONBOARDING_KEYS } from './property-onboarding.seed';
@@ -50,6 +54,10 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  ...GUEST_CHECKOUT_KEYS,
+  ...GUEST_AUTH_SUPPORT_KEYS,
+  ...GUEST_SERVICE_CONTEXT_KEYS,
+  ...STAY_UX_KEYS,
   ...RESERVATION_GUEST_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },

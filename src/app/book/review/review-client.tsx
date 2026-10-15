@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { PriceBreakdown } from '@/components/PriceBreakdown';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { Select } from '@/components/Select';
+import { LocalDate } from '@/components/LocalDate';
 
 type PaymentMethod = 'cash' | 'bank_transfer' | 'card_provider';
 
@@ -43,6 +44,8 @@ export interface ReviewLabels {
   discountEarlyBird: string;
   cleaningFee: string;
   occupancyTax: string;
+  loadingQuote?: string;
+  retryQuote?: string;
 }
 
 interface Breakdown {
@@ -237,6 +240,7 @@ export default function BookingReviewClient({
 
   const categorySelected = Boolean(inventoryCategoryId || categoryKey);
   const canSubmit =
+    !conflict && !unavailable &&
     Boolean(startDate && endDate && projectId && (unitId || categorySelected) && consented) &&
     Boolean(breakdown) && instantBook !== null &&
     quotedStay === stayKey && acceptedTotalSatang !== null &&
@@ -303,13 +307,19 @@ export default function BookingReviewClient({
       }
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        // A payment rail may fail after the reservation has committed.
+        // Recover that reservation instead of inviting a second attempt.
+        if (body?.code === 'CHECKOUT_UNAVAILABLE' && body.booking?.id) {
+          router.push(`/trips/${body.booking.id}`);
+          return;
+        }
         throw new Error(body?.error || labels.error);
       }
       const result = await response.json();
       if (result.checkout?.checkoutUrl) {
         router.push(result.checkout.checkoutUrl);
       } else {
-        router.push('/trips');
+        router.push(result.booking?.id ? `/trips/${result.booking.id}` : '/trips');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : labels.error);
@@ -346,11 +356,11 @@ export default function BookingReviewClient({
           <dl className="grid gap-12 rounded-md bg-surface-sand p-16 text-body sm:grid-cols-3">
             <div className="min-w-0 space-y-4">
               <dt className="text-small text-text-stone">{labels.checkIn}</dt>
-              <dd className="tabular-nums text-text-ink">{startDate}</dd>
+              <dd className="tabular-nums text-text-ink"><LocalDate value={startDate} /></dd>
             </div>
             <div className="min-w-0 space-y-4">
               <dt className="text-small text-text-stone">{labels.checkOut}</dt>
-              <dd className="tabular-nums text-text-ink">{endDate}</dd>
+              <dd className="tabular-nums text-text-ink"><LocalDate value={endDate} /></dd>
             </div>
             <div className="min-w-0 space-y-4">
               <dt className="text-small text-text-stone">{labels.guests}</dt>
@@ -381,6 +391,9 @@ export default function BookingReviewClient({
         </div>
 
         <aside className="lg:sticky lg:top-96">
+        {!breakdown && !error && !unavailable && (
+          <p role="status" className="mb-24 text-body text-text-stone">{labels.loadingQuote || labels.confirming}</p>
+        )}
         {breakdown && (
           <div className="mb-24 stitch-panel shadow-float p-24">
             <PriceBreakdown
@@ -415,11 +428,12 @@ export default function BookingReviewClient({
             value={paymentMethod}
             onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
             options={methodOptions}
+            disabled={submitting || instantBook === null || quotedStay !== stayKey}
           />
         </div>
 
         {(conflict || unavailable) && (
-          <div className="mb-16 rounded-lg border border-state-warning bg-state-warning-soft p-16">
+          <div role="alert" className="mb-16 rounded-lg border border-state-warning bg-state-warning-soft p-16">
             <p className="mb-8 text-body-strong text-text-ink">{unavailable ? labels.unavailableForDates : labels.conflictTitle}</p>
             <p className="mb-12 text-small text-text-secondary">{labels.conflictBody}</p>
             <Link href={backHref} className="font-semibold text-brand-andaman hover:underline">
@@ -427,7 +441,18 @@ export default function BookingReviewClient({
             </Link>
           </div>
         )}
-        {error && !conflict && <p className="mb-16 text-small text-state-error">{error}</p>}
+        {error && !conflict && (
+          <div className="mb-16">
+            <p role="alert" className="mb-12 text-small text-state-error">{error}</p>
+            {!breakdown && !unavailable && (
+              <Button variant="secondary" onClick={() => {
+                setError(null);
+                setConflict(false);
+                setQuoteRevision((revision) => revision + 1);
+              }} disabled={submitting}>{labels.retryQuote || labels.searchAgain}</Button>
+            )}
+          </div>
+        )}
 
         <Button
           size="lg"

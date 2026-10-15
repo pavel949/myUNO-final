@@ -7,7 +7,7 @@ import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
@@ -456,7 +456,7 @@ export default async function ProjectLandingPage({
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
               >
                 {category.coverUrl ? (
-                  <Image src={category.coverUrl}
+                  <PropertyImage fallbackLabel={discovery.photos} src={category.coverUrl}
                     alt={categoryLabels[category.key] || category.key}
                     width={640} height={480}
                     className="mb-16 aspect-[4/3] w-full rounded-md object-cover" />
@@ -548,7 +548,7 @@ export default async function ProjectLandingPage({
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
                 {unit.coverUrl ? (
-                  <Image
+                  <PropertyImage fallbackLabel={discovery.photos}
                     src={unit.coverUrl}
                     alt={unit.name}
                     width={640}

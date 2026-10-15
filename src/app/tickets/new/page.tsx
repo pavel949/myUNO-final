@@ -8,10 +8,16 @@ import NewTicketClient from './new-ticket-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewTicketPage() {
+export default async function NewTicketPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   const user = await getCurrentUser();
   if (!user) {
-    redirect('/login?next=/tickets/new');
+    const context = new URLSearchParams();
+    for (const key of ['projectId', 'unitId', 'bookingId']) {
+      const value = searchParams?.[key];
+      if (typeof value === 'string') context.set(key, value);
+    }
+    const next = `/tickets/new${context.size ? `?${context}` : ''}`;
+    redirect(`/login?next=${encodeURIComponent(next)}`);
   }
 
   // The category list comes from the doc 04 §8 catalog, its labels from
@@ -29,6 +35,7 @@ export default async function NewTicketPage() {
 
   const labels = await getLabels({
     'tickets.new.title': 'Raise a request',
+    'tickets.new.choose_trip': 'Choose your trip',
     'tickets.new.back': '← My requests',
     'tickets.new.category': 'Category',
     'catalog.ticket_categories.maintenance.label': 'Maintenance',

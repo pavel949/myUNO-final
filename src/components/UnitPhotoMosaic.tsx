@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useId, useRef, useState } from 'react';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
 import { Button } from './Button';
 
 const MOBILE_IMAGE_SIZES = '(max-width: 768px) 100vw, 300px';
@@ -76,14 +76,14 @@ export function UnitPhotoMosaic({
           galleries fill the available width instead of leaving empty cells. */}
       <div className={`hidden overflow-hidden rounded-lg md:grid gap-8 ${images.length === 1 ? 'grid-cols-1' : images.length === 2 ? 'grid-cols-2' : 'grid-cols-4 grid-rows-2'}`}>
         <div className={`relative overflow-hidden bg-surface-sand ${images.length === 1 ? 'aspect-[16/7]' : images.length === 2 ? 'aspect-[4/3]' : 'col-span-2 row-span-2 min-h-[320px] lg:min-h-[400px]'}`}>
-          <Image src={cover} alt={alt} fill sizes={images.length === 1 ? '(max-width: 1280px) 100vw, 1200px' : '(max-width: 1280px) 50vw, 600px'} className="object-cover" priority />
+          <PropertyImage fallbackLabel={emptyLabel || alt} src={cover} alt={alt} fill sizes={images.length === 1 ? '(max-width: 1280px) 100vw, 1200px' : '(max-width: 1280px) 50vw, 600px'} className="object-cover" priority />
         </div>
         {thumbs.map((src, index) => (
           <div
             key={`${src}-${index}`}
             className={`relative overflow-hidden bg-surface-sand ${images.length === 2 ? 'aspect-[4/3]' : images.length === 3 ? 'col-span-2' : images.length === 4 && index === 0 ? 'col-span-2' : ''}`}
           >
-            <Image src={src} alt={alt} fill sizes={images.length < 4 || (images.length === 4 && index === 0) ? '(max-width: 1280px) 50vw, 600px' : '(max-width: 1280px) 25vw, 300px'} className="object-cover" />
+            <PropertyImage fallbackLabel={emptyLabel || alt} src={src} alt={alt} fill sizes={images.length < 4 || (images.length === 4 && index === 0) ? '(max-width: 1280px) 50vw, 600px' : '(max-width: 1280px) 25vw, 300px'} className="object-cover" />
           </div>
         ))}
       </div>
@@ -104,7 +104,7 @@ export function UnitPhotoMosaic({
               key={`${src}-${index}`}
               className="relative shrink-0 w-full aspect-[4/3] snap-center overflow-hidden"
             >
-              <Image
+              <PropertyImage fallbackLabel={emptyLabel || alt}
                 src={src}
                 alt={`${alt} (${index + 1}/${images.length})`}
                 fill
@@ -150,7 +150,7 @@ export function UnitPhotoMosaic({
         <div id={overflowId} className="mt-12 hidden md:grid grid-cols-2 md:grid-cols-4 gap-8">
           {rest.map((src, index) => (
             <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-md">
-              <Image
+              <PropertyImage fallbackLabel={emptyLabel || alt}
                 src={src}
                 alt={`${alt} (${index + 6}/${images.length})`}
                 fill

@@ -55,6 +55,33 @@ describe('GET /api/auth/callback/google', () => {
     }
   });
 
+  it.each(['/book/review?unitId=fixture&bookingIntent=fixture', '//untrusted.test', '%broken'])('uses only a safe return destination after Google login: %s', async next => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.identity.findUnique).mockResolvedValue({ id: 'guest', status: 'active', emailVerifiedAt: new Date() } as never);
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'test-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'google', email: 'guest@example.test', verified_email: true }), { status: 200 }));
+    try {
+      const response = await GET(new NextRequest('http://localhost/api/auth/callback/google?code=valid&state=nonce', {
+        headers: { cookie: `google_oauth_state=nonce; google_oauth_next=${next === '%broken' ? next : encodeURIComponent(next)}` },
+      }));
+      expect(response.headers.get('location')).toBe(`http://localhost${next.startsWith('/book/') ? next : '/app'}`);
+      expect(response.cookies.get('google_oauth_next')?.value).toBe('');
+      expect(response.cookies.get('auth-session')?.value).toBe('signed-session-token');
+    } finally { fetchMock.mockRestore(); }
+  });
+
+  it('keeps safe booking context when Google authorization is cancelled', async () => {
+    const next = '/book/review?unitId=fixture';
+    const response = await GET(new NextRequest('http://localhost/api/auth/callback/google?error=access_denied', {
+      headers: { cookie: `google_oauth_next=${encodeURIComponent(next)}` },
+    }));
+    const location = new URL(response.headers.get('location')!);
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('next')).toBe(next);
+    expect(response.cookies.get('google_oauth_next')?.value).toBe('');
+  });
+
   it('redirects missing code to /login with explicit error', async () => {
     const request = new NextRequest('http://localhost/api/auth/callback/google?state=x', {
       headers: { cookie: 'google_oauth_state=x' },

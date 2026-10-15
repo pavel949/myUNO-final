@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { computeOrderPreviewBaht } from './order-preview';
+import { serviceContextPath } from './service-context';
 
 /**
  * SA-2 — the single ordering surface on the service page, super-app style:
@@ -55,6 +56,9 @@ export default function OrderWizard({
   const [note, setNote] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [autoBookingId, setAutoBookingId] = useState<string | null>(null);
+  const [availableStays, setAvailableStays] = useState<Array<{ id: string; startDate: string; unit?: { name?: string } }>>([]);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [contextLoaded, setContextLoaded] = useState(Boolean(bookingId || projectId || unitId));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +71,10 @@ export default function OrderWizard({
     (async () => {
       try {
         const res = await fetch('/api/bookings/me?status=confirmed,checked_in&limit=20');
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (res.status === 401 && !cancelled) setNeedsLogin(true);
+          return;
+        }
         const data = await res.json();
         const now = Date.now();
         const live = (data?.bookings ?? []).filter(
@@ -80,9 +87,15 @@ export default function OrderWizard({
             return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
           }
         );
-        if (!cancelled && live[0]) setAutoBookingId(live[0].id);
+        if (!cancelled) {
+          setAvailableStays(live);
+          // A service must never silently attach to the wrong trip.
+          if (live.length === 1) setAutoBookingId(live[0].id);
+        }
       } catch {
-        // context attach is best-effort; the API's own error surfaces on place
+        // Unavailable context is shown as a recoverable handoff, not an empty order.
+      } finally {
+        if (!cancelled) setContextLoaded(true);
       }
     })();
     return () => {
@@ -91,7 +104,7 @@ export default function OrderWizard({
   }, [bookingId, projectId, unitId]);
 
   const effectiveBookingId = bookingId ?? autoBookingId;
-  const selfPath = `/services/${service.id}${bookingId ? `?bookingId=${bookingId}` : ''}`;
+  const selfPath = serviceContextPath(service.id, { bookingId: effectiveBookingId, projectId, unitId });
   // computeOrderPreviewBaht converts the satang basePriceThb to baht for
   // display only — the server always recomputes the real total from
   // service.basePriceThb (satang), never this preview.
@@ -126,6 +139,16 @@ export default function OrderWizard({
             {labels['services.wizard.quote_messages']}
           </Link>
         )}
+      </div>
+    );
+  }
+
+  if (!bookingId && !projectId && !unitId && !effectiveBookingId && contextLoaded && availableStays.length === 0) {
+    return (
+      <div className="stitch-panel p-24">
+        <h2 className="text-heading-3 font-semibold mb-12">{labels['services.wizard.title']}</h2>
+        <p className="text-body text-text-secondary mb-16">{labels['services.wizard.no_context']}</p>
+        <Link href={needsLogin ? `/login?next=${encodeURIComponent(selfPath)}` : "/messages"} className="inline-flex min-h-48 items-center px-24 rounded-md bg-brand-andaman text-surface-ivory">{labels[needsLogin ? 'services.browse.login_needed' : 'services.wizard.quote_messages']}</Link>
       </div>
     );
   }
@@ -206,7 +229,7 @@ export default function OrderWizard({
         <p className="text-body text-text-secondary mb-16">
           {labels['services.wizard.pay_subtitle']}
         </p>
-        {error && <p className="text-small text-state-error mb-12">{error}</p>}
+        {error && <p role="alert" className="text-small text-state-error mb-12">{error}</p>}
         <div className="flex flex-col sm:flex-row gap-12">
           <Button onClick={payByCard} isLoading={busy} fullWidth>
             {labels['services.wizard.pay_card']}
@@ -229,6 +252,15 @@ export default function OrderWizard({
         {labels['services.wizard.title']}
       </h2>
       <div className="flex flex-col gap-12">
+        {!bookingId && !projectId && !unitId && availableStays.length > 1 && (
+          <div className="flex flex-col gap-4">
+            <label htmlFor="wizard-stay" className="text-small text-text-stone">{labels['services.wizard.choose_stay']}</label>
+            <select id="wizard-stay" value={autoBookingId ?? ''} onChange={(event) => setAutoBookingId(event.target.value || null)} className="min-h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink">
+              <option value="">{labels['services.wizard.choose_stay']}</option>
+              {availableStays.map((stay) => <option key={stay.id} value={stay.id}>{stay.unit?.name ?? stay.id} · {stay.startDate.slice(0, 10)}</option>)}
+            </select>
+          </div>
+        )}
         <div className="flex flex-col gap-4">
           <label htmlFor="wizard-when" className="text-small text-text-stone">
             {labels['services.wizard.when']}
@@ -277,8 +309,8 @@ export default function OrderWizard({
             </span>
           </div>
         )}
-        {error && <p className="text-small text-state-error">{error}</p>}
-        <Button onClick={placeOrder} isLoading={busy} disabled={!when} fullWidth>
+        {error && <p role="alert" className="text-small text-state-error">{error}</p>}
+        <Button onClick={placeOrder} isLoading={busy} disabled={!contextLoaded || !when || (!bookingId && !projectId && !unitId && availableStays.length > 1 && !autoBookingId)} fullWidth>
           {previewThb !== null
             ? fill(labels['services.wizard.place'], { total: previewThb.toLocaleString(UI_LOCALE) })
             : labels['services.wizard.place_no_total']}

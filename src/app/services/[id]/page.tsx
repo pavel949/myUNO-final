@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { Breadcrumb } from '@/components/Breadcrumb';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { track } from '@/modules/analytics';
@@ -98,6 +99,9 @@ export default async function ServiceDetailPage({
     'services.detail.photos': 'Photos',
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
+    'services.browse.login_needed': 'Log in to place an order.',
+    'services.wizard.choose_stay': 'Choose the stay for this service',
+    'services.wizard.no_context': 'To order online, open this service from your stay or property. For another location, message the team to arrange it.',
     'services.wizard.when': 'When',
     'services.wizard.quantity': 'Quantity',
     'services.wizard.note': 'Note to provider (optional)',
@@ -114,7 +118,7 @@ export default async function ServiceDetailPage({
     'services.wizard.quote_whatsapp': 'Ask the concierge on WhatsApp',
     'services.wizard.quote_messages': 'Message us',
     'services.wizard.error_generic': 'Could not place the order. Please try again.',
-  });
+  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   // Quote CTA: the concierge WhatsApp is a project-scoped parameter — when
   // the guest arrives from a stay, resolve it through their booking's project.

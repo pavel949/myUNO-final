@@ -3,6 +3,7 @@
 
 import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -21,6 +22,7 @@ export interface TicketDetailView {
   status: string;
   priority: string;
   createdAt: string;
+  serviceOrderId?: string | null;
   projectName: string | null;
   unitName: string | null;
   raisedByName: string;
@@ -186,15 +188,16 @@ export default function TicketDetailClient({
         </span>
       </div>
 
+      {ticket.serviceOrderId && <Link href={`/services/orders/${ticket.serviceOrderId}`} className="mt-16 inline-flex min-h-44 items-center font-semibold text-brand-andaman underline">{labels['payments.checkout.back_to_order']}</Link>}
       <dl className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div>
+        {ticket.projectName && <div>
           <dt className="text-small text-text-secondary">{labels['tickets.detail.project']}</dt>
-          <dd className="text-body text-text-ink">{ticket.projectName || '—'}</dd>
-        </div>
-        <div>
+          <dd className="text-body text-text-ink">{ticket.projectName}</dd>
+        </div>}
+        {ticket.unitName && <div>
           <dt className="text-small text-text-secondary">{labels['tickets.detail.unit']}</dt>
-          <dd className="text-body text-text-ink">{ticket.unitName || '—'}</dd>
-        </div>
+          <dd className="text-body text-text-ink">{ticket.unitName}</dd>
+        </div>}
         <div>
           <dt className="text-small text-text-secondary">{labels['tickets.detail.reported_by']}</dt>
           <dd className="text-body text-text-ink">{ticket.raisedByName}</dd>

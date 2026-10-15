@@ -6,6 +6,7 @@ import { getLabels } from '@/lib/i18n';
 import { getConfig } from '@/modules/config';
 import { resolveStayCancellationPolicyForDates } from '@/modules/booking';
 import BookingReviewClient from './review-client';
+import { REVIEW_CHECKOUT_DRAFTS } from '@/modules/content/guest-checkout.seed';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,6 +120,8 @@ export default async function BookingReviewPage({
       'After you confirm we will ask for guest details so we can file the stay. You are not charged on this screen if you chose cash or bank transfer.',
     'booking.review.confirm': 'Confirm booking',
     'booking.review.confirming': 'Confirming…',
+    'booking.review.loading_quote': 'Checking availability and the total for your stay…',
+    'booking.review.retry_quote': 'Check availability again',
     'booking.review.back': '← Back',
     'booking.review.error': 'Could not complete the booking. Please try again.',
     'booking.review.terms_requote': 'The price or booking terms changed. Review the updated details and agree again before booking.',
@@ -139,7 +142,7 @@ export default async function BookingReviewPage({
     'listing.cleaning_fee': 'Cleaning',
     'listing.occupancy_tax': 'Occupancy tax',
     'listing.cancellation_default': 'The cancellation terms for this home apply.',
-  }, undefined, BOOKING_MODE_RELIABILITY_DRAFTS);
+  }, undefined, { ...BOOKING_MODE_RELIABILITY_DRAFTS, ...REVIEW_CHECKOUT_DRAFTS });
 
   return (
     <Suspense>
@@ -182,6 +185,8 @@ export default async function BookingReviewPage({
           payTransfer: labels['listing.pay_transfer'],
           confirm: labels['booking.review.confirm'],
           confirming: labels['booking.review.confirming'],
+          loadingQuote: labels['booking.review.loading_quote'],
+          retryQuote: labels['booking.review.retry_quote'],
           back: labels['booking.review.back'],
           error: labels['booking.review.error'],
           requote: labels['booking.review.terms_requote'],

@@ -93,25 +93,38 @@ export default function ServicesClient({
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(false);
+  const [ordersError, setOrdersError] = useState(false);
+
   const load = useCallback(async () => {
-    const [servicesRes, ordersRes] = await Promise.all([
-      fetch(`/api/services${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`),
-      fetch(`/api/service-orders?${new URLSearchParams({
-        ...(bookingId ? { bookingId } : {}),
-        ...(projectId ? { projectId } : {}),
-        ...(unitId ? { unitId } : {}),
-      }).toString()}`),
+    setCatalogLoading(true);
+    setCatalogError(false);
+    setOrdersError(false);
+    // A private-order failure must not hide the public service catalogue.
+    const [catalogResult, ordersResult] = await Promise.allSettled([
+      (async () => {
+        const response = await fetch(`/api/services${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`);
+        if (!response.ok) throw new Error('catalog unavailable');
+        const data = await response.json();
+        setServices(data.services || []);
+      })(),
+      (async () => {
+        const response = await fetch(`/api/service-orders?${new URLSearchParams({
+          ...(bookingId ? { bookingId } : {}),
+          ...(projectId ? { projectId } : {}),
+          ...(unitId ? { unitId } : {}),
+        }).toString()}`);
+        if (response.status === 401) { setLoggedIn(false); return; }
+        if (!response.ok) throw new Error('orders unavailable');
+        const data = await response.json();
+        setLoggedIn(true);
+        setOrders(data.orders || []);
+      })(),
     ]);
-    if (servicesRes.ok) {
-      const data = await servicesRes.json();
-      setServices(data.services || []);
-    }
-    if (ordersRes.status === 401) {
-      setLoggedIn(false);
-    } else if (ordersRes.ok) {
-      const data = await ordersRes.json();
-      setOrders(data.orders || []);
-    }
+    setCatalogError(catalogResult.status === 'rejected');
+    setOrdersError(ordersResult.status === 'rejected');
+    setCatalogLoading(false);
   }, [bookingId, projectId, unitId]);
 
   useEffect(() => {
@@ -364,7 +377,14 @@ export default function ServicesClient({
           </div>
         )}
 
-        {visibleServices.length === 0 ? (
+        {catalogLoading ? (
+          <div className="stitch-panel p-32 mb-32" role="status">{labels['services.browse.loading']}</div>
+        ) : catalogError ? (
+          <div className="stitch-panel p-32 mb-32" role="alert">
+            <p className="mb-16">{labels['services.browse.load_error']}</p>
+            <Button onClick={() => void load()}>{labels['services.browse.retry']}</Button>
+          </div>
+        ) : visibleServices.length === 0 ? (
           <div className="stitch-panel p-32 text-center mb-32">
             <p className="text-body text-text-secondary">
               {selectedCategory && services.length > 0
@@ -505,7 +525,14 @@ export default function ServicesClient({
         <h2 className="font-display text-display font-semibold text-text-ink mb-16">
           {labels['services.my_orders.title']}
         </h2>
-        {!loggedIn || orders.length === 0 ? (
+        {catalogLoading ? (
+          <div className="stitch-panel p-24" role="status">{labels['services.browse.loading']}</div>
+        ) : ordersError ? (
+          <div className="stitch-panel p-24" role="alert">
+            <p className="mb-12">{labels['services.browse.load_error']}</p>
+            <Button onClick={() => void load()}>{labels['services.browse.retry']}</Button>
+          </div>
+        ) : !loggedIn || orders.length === 0 ? (
           <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary">
               {loggedIn ? labels['services.my_orders.empty'] : labels['services.browse.login_needed']}

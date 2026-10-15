@@ -1,15 +1,16 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { LoginForm } from './login-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams?: { next?: string | string[] } }) {
   const user = await getCurrentUser();
   if (user) {
-    redirect('/');
+    redirect(safeNextPath(typeof searchParams?.next === 'string' ? searchParams.next : null) || '/');
   }
 
   const labels = await getLabels({

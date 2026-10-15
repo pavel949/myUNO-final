@@ -45,6 +45,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -52,7 +53,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), password }),
       });
 
       if (!response.ok) {
@@ -80,7 +81,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-24">
-      <div className="grid grid-cols-2 gap-16">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-16">
         <Input
           label={labels.firstName}
           autoComplete="given-name"
@@ -113,7 +114,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
           helpText={labels.passwordHelp}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          error={error || undefined}
+          minLength={8}
         />
         {/* 4-segment strength meter (Phase 3 requirement) */}
         {password.length > 0 && (
@@ -127,6 +128,7 @@ export function RegisterForm({ labels }: { labels: RegisterFormLabels }) {
           </div>
         )}
       </div>
+      {error && <p role="alert" className="text-small text-state-error">{error}</p>}
       <Button type="submit" fullWidth isLoading={loading}>
         {labels.submit}
       </Button>

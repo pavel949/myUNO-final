@@ -1,3 +1,4 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
@@ -7,7 +8,7 @@ import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
@@ -217,6 +218,7 @@ export default async function ProjectLandingPage({
   const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
+  const galleryLabels = await getGalleryCopy();
   const context = discoveryContext(searchParams, { projectId: project.id });
   const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
 
@@ -342,7 +344,7 @@ export default async function ProjectLandingPage({
           subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
         />
         {projectPhotos.length > 0 ? (
-          <UnitPhotoMosaic
+          <UnitPhotoMosaic galleryLabels={galleryLabels}
             images={projectPhotos}
             alt={project.name}
             showAllLabel={`${labels['project_page.gallery.view_all']} · ${labels['project_page.gallery.count'].replace('{count}', String(projectPhotos.length))}`}
@@ -456,7 +458,7 @@ export default async function ProjectLandingPage({
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
               >
                 {category.coverUrl ? (
-                  <Image src={category.coverUrl}
+                  <PropertyImage fallbackLabel={discovery.photos} src={category.coverUrl}
                     alt={categoryLabels[category.key] || category.key}
                     width={640} height={480}
                     className="mb-16 aspect-[4/3] w-full rounded-md object-cover" />
@@ -548,7 +550,7 @@ export default async function ProjectLandingPage({
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
               >
                 {unit.coverUrl ? (
-                  <Image
+                  <PropertyImage fallbackLabel={discovery.photos}
                     src={unit.coverUrl}
                     alt={unit.name}
                     width={640}

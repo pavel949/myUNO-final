@@ -21,6 +21,7 @@ export default async function TicketsPage() {
       'No requests yet. Raise one from your trip or unit and track its progress here.',
     'tickets.list.view': 'View',
     'tickets.list.raise': 'Raise from a trip',
+    'tickets.list.filter_empty': 'No requests with this status. Choose All to see your requests.',
     'tickets.list.filter_all': 'All',
     'tickets.status.open': 'Open',
     'tickets.status.acknowledged': 'Acknowledged',

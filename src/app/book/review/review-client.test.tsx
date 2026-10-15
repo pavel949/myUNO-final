@@ -33,6 +33,36 @@ async function consent() {
 }
 
 describe('reviewed price and recovery', () => {
+  it('recovers the saved booking when card checkout cannot be created', async () => {
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => url === '/api/bookings'
+      ? response({ code: 'CHECKOUT_UNAVAILABLE', booking: { id: 'saved-booking' } }, 503)
+      : normalFetch(url, options));
+    renderReview();
+    await consent();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/saved-booking'));
+    expect(bookingCalls()).toHaveLength(1);
+  });
+
+  it('lets a guest retry a failed quote without losing the stay or booking intent', async () => {
+    let quotes = 0;
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => {
+      if (url === '/api/pricing/breakdown' && ++quotes === 1) throw new Error('offline');
+      return normalFetch(url, options);
+    });
+    renderReview();
+    expect(await screen.findByRole('alert')).toHaveTextContent('error');
+    fireEvent.click(screen.getByRole('button', { name: 'searchAgain' }));
+    await consent();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(bookingCalls()).toHaveLength(1));
+    expect(JSON.parse(bookingCalls()[0][1].body)).toMatchObject({
+      unitId: 'unit-a', startDate: '2027-02-01', endDate: '2027-02-04', adultsCount: 2,
+    });
+  });
+
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +84,7 @@ describe('reviewed price and recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
     await waitFor(() => expect(bookingCalls()).toHaveLength(1));
     expect(JSON.parse(bookingCalls()[0][1].body)).toMatchObject({ unitId: 'unit-a', acceptedTotalSatang: 300_000 });
-    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips'));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/booking-a'));
   });
 
   it('retains the category signed quote and accepted ceiling', async () => {

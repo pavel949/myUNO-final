@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const push = vi.fn();
+const replace = vi.fn();
 const params = new URLSearchParams({
   startDate: '2026-11-10',
   endDate: '2026-11-14',
@@ -13,7 +14,7 @@ const params = new URLSearchParams({
   inventoryCategoryId: 'cat-uuid-1',
 });
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push, replace, refresh: vi.fn() }),
   useSearchParams: () => params,
 }));
 vi.mock('next/link', () => ({
@@ -79,4 +80,19 @@ describe('SearchResults — category booking uses the canonical id', () => {
     const requests = vi.mocked(fetch).mock.calls.map(([url]) => new URL(String(url), 'https://example.test'));
     expect(requests.every(url => url.searchParams.get('inventoryCategoryId') === 'cat-uuid-1')).toBe(true);
   });
+});
+
+
+it('keeps amenity filters in paginated canonical searches and filter links preserve dates', async () => {
+  params.set('amenities', 'wifi');
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ units: [], mapProjects: [], total: 0 }) })));
+  const labels = new Proxy({}, { get: (_t, key) => String(key) });
+  render(<SearchResults labels={labels as never} sortOptions={[]} typeOptions={[]} amenityTitle="Amenities" amenityOptions={[{ key: 'wifi', label: 'Wi-Fi' }, { key: 'pool', label: 'Pool' }]} />);
+  await waitFor(() => expect(fetch).toHaveBeenCalled());
+  expect(new URL(String(vi.mocked(fetch).mock.calls[0][0]), 'https://example.test').searchParams.get('amenities')).toBe('wifi');
+  fireEvent.click(screen.getByRole('button', { name: 'Pool' }));
+  const next = new URL(replace.mock.calls[0][0], 'https://example.test');
+  expect(next.searchParams.get('amenities')).toBe('wifi,pool');
+  expect(next.searchParams.get('startDate')).toBe('2026-11-10');
+  params.delete('amenities');
 });

@@ -48,6 +48,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true, status: 'cancelled' });
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Cannot ')) return handleError(createPublicError(error.message, 409));
     return handleError(error);
   }
 }

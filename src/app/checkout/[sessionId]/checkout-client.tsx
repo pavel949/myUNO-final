@@ -2,7 +2,7 @@
 
 
 import { UI_LOCALE, APP_TZ } from '@/lib/format';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
@@ -47,31 +47,38 @@ export default function CheckoutClient({
   const [success, setSuccess] = useState(false);
   const [reconciliationRequired, setReconciliationRequired] = useState(false);
   const [reconciliationRefunded, setReconciliationRefunded] = useState(false);
+  const paymentInFlight = useRef(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       try {
-        const response = await fetch(`/api/checkout/${sessionId}`);
+        const response = await fetch(`/api/checkout/${sessionId}`, { signal: controller.signal, cache: 'no-store' });
         if (response.status === 401) {
           router.push(`/login?next=/checkout/${sessionId}`);
           return;
         }
         if (!response.ok) throw new Error(labels['payments.checkout.not_found']);
         const data: SessionInfo = await response.json();
+        if (controller.signal.aborted) return;
         setSession(data);
         setReconciliationRequired(!!data.reconciliationRequired);
         setReconciliationRefunded(!!data.reconciliationRefunded);
         if (data.status === 'succeeded' && !data.reconciliationRequired) setSuccess(true);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : labels['payments.checkout.error_generic']);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     load();
+    return () => controller.abort();
   }, [sessionId, router, labels]);
 
   const handlePayment = async (simulateDecline = false) => {
+    if (paymentInFlight.current) return;
+    paymentInFlight.current = true;
     if (simulateDecline) {
       setDeclining(true);
     } else {
@@ -87,6 +94,10 @@ export default function CheckoutClient({
       });
 
       const result = await response.json().catch(() => null);
+      if (response.status === 401) {
+        router.push(`/login?next=${encodeURIComponent(`/checkout/${sessionId}`)}`);
+        return;
+      }
       if (!response.ok) {
         setError(result?.error || labels['payments.checkout.error_generic']);
         return;
@@ -97,36 +108,29 @@ export default function CheckoutClient({
         setReconciliationRefunded(!!result.reconciliationRefunded);
       } else if (result.confirmed || result.payment?.status === 'succeeded') {
         setSuccess(true);
-        const bookingId = result.payment?.bookingId || session?.booking?.id;
-        const serviceOrderId =
-          result.payment?.serviceOrderId || session?.serviceOrder?.id;
-        setTimeout(() => {
-          if (serviceOrderId) {
-            // SA-2: land on the order's confirmation view, not the catalog
-            router.push(`/services/orders/${serviceOrderId}?paid=1`);
-          } else {
-            router.push(bookingId ? `/bookings/${bookingId}/home-space` : '/trips');
-          }
-        }, 1500);
       } else {
         setError(labels['payments.checkout.error_generic']);
       }
     } catch {
       setError(labels['payments.checkout.error_generic']);
     } finally {
+      paymentInFlight.current = false;
       setPaying(false);
       setDeclining(false);
     }
   };
 
-  const tripUrl = session?.booking?.id
-    ? `/bookings/${session.booking.id}/home-space`
-    : '/trips';
+  const tripUrl = session?.serviceOrder?.id
+    ? `/services/orders/${session.serviceOrder.id}`
+    : session?.booking?.id ? `/trips/${session.booking.id}` : '/trips';
+  const continueLabel = session?.serviceOrder
+    ? labels['payments.checkout.back_to_order'] || labels['payments.checkout.back_to_trip']
+    : labels['payments.checkout.back_to_trip'];
 
   if (loading) {
     return (
       <div className="stitch-workspace flex min-h-screen items-center justify-center">
-        <p className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
+        <p role="status" className="text-body text-text-secondary">{labels['payments.checkout.loading']}</p>
       </div>
     );
   }
@@ -136,8 +140,8 @@ export default function CheckoutClient({
       <div className="stitch-workspace flex min-h-screen items-center justify-center px-20 py-40">
         <div className="stitch-panel w-full max-w-lg p-32 text-center" role="status">
           <h1 className="font-display text-display-xl font-semibold mb-12">{labels[reconciliationRefunded ? 'payments.checkout.refunded_title' : 'payments.checkout.reconciliation_title']}</h1>
-          <p className="text-body text-text-secondary mb-24">{labels[reconciliationRefunded ? 'payments.checkout.refunded_body' : 'payments.checkout.reconciliation_body']}</p>
-          <Link href={session?.booking ? `/trips/${session.booking.id}` : '/trips'}>{labels['payments.checkout.back_to_trip']}</Link>
+          <p className="text-body text-text-secondary mb-24">{labels[session?.serviceOrder ? (reconciliationRefunded ? 'payments.checkout.order_refunded_body' : 'payments.checkout.order_reconciliation_body') : (reconciliationRefunded ? 'payments.checkout.refunded_body' : 'payments.checkout.reconciliation_body')]}</p>
+          <Link href={tripUrl}>{continueLabel}</Link>
         </div>
       </div>
     );
@@ -146,7 +150,7 @@ export default function CheckoutClient({
   if (success) {
     return (
       <div className="stitch-workspace flex min-h-screen items-center justify-center bg-gradient-to-b from-surface-paper to-surface-mint px-20 py-40 md:px-32">
-        <div className="stitch-panel w-full max-w-lg p-32 text-center shadow-float">
+        <div className="stitch-panel w-full max-w-lg p-32 text-center shadow-float" role="status">
           <div className="text-heading-1 mb-16" aria-hidden="true">
             ✓
           </div>
@@ -154,8 +158,13 @@ export default function CheckoutClient({
             {labels['payments.checkout.success_title']}
           </h1>
           <p className="text-body text-text-secondary">
-            {labels['payments.checkout.success_body']}
+            {session?.serviceOrder
+              ? labels['payments.checkout.order_success_body'] || labels['payments.checkout.success_body']
+              : labels['payments.checkout.receipt_body'] || labels['payments.checkout.success_body']}
           </p>
+          <Link href={tripUrl} className="mt-24 inline-flex min-h-[44px] items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white">
+            {continueLabel}
+          </Link>
         </div>
       </div>
     );
@@ -226,15 +235,11 @@ export default function CheckoutClient({
         )}
 
         {error && (
-          <div className="mb-24 p-16 bg-state-error-soft rounded-lg border border-state-error">
+          <div role="alert" className="mb-24 p-16 bg-state-error-soft rounded-lg border border-state-error">
             <p className="text-small text-state-error mb-12">{error}</p>
-            {session?.booking?.id ? (
-              <Link href={tripUrl}>
-                <Button variant="ghost" size="sm">
-                  {labels['payments.checkout.back_to_trip']}
-                </Button>
-              </Link>
-            ) : null}
+            <Link href={tripUrl} className="inline-flex min-h-[44px] items-center font-semibold text-brand-andaman underline">
+              {continueLabel}
+            </Link>
           </div>
         )}
 
@@ -248,14 +253,14 @@ export default function CheckoutClient({
             </Button>
             <p className="text-small text-text-stone text-center mt-16">{labels['payments.checkout.test_note']}</p>
           </>
-        ) : (
+        ) : session ? (
           <div className="text-small text-text-secondary mt-16" role="status">
             {labels['payments.checkout.provider_pending']}
             <Link href={tripUrl} className="block mt-12 text-brand-andaman underline">
-              {labels['payments.checkout.back_to_trip']}
+              {continueLabel}
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

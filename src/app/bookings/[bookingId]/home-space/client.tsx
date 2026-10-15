@@ -256,12 +256,15 @@ export const InStayHomeSpaceClient: React.FC<InStayHomeSpaceClientProps> = ({
           </>
         }
         actions={
+          <>
+          <Link href="/help/emergency" className="inline-flex min-h-44 items-center rounded-lg border border-border-line px-16 text-small font-semibold text-brand-andaman hover:border-brand-andaman">{labels['help.emergency.title']}</Link>
           <Link
             href={`/trips/${booking.id}`}
             className="inline-flex min-h-44 items-center rounded-lg border border-border-line bg-surface-paper px-16 text-small font-semibold text-text-ink hover:border-border-line-2"
           >
             {labels['home.pass.title']}
           </Link>
+          </>
         }
       />
 

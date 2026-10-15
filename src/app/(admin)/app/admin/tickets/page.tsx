@@ -102,7 +102,7 @@ export default async function AdminTicketsPage({
           categoryKey: ticket.categoryKey,
           createdAt: ticket.createdAt.toISOString(),
           slaDueAt: ticket.slaDueAt?.toISOString() ?? null,
-          projectName: ticket.project.name,
+          projectName: ticket.project?.name ?? '—',
           unitName: ticket.unit?.name ?? null,
           raisedByName: `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`.trim(),
           assigneeName: ticket.assignee

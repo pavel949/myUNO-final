@@ -1,12 +1,22 @@
 import Link from 'next/link';
 import { StitchMain, PublicHero } from '@/components/premium/StitchPage';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
+import { GALLERY_EMERGENCY_LOCALE_DRAFTS } from '@/modules/content/gallery-emergency.seed';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HelpPage() {
   const labels = await getLabels({
+    'help.emergency.title': 'Emergency help in Thailand',
+    'help.emergency.body': 'For immediate danger or a medical emergency, call the relevant emergency service directly. Do not wait for a myUNO message or request reply.',
     'help.kicker': 'HELP CENTER',
+    'help.guest.account': 'Sign in and open Account to update your details. My UNO connects your trips, orders and the workspaces available to you.',
+    'help.guest.passport': 'A Project Passport brings together the available information and supporting records about a complex. It also identifies information that still needs confirmation.',
+    'help.guest.add_property': 'Sign in and open Add a property. Save your details and return later to finish photos, prices and responsibilities.',
+    'help.guest.sell': 'Open Sell and send your property details. The team will review the information and discuss the next steps with you.',
+    'help.guest.home_search': 'Open Buy to see homes for sale, or Monthly for longer stays. Each home shows the available terms.',
+    'help.guest.stay_search': 'Choose your dates, guests and preferred area. Open a home to check its price and availability for your stay.',
     'help.title': 'How can we help?',
     'help.body':
       'Find the right myUNO flow for stays, property, services and account support. If an answer depends on your booking or property, sign in so the team can see the correct record.',
@@ -44,6 +54,7 @@ export default async function HelpPage() {
     'help.services.a2':
       'A provider is shown as vetted only when the provider record is active and its vetting state is recorded in myUNO. It is not a guarantee of every future service outcome.',
     'help.services.cta': 'Browse services',
+    'orders.title': 'My orders',
     'help.trust.title': 'Trust & project evidence',
     'help.trust.q1': 'What is a Project Passport?',
     'help.trust.a1':
@@ -61,13 +72,14 @@ export default async function HelpPage() {
       'Sign in and open My requests. If the problem is tied to a stay or unit, opening the request from that context keeps the correct booking or property attached.',
     'help.account.cta': 'Open Account',
     'help.requests.cta': 'Open My requests',
-  });
+    'tickets.new.title': 'Raise a request',
+  }, undefined, { ...GUEST_SERVICE_LOCALE_DRAFTS, ...GALLERY_EMERGENCY_LOCALE_DRAFTS });
 
   const sections = [
     {
       title: labels['help.stays.title'],
       items: [
-        [labels['help.stays.q1'], labels['help.stays.a1']],
+        [labels['help.stays.q1'], labels['help.guest.stay_search']],
         [labels['help.stays.q2'], labels['help.stays.a2']],
       ],
       links: [
@@ -78,8 +90,8 @@ export default async function HelpPage() {
     {
       title: labels['help.property.title'],
       items: [
-        [labels['help.property.q1'], labels['help.property.a1']],
-        [labels['help.property.q2'], labels['help.property.a2']],
+        [labels['help.property.q1'], labels['help.guest.home_search']],
+        [labels['help.property.q2'], labels['help.guest.sell']],
       ],
       links: [
         ['/homes?intent=buy', labels['help.property.buy_cta']],
@@ -89,7 +101,7 @@ export default async function HelpPage() {
     {
       title: labels['help.owners.title'],
       items: [
-        [labels['help.owners.q1'], labels['help.owners.a1']],
+        [labels['help.owners.q1'], labels['help.guest.add_property']],
         [labels['help.owners.q2'], labels['help.owners.a2']],
       ],
       links: [['/owner', labels['help.owners.cta']]],
@@ -100,12 +112,12 @@ export default async function HelpPage() {
         [labels['help.services.q1'], labels['help.services.a1']],
         [labels['help.services.q2'], labels['help.services.a2']],
       ],
-      links: [['/services', labels['help.services.cta']]],
+      links: [['/services', labels['help.services.cta']], ['/services/orders', labels['orders.title']]],
     },
     {
       title: labels['help.trust.title'],
       items: [
-        [labels['help.trust.q1'], labels['help.trust.a1']],
+        [labels['help.trust.q1'], labels['help.guest.passport']],
         [labels['help.trust.q2'], labels['help.trust.a2']],
       ],
       links: [['/trust', labels['help.trust.cta']]],
@@ -113,12 +125,13 @@ export default async function HelpPage() {
     {
       title: labels['help.account.title'],
       items: [
-        [labels['help.account.q1'], labels['help.account.a1']],
+        [labels['help.account.q1'], labels['help.guest.account']],
         [labels['help.account.q2'], labels['help.account.a2']],
       ],
       links: [
         ['/account', labels['help.account.cta']],
         ['/tickets', labels['help.requests.cta']],
+        ['/tickets/new', labels['tickets.new.title']],
       ],
     },
   ] as const;
@@ -126,6 +139,11 @@ export default async function HelpPage() {
   return (
     <StitchMain>
       <PublicHero dark kicker={labels['help.kicker']} title={labels['help.title']} body={labels['help.body']} />
+      <section className="stitch-panel mb-24 border-l-4 border-state-error p-24">
+        <h2 className="text-heading-3 font-semibold text-text-ink">{labels['help.emergency.title']}</h2>
+        <p className="my-12 text-body text-text-secondary">{labels['help.emergency.body']}</p>
+        <Link href="/help/emergency" className="inline-flex min-h-44 items-center font-semibold text-state-error hover:underline">{labels['help.emergency.title']} →</Link>
+      </section>
       <div className="grid gap-20 lg:grid-cols-2">
         <div className="contents">
           {sections.map((section) => (

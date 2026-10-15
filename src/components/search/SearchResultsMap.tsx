@@ -56,6 +56,15 @@ export function SearchResultsMap({
     onBoundsChangeRef.current = onBoundsChange;
   }, [onBoundsChange]);
 
+  // A mobile list/map switch changes the container size without a window
+  // resize. Resize the existing map rather than recreate it or lose filters.
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => mapRef.current?.resize());
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     let map: import('maplibre-gl').Map | null = null;

@@ -1,6 +1,7 @@
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
+import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { prisma } from '@/lib/prisma';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { listPublicCommercialHomes, type HomeIntent } from '@/modules/projects/commercial-discovery';
@@ -33,6 +34,7 @@ const positiveNumber = (value?: string) => {
 export default async function HomesPage({ searchParams }: { searchParams?: SearchParams }) {
   const intent: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const destination = getDestination();
+  const discovery = await discoveryCopy(getRequestLocale());
   const [allHomes, labels] = await Promise.all([
     listPublicCommercialHomes(
       prisma,
@@ -44,7 +46,7 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
         leaseTermMonths: positiveNumber(searchParams?.leaseTermMonths),
         pets: searchParams?.pets === 'yes' || searchParams?.pets === 'no' ? searchParams.pets : 'any',
       }
-    ).catch(() => []),
+    ),
     getLabels({
       'homes.kicker': 'myUNO · REAL ESTATE',
       'homes.inquiry.buy': `I am looking to purchase a property in ${destination.name}.`,
@@ -244,9 +246,9 @@ export default async function HomesPage({ searchParams }: { searchParams?: Searc
               const price = home.priceThb[intent] ?? null;
               return <Link href={detailHref(home.id)} key={home.id}
                 className="group overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition duration-structural hover:-translate-y-[2px] hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman md:grid md:grid-cols-[280px_minmax(0,1fr)]">
-                {home.imageUrl ? <Image src={home.imageUrl} alt={home.name} width={760} height={500}
+                {home.imageUrl ? <PropertyImage fallbackLabel={discovery.photos} src={home.imageUrl} alt={home.name} width={760} height={500}
                   className="h-full min-h-[220px] w-full object-cover" /> :
-                  <div className="min-h-[220px] bg-surface-ivory"/>}
+                  <div role="img" aria-label={discovery.photos} className="flex min-h-[220px] items-center justify-center bg-surface-ivory p-16 text-center text-small text-text-secondary">{discovery.photos}</div>}
                 <div className="flex min-w-0 flex-col justify-between p-20">
                   <div>
                     <p className="text-small font-semibold text-brand-andaman">{home.project.name}</p>

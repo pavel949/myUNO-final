@@ -1,3 +1,4 @@
+import { parseStandaloneContext } from './standalone-context';
 import type { PrismaClient } from '@prisma/client';
 
 export type ServiceOrderCustomerViewResult = Awaited<ReturnType<typeof getServiceOrderCustomerView>>;
@@ -101,11 +102,12 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     scheduledStart: order.scheduled_start.toISOString(),
     scheduledEnd: order.scheduled_end.toISOString(),
     totalThb: order.total_thb,
-    takeRatePctSnapshot: Number(order.take_rate_pct_snapshot),
     priceBreakdown,
     refundAccruedThb: order.refund_accrued_thb,
     noteToProvider: order.note_to_provider,
     addressNote: order.address_note,
+    serviceContext: (() => { try { return { ...parseStandaloneContext(order.service_context) }; } catch { return null; } })(),
+    termsSnapshot: customerServiceTerms(order.terms_snapshot),
     cancelledAt: order.cancelled_at?.toISOString() || null,
     cancellationReason: order.cancellation_reason,
     rated: Boolean(existingReview),
@@ -144,4 +146,15 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     })),
   };
   return { kind: 'ok' as const, order: view };
+}
+
+/** Customer terms deliberately exclude internal commission and configuration identifiers. */
+export function customerServiceTerms(snapshot: unknown): Record<string, string | number> | null {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
+  const record = snapshot as Record<string, unknown>;
+  const allowed: Record<string, string | number> = {};
+  for (const key of ['collector', 'fulfilmentMode', 'responsibleOrganizationName', 'cancellationWindowHours', 'totalThb']) {
+    if (typeof record[key] === 'string' || typeof record[key] === 'number') allowed[key] = record[key] as string | number;
+  }
+  return Object.keys(allowed).length ? allowed : null;
 }

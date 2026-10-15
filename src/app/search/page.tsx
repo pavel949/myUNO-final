@@ -1,3 +1,7 @@
+import { parseStayAmenities, STAY_AMENITY_KEYS } from '@/modules/browse/amenity-filters';
+import { GUEST_SEARCH_UX_KEYS, guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
+import { SavedHomesProvider } from '@/components/property/SaveHomeButton';
+import { STAY_UX_KEYS, stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
 import { Suspense } from 'react';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { UNIT_SORTS } from '@/modules/browse';
@@ -13,17 +17,24 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
   const bedrooms = bedroomValue && /^\d+$/.test(bedroomValue) ? Number(bedroomValue) : undefined;
   const unitTypes = (param('unitTypes') || '').split(',').filter((value): value is 'villa' | 'condo' | 'townhouse' => ['villa', 'condo', 'townhouse'].includes(value));
   const hasDates = Boolean(param('startDate') && param('endDate'));
-  const browse = hasDates ? [] : await listPublicDiscoveryUnits({ projectId: param('projectId'), areaSlug: param('areaSlug'), inventoryCategoryId: param('inventoryCategoryId'), bedrooms, unitTypes });
+  const browse = hasDates ? [] : await listPublicDiscoveryUnits({ projectId: param('projectId'), areaSlug: param('areaSlug'), inventoryCategoryId: param('inventoryCategoryId'), bedrooms, unitTypes, amenities: parseStayAmenities(param('amenities')) });
   const context = new URLSearchParams(Object.entries(searchParams).filter((entry): entry is [string, string] => typeof entry[1] === 'string')).toString();
   const locale = getRequestLocale();
   const discovery = await discoveryCopy(locale);
+  const extraLabels = await getLabels(Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, row.en])), locale, Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const extraCopy = Object.fromEntries(Object.keys(guestSearchDefaults(locale)).map(key => [key, extraLabels[`guest_search.${key}`]])) as GuestSearchCopy;
   // Fetch all sort labels from the content layer (no fallbacks — labelKey must exist)
   const sortLabels = await getLabels(
     Object.fromEntries(UNIT_SORTS.map((sort) => [sort.labelKey, sort.key]))
   );
 
+  const uxLocale = getRequestLocale();
+  const uxLabels = await getLabels(Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const uxCopy = Object.fromEntries(Object.keys(stayUxDefaults(uxLocale)).map(key => [key, uxLabels[`stay_ux.${key}`]])) as StayUxCopy;
   const labels = await getLabels({
     'search.filters.bedrooms': 'Bedrooms',
+    'listing.guests_count': '{count} guests',
+    'listing.bedrooms_count': '{count} bedrooms',
     'search.title': 'Find your stay',
     'search.results_summary': '{from} to {to} · {guests} guests',
     'search.prompt': 'Choose your dates to see available homes.',
@@ -72,10 +83,15 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
         </div>
       }
     >
-      <SearchResults
+      <SavedHomesProvider enabled={hasDates}><SearchResults
+        amenityTitle={extraCopy.amenities}
+        amenityOptions={STAY_AMENITY_KEYS.map(key => ({ key, label: extraCopy[key] }))}
+        uxCopy={uxCopy}
         locale={locale}
         labels={{
           title: labels['search.title'],
+          guestsCount: labels['listing.guests_count'],
+          bedroomsCount: labels['listing.bedrooms_count'],
           resultsSummary: labels['search.results_summary'],
           prompt: labels['search.prompt'],
           loading: labels['search.loading'],
@@ -123,6 +139,7 @@ export default async function SearchPage({ searchParams = {} }: { searchParams?:
           label: sortLabels[sort.labelKey],
         }))}
       />
+      </SavedHomesProvider>
       {!hasDates && <DiscoveryHomes units={browse} context={context} />}
     </Suspense>
   );

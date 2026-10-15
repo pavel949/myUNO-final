@@ -121,7 +121,7 @@ export async function recordServiceCommission(
   db: PrismaClient,
   serviceOrderId: string,
   unitId: string | null,
-  projectId: string,
+  projectId: string | null,
   commissionAmountThb: number,
   occurredOn: Date
 ): Promise<LedgerEntry> {

@@ -1,5 +1,11 @@
 'use client';
 
+import { SimilarAvailableHomes } from '@/components/property/SimilarAvailableHomes';
+import { guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
+
+import { stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
+import { SaveHomeButton } from '@/components/property/SaveHomeButton';
+import { ShareStayOffer } from '@/components/property/ShareStayOffer';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { useState, useEffect, type ReactNode } from 'react';
@@ -136,13 +142,17 @@ export default function UnitDetailClient({
   unitId,
   labels,
   sleepingSummary,
+  uxCopy, similarCopy, galleryLabels,
 }: {
   unitId: string;
   labels: UnitDetailLabels;
   sleepingSummary?: ReactNode;
+  galleryLabels?: { close: string; previous: string; next: string; unavailable: string };
+  uxCopy?: StayUxCopy; similarCopy?: GuestSearchCopy;
 }) {
   const router = useRouter();
   const locale = useLocale();
+  const ux = uxCopy ?? stayUxDefaults(locale);
   const pickerLabels = {
     ru: { previous: 'Назад', next: 'Вперёд', close: 'Закрыть', clear: 'Очистить' },
     th: { previous: 'ก่อนหน้า', next: 'ถัดไป', close: 'ปิด', clear: 'ล้าง' },
@@ -157,7 +167,8 @@ export default function UnitDetailClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaseRequired, setLeaseRequired] = useState(false);
-  const bookingType = unit?.instantBook === false ? 'request' : 'instant';
+  const [quoting, setQuoting] = useState(false);
+  const bookingType = unit?.instantBook === true ? 'instant' : 'request';
 
   const startDate = searchParams?.get('startDate');
   const endDate = searchParams?.get('endDate');
@@ -167,20 +178,24 @@ export default function UnitDetailClient({
   const backToSearch = `/search?${searchParams?.toString() || ''}`;
 
   useEffect(() => {
+    const controller = new AbortController();
+    setUnit(null);
+    setLoading(true);
     const fetchUnit = async () => {
       try {
-        const response = await fetch(`/api/units/${unitId}`);
+        const response = await fetch(`/api/units/${unitId}`, { signal: controller.signal });
         if (!response.ok) throw new Error(labels.notFound);
         const data = await response.json();
-        setUnit(data);
+        if (!controller.signal.aborted) setUnit(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : labels.notFound);
+        if (!controller.signal.aborted) setError(err instanceof Error ? err.message : labels.notFound);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchUnit();
+    return () => controller.abort();
   }, [unitId, labels.notFound]);
 
   useEffect(() => {
@@ -188,6 +203,7 @@ export default function UnitDetailClient({
     setBreakdown(null);
     setError(null);
     setLeaseRequired(false);
+    setQuoting(false);
     const fetchBreakdown = async () => {
       if (!unit || !startDate || !endDate || endDate <= startDate) return;
       // A quote belongs to one set of dates: never leave the previous
@@ -196,6 +212,7 @@ export default function UnitDetailClient({
       setError(null);
       setLeaseRequired(false);
 
+      setQuoting(true);
       try {
         const response = await fetch('/api/pricing/breakdown', {
           signal: controller.signal,
@@ -222,6 +239,8 @@ export default function UnitDetailClient({
         if (!controller.signal.aborted) setBreakdown(data);
       } catch (err) {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : labels.errorPrice);
+      } finally {
+        if (!controller.signal.aborted) setQuoting(false);
       }
     };
 
@@ -237,7 +256,7 @@ export default function UnitDetailClient({
   };
 
   const goToReview = () => {
-    if (!startDate || !endDate || !unit) return;
+    if (!startDate || !endDate || !unit || !breakdown || quoting) return;
     const next = new URLSearchParams({
       unitId: unit.id,
       projectId: unit.projectId,
@@ -303,9 +322,14 @@ export default function UnitDetailClient({
             </p> : null}
           </>}
         />
+        <div className="mb-16 flex flex-wrap items-center justify-between gap-12">
+          <SaveHomeButton unitId={unit.id} copy={ux} />
+          <ShareStayOffer name={unit.name} unitId={unit.id} startDate={startDate} endDate={endDate}
+            guests={adults + children} totalSatang={breakdown ? Math.round(breakdown.total * 100) : undefined} copy={ux} />
+        </div>
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-32">
           <div className="lg:col-span-2">
-            <UnitPhotoMosaic
+            <UnitPhotoMosaic galleryLabels={galleryLabels}
               images={unit.images ?? []}
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
@@ -327,6 +351,7 @@ export default function UnitDetailClient({
                     {formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale)}
                   </Chip>
                 )}
+                {unit.bathrooms !== undefined && <Chip variant="neutral">{unit.bathrooms} {labels.bathrooms}</Chip>}
                 <Chip variant="neutral">
                   {formatPropertyCount(labels.minNightsCount, unit.minNights || 1, locale)}
                 </Chip>
@@ -352,15 +377,16 @@ export default function UnitDetailClient({
                 </p>
               ) : null}
               {sleepingSummary}
-              {unit.amenityKeys && unit.amenityKeys.length > 0 && (
+              <Link href={backToSearch} className="mb-24 inline-flex min-h-44 items-center text-brand-andaman hover:underline">{ux.similar} →</Link>
+              {unit.amenityKeys?.some(key => labels.amenityLabels[key]) && (
                 <div className="stitch-panel-soft mb-32 p-20">
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
                     {labels.amenitiesTitle}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                    {unit.amenityKeys.map((key) => (
+                    {unit.amenityKeys?.filter(key => labels.amenityLabels[key]).map((key) => (
                       <p key={key} className="text-body text-text-ink m-0">
-                        {labels.amenityLabels[key] || key}
+                        {labels.amenityLabels[key]}
                       </p>
                     ))}
                   </div>
@@ -368,19 +394,19 @@ export default function UnitDetailClient({
               )}
               {/* The resolved policy the booking will snapshot. No policy
                   resolved = no claim: never a "flexible" placeholder. */}
-              {policyKey && (
+              {policyKey && labels.policyLabels[policyKey] && (
                 <>
                   <p className="font-display text-kicker uppercase text-brand-sun mb-16">
                     {labels.cancellationPolicy}
                   </p>
                   <p className="text-body text-text-stone mb-32">
-                    {labels.policyLabels[policyKey] || policyKey}
+                    {labels.policyLabels[policyKey]}
                   </p>
                 </>
               )}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1" id="stay-booking">
             <div className="stitch-panel lg:sticky lg:top-96 p-20 md:p-24 shadow-card">
               <div className="flex items-baseline gap-8 mb-20">
                 {/* The headline must match what the guest will be charged:
@@ -389,21 +415,21 @@ export default function UnitDetailClient({
                     the canonical category base rate, labelled as such. It
                     used to show the legacy unit field (฿9,393) beside a
                     quote of ฿13,006/night. */}
-                <MoneyAmount
+                {(breakdown || (!startDate && (unit.baseRateSatang ?? unit.baseNightlyThb) > 0)) ? <MoneyAmount
                   satang={
                     breakdown && breakdown.nights > 0
                       ? Math.round((breakdown.subtotal * 100) / breakdown.nights)
                       : unit.baseRateSatang ?? unit.baseNightlyThb ?? 0
                   }
                   className="text-display font-semibold"
-                />
-                <span className="text-body text-text-stone">{labels.perNight}</span>
+                /> : <span className="text-title font-semibold" role="status">{quoting ? ux.checking : labels.pickDates}</span>}
+                {(breakdown || !startDate) && <span className="text-body text-text-stone">{labels.perNight}</span>}
               </div>
               <p className="-mt-12 mb-20 text-small text-text-stone">
                 {breakdown && breakdown.nights > 0 ? labels.averageForDates : labels.baseRateNote}
               </p>
 
-              <div className="mb-20">
+              <div className="mb-20" id="stay-dates">
                 <StayDatePicker start={startDate || ''} end={endDate || ''}
                   min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })}
                   locale={locale} labels={{ checkIn: labels.checkIn, checkOut: labels.checkOut, ...pickerCopy }}
@@ -465,6 +491,9 @@ export default function UnitDetailClient({
                       ...(breakdown.cleaningFee > 0
                         ? [{ id: 'clean', label: labels.cleaningFee, satang: Math.round(breakdown.cleaningFee * 100) }]
                         : []),
+                      ...(breakdown.serviceFee > 0
+                        ? [{ id: 'service', label: ux.serviceFee, satang: Math.round(breakdown.serviceFee * 100) }]
+                        : []),
                       ...(breakdown.occupancyTax > 0
                         ? [{ id: 'tax', label: labels.occupancyTax, satang: Math.round(breakdown.occupancyTax * 100) }]
                         : []),
@@ -473,6 +502,12 @@ export default function UnitDetailClient({
                 </div>
               )}
 
+              {breakdown?.bookingTerms?.cancellationSteps?.length ? <details className="mb-20 text-small text-text-stone">
+                <summary className="min-h-44 cursor-pointer font-semibold text-brand-andaman">{ux.terms}</summary>
+                <ul className="space-y-8">
+                  {breakdown.bookingTerms.cancellationSteps.map((step, index) => <li key={index}>{fill(ux.refund, step)}</li>)}
+                </ul>
+              </details> : null}
               {leaseRequired && startDate && endDate ? (
                 <div>
                   <p className="font-display text-title font-semibold mb-8">{labels.leaseRequiredTitle}</p>
@@ -501,7 +536,7 @@ export default function UnitDetailClient({
               <Button
                 size="lg"
                 onClick={goToReview}
-                disabled={!breakdown}
+                disabled={!breakdown || quoting}
                 fullWidth
               >
                 {bookingType === 'request' ? labels.requestToBook : labels.reserve}
@@ -515,12 +550,19 @@ export default function UnitDetailClient({
           </div>
         </div>
       </div>
+      <SimilarAvailableHomes unitId={unitId} nightlyBaht={breakdown && breakdown.nights > 0 ? breakdown.subtotal / breakdown.nights : null} copy={similarCopy ?? guestSearchDefaults(locale)} photoLabel={ux.photos} />
+      {(!startDate || !endDate) && <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float lg:hidden">
+        <Button fullWidth onClick={() => {
+          document.getElementById('stay-dates')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          document.querySelector<HTMLButtonElement>('#stay-dates button')?.click();
+        }}>{ux.chooseDates}</Button>
+      </div>}
       {breakdown && (
         <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 flex items-center justify-between gap-16 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float backdrop-blur-xl lg:hidden">
-          <MoneyAmount
-            satang={Math.round((breakdown.total || 0) * 100)}
-            className="text-title font-semibold"
-          />
+          <div className="min-w-0">
+            <p className="text-small text-text-stone">{ux.totalStay}</p>
+            <MoneyAmount satang={Math.round((breakdown.total || 0) * 100)} className="text-title font-semibold" />
+          </div>
           <Button
             onClick={goToReview}
           >

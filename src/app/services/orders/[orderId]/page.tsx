@@ -3,6 +3,8 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
+import type { Prisma } from '@prisma/client';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
 import OrderDisputePanel from './order-dispute-panel';
@@ -24,11 +26,12 @@ interface ServiceOrderDetail {
   status: string;
   quantity: number;
   totalThb: number;
-  takeRatePctSnapshot: number;
   priceBreakdown: Record<string, any>;
   refundAccruedThb: number;
   noteToProvider: string | null;
   addressNote: string | null;
+  serviceContext: Prisma.JsonValue;
+  termsSnapshot: Prisma.JsonValue;
   cancelledAt: string | null;
   cancellationReason: string | null;
   rated: boolean;
@@ -91,8 +94,16 @@ export default async function ServiceOrderDetailPage({
     notFound();
   }
   const order: ServiceOrderDetail = result.order;
+  const standaloneContext = order.serviceContext && typeof order.serviceContext === 'object' && !Array.isArray(order.serviceContext) && order.serviceContext.kind === 'standalone' ? order.serviceContext : null;
+  const acceptedTerms = order.termsSnapshot && typeof order.termsSnapshot === 'object' && !Array.isArray(order.termsSnapshot) ? order.termsSnapshot : null;
 
   const labels = await getLabels({
+    'help.requests.cta': 'Open My requests',
+    'services.standalone.responsibility': 'Responsible organization: {organization}',
+    'services.standalone.cancellation': 'Full refund if cancelled more than {hours} hours before the service. No refund within that window.',
+    'services.standalone.location': 'Service location',
+    'services.standalone.recipient': 'Recipient name',
+    'services.standalone.phone': 'Recipient phone',
     'service-order.breadcrumb_home': 'Home',
     'service-order.breadcrumb_services': 'Services',
     'service-order.breadcrumb_orders': 'Orders',
@@ -171,7 +182,7 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.no_show_error': 'Could not submit the report. Please try again.',
     'service-order.detail.no_show_done':
       'No-show reported. Any refund due is being processed — our team has opened a ticket.',
-  });
+  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
   // cash-on-fulfilment choice (?placed=cash) shows the confirmation banner.
@@ -455,6 +466,17 @@ export default async function ServiceOrderDetailPage({
           </div>
         </div>
 
+        <Link href={`/tickets/new?serviceOrderId=${encodeURIComponent(order.id)}`} className="mb-24 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">{labels['help.requests.cta']}</Link>
+        {standaloneContext && <section className="stitch-panel p-24 mb-24">
+          <h2 className="font-semibold text-heading-3 mb-12">{labels['services.standalone.location']}</h2>
+          <p className="whitespace-pre-line">{String(standaloneContext.address ?? '')}</p>
+          <p className="mt-12">{labels['services.standalone.recipient']}: {String(standaloneContext.recipientName ?? '')}</p>
+          <p>{labels['services.standalone.phone']}: {String(standaloneContext.recipientPhone ?? '')}</p>
+          {acceptedTerms && <div className="mt-16 text-small text-text-secondary space-y-8">
+            <p>{labels['services.standalone.responsibility'].replace('{organization}', String(acceptedTerms.responsibleOrganizationName ?? ''))}</p>
+            <p>{labels['services.standalone.cancellation'].replace('{hours}', String(acceptedTerms.cancellationWindowHours ?? ''))}</p>
+          </div>}
+        </section>}
         {/* Location */}
         {order.unit && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
@@ -471,7 +493,7 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {/* Notes */}
-        {(order.noteToProvider || order.addressNote) && (
+        {(order.noteToProvider || (order.addressNote && order.addressNote !== standaloneContext?.address)) && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['service-order.detail.notes']}
@@ -486,7 +508,7 @@ export default async function ServiceOrderDetailPage({
                 </p>
               </div>
             )}
-            {order.addressNote && (
+            {order.addressNote && order.addressNote !== standaloneContext?.address && (
               <div>
                 <p className="text-small text-text-secondary mb-4">
                   {labels['service-order.detail.address_note']}

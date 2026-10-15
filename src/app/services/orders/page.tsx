@@ -60,7 +60,7 @@ export default async function ServiceOrdersPage() {
 
   const locale = getRequestLocale();
   const baht = (satang: number) =>
-    `฿${(satang / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    `฿${(satang / 100).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
   const live = orders.filter((o) => LIVE_STATUSES.has(o.status));
   const past = orders.filter((o) => !LIVE_STATUSES.has(o.status));
@@ -106,6 +106,7 @@ export default async function ServiceOrdersPage() {
           <p className="stitch-kicker">{labels['orders.upcoming']}</p>
           <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{labels['orders.title']}</h1>
           <p className="mt-8 max-w-2xl text-body text-text-secondary">{labels['orders.subtitle']}</p>
+          <Link href="/services" className="mt-16 inline-flex min-h-44 items-center text-brand-andaman font-semibold hover:underline">{labels['orders.browse']}</Link>
         </div>
 
         {orders.length === 0 ? (

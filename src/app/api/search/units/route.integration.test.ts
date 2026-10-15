@@ -24,6 +24,23 @@ describe('GET /api/search/units — category grouping & filters (LY-6)', () => {
     projectId = project.id;
   });
 
+  it('requires every selected recorded amenity while preserving dated availability and price budget', async () => {
+    const eligible = await createUnit({ projectId, name: 'Eligible', status: 'live', baseNightlyThb: 500000, maxGuests: 4 });
+    const missing = await createUnit({ projectId, name: 'Missing pool', status: 'live', baseNightlyThb: 500000, maxGuests: 4 });
+    const expensive = await createUnit({ projectId, name: 'Over budget', status: 'live', baseNightlyThb: 2000000, maxGuests: 4 });
+    const occupied = await createUnit({ projectId, name: 'Occupied', status: 'live', baseNightlyThb: 500000, maxGuests: 4 });
+    await db.unit.updateMany({ where: { id: { in: [eligible.id, expensive.id, occupied.id] } }, data: { amenityKeys: ['wifi', 'pool'] } });
+    await db.unit.update({ where: { id: missing.id }, data: { amenityKeys: ['wifi'] } });
+    const guest = await createIdentity();
+    await createBooking({ unitId: occupied.id, projectId, guestIdentityId: guest.id, startDate: new Date('2026-11-10'), endDate: new Date('2026-11-14'), status: 'confirmed' });
+    const res = await GET(makeRequest({ projectId, startDate: '2026-11-10', endDate: '2026-11-14', adultsCount: '2', amenities: 'wifi,pool', maxPrice: '10000' }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.units.map((home: { id: string }) => home.id)).toEqual([eligible.id]);
+    expect(body.total).toBe(1);
+    expect(body.units[0].pricing.stayTotalThb).toBeGreaterThan(0);
+  });
+
   it('groupBy=category returns per-category availability with from-prices', async () => {
     await createUnit({
       projectId, name: 'A-01', categoryKey: 'superior_2br', status: 'live',

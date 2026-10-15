@@ -18,6 +18,7 @@ interface ProviderOrder {
   serviceTitle: string | null;
   noteToProvider: string | null;
   acceptDeadline: string | null;
+  location?: { address: string; recipientName: string; recipientPhone: string } | null;
 }
 
 type Labels = Record<string, string>;
@@ -67,6 +68,7 @@ function mapApiOrder(raw: Record<string, unknown>): ProviderOrder {
       (raw.note_to_provider as string | null | undefined) ??
       null,
     acceptDeadline: safeIso(acceptDeadline),
+    location: raw.location as ProviderOrder['location'],
   };
 }
 
@@ -256,6 +258,11 @@ export default function ProviderOrdersClient({
                     {formatScheduledStart(order.scheduledStart, locale)} · ×{order.quantity} · ฿
                     {(order.totalThb / 100).toLocaleString(UI_LOCALE)}
                   </p>
+                  {order.location && <div className="mt-12 space-y-4 text-small text-text-secondary">
+                    <p className="whitespace-pre-line">{labels['services.standalone.address']}: {order.location.address}</p>
+                    <p>{labels['services.standalone.recipient']}: {order.location.recipientName}</p>
+                    <p>{labels['services.standalone.phone']}: {order.location.recipientPhone}</p>
+                  </div>}
                   {order.noteToProvider && (
                     <p className="text-small text-text-secondary">
                       {labels['provider.orders.note']}: {order.noteToProvider}

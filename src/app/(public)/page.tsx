@@ -195,7 +195,7 @@ export default async function LandingPage({
     getPublicHomepageData(locale),
   ]);
 
-  const { projects, commercialHomes, services, stayUnits, areas, placeAreas } = homepageData;
+  const { projects, commercialHomes, services, stayUnits, areas, placeAreas, placeUnits } = homepageData;
   const L = (key: string): string => (labels as Record<string, string>)[key] ?? key;
 
   const heroProject = projects.find((project) => Boolean(project.coverUrl)) ?? projects[0] ?? null;
@@ -219,7 +219,7 @@ export default async function LandingPage({
       slug: area.slug,
       name: area.displayName,
     })),
-    ...stayUnits.map((unit) => ({
+    ...placeUnits.map((unit) => ({
       kind: 'unit' as const,
       id: unit.id,
       name: unit.name,

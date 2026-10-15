@@ -12,7 +12,8 @@ async function main() {
     assert.equal(database[0]?.name, 'myuno_browser_test');
     const fixture = JSON.parse(await readFile('browser-results/fixture.json', 'utf8'));
     const baseline = JSON.parse(await readFile('browser-results/result.json', 'utf8'));
-    assert.equal(baseline.steps.length, 21);
+    assert.equal(baseline.steps.length, 22);
+    assert.equal(baseline.manualGuest.foreignGuestDenied, true);
     assert.ok(baseline.steps.every((step: { status: string }) => step.status === 'passed'));
     const founder = await db.identity.findUniqueOrThrow({ where: { email: fixture.founderEmail } });
     assert.equal(founder.email, 'founder@browser.example.test'); assert.equal(founder.isAdmin, true);

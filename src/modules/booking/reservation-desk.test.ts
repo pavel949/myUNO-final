@@ -27,6 +27,8 @@ describe('Reservation Desk canonical model', () => {
 
   it('requires Operating Space reservation capability for staff manual writes', () => {
     expect(manualRoute).toContain("'manage_reservations'");
-    expect(manualRoute).toContain('getOperatingSpaceUnitIds');
+    expect(manualRoute).toContain('getScopedOperationalAccess');
+    expect(manualRoute).toContain('access.unitIds.includes(body.unitId)');
+    expect(manualRoute).toContain('canUseReservationGuest');
   });
 });

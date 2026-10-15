@@ -6,6 +6,7 @@ const current = vi.hoisted(()=>vi.fn());
 vi.mock('@/app/actions/getCurrentUser',()=>({getCurrentUser:()=>current()}));
 vi.mock('@/lib/prisma',async()=>({prisma:(await import('@/test/util')).db}));
 import { POST } from '@/app/api/ops/reservation-guests/route';
+import { POST as reserve } from '@/app/api/ops/reservations/route';
 
 async function fixture(){
   const founder=await createIdentity({isAdmin:true});
@@ -61,7 +62,8 @@ describe('Manual reservation contact registration without login or email side ef
   it('does not merge contacts matching two different people',async()=>{
     const f=await fixture();
     await createIdentity({email:'new.guest@example.test'});
-    await createIdentity({phone:'+66920000001'});
+    const phoneContact=await createIdentity();
+    await db.identity.update({where:{id:phoneContact.id},data:{phone:'+66920000001'}});
     const count=await db.identity.count();
     await expect(registerReservationGuest(db,f.founder.id,input(f))).rejects.toMatchObject({status:409});
     expect(await db.identity.count()).toBe(count);expect(await db.auditLog.count()).toBe(0);
@@ -102,6 +104,25 @@ describe('Manual reservation contact registration without login or email side ef
     expect(await registeredReservationGuestIds(db,f.space.id,[])).toEqual([]);
     expect(await canUseReservationGuest(db,created.guest.id,f.space.id,[sibling.id],false)).toBe(false);
     expect(await canUseReservationGuest(db,created.guest.id,f.space.id,[],false)).toBe(false);
+  });
+  it('manual reservation HTTP boundary rejects foreign guests and revoked capabilities before writes',async()=>{
+    const f=await fixture();await staffGrant(f);
+    const live=await createUnit({projectId:f.project.id,status:'live'});
+    await db.operatingSpaceUnit.create({data:{operatingSpaceId:f.space.id,unitId:live.id}});
+    const foreign=await createIdentity();
+    current.mockResolvedValue({identityId:f.staff.id,isAdmin:true});
+    const req=(guestId:string)=>new NextRequest('http://localhost/api/ops/reservations',{
+      method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+        operatingSpaceId:f.space.id,unitId:live.id,guestIdentityId:guestId,startDate:'2027-01-10',endDate:'2027-01-10',
+      }),
+    });
+    expect((await reserve(req(foreign.id))).status).toBe(403);
+    const contact=await registerReservationGuest(db,f.staff.id,{...input(f),unitId:live.id});
+    const invalidDates=await reserve(req(contact.guest.id));
+    expect(invalidDates.status).toBe(400);expect((await invalidDates.json()).error).toBe('Invalid dates');
+    await db.operatingSpaceMember.update({where:{operatingSpaceId_identityId:{operatingSpaceId:f.space.id,identityId:f.staff.id}},data:{capabilities:[]}});
+    expect((await reserve(req(contact.guest.id))).status).toBe(403);
+    expect(await db.booking.count()).toBe(0);expect(await db.payment.count()).toBe(0);
   });
   it('rolls back a new contact if its audit fails',async()=>{
     const f=await fixture();const count=await db.identity.count();

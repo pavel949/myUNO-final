@@ -47,7 +47,11 @@ export default async function OperationalTasksPage({
     if (error instanceof OperatingAccessError) notFound();
     throw error;
   }
-  const backHref = requestedSpaceId ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId) : explicitMcMode ? '/mc/calendar' : '/ops/calendar';
+  const calendarQuery = new URLSearchParams();
+  if (requestedSpaceId) calendarQuery.set('spaceId', requestedSpaceId);
+  if (requestedUnitId) calendarQuery.set('unitId', requestedUnitId);
+  if (explicitMcMode) calendarQuery.set('mc', '1');
+  const backHref = '/ops/calendar/board' + (calendarQuery.size ? '?' + calendarQuery.toString() : '');
 
   const labels = await getLabels({
     ...enumLabelDefaults('taskType', 'taskStatus'),
@@ -91,6 +95,8 @@ export default async function OperationalTasksPage({
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>
       {requestedSpaceId && taskFormData && taskTimeZone ? <OperationalTaskCreateForm
+        key={requestedSpaceId + ':' + (requestedUnitId || '')}
+        initialUnitId={requestedUnitId}
         operatingSpaceId={requestedSpaceId}
         timeZone={taskTimeZone}
         units={taskFormData[0]}
@@ -121,4 +127,5 @@ export default async function OperationalTasksPage({
     </div>
   </main>;
 }
+
 

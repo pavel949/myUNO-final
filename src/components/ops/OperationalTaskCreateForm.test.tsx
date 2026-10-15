@@ -102,3 +102,44 @@ describe('operational task form submission', () => {
     expect(mocks.refresh).not.toHaveBeenCalled();
   });
 });
+
+
+describe('calendar unit context', () => {
+  function contextForm(initialUnitId?: string) {
+    const { container } = render(<OperationalTaskCreateForm operatingSpaceId="space" timeZone="Asia/Bangkok"
+      initialUnitId={initialUnitId}
+      units={[{ id: 'v1', name: 'V1', project: { name: 'Estate' } }, { id: 'v2', name: 'V2', project: { name: 'Estate' } }]}
+      teams={[]} members={[]} labels={labels} />);
+    return container.querySelector('form')!;
+  }
+
+  it('preselects the authorized unit, submits it and preserves context after reset', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ task: { id: 'task' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const form = contextForm('v1');
+    expect(form.querySelector('[name=unitId]')).toHaveValue('v1');
+    fireEvent.change(form.querySelector('[name=title]')!, { target: { value: 'Inspect V1' } });
+    fireEvent.change(form.querySelector('[name=dueAt]')!, { target: { value: '2027-01-10T10:00' } });
+    fireEvent.submit(form);
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ operatingSpaceId: 'space', unitId: 'v1' });
+    expect(form.querySelector('[name=unitId]')).toHaveValue('v1');
+  });
+
+  it.each([undefined, 'foreign-unit'])('keeps the placeholder for missing or unauthorized context (%s)', initialUnitId => {
+    const form = contextForm(initialUnitId);
+    expect(form.querySelector('[name=unitId]')).toHaveValue('');
+    expect(form.querySelector('option[value="foreign-unit"]')).toBeNull();
+  });
+
+  it('allows an explicit choice of another authorized unit', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ task: { id: 'task' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const form = contextForm('v1');
+    fireEvent.change(form.querySelector('[name=unitId]')!, { target: { value: 'v2' } });
+    fireEvent.change(form.querySelector('[name=dueAt]')!, { target: { value: '2027-01-10T10:00' } });
+    fireEvent.submit(form);
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).unitId).toBe('v2');
+  });
+});

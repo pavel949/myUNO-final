@@ -154,7 +154,7 @@ try {
     assert.equal(row.pricingType, 'not_specified'); assert.equal(row.priceThb, null);
   });
   await step('Common facility picker creates only an unpublished draft with unknown costs and no native booking', sp, async () => {
-    const form = sp.locator('form').filter({ has: sp.getByRole('button', { name: 'Add draft', exact: true }) });
+    const form = sp.locator('form').filter({ has: sp.getByRole('heading', { name: 'Add amenity or facility', exact: true }) });
     await form.getByRole('combobox', { name: /^Choose a common facility/ }).selectOption('Sauna');
     const response = sp.waitForResponse(res => new URL(res.url()).pathname === `/api/admin/projects/${project.id}/amenities` && res.request().method() === 'POST');
     await form.getByRole('button', { name: 'Add draft', exact: true }).click(); assert.equal((await response).status(), 201);

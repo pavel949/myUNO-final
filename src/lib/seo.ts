@@ -7,7 +7,7 @@ import { LOCALES, DEFAULT_LOCALE } from '@/modules/content/types';
  */
 export function siteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const normalized = configured.replace(/\\/$/, '');
+  const normalized = configured.endsWith('/') ? configured.slice(0, -1) : configured;
   // Only allow valid HTTP(S) origins in canonical URLs and sitemap entries.
   try {
     const url = new URL(normalized);

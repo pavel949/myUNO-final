@@ -322,16 +322,16 @@ export default async function LandingPage({
             fill
             priority
             sizes={['100', 'vw'].join('')}
-            className="object-cover saturate-[0.94] contrast-[1.03]"
+            className="object-cover saturate-[0.94] contrast-[1.03] motion-safe:animate-[fade-in_600ms_ease-out]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/85 via-surface-paper/30 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/20 via-transparent to-transparent" />
 
-          <div className="relative mx-auto flex min-h-[640px] max-w-content flex-col justify-end px-20 pb-24 pt-32 md:min-h-[760px] md:px-32 md:pb-48">
+          <div className="relative mx-auto flex min-h-[640px] max-w-content flex-col justify-end px-16 pb-24 pt-32 sm:px-20 md:min-h-[760px] md:px-32 md:pb-48">
             <div className="max-w-2xl">
               <h1
                 id="home-title"
-                className="max-w-2xl font-display text-display-hero font-semibold text-text-ink md:text-display-hero-lg"
+                className="max-w-2xl font-display text-display-hero font-semibold leading-tight tracking-tight text-text-ink [overflow-wrap:normal] [word-break:normal] hyphens-none md:text-display-hero-lg"
               >
                 {labels['landing.hp.hero.title']}
               </h1>
@@ -340,7 +340,7 @@ export default async function LandingPage({
               </p>
             </div>
 
-            <div className="mt-24 max-w-content rounded-xl bg-surface-paper/95 p-12 shadow-float backdrop-blur-md md:p-20">
+            <div className="mt-24 max-w-content rounded-xl bg-surface-paper/95 p-8 shadow-float backdrop-blur-md sm:p-12 md:p-20">
               <EcosystemEntry locale={locale} places={places} />
               <details className="mt-12 rounded-lg border border-border-line bg-surface-paper p-12"><summary className="cursor-pointer text-small font-semibold text-brand-andaman">{locale === 'ru' ? 'Расширенный поиск жилья: даты, гости, район и комплекс' : 'Advanced property search: dates, guests, area and complex'}</summary><div className="mt-12"><HomeFinder
                 locale={locale}

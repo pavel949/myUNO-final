@@ -146,4 +146,22 @@ describe('one calendar surface with mode-specific safe actions', () => {
     }
   });
 
+  it.each(['staff', 'mc'] as const)('retains the advanced range and original board filters through tasks (%s)', mode => {
+    const current = { ...props, start: '2026-10-15', days: ['2026-10-15'], daysCount: 14,
+      mode, spaceId: 'resort-space', organizationId: mode === 'mc' ? 'org-a' : '' };
+    const { rerender } = render(<UnifiedStayCalendar {...current} />);
+    const next = new URL(screen.getByRole('link', { name: /Next/ }).getAttribute('href')!, 'https://myuno.test');
+    const start = next.searchParams.get('start')!;
+    expect(start).toBe('2026-10-29');
+    rerender(<UnifiedStayCalendar {...current} start={start} days={[start]} />);
+    fireEvent.click(screen.getAllByRole('button', { name: new RegExp(`Villa A.*${start}`) })[0]);
+    const tasks = new URL(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href')!, 'https://myuno.test');
+    expect(tasks.pathname).toBe('/ops/tasks');
+    expect(tasks.searchParams.get('unitId')).toBe('unit-a');
+    expect(tasks.searchParams.get('spaceId')).toBe('resort-space');
+    expect(tasks.searchParams.get('returnTo')).toBe(next.pathname + next.search);
+    // The board was showing all category units, not just the selected task unit.
+    expect(new URL(tasks.searchParams.get('returnTo')!, 'https://myuno.test').searchParams.has('unitId')).toBe(false);
+  });
+
 });

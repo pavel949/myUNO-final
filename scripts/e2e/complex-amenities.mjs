@@ -64,8 +64,14 @@ async function save(page, id, status = 200) {
 }
 async function canonical(id) { return db.projectAmenity.findUniqueOrThrow({ where: { id } }); }
 async function expectNotFound(page, path) {
-  const response = await page.goto(path); const text = await page.locator('body').innerText();
-  assert.ok(response.status() === 404 || /not found|couldn.t find|doesn.t exist|страница не найдена/i.test(text), `Expected not-found page for ${path}, got ${response.status()}`);
+  const response = await page.goto(path);
+  // Next's loading boundary can stream HTTP 200 before notFound() resolves.
+  // Always require the final not-found UI at the requested path, never a login
+  // redirect, transient loading shell, or a generic 200 response.
+  assert.equal(new URL(page.url()).pathname, path, 'Unavailable resources must not redirect to login');
+  await page.getByRole('heading', { name: 'Page not found', exact: true }).waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Reserve', exact: true }).count(), 0);
+  report.reservationResponses.push({ path, status: response.status(), notFound: true });
 }
 try {
   await mkdir('browser-results', { recursive: true }); fixture = JSON.parse(await readFile('browser-results/fixture.json', 'utf8'));
@@ -206,6 +212,7 @@ try {
     await expectNotFound(pp, `/projects/${project.slug}/amenities/${native.slug}/book`);
     await expectNotFound(pp, `/projects/${ordinaryDraft.slug}/amenities`);
     await login(ap, fixture.founderEmail, path);
+    await expectNotFound(ap, `/projects/${project.slug}/amenities/${native.slug}/book`);
     const startAt = new Date(Date.now() + 3 * 86400000); const endAt = new Date(startAt.getTime() + 3600000);
     const rejectReservation = async () => {
       const res = await ap.request.post(`/api/project-amenities/${native.id}/reservations`, { data: { startAt: startAt.toISOString(), endAt: endAt.toISOString(), partySize: 1 } });
@@ -222,6 +229,12 @@ try {
       latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live' } });
     const controlAmenity = await db.projectAmenity.create({ data: { projectId: controlProject.id, slug: 'control', name: 'Synthetic reservation control',
       published: true, bookingRequired: true, bookingMode: 'time_slot', reservationConfig: { slotMinutes: 60, autoConfirm: true } } });
+    const controlPath = `/projects/${controlProject.slug}/amenities/${controlAmenity.slug}/book`;
+    await pp.goto(controlPath);
+    await pp.waitForURL(url => url.pathname === '/login');
+    assert.equal(new URL(pp.url()).searchParams.get('next'), controlPath);
+    await ap.goto(controlPath);
+    await ap.getByRole('button', { name: 'Reserve', exact: true }).waitFor();
     const control = await ap.request.post(`/api/project-amenities/${controlAmenity.id}/reservations`, { data: { startAt: startAt.toISOString(), endAt: endAt.toISOString(), partySize: 1 } });
     assert.equal(control.status(), 201, await control.text());
     const controlBody = await control.json(); assert.equal(controlBody.reservation.amenityId, controlAmenity.id); assert.equal(controlBody.reservation.status, 'confirmed');
@@ -229,7 +242,10 @@ try {
     report.reservationResponses.push({ projectStatus: 'live-control', status: control.status(), reservationId: controlBody.reservation.id });
     assert.deepEqual(clone(await db.project.findUniqueOrThrow({ where: { id: project.id } })), originalProject, 'Content editor never publishes the project');
     await db.project.update({ where: { id: project.id }, data: { status: 'archived' } });
-    await rejectReservation(); await expectNotFound(pp, `/projects/${project.slug}/amenities/${native.slug}`);
+    await rejectReservation();
+    await expectNotFound(pp, `/projects/${project.slug}/amenities/${native.slug}/book`);
+    await expectNotFound(ap, `/projects/${project.slug}/amenities/${native.slug}/book`);
+    await expectNotFound(pp, `/projects/${project.slug}/amenities/${native.slug}`);
     assert.deepEqual(clone(await db.identity.findMany({ select: { id: true, email: true, isAdmin: true, status: true }, orderBy: { id: 'asc' } })), originalExistingPeople);
     assert.deepEqual(clone(await db.roleAssignment.findMany({ where: { id: { notIn: createdRoleIds } }, orderBy: { id: 'asc' } })), originalExistingRoles);
   });

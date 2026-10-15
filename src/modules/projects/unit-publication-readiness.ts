@@ -37,7 +37,11 @@ export async function getUnitPublicationReadiness(unitId: string): Promise<UnitP
   ]);
   const visible = discovery.find(row => row.id === unitId);
   const published = Boolean(visible || booking?.id === unitId);
-  const detailsToAdd: PublicationDetail[] = [];\n  if (!unit.ownerIdentityId) detailsToAdd.push('owner');\n  if (!unit.inventoryCategoryId) detailsToAdd.push('category');\n  if (!unit.coverMediaId || unit.media.length < 3) detailsToAdd.push('photos');\n  if (unit.baseNightlyThb <= 0) detailsToAdd.push('pricing');
+  const detailsToAdd: PublicationDetail[] = [];
+  if (!unit.ownerIdentityId) detailsToAdd.push('owner');
+  if (!unit.inventoryCategoryId) detailsToAdd.push('category');
+  if (!unit.coverMediaId || unit.media.length < 3) detailsToAdd.push('photos');
+  if (unit.baseNightlyThb <= 0) detailsToAdd.push('pricing');
   if (!description?.translations.some(row => row.status === 'ok' && row.value.trim())) detailsToAdd.push('description');
   if (!unit.sleepingSpaces.some(space => space.beds.some(bed => bed.count > 0))) detailsToAdd.push('sleeping');
   if (!(visible?.videoUrls?.length || booking?.videoUrls?.length)) detailsToAdd.push('video');

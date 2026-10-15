@@ -129,6 +129,7 @@ async function readHomepageData(locale: Locale) {
     commercialHomes: placedCommercialHomes,
     services: placedServices,
     stayUnits: placedStayUnits,
+    placeUnits: allStayUnits.map(unit => ({ id: unit.id, name: unit.name, project: { name: unit.project.name } })),
     /** Areas shown as cards (first six); `placeAreas` feeds the search box. */
     areas: placedAreas.slice(0, 6),
     placeAreas: allAreas,

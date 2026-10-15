@@ -65,7 +65,7 @@ export function PlaceCombobox({
   }
 
   const optionId = (index: number) => `${listId}-${index}`;
-  const kindLabel = (kind: PlaceOption['kind']) => (kind === 'area' ? labels.areas : labels.complexes);
+  const kindLabel = (kind: PlaceOption['kind']) => (kind === 'area' ? labels.areas : kind === 'project' ? labels.complexes : 'Home');
 
   return (
     <div className={`relative ${className}`}>

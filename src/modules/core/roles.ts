@@ -1,5 +1,6 @@
 import { RoleType, RoleScopeType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { grantRole as grantPeopleRole } from './people.service';
 
 interface GrantRoleInput {
   identityId: string;
@@ -26,6 +27,9 @@ interface RevokeRoleInput {
  * Creates or updates the role assignment.
  */
 export async function grantRole(input: GrantRoleInput) {
+  // Keep the legacy entry point on the same strict contributor assignment path.
+  if (input.role === 'content_contributor') return grantPeopleRole(prisma, input);
+
   const {
     identityId,
     role,

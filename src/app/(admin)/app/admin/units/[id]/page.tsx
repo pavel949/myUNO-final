@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from '@/modules/projects/unit-marketing-title';
 import { requireAdminPage } from '@/app/libs/requireAdminPage';
 import { UNIT_PUBLICATION_LABELS, UNIT_PUBLICATION_DRAFTS } from '@/modules/content/unit-publication.seed';
 import UnitPublicationPanel from '@/components/units/UnitPublicationPanel';
@@ -122,6 +123,11 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
   });
 
   if (!unit) notFound();
+
+  const marketingTitleKey = resolveUnitMarketingTitleKey(unit);
+  const marketingTitleContent = marketingTitleKey
+    ? await prisma.contentKey.findUnique({ where: { key: marketingTitleKey }, select: { namespace: true } })
+    : null;
 
   const descriptionContent = unit.descriptionKey
     ? await prisma.contentKey.findUnique({ where: { key: unit.descriptionKey }, select: { namespace: true } })
@@ -285,6 +291,11 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
           className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
           {labels['admin.unit_publication.edit_description']} →
         </Link>}
+        {marketingTitleKey && marketingTitleContent && <Link
+          href={`/app/admin/content?ns=${encodeURIComponent(marketingTitleContent.namespace)}&key=${encodeURIComponent(marketingTitleKey)}`}
+          className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
+          {labels['admin.unit_publication.edit_marketing_title']} →
+        </Link>}
         <Link href="#unit-tariffs"
           className="inline-block rounded-md border border-border-line px-16 py-12 text-brand-andaman">
           {labels['admin.unit_publication.edit_tariffs']} →
@@ -414,4 +425,5 @@ export default async function UnitOnboardingPage({ params }: { params: { id: str
     </div>
   );
 }
+
 

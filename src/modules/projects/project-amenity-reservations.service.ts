@@ -60,6 +60,9 @@ async function accessContext(
     where: {
       identityId: input.identityId,
       status: 'active',
+      // Content assignments do not confer resident/guest amenity privileges.
+      // An eligible stay has already been checked independently above.
+      role: { not: 'content_contributor' },
       OR: [
         { projectId: input.projectId },
         { unit: { projectId: input.projectId } },

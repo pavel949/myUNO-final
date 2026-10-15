@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import Link from 'next/link';
+import ContributorUnitPicker from './contributor-unit-picker';
 
 const ROLES = [
   'owner', 'guest', 'resident', 'buyer',
   'provider_member', 'mc_member', 'juristic_member',
-  'staff_ops', 'onsite_host',
+  'staff_ops', 'onsite_host', 'content_contributor',
 ] as const;
 
 /** Platform scope is for the roles that genuinely span everything. */
@@ -33,6 +34,7 @@ export default function PeopleAdminClient({
   projects: { id: string; name: string }[];
   labels: Record<string, string>;
 }) {
+  const assignmentFormId = useId();
   const [query, setQuery] = useState('');
   const [people, setPeople] = useState<Person[]>([]);
   const [searching, setSearching] = useState(false);
@@ -43,6 +45,7 @@ export default function PeopleAdminClient({
   const [role, setRole] = useState<string>(ROLES[0]);
   const [scopeType, setScopeType] = useState('project');
   const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
+  const [unitId, setUnitId] = useState('');
   const [busy, setBusy] = useState(false);
   const [teamProjectId, setTeamProjectId] = useState(projects[0]?.id ?? '');
   const [teamMembers, setTeamMembers] = useState<Array<{ identityId:string;name:string;email:string|null;role:string;departments:string[] }>>([]);
@@ -65,6 +68,7 @@ export default function PeopleAdminClient({
 
   const open = useCallback(async (person: Person) => {
     setSelected(person);
+    setUnitId('');
     setError(null);
     const res = await fetch(`/api/admin/people/${person.id}/roles`).catch(() => null);
     const body = await res?.json().catch(() => null);
@@ -81,7 +85,8 @@ export default function PeopleAdminClient({
   }, []);
 
   const grant = useCallback(async () => {
-    if (!selected) return;
+    if (!selected || busy || (scopeType !== 'platform' && !projectId) || (scopeType === 'unit' && !unitId)) return;
+    if (role === 'content_contributor' && !['project', 'unit'].includes(scopeType)) return;
     setBusy(true);
     setError(null);
     const res = await fetch('/api/admin/roles/grant', {
@@ -91,7 +96,8 @@ export default function PeopleAdminClient({
         identityId: selected.id,
         role,
         scopeType,
-        ...(scopeType === 'project' ? { projectId } : {}),
+        ...(scopeType !== 'platform' ? { projectId } : {}),
+        ...(scopeType === 'unit' ? { unitId } : {}),
       }),
     }).catch(() => null);
     if (!res?.ok) {
@@ -101,7 +107,7 @@ export default function PeopleAdminClient({
       await refresh(selected.id);
     }
     setBusy(false);
-  }, [selected, role, scopeType, projectId, refresh, labels]);
+  }, [selected, role, scopeType, projectId, unitId, busy, refresh, labels]);
 
   const revoke = useCallback(async (roleAssignmentId: string) => {
     if (!selected) return;
@@ -296,6 +302,7 @@ export default function PeopleAdminClient({
               key={p.id}
               type="button"
               onClick={() => open(p)}
+              disabled={busy}
               className={`w-full text-left bg-surface-paper border rounded-lg p-16 mb-8 transition ${
                 selected?.id === p.id ? 'border-brand-andaman' : 'border-border-line hover:border-brand-andaman/50'
               }`}
@@ -326,12 +333,13 @@ export default function PeopleAdminClient({
                 {assignments.map((a) => (
                   <li key={a.id} className="flex items-center justify-between py-8 border-t border-border-line">
                     <span className="text-body text-text-ink">
-                      {a.role}
+                      {a.role === 'content_contributor' ? labels['admin.people.content_contributor'] : a.role}
                       <span className="text-small text-text-secondary">
                         {' · '}
                         {a.scopeType === 'platform'
                           ? labels['admin.people.scope_platform']
                           : a.unitName ?? a.projectName ?? a.scopeType}
+                        {a.role === 'content_contributor' && a.scopeType === 'project' && ` · ${labels['admin.people.scope_shared_content']}`}
                         {a.status !== 'active' && ` · ${a.status}`}
                       </span>
                     </span>
@@ -350,49 +358,79 @@ export default function PeopleAdminClient({
 
             <h3 className="text-small text-text-secondary mb-8">{labels['admin.people.grant']}</h3>
             <div className="grid grid-cols-1 gap-8 mb-8">
+              <label htmlFor={`${assignmentFormId}-role`} className="text-small text-text-secondary">
+                {labels['admin.people.role']}
+              </label>
               <select
+                id={`${assignmentFormId}-role`}
+                disabled={busy}
                 value={role}
                 onChange={(e) => {
                   setRole(e.target.value);
-                  // A role that cannot span the platform must not offer it.
-                  if (!PLATFORM_SCOPED_ROLES.has(e.target.value)) setScopeType('project');
+                  // Require an exact unit by default; shared content is a separate choice.
+                  setUnitId('');
+                  if (e.target.value === 'content_contributor') setScopeType('unit');
+                  else if (scopeType === 'unit' || !PLATFORM_SCOPED_ROLES.has(e.target.value)) setScopeType('project');
                 }}
                 className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
                 {ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>{r === 'content_contributor' ? labels['admin.people.content_contributor'] : r}</option>
                 ))}
               </select>
 
+              <label htmlFor={`${assignmentFormId}-scope`} className="text-small text-text-secondary">
+                {labels['admin.people.scope']}
+              </label>
               <select
+                id={`${assignmentFormId}-scope`}
+                disabled={busy}
                 value={scopeType}
-                onChange={(e) => setScopeType(e.target.value)}
+                onChange={(e) => { setScopeType(e.target.value); setUnitId(''); }}
                 className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
-                <option value="project">{labels['admin.people.scope_project']}</option>
+                <option value="project">{labels[role === 'content_contributor' ? 'admin.people.scope_shared_content' : 'admin.people.scope_project']}</option>
+                {role === 'content_contributor' && <option value="unit">{labels['admin.people.scope_unit']}</option>}
                 {PLATFORM_SCOPED_ROLES.has(role) && (
                   <option value="platform">{labels['admin.people.scope_platform']}</option>
                 )}
               </select>
 
-              {scopeType === 'project' && (
-                <select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+              {scopeType !== 'platform' && (
+                <>
+                  <label htmlFor={`${assignmentFormId}-project`} className="text-small text-text-secondary">
+                    {labels['admin.people.project']}
+                  </label>
+                  <select
+                    id={`${assignmentFormId}-project`}
+                    disabled={busy}
+                    value={projectId}
+                    onChange={(e) => { setProjectId(e.target.value); setUnitId(''); }}
+                    className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </>
               )}
+              {role === 'content_contributor' && scopeType === 'unit' && projectId && <ContributorUnitPicker
+                key={projectId}
+                projectId={projectId}
+                unitId={unitId}
+                onChange={setUnitId}
+                disabled={busy}
+                labels={labels}
+              />}
             </div>
-            <p className="text-small text-text-secondary mb-16">{labels['admin.people.scope_note']}</p>
+            <p className="text-small text-text-secondary mb-16">{labels[role === 'content_contributor' ? 'admin.people.content_scope_note' : 'admin.people.scope_note']}</p>
+
+            {role === 'content_contributor' && <Link href="/property/content" className="mb-16 block text-small text-brand-andaman underline">{labels['admin.people.content_workspace_link']}</Link>}
 
             <button
               type="button"
               onClick={grant}
-              disabled={busy || (scopeType === 'project' && !projectId)}
+              disabled={busy || (scopeType !== 'platform' && !projectId) || (scopeType === 'unit' && !unitId)}
               className="h-48 px-24 rounded-sm bg-brand-andaman text-surface-ivory font-semibold hover:opacity-90 transition disabled:opacity-50 mb-24"
             >
               {busy ? labels['admin.people.granting'] : labels['admin.people.grant_submit']}

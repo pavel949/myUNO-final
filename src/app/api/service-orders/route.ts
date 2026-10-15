@@ -130,10 +130,13 @@ export async function POST(req: NextRequest) {
     // an active role scoped to this project or unit; a platform-shaped role is
     // not a substitute for resource scope.
     const hasScopedRole = user.isAdmin || user.roles.some(
-      (role) =>
+      // A draft-content assignment is not a right to order for a property.
+      // Independent bookings and ordinary standalone-customer access remain above.
+      (role) => role.role !== 'content_contributor' && (
         (unitId && role.unitId === unitId) ||
         (!unitId && role.projectId === projectId) ||
         (unitId && role.projectId === projectId)
+      )
     );
     if (!contextIsValidated && !hasScopedRole) {
       throw createPublicError('not found', 404);

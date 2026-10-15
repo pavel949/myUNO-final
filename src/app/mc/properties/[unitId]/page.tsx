@@ -162,7 +162,7 @@ export default async function MCPropertyWorkspace({
       where: { unitId: unit.id, endDate: { gte: recentStart }, startDate: { lte: futureEnd } },
       select: {
         id: true, status: true, channel: true, startDate: true, endDate: true,
-        totalThb: true, balanceDueThb: true, requestExpiresAt: true, holdExpiresAt: true,
+        totalThb: true, receivableStatus: true, balanceDueThb: true, requestExpiresAt: true, holdExpiresAt: true,
         checkedInAt: true, checkedOutAt: true,
         guestIdentity: { select: { firstName: true, lastName: true } },
       },
@@ -209,6 +209,7 @@ export default async function MCPropertyWorkspace({
   const channel = channelMap[unit.id] ?? { state: 'manual_only', rows: [] };
   const activeBooking = bookings.find(b => b.startDate <= now && b.endDate > now && ['confirmed','checked_in'].includes(b.status));
   const nextBooking = bookings.find(b => b.startDate > now && ['confirmed','checked_in'].includes(b.status));
+  const pendingReceivables = bookings.filter(b => b.receivableStatus === 'pending_reconciliation').length;
   const upcomingBalance = bookings
     .filter(b => ['pending_payment','confirmed','checked_in'].includes(b.status))
     .reduce((sum,b) => sum + outstandingStayBalanceSatang(b),0);
@@ -286,7 +287,7 @@ export default async function MCPropertyWorkspace({
           </Link> : <div className={card}><p className={small}>Current stay</p><p className="mt-4 font-semibold">Vacant</p></div>}
           <Link href={workspaceHref('operations')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Readiness</p><p className="mt-4 font-semibold capitalize">{readiness.state.replace(/_/g,' ')}</p><p className={small}>{readiness.openTaskCount} open tasks</p></Link>
           <Link href={workspaceHref('channels')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Channels</p><p className="mt-4 font-semibold capitalize">{channel.state.replace(/_/g,' ')}</p><p className={small}>{channel.rows.length} mapped channels</p></Link>
-          <Link href={workspaceHref('reservations')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>booking balance</p></Link>
+          <Link href={workspaceHref('reservations')} className={card+' transition hover:border-brand-andaman'}><p className={small}>Outstanding</p><p className="mt-4 font-semibold">{money(upcomingBalance)}</p><p className={small}>collectible balance · {pendingReceivables} awaiting reconciliation</p></Link>
           {nextBooking ? <Link href={`/ops/stays/${nextBooking.id}`} className={card+' transition hover:border-brand-andaman'}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">{bangkokDate(nextBooking.startDate, locale)}</p><p className={small}>{nextBooking.guestIdentity.firstName} {nextBooking.guestIdentity.lastName} · {nextBooking.status.replace(/_/g,' ')}</p></Link>
             : <div className={card}><p className={small}>Next arrival</p><p className="mt-4 font-semibold">—</p><p className={small}>No upcoming stay</p></div>}
         </section>
@@ -294,12 +295,13 @@ export default async function MCPropertyWorkspace({
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Requires attention</h2><div className="mt-12 space-y-8">
             {readiness.state!=='ready' && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('operations')}>Readiness · {readiness.state.replace(/_/g,' ')} →</Link>}
             {channel.state!=='healthy' && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('channels')}>Channel health · {channel.state.replace(/_/g,' ')} →</Link>}
+            {pendingReceivables>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('reservations')}>Guest balances awaiting reconciliation · {pendingReceivables} →</Link>}
             {upcomingBalance>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('reservations')}>Outstanding guest payments · {money(upcomingBalance)} →</Link>}
             {tickets.length>0 && <Link className="block rounded-md bg-surface-ivory p-12" href={workspaceHref('operations')}>Open issues · {tickets.length} →</Link>}
             {expiringRequests.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={workspaceHref('reservations')}>Booking requests expiring soon · {expiringRequests.length} →</Link>}
             {expiringHolds.length>0 && <Link className="block rounded-md bg-amber-50 p-12" href={workspaceHref('reservations')}>Payment holds expiring soon · {expiringHolds.length} →</Link>}
             {hasArrivalReadinessRisk && <Link className="block rounded-md bg-red-50 p-12" href={workspaceHref('operations')}>Arrival today · property not ready →</Link>}
-            {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && tickets.length===0 && expiringRequests.length===0 && expiringHolds.length===0 && !hasArrivalReadinessRisk && <p className={small}>No operational exceptions.</p>}
+            {readiness.state==='ready' && channel.state==='healthy' && upcomingBalance===0 && pendingReceivables===0 && tickets.length===0 && expiringRequests.length===0 && expiringHolds.length===0 && !hasArrivalReadinessRisk && <p className={small}>No operational exceptions.</p>}
           </div></div>
           <div className={card}><h2 className="font-display text-heading-2 font-semibold">Quick actions</h2><div className="mt-12 grid gap-8 sm:grid-cols-2">
             <Link className="rounded-md border border-border-line p-12 font-semibold" href={workspaceHref('calendar')}>Block dates / rate override →</Link>
@@ -336,7 +338,7 @@ export default async function MCPropertyWorkspace({
                   <p className={small}>{bangkokDate(b.startDate, locale)} → {bangkokDate(b.endDate, locale)} · {b.channel.replace(/_/g,' ')}</p>
                   <span className={pill}>{b.status.replace(/_/g,' ')}</span>
                 </div>
-                <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>Due {money(outstandingStayBalanceSatang(b))}</p></div>
+                <div className="text-right"><p className="font-semibold">{money(b.totalThb)}</p><p className={small}>{b.receivableStatus==='pending_reconciliation'?'Balance awaiting reconciliation':`Due ${money(outstandingStayBalanceSatang(b))}`}</p></div>
               </div>
               <Link href={`/ops/stays/${b.id}`} className="mt-8 inline-flex text-small font-semibold text-brand-andaman">Open booking →</Link>
             </article>)}</div>
@@ -398,3 +400,4 @@ export default async function MCPropertyWorkspace({
     </div>
   </main>;
 }
+

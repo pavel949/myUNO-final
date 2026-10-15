@@ -120,6 +120,7 @@ export async function GET(
       infants: booking.infants,
       pets: booking.pets,
       balanceDueThb: booking.balanceDueThb,
+      receivableStatus: booking.receivableStatus,
       holdExpiresAt: booking.holdExpiresAt,
       requestExpiresAt: booking.requestExpiresAt,
       checkedInAt: booking.checkedInAt,
@@ -173,3 +174,4 @@ export async function GET(
     return handleError(error);
   }
 }
+

@@ -90,6 +90,7 @@ export interface StatementSignOffView {
 
 /** Why a sign-off was refused. Routes map these onto status codes. */
 export type StatementSignOffFailure =
+  | 'receivable_review'
   | 'not_found'
   | 'not_signable'
   | 'already_signed'
@@ -236,7 +237,9 @@ export async function recordStatementSignOff(
     if (!verdict.ok) {
       throw new StatementSignOffError(
         verdict.reason,
-        verdict.reason === 'stale'
+        verdict.reason === 'receivable_review'
+          ? 'Source payment and guest balances in this period need reconciliation before signing.'
+          : verdict.reason === 'stale'
           ? 'The statement is out of date: costs, receipts or ownership changed after it was prepared. Regenerate it before signing.'
           : 'The statement no longer matches the snapshot it was prepared with.'
       );
@@ -290,3 +293,4 @@ export async function recordStatementSignOff(
     };
   });
 }
+

@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client';
 import { createReservationGroup } from '@/modules/booking';
 import { parseChannelEvent, type ChannelEvent, type ChannelEventChannel } from './channel-contract';
 import { applyChannelEvent } from './channel-service';
+import { readReviewedWorkbook, evidenceDigest, reviewedGuestKey, type WorkbookReviewContext } from './reviewed-workbook';
 
 /**
  * Layantara operator reservations workbook → canonical bookings.
@@ -132,7 +133,10 @@ function isoDay(raw: string | undefined): string | null {
   return new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86_400_000).toISOString().slice(0, 10);
 }
 const satang = (raw: string | undefined) => {
-  const n = Number(String(raw ?? '').replace(/[,\s฿]/g, ''));
+  if (raw === undefined || raw.trim() === '') return NaN;
+  const normalized = String(raw).replace(/[,\s฿]/g, '');
+  if (!normalized) return NaN;
+  const n = Number(normalized);
   return Number.isFinite(n) ? Math.round(n * 100) : NaN;
 };
 const count = (raw: string | undefined) => {
@@ -148,7 +152,7 @@ function status(raw: string | undefined): WorkbookStatus {
   return 'unknown';
 }
 
-export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookReservation[]; problems: WorkbookProblem[]; sourcePayments: SourcePayment[] } {
+export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookReservation[]; problems: WorkbookProblem[]; sourcePayments: SourcePayment[]; workbookSha256?: string } {
   const sheet = readXlsxSheet(file, 'Reservations');
   const header = sheet.find(r => Object.values(r.cells).some(v => v.trim().toLowerCase() === 'booking id'));
   if (!header) throw new Error('WORKBOOK_HEADER_MISSING');
@@ -174,6 +178,13 @@ export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookRes
     const hasStayFields = ['guest', 'checkIn', 'checkOut', 'rooms', 'channel', 'status']
       .some(field => (get(cells, field as keyof typeof COLUMNS) ?? '').trim() !== '');
     if (!Object.values(cells).some(value => value.trim())) continue;
+    // The operator template pre-fills derived Avg/night and Balance formula
+    // zeros far below the last reservation. Ignore only these otherwise empty
+    // template rows; payment/source facts or other content still require review.
+    const derivedColumns = new Set(Object.entries(header.cells)
+      .filter(([, label]) => /^(avg\.?\/night|balance)$/i.test(label.trim())).map(([letter]) => letter));
+    if (!ref && !hasStayFields && Object.entries(cells).every(([letter, value]) =>
+      !value.trim() || (derivedColumns.has(letter) && /^[+]?(?:0+(?:\.0*)?|\.0+)$/.test(value.trim())))) continue;
     if (/^(grand total|total|subtotal)$/i.test(ref) && !hasStayFields) continue;
     const amountPaidRaw = get(cells, 'paid') ?? '';
     const paid = satang(amountPaidRaw);
@@ -207,7 +218,7 @@ export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookRes
     if (seen.has(row.ref)) problems.push({ rowNumber: row.rowNumber, ref: row.ref, message: 'duplicate_ref' });
     seen.add(row.ref);
   }
-  return { rows: rows.filter(r => !problems.some(p => p.ref === r.ref && p.message === 'duplicate_ref')), problems, sourcePayments };
+  return { rows: rows.filter(r => !problems.some(p => p.ref === r.ref && p.message === 'duplicate_ref')), problems, sourcePayments, workbookSha256: createHash('sha256').update(file).digest('hex') };
 }
 
 export function mapChannel(label: string): { channel: ChannelEventChannel; sourceChannelName?: string } {
@@ -228,6 +239,7 @@ export type StayAction =
   | 'create' | 'create_cancelled' | 'change' | 'cancel' | 'unchanged' | 'skip';
 
 export interface PlannedStay {
+  review?: WorkbookReviewContext;
   key: string;
   ref: string;
   rowNumber: number;
@@ -256,6 +268,7 @@ export interface PlannedStay {
 }
 
 export interface ImportPlan {
+  reviewedSource?: boolean;
   systemId: string;
   environment: string;
   today: string;
@@ -296,6 +309,7 @@ export async function planWorkbookImport(
   db: PrismaClient,
   parsed: ReturnType<typeof parseReservationsWorkbook>,
   now: Date = new Date(),
+  options: { reviewedSource?: boolean } = {},
 ): Promise<ImportPlan> {
   const system = await db.externalSystem.findFirst({
     where: { system_key: SYSTEM_KEY, status: { in: ['active', 'staging'] } },
@@ -306,6 +320,7 @@ export async function planWorkbookImport(
   if (config.bookingAuthority !== 'myuno' || config.cutoverVerified !== true)
     throw new Error('LAYANTARA_CUTOVER_NOT_VERIFIED');
 
+  const reviewManifest = options.reviewedSource ? readReviewedWorkbook(config, parsed.workbookSha256 ?? '') : null;
   const mappings = await db.externalMapping.findMany({ where: { external_system_id: system.id } });
   const unitByCode = new Map<string, { unitId: string; externalId: string }>();
   for (const m of mappings) {
@@ -319,7 +334,7 @@ export async function planWorkbookImport(
     db.booking.findMany({ where: { unitId: { in: unitIds } },
       select: { id: true, unitId: true, status: true, startDate: true, endDate: true, totalThb: true, adults: true, children: true } }),
     db.blockedDate.findMany({ where: { unitId: { in: unitIds } },
-      select: { id: true, unitId: true, startDate: true, endDate: true, externalRef: true, reason: true } }),
+      select: { id: true, unitId: true, startDate: true, endDate: true, externalRef: true, reason: true, note: true } }),
     db.commercialOffering.findMany({ where: { unitId: { in: unitIds }, offeringType: 'short_term_stay' },
       select: { unitId: true, pricingTerms: true } }),
     db.payment.findMany({ where: { booking: { unitId: { in: unitIds } }, status: 'succeeded' },
@@ -331,7 +346,7 @@ export async function planWorkbookImport(
   for (const p of payments) if (p.bookingId) paidByBooking.set(p.bookingId, (paidByBooking.get(p.bookingId) ?? 0) + p.amountThb);
   const codeByUnit = new Map(Array.from(unitByCode, ([code, u]) => [u.unitId, code]));
   const today = iso(now);
-  const applyBlockers: ApplyBlocker[] = parsed.sourcePayments.flatMap(source => {
+  const applyBlockers: ApplyBlocker[] = reviewManifest ? [] : parsed.sourcePayments.flatMap(source => {
     const blocker = paymentBlocker(source);
     return blocker ? [blocker] : [];
   });
@@ -339,10 +354,15 @@ export async function planWorkbookImport(
   const stays: PlannedStay[] = [];
   for (const row of parsed.rows) {
     const { channel, sourceChannelName } = mapChannel(row.channelLabel);
-    const units = row.unitCodes.map(code => ({ code, mapped: unitByCode.get(code) ?? null }));
+    const reviewedUnit = row.unitCodes.length === 1 ? reviewManifest?.entries.find(e => e.ref === row.ref) : undefined;
+    // A reviewed row digest binds the source villa code, including explicit aliases.
+    // Resolve only the reviewed canonical pair, never a fuzzy/global alias.
+    const reviewedMapping = reviewedUnit ? Array.from(unitByCode.values()).find(u =>
+      u.unitId === reviewedUnit.unitId && u.externalId === reviewedUnit.unitExternalId) : undefined;
+    const units = row.unitCodes.map(code => ({ code, mapped: reviewedMapping ?? unitByCode.get(code) ?? null }));
     const weights = units.map(u => (u.mapped ? arrivalDailySatang(termsByUnit.get(u.mapped.unitId), row.startDate) : 0));
-    const totals = splitByWeight(row.revenueSatang, weights);
-    const paidShares = splitByWeight(row.amountPaidSatang, weights);
+    const totals = reviewManifest && units.length > 1 ? units.map(() => 0) : splitByWeight(row.revenueSatang, weights);
+    const paidShares = reviewManifest && units.length > 1 ? units.map(() => 0) : splitByWeight(row.amountPaidSatang, weights);
     units.forEach((u, i) => {
       const key = units.length > 1 ? `${row.ref}:${u.code}` : row.ref;
       const bookingId = bookingByKey.get(key) ?? null;
@@ -361,6 +381,27 @@ export async function planWorkbookImport(
         completeAfterImport: false, action: 'skip',
       };
       stays.push(stay);
+      if (reviewManifest) {
+        stay.adults = row.adults ?? 0;
+        stay.children = row.children ?? 0;
+        stay.partyUnknown = row.adults === null || row.children === null;
+        if (row.status !== 'confirmed') { stay.reason = 'source_status_deferred'; return; }
+        if (units.length !== 1) { stay.reason = 'source_unit_allocation_required'; return; }
+        const entry = reviewManifest.entries.find(e => e.ref === row.ref);
+        if (!entry) { stay.reason = 'source_review_missing'; return; }
+        if (entry.rowDigest !== evidenceDigest({ row, source }) || entry.unitId !== stay.unitId ||
+            entry.unitExternalId !== stay.unitExternalId || entry.startDate !== stay.startDate ||
+            entry.endDate !== stay.endDate || entry.totalSatang !== stay.totalSatang ||
+            entry.guestName !== stay.guestName || entry.channel !== stay.channel ||
+            entry.sourceChannelName !== stay.sourceChannelName || entry.adults !== row.adults ||
+            entry.children !== row.children || entry.rawStatus !== source.paymentStatus ||
+            entry.reportedPaidSatang !== source.amountPaidSatang) {
+          stay.reason = 'source_review_facts_changed';
+          applyBlockers.push({ rowNumber: row.rowNumber, ref: row.ref, message: stay.reason }); return;
+        }
+        stay.review = { workbookSha256: reviewManifest.workbookSha256,
+          manifestDigest: evidenceDigest(reviewManifest), ref: row.ref, rowDigest: entry.rowDigest };
+      }
       if (!u.mapped) { stay.reason = 'unknown_villa'; return; }
       const start = new Date(row.startDate + 'T00:00:00Z').getTime();
       const end = new Date(row.endDate + 'T00:00:00Z').getTime();
@@ -368,13 +409,24 @@ export async function planWorkbookImport(
         x.unitId === u.mapped!.unitId && x.startDate.getTime() < end && x.endDate.getTime() > start;
 
       const unitBlocks = blocks.filter(overlaps);
-      if (unitBlocks.length) {
+      const reviewedBlock = reviewManifest?.entries.find(e => e.ref === row.ref)?.block;
+      const exactReviewedBlocks = !!stay.review && unitBlocks.length === 1 &&
+        unitBlocks[0].id === reviewedBlock?.id && unitBlocks[0].externalRef === reviewedBlock.externalRef &&
+        unitBlocks[0].reason === reviewedBlock.reason &&
+        (reviewedBlock.externalRef !== null || unitBlocks[0].note === reviewedBlock.note) &&
+        iso(unitBlocks[0].startDate) === row.startDate && iso(unitBlocks[0].endDate) === row.endDate;
+      if (stay.review && !existing && !exactReviewedBlocks) {
+        stay.reason = 'source_review_block_changed';
+        applyBlockers.push({ rowNumber: row.rowNumber, ref: row.ref, message: stay.reason }); return;
+      }
+      if (unitBlocks.length && !exactReviewedBlocks) {
         stay.reason = 'protection_identity_unverified';
         applyBlockers.push({ rowNumber: row.rowNumber, ref: row.ref, unitCode: u.code, message: stay.reason });
         return;
       }
       if (row.status === 'pending') { stay.reason = 'pending_kept_protected'; return; }
       if (row.status === 'unknown') { stay.reason = 'unknown_status'; return; }
+      if (existing && stay.review) { stay.action = 'create'; return; }
       if (existing) {
         if (row.status === 'cancelled') {
           stay.action = existing.status === 'cancelled' ? 'unchanged' : 'cancel';
@@ -388,7 +440,7 @@ export async function planWorkbookImport(
         if (same) stay.action = 'unchanged';
         else if (existing.status === 'confirmed') stay.action = 'change';
         else { stay.action = 'skip'; stay.reason = 'stay_already_' + existing.status; }
-        if (stay.action !== 'skip') stay.completeAfterImport = row.endDate <= today && existing.status === 'confirmed';
+
         return;
       }
       const otherBookings = bookings.filter(b => overlaps(b) &&
@@ -401,13 +453,15 @@ export async function planWorkbookImport(
       }
       if (otherBookings.length) { stay.reason = 'calendar_conflict'; return; }
       stay.action = 'create';
-      stay.completeAfterImport = row.endDate <= today;
+
     });
   }
 
   const touched = new Set(stays.filter(s => s.occupancyId).map(s => 'layantara:occupancy:' + s.occupancyId));
+  const reviewedBlockIds = new Set(stays.filter(s => s.review && s.action === 'create')
+    .flatMap(s => reviewManifest?.entries.filter(e => e.ref === s.ref).map(e => e.block.id) ?? []));
   const untouchedProtections = blocks
-    .filter(b => b.externalRef?.startsWith('layantara:occupancy:') && !touched.has(b.externalRef) &&
+    .filter(b => !reviewedBlockIds.has(b.id) && (reviewManifest || b.externalRef?.startsWith('layantara:occupancy:')) && !touched.has(b.externalRef ?? '') &&
       b.endDate.getTime() > now.getTime() - 400 * DAY)
     .map(b => ({ unitCode: codeByUnit.get(b.unitId) ?? '?', startDate: iso(b.startDate), endDate: iso(b.endDate), reason: b.reason }))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
@@ -415,7 +469,7 @@ export async function planWorkbookImport(
   const summary = { create: 0, create_cancelled: 0, change: 0, cancel: 0, unchanged: 0, skip: 0,
     reservations: parsed.rows.length, problems: parsed.problems.length };
   for (const s of stays) summary[s.action] += 1;
-  return { systemId: system.id, environment: system.environment, today, stays, problems: parsed.problems, applyBlockers, untouchedProtections, summary };
+  return { reviewedSource: !!reviewManifest, systemId: system.id, environment: system.environment, today, stays, problems: parsed.problems, applyBlockers, untouchedProtections, summary };
 }
 
 // ── applying ────────────────────────────────────────────────────────────────
@@ -430,18 +484,21 @@ export class WorkbookReconciliationRequired extends Error {
 export interface AppliedStay { key: string; action: StayAction; status: string; code?: string; bookingId: string | null }
 
 async function ensureIntegrationActor(db: PrismaClient, systemId: string, actorIdentityId: string): Promise<string> {
-  const system = await db.externalSystem.findUniqueOrThrow({ where: { id: systemId } });
+  return db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM external_system WHERE id = ${systemId} FOR UPDATE`;
+  const system = await tx.externalSystem.findUniqueOrThrow({ where: { id: systemId } });
   const config = (system.config ?? {}) as Record<string, unknown>;
   if (typeof config.integrationActorIdentityId === 'string' && config.integrationActorIdentityId) return config.integrationActorIdentityId;
   // Source-side edits are attributed to a dedicated integration identity,
   // never to the admin who uploaded the file or to the guest.
-  const actor = await db.identity.create({ data: { firstName: 'Layantara', lastName: 'Reservations import' } });
-  await db.externalSystem.update({ where: { id: systemId }, data: { config: { ...config, integrationActorIdentityId: actor.id } } });
-  await db.auditLog.create({ data: {
+  const actor = await tx.identity.create({ data: { firstName: 'Layantara', lastName: 'Reservations import' } });
+  await tx.externalSystem.update({ where: { id: systemId }, data: { config: { ...config, integrationActorIdentityId: actor.id } } });
+  await tx.auditLog.create({ data: {
     actorIdentityId, action: 'layantara.integration_actor_created', entityType: 'ExternalSystem', entityId: systemId,
     data: { integrationActorIdentityId: actor.id },
   } });
   return actor.id;
+  });
 }
 
 export async function applyWorkbookImport(
@@ -455,16 +512,16 @@ export async function applyWorkbookImport(
   const blocks = await db.blockedDate.findMany({ where: {
     unitId: { in: plan.stays.flatMap(stay => stay.unitId ? [stay.unitId] : []) },
   }, select: { unitId: true, startDate: true, endDate: true } });
-  const freshBlockers = plan.stays.filter(stay => blocks.some(block =>
+  const freshBlockers = plan.stays.filter(stay => !stay.review && (!plan.reviewedSource || !['skip','unchanged'].includes(stay.action)) && blocks.some(block =>
     block.unitId === stay.unitId && iso(block.startDate) < stay.endDate && iso(block.endDate) > stay.startDate))
     .map(stay => ({ rowNumber: stay.rowNumber, ref: stay.ref, unitCode: stay.unitCode,
       message: 'protection_identity_unverified' }));
   if (freshBlockers.length) throw new WorkbookReconciliationRequired({ ...plan, applyBlockers: freshBlockers });
-  await ensureIntegrationActor(db, plan.systemId, input.actorIdentityId);
+  if (!plan.reviewedSource) await ensureIntegrationActor(db, plan.systemId, input.actorIdentityId);
   const now = input.now ?? new Date();
   const runVersion = Math.floor(now.getTime() / 1000) * 100;
   const applied: AppliedStay[] = [];
-  let completed = 0;
+  const completed = 0;
 
   const send = async (stay: PlannedStay, step: number, payload: Omit<ChannelEvent, 'contractVersion' | 'eventId' | 'eventVersion' | 'externalBookingId' | 'externalUnitId' | 'occurredAt'>) => {
     const body = {
@@ -475,15 +532,15 @@ export async function applyWorkbookImport(
     // Same row content → same event id and the same payload hash, so a
     // re-run reports a duplicate instead of a collision. The run's version
     // and timestamp are deliberately outside the hashed content.
-    const content = JSON.stringify({ ...body, eventVersion: 0, occurredAt: '' });
+    const content = JSON.stringify({ ...body, eventVersion: 0, occurredAt: '', ...(stay.review ? { review: stay.review } : {}) });
     const eventId = 'wb-' + createHash('sha256').update(content).digest('hex').slice(0, 40);
-    const event = parseChannelEvent({ ...body, eventId });
-    return applyChannelEvent(db, { event, rawBody: content, environment: plan.environment, operatingRecord: true });
+    const event = parseChannelEvent({ ...body, eventId }, { reviewedUnknownParty: !!stay.review });
+    return applyChannelEvent(db, { event, rawBody: content, environment: plan.environment, operatingRecord: true, workbookReview: stay.review });
   };
   const bookingPayload = (stay: PlannedStay, eventType: 'booking.confirmed' | 'booking.changed') => ({
     eventType, startDate: stay.startDate, endDate: stay.endDate, channel: stay.channel,
     ...(stay.sourceChannelName ? { sourceChannelName: stay.sourceChannelName } : {}),
-    guestExternalId: guestKey(stay.guestName, stay.channel), guestName: stay.guestName,
+    guestExternalId: stay.review ? reviewedGuestKey(stay.ref) : guestKey(stay.guestName, stay.channel), guestName: stay.guestName,
     adults: stay.adults, children: stay.children, totalSatang: stay.totalSatang, currency: 'THB' as const,
   });
 
@@ -506,16 +563,6 @@ export async function applyWorkbookImport(
         outcome = { ...(await send(stay, 2, { eventType: 'booking.cancelled' })), bookingId: outcome.bookingId };
     }
     const bookingId = outcome.bookingId ?? stay.bookingId;
-    if (bookingId && stay.completeAfterImport && ['processed', 'duplicate'].includes(outcome.status)) {
-      const done = await db.booking.updateMany({ where: { id: bookingId, status: 'confirmed' }, data: { status: 'completed' } });
-      if (done.count) {
-        completed += 1;
-        await db.auditLog.create({ data: {
-          actorIdentityId: input.actorIdentityId, action: 'booking.imported_as_completed', entityType: 'Booking', entityId: bookingId,
-          data: { source: 'layantara_workbook', ref: stay.ref, endDate: stay.endDate },
-        } });
-      }
-    }
     applied.push({ key: stay.key, action: stay.action, status: outcome.status, code: outcome.code, bookingId });
   }
 

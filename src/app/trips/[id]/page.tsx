@@ -15,6 +15,8 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     'booking.detail.guests': 'Guests',
     'booking.detail.total': 'Total',
     'booking.detail.payment_title': 'Payment',
+    'booking.detail.source_review_title': 'Balance awaiting reconciliation',
+    'booking.detail.source_review_body': 'The property team is checking the original payment records. Your guest balance is not yet established. Please do not pay again until the team confirms it.',
     'booking.detail.paid': 'Paid',
     'booking.detail.awaiting_payment': 'Awaiting payment',
     'booking.detail.confirmed_unpaid': 'Reservation confirmed — payment outstanding',
@@ -137,3 +139,4 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
     </Suspense>
   );
 }
+

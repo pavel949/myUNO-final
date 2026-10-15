@@ -1,3 +1,4 @@
+import { assertStayReceivableCollectible } from '@/modules/booking/outstanding-balance';
 import { PrismaClient, PaymentPurpose } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { track } from '@/modules/analytics';
@@ -60,6 +61,8 @@ export async function getTransferInstructions(
   db: PrismaClient,
   input: { bookingId: string; amountThb: number; projectId?: string }
 ): Promise<TransferInstructions> {
+  const booking = await db.booking.findUniqueOrThrow({ where: { id: input.bookingId }, select: { receivableStatus: true } });
+  assertStayReceivableCollectible(booking);
   const scope = input.projectId ? { projectId: input.projectId } : undefined;
 
   const [enabled, legalName, bankName, accountName, accountNumber, swift, taxId, windowHours] =
@@ -151,6 +154,7 @@ export async function recordBankTransfer(
       // Lock the canonical booking before comparing its payment state. Two staff
       // clicks cannot record the same initial charge or balance simultaneously.
       const locked = await lockBookingInventory(tx, input.bookingId);
+      if (locked) assertStayReceivableCollectible(locked);
       booking = locked;
       if (!booking) throw new Error('Booking not found');
       if (booking.guestIdentityId !== input.payerIdentityId) throw new Error('Payer does not match booking');
@@ -234,3 +238,4 @@ export async function recordBankTransfer(
 
   return result.payment;
 }
+

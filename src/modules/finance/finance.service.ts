@@ -1,3 +1,4 @@
+import { assertStayReceivableCollectible } from '@/modules/booking/outstanding-balance';
 import { PrismaClient, PaymentPurpose, RefundReason, type Prisma } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
@@ -70,9 +71,10 @@ async function assertStayPaymentAmount(
   if (!bookingId) throw new Error('Stay payment requires bookingId');
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
-    select: { totalThb: true, balanceDueThb: true },
+    select: { totalThb: true, balanceDueThb: true, receivableStatus: true },
   });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  assertStayReceivableCollectible(booking);
   const expected = purpose === 'stay' ? booking.totalThb : booking.balanceDueThb;
   if (expected <= 0) throw new Error('Booking has no balance due');
   if (amountThb !== expected) {
@@ -174,6 +176,7 @@ export async function recordCashPayment(
       if (input.authorizeBooking && !(await input.authorizeBooking(tx as PrismaClient, booking))) {
         throw Object.assign(new Error('Forbidden'), { code: 'BOOKING_FORBIDDEN' });
       }
+      assertStayReceivableCollectible(locked!);
       if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
       if (purpose === 'stay') {
         if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
@@ -580,6 +583,7 @@ export async function verifyAndConfirm(
     if (current.purpose === 'stay' || current.purpose === 'stay_balance') {
       if (!booking) reconciliationReason = 'BOOKING_NOT_FOUND';
       else if (booking.guestIdentityId !== current.payerIdentityId) reconciliationReason = 'BOOKING_PAYER_MISMATCH';
+      else if (booking.receivableStatus !== 'collectible') reconciliationReason = 'BOOKING_RECEIVABLE_RECONCILIATION_REQUIRED';
       else if (current.purpose === 'stay') {
         reconciliationReason = await initialStayConfirmationIssue(tx, booking);
         if (!reconciliationReason && current.amountThb !== booking.totalThb) reconciliationReason = 'BOOKING_AMOUNT_CHANGED';
@@ -984,3 +988,4 @@ export async function markPaymentFailed(
 
   return failed;
 }
+

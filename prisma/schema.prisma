@@ -141,6 +141,11 @@ enum BookingStatus {
   cancelled
 }
 
+enum BookingReceivableStatus {
+  collectible
+  pending_reconciliation
+}
+
 enum VerificationStatus {
   not_required
   pending
@@ -1237,6 +1242,8 @@ model Booking {
   pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
+  /// Collection eligibility is independent of source-reported payments and stay status.
+  receivableStatus           BookingReceivableStatus @default(collectible) @map("receivable_status")
   balanceDueThb              Int                @default(0) @map("balance_due_thb")
   refundAccruedThb           Int                @default(0) @map("refund_accrued_thb")
   cancellationPolicySnapshot Json?              @map("cancellation_policy_snapshot") @db.JsonB
@@ -4069,3 +4076,4 @@ model RateLimitBucket {
   @@index([resetAt])
   @@map("rate_limit_bucket")
 }
+

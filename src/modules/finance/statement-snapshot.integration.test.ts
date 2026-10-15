@@ -255,3 +255,40 @@ describe('owner change vs statement approval', () => {
     expect(await verifyStatementSnapshot(db, { ...row, signedOffByOperatorAt: null })).toEqual({ ok: false, reason: 'stale' });
   });
 });
+
+
+describe('source receivable review blocks financial close', () => {
+  async function requireReview() {
+    await db.booking.updateMany({ where: { unitId: world.unit.id }, data: { receivableStatus: 'pending_reconciliation' } });
+  }
+  it('refuses generation sources instead of recognizing source claims as distributable cash', async () => {
+    await requireReview();
+    await expect(collectSnapshotSources(db, world.period)).rejects.toMatchObject({ code: 'STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED' });
+  });
+  it('checks review before legacy and operator-signed snapshot exemptions', async () => {
+    await requireReview();
+    await expect(verifyStatementSnapshot(db, { ...world.statement, sourceFingerprint: null, snapshotHash: null }))
+      .resolves.toEqual({ ok: false, reason: 'receivable_review' });
+    await expect(verifyStatementSnapshot(db, { ...world.statement, signedOffByOperatorAt: NOW }))
+      .resolves.toEqual({ ok: false, reason: 'receivable_review' });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id))
+      .rejects.toMatchObject({ reason: 'receivable_review' });
+  });
+  it('DB guard blocks bypass generation, distribution and owner payout without altering issued history', async () => {
+    await requireReview();
+    await expect(db.ownerStatement.create({ data: { ...world.statement, id: randomUUID(), status: 'draft' } }))
+      .rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    await expect(db.ownerStatement.update({ where: { id: world.statement.id }, data: { status: 'distributed' } }))
+      .rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    await expect(db.payout.create({ data: {
+      payeeType: 'owner', ownerStatementId: world.statement.id, amountThb: world.statement.ownerShareTh,
+      periodStart: world.period.periodStart, periodEnd: world.period.periodEnd,
+      method: 'bank_transfer_thb', reference: 'SYNTHETIC-REVIEW', executedOn: NOW,
+      recordedByIdentityId: world.admin.id, status: 'recorded',
+    } })).rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    expect(await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } }))
+      .toMatchObject({ status: world.statement.status, sourceFingerprint: world.statement.sourceFingerprint,
+        snapshotHash: world.statement.snapshotHash, ownerShareTh: world.statement.ownerShareTh });
+    expect(await db.payout.count({ where: { ownerStatementId: world.statement.id } })).toBe(0);
+  });
+});

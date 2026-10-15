@@ -96,7 +96,7 @@ export async function PUT(
       }
       // The statement is theirs and visible; it simply no longer matches the
       // facts it was prepared from. Say so — a 404 here would read as "gone".
-      if (error.reason === 'stale' || error.reason === 'snapshot_mismatch') {
+      if (error.reason === 'receivable_review' || error.reason === 'stale' || error.reason === 'snapshot_mismatch') {
         return NextResponse.json(
           { error: error.message, code: `statement_${error.reason}` },
           { status: 409 }
@@ -111,3 +111,4 @@ export async function PUT(
     )
   }
 }
+

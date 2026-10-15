@@ -20,7 +20,8 @@ function serializePlan(plan: ImportPlan, mode: 'preview' | 'apply') {
       sourceChannelName: s.sourceChannelName ?? null, startDate: s.startDate, endDate: s.endDate,
       totalSatang: s.totalSatang, paidSatang: s.paidSatang, action: s.action, reason: s.reason ?? null,
       sourcePaymentStatus: s.sourcePaymentStatus, sourcePaymentAmountRaw: s.sourcePaymentAmountRaw,
-      completeAfterImport: s.completeAfterImport,
+      completeAfterImport: s.completeAfterImport, partyUnknown: s.partyUnknown,
+      receivableStatus: s.review ? 'pending_reconciliation' : null,
     }));
     return { mode, summary: plan.summary, problems: plan.problems, applyBlockers: plan.applyBlockers, untouchedProtections: plan.untouchedProtections, stays };
 }
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const parsed = parseReservationsWorkbook(new Uint8Array(await file.arrayBuffer()));
-    const plan = await planWorkbookImport(prisma, parsed);
+    const plan = await planWorkbookImport(prisma, parsed, new Date(), { reviewedSource: form?.get('sourceMode') === 'reviewed_source' });
     const body = serializePlan(plan, mode);
     if (mode === 'preview') return NextResponse.json(body);
     const result = await applyWorkbookImport(prisma, plan, { actorIdentityId: guard.actorIdentityId });

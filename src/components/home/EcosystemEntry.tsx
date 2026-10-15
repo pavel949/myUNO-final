@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { matchPlaces, type PlaceOption } from '@/lib/place-search';
 
-type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner';
+type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner' | 'partner';
 
 export function EcosystemEntry({ locale, places }: { locale: string; places: PlaceOption[] }) {
   const router = useRouter();
@@ -18,7 +18,8 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
       { key: 'buy', title: 'Купить недвижимость', detail: 'Каталог предложений', href: '/homes?intent=buy' },
       { key: 'move', title: 'Переехать', detail: 'Жильё и организация переезда', href: '/relocation' },
       { key: 'services', title: 'Найти услугу', detail: 'Для отдыха и жизни', href: '/services' },
-      { key: 'owner', title: 'Моя недвижимость', detail: 'Сдать, продать, управлять', href: '/owners' },
+      { key: 'owner', title: 'Владельцам', detail: 'Сдать, продать, управлять', href: '/owners' },
+      { key: 'partner', title: 'Партнёрам', detail: 'Агентам, девелоперам и поставщикам', href: '/partners' },
     ]
     : [
       { key: 'stay', title: 'Book a stay', detail: 'Villas and apartments', href: '/search' },
@@ -26,7 +27,8 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
       { key: 'buy', title: 'Buy property', detail: 'Properties for sale', href: '/homes?intent=buy' },
       { key: 'move', title: 'Relocate', detail: 'Homes and moving support', href: '/relocation' },
       { key: 'services', title: 'Find a service', detail: 'For everyday life and holidays', href: '/services' },
-      { key: 'owner', title: 'My property', detail: 'Rent, sell or manage', href: '/owners' },
+      { key: 'owner', title: 'For owners', detail: 'Rent, sell or manage', href: '/owners' },
+      { key: 'partner', title: 'For partners', detail: 'Agents, developers and providers', href: '/partners' },
     ];
   const matches = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
@@ -65,7 +67,7 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
       </div>}
       <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">
         {routes.map((route) => <Link key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
-          <div className="flex min-w-0 items-start justify-between gap-4"><span className="min-w-0 break-normal text-small font-semibold leading-snug text-text-ink sm:text-body">{route.title}</span><span aria-hidden="true" className="shrink-0 text-brand-andaman">→</span></div>
+          <div className="flex min-w-0 items-start justify-between gap-4"><span className="min-w-0 break-normal hyphens-none [overflow-wrap:normal] [word-break:normal] text-small font-semibold leading-snug text-text-ink sm:text-body">{route.title}</span><span aria-hidden="true" className="shrink-0 text-brand-andaman">→</span></div>
           <p className="mt-6 hidden text-small leading-relaxed text-text-secondary sm:block">{route.detail}</p>
         </Link>)}
       </div>

@@ -117,3 +117,30 @@ describe('property onboarding form wiring', () => {
   });
 });
 
+
+describe('onboarding unit destinations', () => {
+  const units = ['unit-1', 'unit-2'].map((id, index) => ({
+    id, name: `Villa ${index + 1}`, ownerIdentityId: `owner-${index + 1}`,
+    media: [], sleepingSpaces: [], commercialOfferings: [],
+  }));
+
+  it('links each gallery directly to its own scoped editor and leaves owner links intact', () => {
+    render(<PropertyOnboardingClient initialProject={{ ...project, units }} initialReadiness={readiness} galleryLabels={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: /7\. Content & photos/ }));
+    for (const unit of units) {
+      const link = screen.getByRole('link', { name: `Open unit gallery: ${unit.name}` });
+      const url = new URL(link.getAttribute('href')!, window.location.origin);
+      expect(url.pathname).toBe('/app/admin/properties/project-1/onboarding');
+      expect(url.searchParams.get('gallery')).toBe(`unit:${unit.id}`);
+      expect(url.hash).toBe('#step-7');
+    }
+    fireEvent.click(screen.getByRole('button', { name: /3\. Owner & contract/ }));
+    for (const unit of units) {
+      expect(screen.getByRole('link', { name: `Open owner and contract workspace: ${unit.name}` }))
+        .toHaveAttribute('href', `/app/admin/units/${unit.id}`);
+    }
+    fireEvent.click(screen.getByRole('button', { name: /4\. Compliance/ }));
+    expect(screen.getByRole('link', { name: 'Complete compliance checklist: Villa 1' }))
+      .toHaveAttribute('href', '/app/admin/units/unit-1');
+  });
+});

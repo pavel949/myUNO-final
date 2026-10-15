@@ -250,3 +250,103 @@ describe('copy existing unit photo to its parent complex', () => {
   expect(GALLERY_COPY_KEYS.every(row => row.status === 'needs_review')).toBe(true);
  });
 });
+
+describe('scoped gallery route navigation', () => {
+ afterEach(() => vi.unstubAllGlobals());
+ const allProps = { ...props, units: [...props.units, { id: 'unit-2', name: 'Room 102' }] };
+ const response = (body: object, ok = true) => ({ ok, json: async () => body });
+ const gallery = (id: string) => ({ coverMediaId: id, media: [{ mediaId: id, sort: 0, media: {
+  id, storageKey: `/${id}.jpg`, kind: 'photo', mimeType: 'image/jpeg', encrypted: false, sizeBytes: 1024,
+ } }] });
+ const unitA = '/api/admin/units/unit-1/media';
+ const unitB = '/api/admin/units/unit-2/media';
+
+ it('follows A to B and cleared deep links on the same mounted route', async () => {
+  const fetchMock = vi.fn().mockImplementation(url => Promise.resolve(response(gallery(url === unitA ? 'a' : url === unitB ? 'b' : 'project'))));
+  vi.stubGlobal('fetch', fetchMock);
+  const { rerender } = render(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-1" />);
+  await screen.findByAltText('Photo 1 of Room 101');
+  rerender(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-2" />);
+  expect(screen.queryByAltText('Photo 1 of Room 101')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Object')).toHaveValue('unit:unit-2');
+  expect(await screen.findByAltText('Photo 1 of Room 102')).toHaveAttribute('src', '/b.jpg');
+  rerender(<ScopedGalleryEditor {...allProps} />);
+  expect(screen.getByLabelText('Level')).toHaveValue('project');
+  expect(await screen.findByAltText('Photo 1 of Hotel')).toHaveAttribute('src', '/project.jpg');
+ });
+
+ it.each([true, false])('ignores delayed A responses after a route change to B (success=%s)', async ok => {
+  let finishA!: (value: ReturnType<typeof response>) => void;
+  const pendingA = new Promise<ReturnType<typeof response>>(resolve => { finishA = resolve; });
+  const fetchMock = vi.fn().mockImplementation(url => url === unitA ? pendingA : Promise.resolve(response(gallery('b'))));
+  vi.stubGlobal('fetch', fetchMock);
+  const { rerender } = render(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-1" />);
+  rerender(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-2" />);
+  await screen.findByAltText('Photo 1 of Room 102');
+  await act(async () => { finishA(response(gallery('a'), ok)); });
+  expect(screen.getByAltText('Photo 1 of Room 102')).toHaveAttribute('src', '/b.jpg');
+  expect(screen.queryByText('Could not load gallery')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Add photos')).not.toBeDisabled();
+ });
+
+ it.each(['unit:foreign-unit', 'category:unit-1', 'project:foreign-project', 'unit:unit-1:extra'])('rejects an unavailable or wrong-level selection %s', async selection => {
+  const fetchMock = vi.fn().mockResolvedValue(empty);
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ScopedGalleryEditor {...allProps} initialSelection={selection} />);
+  await screen.findByText('No photos');
+  expect(screen.getByLabelText('Level')).toHaveValue('project');
+  expect(screen.getByLabelText('Object')).toHaveValue('project:project-1');
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/admin/projects/project-1/media']);
+ });
+
+ it('keeps project, category and unit namespaces distinct even for equal ids', async () => {
+  const sameId = { ...props, projectId: 'same', categories: [{ id: 'same', name: 'Category' }], units: [{ id: 'same', name: 'Unit' }] };
+  const fetchMock = vi.fn().mockResolvedValue(empty);
+  vi.stubGlobal('fetch', fetchMock);
+  const { rerender } = render(<ScopedGalleryEditor {...sameId} initialSelection="project:same" />);
+  await screen.findByText('No photos');
+  for (const [scope, resource] of [['category', 'categories'], ['unit', 'units'], ['project', 'projects']]) {
+   rerender(<ScopedGalleryEditor {...sameId} initialSelection={`${scope}:same`} />);
+   await screen.findByText('No photos');
+   expect(screen.getByLabelText('Level')).toHaveValue(scope);
+   expect(fetchMock).toHaveBeenLastCalledWith(`/api/admin/${resource}/same/media`, { cache: 'no-store' });
+  }
+ });
+
+ it('preserves a manual selection on refresh but resets it when the project changes', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(empty));
+  const { rerender } = render(<ScopedGalleryEditor {...allProps} />);
+  await screen.findByText('No photos');
+  fireEvent.change(screen.getByLabelText('Level'), { target: { value: 'category' } });
+  await screen.findByText('No photos');
+  rerender(<ScopedGalleryEditor {...allProps} units={[...allProps.units]} labels={{...labels}} />);
+  expect(screen.getByLabelText('Object')).toHaveValue('category:cat-1');
+  rerender(<ScopedGalleryEditor {...allProps} projectId="project-2" projectName="Other Hotel" categories={[]} units={[]} />);
+  await screen.findByText('No photos');
+  expect(screen.getByLabelText('Object')).toHaveValue('project:project-2');
+ });
+
+ it.each([true, false])('isolates pending A writes from B after route navigation (success=%s)', async ok => {
+  let finishWrite!: (value: ReturnType<typeof response>) => void;
+  const pendingWrite = new Promise<ReturnType<typeof response>>(resolve => { finishWrite = resolve; });
+  const fetchMock = vi.fn().mockImplementation((url, options) => {
+   if (options?.method === 'DELETE') return pendingWrite;
+   return Promise.resolve(response(gallery(url === unitA ? 'a' : 'b')));
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  const { rerender } = render(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-1" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Remove from gallery' }));
+  expect(screen.getByLabelText('Object')).toBeDisabled();
+  rerender(<ScopedGalleryEditor {...allProps} initialSelection="unit:unit-2" />);
+  expect(await screen.findByAltText('Photo 1 of Room 102')).toHaveAttribute('src', '/b.jpg');
+  expect(screen.getByLabelText('Object')).not.toBeDisabled();
+  await act(async () => { finishWrite(response({ error: 'Old A write failed' }, ok)); });
+  expect(screen.queryByText('Gallery saved')).not.toBeInTheDocument();
+  expect(screen.queryByText('Old A write failed')).not.toBeInTheDocument();
+  expect(screen.getByAltText('Photo 1 of Room 102')).toHaveAttribute('src', '/b.jpg');
+  expect(fetchMock.mock.calls.filter(([url, options]) => url === unitA && !options?.method)).toHaveLength(1);
+  expect(fetchMock.mock.calls.filter(([, options]) => options?.method)).toEqual([
+   [`${unitA}?mediaId=a`, { method: 'DELETE', headers: undefined, body: undefined }],
+  ]);
+ });
+});

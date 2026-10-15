@@ -8,12 +8,13 @@ import { getScopedOperationalAccess, getLegacyOperationalUnitIds, operationalTas
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
 import OperationalTaskCreateForm from '@/components/ops/OperationalTaskCreateForm';
 import { enumLabelDefaults } from '@/lib/enum-labels';
+import { taskCalendarReturnHref } from '@/lib/calendar-navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function OperationalTasksPage({
   searchParams,
-}: { searchParams?: { unitId?: string; mc?: string; spaceId?: string } }) {
+}: { searchParams?: { unitId?: string; mc?: string; spaceId?: string; returnTo?: string | string[] } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/tasks');
 
@@ -47,11 +48,9 @@ export default async function OperationalTasksPage({
     if (error instanceof OperatingAccessError) notFound();
     throw error;
   }
-  const calendarQuery = new URLSearchParams();
-  if (requestedSpaceId) calendarQuery.set('spaceId', requestedSpaceId);
-  if (requestedUnitId) calendarQuery.set('unitId', requestedUnitId);
-  if (explicitMcMode) calendarQuery.set('mc', '1');
-  const backHref = '/ops/calendar/board' + (calendarQuery.size ? '?' + calendarQuery.toString() : '');
+  const backHref = taskCalendarReturnHref(searchParams?.returnTo, {
+    spaceId: requestedSpaceId, unitId: requestedUnitId, mc: explicitMcMode,
+  });
 
   const labels = await getLabels({
     ...enumLabelDefaults('taskType', 'taskStatus'),

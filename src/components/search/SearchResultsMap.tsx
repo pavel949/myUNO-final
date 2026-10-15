@@ -163,7 +163,8 @@ export function SearchResultsMap({
       button.setAttribute('aria-label', project.name);
       button.className =
         'rounded-full border border-brand-deep bg-surface-paper px-12 py-4 text-small font-semibold text-brand-deep shadow-card';
-      button.textContent = project.unitCount > 1 ? String(project.unitCount) : '1';
+      button.textContent = project.name + (project.unitCount > 1 ? ` · ${project.unitCount}` : '');
+      button.title = project.name;
       button.onclick = () => {
         if (mapRef.current === map) onSelectProject(project.id);
       };

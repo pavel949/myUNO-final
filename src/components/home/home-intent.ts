@@ -14,7 +14,7 @@ export function parseHomeIntent(value: string | null | undefined): HomeIntent {
 }
 
 export interface HomePlaceSelection {
-  kind: 'area' | 'project';
+  kind: 'area' | 'project' | 'unit';
   id: string;
   slug?: string;
   name: string;

@@ -4,6 +4,7 @@ import { getServiceOrdersByProvider } from '@/modules/services';
 import { getConfig } from '@/modules/config';
 import { requireProviderMember } from '@/app/libs/providerGuard';
 import { handleError } from '@/app/libs/errorHandler';
+import { parseStandaloneContext } from '@/modules/services/standalone-context';
 import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
 
 /**
@@ -22,6 +23,7 @@ export async function GET() {
       orders: orders.map((order) => ({
         ...serializeOrder(order),
         noteToProvider: order.note_to_provider ?? null,
+        location: (() => { try { return parseStandaloneContext(order.service_context); } catch { return null; } })(),
         acceptDeadline:
           order.status === 'placed' || order.status === 'paid'
             ? new Date(order.createdAt.getTime() + slaHours * 60 * 60 * 1000)

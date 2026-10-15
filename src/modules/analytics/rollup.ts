@@ -20,8 +20,10 @@ const OCCUPYING_STATUSES: BookingStatus[] = [
  * - nightsOccupied ∈ {0,1}: 1 when any confirmed/checked_in/checked_out/
  *   completed booking covers the night. Owner stays and internal blocks
  *   occupy the unit but carry no revenue (totalThb = 0).
- * - rentalRevenueCents: each booking's total attributed evenly per night
- *   (totalThb × 100 / nights), so summing days never double-counts a stay.
+ * - rentalRevenueCents: each booking's stored satang total attributed evenly
+ *   per night (totalThb / nights), so a stay is not counted in full every day.
+ * - serviceOrderRevenueCents: sum of stored service-order satang totals.
+ *   Despite their legacy names, totalThb and total_thb already use minor units.
  */
 export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
   const targetDate = new Date(date ? date.getTime() : Date.now());
@@ -67,7 +69,7 @@ export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
     if (!o.unit_id) continue;
     const agg = ordersByUnit.get(o.unit_id) || { count: 0, revenueCents: 0 };
     agg.count += 1;
-    agg.revenueCents += o.total_thb * 100;
+    agg.revenueCents += o.total_thb;
     ordersByUnit.set(o.unit_id, agg);
   }
 
@@ -100,7 +102,7 @@ export async function rollupMetricsDaily(db: PrismaClient, date?: Date) {
         1,
         Math.round((b.endDate.getTime() - b.startDate.getTime()) / DAY_MS)
       );
-      rentalRevenueCents += (b.totalThb * 100) / nights;
+      rentalRevenueCents += b.totalThb / nights;
     }
     rentalRevenueCents = Math.round(rentalRevenueCents);
 

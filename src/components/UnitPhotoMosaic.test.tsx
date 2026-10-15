@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, it, expect } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { UnitPhotoMosaic } from './UnitPhotoMosaic';
 
+beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+});
 const photos = (n: number) => Array.from({ length: n }, (_, i) => `/p${i + 1}.jpg`);
 
 /**
@@ -39,7 +43,7 @@ describe('every photo is reachable on mobile (T-062)', () => {
     expect(container.firstElementChild).toBeTruthy();
   });
 
-  it('still offers the desktop overflow grid past five photos', () => {
+  it('offers full-screen viewing for larger galleries', () => {
     render(<UnitPhotoMosaic images={photos(9)} alt="Villa" showAllLabel="Show all" />);
     expect(screen.getByRole('button', { name: 'Show all' })).toHaveAttribute(
       'aria-expanded',
@@ -47,9 +51,9 @@ describe('every photo is reachable on mobile (T-062)', () => {
     );
   });
 
-  it('does not offer "show all" at five or fewer, where it would reveal nothing', () => {
+  it('offers full-screen viewing even for small galleries', () => {
     render(<UnitPhotoMosaic images={photos(5)} alt="Villa" showAllLabel="Show all" />);
-    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show all' })).toHaveAttribute('aria-haspopup', 'dialog');
   });
 });
 
@@ -76,15 +80,37 @@ describe('shared property gallery composition', () => {
     expect(screen.getByRole('region', { name: 'Residence' })).toHaveAttribute('tabindex', '0');
   });
 
-  it('opens and closes additional desktop images through its linked control', () => {
+  it('opens every photo in a modal with keyboard, swipe, Escape and focus return', () => {
     render(<UnitPhotoMosaic images={photos(7)} alt="Residence" showAllLabel="View photos" />);
     const button = screen.getByRole('button', { name: 'View photos' });
+    button.focus();
     fireEvent.click(button);
+    const dialog = screen.getByRole('dialog');
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    const overflow = document.getElementById(button.getAttribute('aria-controls')!);
-    expect(overflow?.querySelectorAll('img')).toHaveLength(2);
-    fireEvent.click(button);
+    expect(within(dialog).getByRole('status')).toHaveTextContent('1 / 7');
+    fireEvent.keyDown(dialog, { key: 'ArrowLeft' });
+    expect(within(dialog).getByRole('status')).toHaveTextContent('7 / 7');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next photo' }));
+    expect(within(dialog).getByRole('status')).toHaveTextContent('1 / 7');
+    const image = within(dialog).getByAltText('Residence (1/7)');
+    fireEvent.touchStart(image.parentElement!, { touches: [{ clientX: 200 }] });
+    fireEvent.touchEnd(image.parentElement!, { changedTouches: [{ clientX: 80 }] });
+    expect(within(dialog).getByRole('status')).toHaveTextContent('2 / 7');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(document.getElementById(button.getAttribute('aria-controls')!)).toBeNull();
+    expect(button).toHaveFocus();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('opens the selected photo directly and handles failed image delivery', () => {
+    render(<UnitPhotoMosaic images={photos(3)} alt="Residence" showAllLabel="View photos" />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'View photos: 3 / 3' })[0]);
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('status')).toHaveTextContent('3 / 3');
+    fireEvent.error(within(dialog).getByAltText('Residence (3/3)'));
+    expect(within(dialog).getByRole('img', { name: 'This photo could not be loaded.' })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previous photo' }));
+    expect(within(dialog).getByAltText('Residence (2/3)')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close gallery' }));
   });
 });

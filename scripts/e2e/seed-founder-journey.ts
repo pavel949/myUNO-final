@@ -117,13 +117,32 @@ async function main() {
     await db.inventoryCategory.update({ where: { id: tariffUnit.inventoryCategoryId! }, data: { coverMediaId: localMedia[0].mediaId } });
     await db.operatingSpace.update({ where: { id: operatingSpace.id }, data: { units: { create: { unitId: tariffUnit.id, active: true, startsOn: new Date() } } } });
 
+    // Standalone buyer has no stay, property membership or role assignment.
+    const serviceCustomer = await createIdentity({ email: 'service-customer@browser.example.test', firstName: 'Synthetic', lastName: 'Standalone Customer' });
+    await db.identity.update({ where: { id: serviceCustomer.id }, data: { hashedPassword, emailVerifiedAt: new Date() } });
+    const provider = await db.provider.create({ data: { name: 'Synthetic Browser Provider', contactEmail: 'provider@browser.example.test', contactPhone: '+66000000000', categoryKeys: ['cleaning'], status: 'active', vetted_at: new Date(), vetted_by_identity_id: founder.id } });
+    const service = await db.service.create({ data: {
+      provider_id: provider.id, categoryKey: 'cleaning', title: 'Synthetic standalone cleaning',
+      titleEn: 'Synthetic standalone cleaning', titleRu: 'Тестовая уборка по адресу', titleTh: 'บริการทำความสะอาดทดสอบ',
+      description: 'Synthetic local acceptance service, no real delivery.',
+      descriptionEn: 'Synthetic local acceptance service, no real delivery.', descriptionRu: 'Только тестовый заказ без реального выполнения.', descriptionTh: 'บริการสำหรับทดสอบเท่านั้น ไม่มีการให้บริการจริง',
+      priceModel: 'fixed', basePriceThb: 50000, durationMin: 60, fulfilmentMode: 'referred', advanceNoticeHours: 0,
+      status: 'active', approved_at: new Date(), approved_by_identity_id: founder.id, coverMediaId: localMedia[0].mediaId,
+    } });
+    // Only the exact disposable DB guard above permits synthetic supply activation.
+    await db.configParameter.upsert({ where: { key: 'services.standalone_offers' },
+      create: { key: 'services.standalone_offers', valueType: 'json', scopeableTo: 'global', groupKey: 'services', description: 'Synthetic browser standalone supply only', defaultValue: [] }, update: {} });
+    await db.configOverride.upsert({ where: { parameterKey_scopeType_scopeId: { parameterKey: 'services.standalone_offers', scopeType: 'global', scopeId: 'global' } },
+      create: { parameterKey: 'services.standalone_offers', scopeType: 'global', scopeId: 'global', updatedByIdentityId: founder.id, value: [{ serviceId: service.id, enabled: true, responsibleOrganizationId: organization.id, destinationKey: 'phuket', areaKeys: [area.slug], termsVersion: 1, takeRatePct: 12 }] },
+      update: { value: [{ serviceId: service.id, enabled: true, responsibleOrganizationId: organization.id, destinationKey: 'phuket', areaKeys: [area.slug], termsVersion: 1, takeRatePct: 12 }] } });
+
     const readiness = await getPropertyReadiness(db, project.id);
     if (!readiness || readiness.blockers.length) throw new Error(`Fixture prerequisites incomplete: ${JSON.stringify(readiness?.blockers)}`);
     const day = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
     await mkdir('browser-results', { recursive: true });
     const thisYear = new Date().getUTCFullYear();
     const seasonalYear = Date.parse(`${thisYear}-12-19T00:00:00Z`) > Date.now() + 2 * 86400000 ? thisYear : thisYear + 1;
-    await writeFile('browser-results/fixture.json', JSON.stringify({ unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55), staffId: staff.id, staffEmail: staff.email, taskDueAt: `${day(2)}T12:00`, taskExpectedDueAt: `${day(2)}T05:00:00.000Z`, taskTimeZone: operatingSpace.timezone, tariffUnitId: tariffUnit.id, tariffUnitName: tariffUnit.name, tariffStartDate: `${seasonalYear}-12-19`, tariffEndDate: `${seasonalYear}-12-22` }, null, 2));
+    await writeFile('browser-results/fixture.json', JSON.stringify({ serviceCustomerId: serviceCustomer.id, serviceCustomerEmail: serviceCustomer.email, standaloneServiceId: service.id, standaloneAreaSlug: area.slug, standaloneOrganizationId: organization.id, unitId: unit.id, unitName: unit.name, projectId: project.id, guestId: guest.id, contentId: content.id, descriptionKey, founderEmail: founder.email, guestEmail: guest.email, password, startDate: day(45), endDate: day(48), operatingSpaceId: operatingSpace.id, manualStartDate: day(52), manualEndDate: day(55), staffId: staff.id, staffEmail: staff.email, taskDueAt: `${day(2)}T12:00`, taskExpectedDueAt: `${day(2)}T05:00:00.000Z`, taskTimeZone: operatingSpace.timezone, tariffUnitId: tariffUnit.id, tariffUnitName: tariffUnit.name, tariffStartDate: `${seasonalYear}-12-19`, tariffEndDate: `${seasonalYear}-12-22` }, null, 2));
     console.log('Synthetic canonical draft fixture ready; no unit published or booking created by setup.');
   } finally { await db.$disconnect(); }
 }

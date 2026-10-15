@@ -1,3 +1,4 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
@@ -217,6 +218,7 @@ export default async function ProjectLandingPage({
   const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
+  const galleryLabels = await getGalleryCopy();
   const context = discoveryContext(searchParams, { projectId: project.id });
   const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
 
@@ -342,7 +344,7 @@ export default async function ProjectLandingPage({
           subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
         />
         {projectPhotos.length > 0 ? (
-          <UnitPhotoMosaic
+          <UnitPhotoMosaic galleryLabels={galleryLabels}
             images={projectPhotos}
             alt={project.name}
             showAllLabel={`${labels['project_page.gallery.view_all']} · ${labels['project_page.gallery.count'].replace('{count}', String(projectPhotos.length))}`}

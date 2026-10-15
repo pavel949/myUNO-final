@@ -11,6 +11,7 @@ import { getPublicMarketplaceServiceDetail } from '@/modules/services';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
+import { getStandaloneServiceOffer } from '@/modules/services/standalone-context';
 import { formatServicePriceLabel } from './price-label';
 import { getDestination } from '@/modules/destinations';
 import { servicePresentationImage } from '@/lib/presentation-media';
@@ -76,7 +77,19 @@ export default async function ServiceDetailPage({
     track(prisma, 'service_opened', serviceEventDimensions),
   ]).catch(() => null);
 
+  const standaloneOffer = await getStandaloneServiceOffer(prisma, service.id);
+  const standaloneAreas = standaloneOffer ? await prisma.area.findMany({ where: { slug: { in: standaloneOffer.areaKeys }, status: 'live' }, select: { slug: true, nameKey: true }, orderBy: { sort: 'asc' } }) : [];
+  const standalone = standaloneOffer && standaloneAreas.length ? { destinationKey: standaloneOffer.destinationKey, responsibleOrganizationName: standaloneOffer.responsibleOrganizationName ?? '', cancellationWindowHours: Number(await getConfig(prisma, 'service.cancel_window_hours', { fresh: true }) ?? 24), areas: standaloneAreas.map(area => ({ key: area.slug, label: area.slug.replace(/-/g, ' ') })) } : null;
+
   const labels = await getLabels({
+    'services.standalone.another_address': 'Order for another address',
+    'services.standalone.location': 'Service location',
+    'services.standalone.responsibility': 'Responsible organization: {organization}',
+    'services.standalone.cancellation': 'Full refund if cancelled more than {hours} hours before the service. No refund within that window.',
+    'services.standalone.area': 'Choose a service area',
+    'services.standalone.address': 'Full address and arrival instructions',
+    'services.standalone.recipient': 'Recipient name',
+    'services.standalone.phone': 'Recipient phone',
     'landing.services.no_photo': 'Illustrative image',
     'services.breadcrumb_home': 'Home',
     'services.breadcrumb_services': 'Services',
@@ -100,6 +113,7 @@ export default async function ServiceDetailPage({
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
     'services.browse.login_needed': 'Log in to place an order.',
+    'services.browse.loading': 'Loading…',
     'services.wizard.choose_stay': 'Choose the stay for this service',
     'services.wizard.no_context': 'To order online, open this service from your stay or property. For another location, message the team to arrange it.',
     'services.wizard.when': 'When',
@@ -264,6 +278,7 @@ export default async function ServiceDetailPage({
             projectId={projectId}
             unitId={unitId}
             whatsappNumber={whatsappNumber}
+              standalone={standalone}
             labels={labels}
           />
           <div className="mt-16">

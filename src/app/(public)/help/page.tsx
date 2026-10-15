@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { StitchMain, PublicHero } from '@/components/premium/StitchPage';
 import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
+import { GALLERY_EMERGENCY_LOCALE_DRAFTS } from '@/modules/content/gallery-emergency.seed';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HelpPage() {
   const labels = await getLabels({
+    'help.emergency.title': 'Emergency help in Thailand',
+    'help.emergency.body': 'For immediate danger or a medical emergency, call the relevant emergency service directly. Do not wait for a myUNO message or request reply.',
     'help.kicker': 'HELP CENTER',
     'help.guest.account': 'Sign in and open Account to update your details. My UNO connects your trips, orders and the workspaces available to you.',
     'help.guest.passport': 'A Project Passport brings together the available information and supporting records about a complex. It also identifies information that still needs confirmation.',
@@ -69,7 +72,8 @@ export default async function HelpPage() {
       'Sign in and open My requests. If the problem is tied to a stay or unit, opening the request from that context keeps the correct booking or property attached.',
     'help.account.cta': 'Open Account',
     'help.requests.cta': 'Open My requests',
-  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
+    'tickets.new.title': 'Raise a request',
+  }, undefined, { ...GUEST_SERVICE_LOCALE_DRAFTS, ...GALLERY_EMERGENCY_LOCALE_DRAFTS });
 
   const sections = [
     {
@@ -126,7 +130,8 @@ export default async function HelpPage() {
       ],
       links: [
         ['/account', labels['help.account.cta']],
-        ['/tickets/new', labels['help.requests.cta']],
+        ['/tickets', labels['help.requests.cta']],
+        ['/tickets/new', labels['tickets.new.title']],
       ],
     },
   ] as const;
@@ -134,6 +139,11 @@ export default async function HelpPage() {
   return (
     <StitchMain>
       <PublicHero dark kicker={labels['help.kicker']} title={labels['help.title']} body={labels['help.body']} />
+      <section className="stitch-panel mb-24 border-l-4 border-state-error p-24">
+        <h2 className="text-heading-3 font-semibold text-text-ink">{labels['help.emergency.title']}</h2>
+        <p className="my-12 text-body text-text-secondary">{labels['help.emergency.body']}</p>
+        <Link href="/help/emergency" className="inline-flex min-h-44 items-center font-semibold text-state-error hover:underline">{labels['help.emergency.title']} →</Link>
+      </section>
       <div className="grid gap-20 lg:grid-cols-2">
         <div className="contents">
           {sections.map((section) => (

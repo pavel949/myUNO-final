@@ -1,30 +1,21 @@
 'use client';
 
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { PropertyImage } from '@/components/property/PropertyImage';
 import { Button } from './Button';
 
+const FULLSCREEN_IMAGE_SIZES = '100vw';
 const MOBILE_IMAGE_SIZES = '(max-width: 768px) 100vw, 300px';
 
-/**
- * Unit photography: a mosaic on desktop, a swipeable carousel on mobile.
- *
- * The mobile half used to render the cover image alone, with a "1 / N" badge
- * that looked like a carousel position and was purely decorative. The only way
- * to see another photo was a "show all" button that appeared solely when there
- * were MORE than five images — so for any unit with two to five photos, a
- * mobile guest could not see any picture but the first. On a booking funnel
- * whose traffic is mostly phones, that is most of the photography, invisible.
- *
- * Now it is a real carousel: CSS scroll-snap, which is native, touch-driven,
- * keyboard-reachable and needs no library. The counter reads the actual
- * scroll position rather than asserting one.
+/** Image mosaic and native mobile carousel with an accessible full-screen viewer.
+ * Native dialog provides modal focus containment; close restores the trigger.
  */
 export function UnitPhotoMosaic({
   images,
   alt,
   showAllLabel,
   emptyLabel,
+  galleryLabels,
 }: {
   images: string[];
   alt: string;
@@ -32,15 +23,40 @@ export function UnitPhotoMosaic({
   /** Shown when the home has no published photos yet (doc 06: every
    *  component ships its empty state, never a blank block). */
   emptyLabel?: string;
+  galleryLabels?: { close: string; previous: string; next: string; unavailable: string };
 }) {
   const overflowId = useId();
-  const [expanded, setExpanded] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const touchStart = useRef<number | null>(null);
+  const galleryOpen = galleryIndex !== null;
+  const copy = galleryLabels || { close: 'Close gallery', previous: 'Previous photo', next: 'Next photo', unavailable: 'This photo could not be loaded.' };
+  const openGallery = (index: number, trigger: HTMLElement) => {
+    triggerRef.current = trigger;
+    setGalleryIndex(index);
+  };
+  const closeGallery = () => setGalleryIndex(null);
+  const move = (direction: number) => setGalleryIndex(index => index === null ? index : (index + direction + images.length) % images.length);
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      triggerRef.current?.focus();
+    };
+  }, [galleryOpen]);
   const [current, setCurrent] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
 
   const cover = images[0];
   const thumbs = images.slice(1, 5);
-  const rest = images.slice(5);
+
 
   // Which slide is showing, derived from where the track actually is. Reading
   // the scroll position keeps the counter honest when the guest flicks past
@@ -75,16 +91,16 @@ export function UnitPhotoMosaic({
       {/* The same image-led composition serves project and unit pages. Sparse
           galleries fill the available width instead of leaving empty cells. */}
       <div className={`hidden overflow-hidden rounded-lg md:grid gap-8 ${images.length === 1 ? 'grid-cols-1' : images.length === 2 ? 'grid-cols-2' : 'grid-cols-4 grid-rows-2'}`}>
-        <div className={`relative overflow-hidden bg-surface-sand ${images.length === 1 ? 'aspect-[16/7]' : images.length === 2 ? 'aspect-[4/3]' : 'col-span-2 row-span-2 min-h-[320px] lg:min-h-[400px]'}`}>
+        <button type="button" aria-label={`${showAllLabel}: 1 / ${images.length}`} onClick={event => openGallery(0, event.currentTarget)} className={`relative overflow-hidden bg-surface-sand ${images.length === 1 ? 'aspect-[16/7]' : images.length === 2 ? 'aspect-[4/3]' : 'col-span-2 row-span-2 min-h-[320px] lg:min-h-[400px]'}`}>
           <PropertyImage fallbackLabel={emptyLabel || alt} src={cover} alt={alt} fill sizes={images.length === 1 ? '(max-width: 1280px) 100vw, 1200px' : '(max-width: 1280px) 50vw, 600px'} className="object-cover" priority />
-        </div>
+        </button>
         {thumbs.map((src, index) => (
-          <div
+          <button type="button" aria-label={`${showAllLabel}: ${index + 2} / ${images.length}`} onClick={event => openGallery(index + 1, event.currentTarget)}
             key={`${src}-${index}`}
             className={`relative overflow-hidden bg-surface-sand ${images.length === 2 ? 'aspect-[4/3]' : images.length === 3 ? 'col-span-2' : images.length === 4 && index === 0 ? 'col-span-2' : ''}`}
           >
             <PropertyImage fallbackLabel={emptyLabel || alt} src={src} alt={alt} fill sizes={images.length < 4 || (images.length === 4 && index === 0) ? '(max-width: 1280px) 50vw, 600px' : '(max-width: 1280px) 25vw, 300px'} className="object-cover" />
-          </div>
+          </button>
         ))}
       </div>
 
@@ -100,7 +116,7 @@ export function UnitPhotoMosaic({
           aria-label={alt}
         >
           {images.map((src, index) => (
-            <div
+            <button type="button" aria-label={`${showAllLabel}: ${index + 1} / ${images.length}`} onClick={event => openGallery(index, event.currentTarget)}
               key={`${src}-${index}`}
               className="relative shrink-0 w-full aspect-[4/3] snap-center overflow-hidden"
             >
@@ -112,7 +128,7 @@ export function UnitPhotoMosaic({
                 className="object-cover"
                 priority={index === 0}
               />
-            </div>
+            </button>
           ))}
         </div>
 
@@ -130,37 +146,38 @@ export function UnitPhotoMosaic({
         )}
       </div>
 
-      {/* The overflow grid is a desktop affordance: the mobile carousel already
-          carries every photo, so offering "show all" there would reveal nothing
-          new. */}
-      {rest.length > 0 && (
-        <div className="mt-12 hidden md:flex justify-end">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setExpanded((open) => !open)}
-            aria-expanded={expanded}
-            aria-controls={overflowId}
-          >
-            {showAllLabel}
-          </Button>
-        </div>
-      )}
-      {expanded && rest.length > 0 && (
-        <div id={overflowId} className="mt-12 hidden md:grid grid-cols-2 md:grid-cols-4 gap-8">
-          {rest.map((src, index) => (
-            <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-md">
-              <PropertyImage fallbackLabel={emptyLabel || alt}
-                src={src}
-                alt={`${alt} (${index + 6}/${images.length})`}
-                fill
-                sizes={MOBILE_IMAGE_SIZES}
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mt-12 flex justify-end">
+        <Button type="button" variant="secondary" size="sm" onClick={event => openGallery(current, event.currentTarget)} aria-haspopup="dialog" aria-expanded={galleryOpen} aria-controls={overflowId}>
+          {showAllLabel}
+        </Button>
+      </div>
+      <dialog ref={dialogRef} id={overflowId} aria-label={`${showAllLabel}: ${alt}`} onCancel={event => { event.preventDefault(); closeGallery(); }}
+        onKeyDown={event => {
+          if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
+          if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
+          if (event.key === 'Escape') { event.preventDefault(); closeGallery(); }
+        }}
+        className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none bg-brand-deep p-16 text-surface-ivory backdrop:bg-black/80 sm:p-24">
+        {galleryIndex !== null && <div className="flex h-full flex-col gap-16">
+          <div className="flex items-center justify-between gap-16">
+            <p className="min-w-0 truncate text-body">{alt}</p>
+            <button type="button" autoFocus onClick={closeGallery} className="min-h-44 shrink-0 rounded-md border border-surface-ivory/40 px-16 focus-visible:outline-2 focus-visible:outline-offset-4">{copy.close}</button>
+          </div>
+          <div className="relative min-h-0 flex-1" onTouchStart={event => { touchStart.current = event.touches[0]?.clientX ?? null; }}
+            onTouchEnd={event => {
+              const end = event.changedTouches[0]?.clientX;
+              if (touchStart.current !== null && end !== undefined && Math.abs(end - touchStart.current) > 50) move(end < touchStart.current ? 1 : -1);
+              touchStart.current = null;
+            }}>
+            <PropertyImage key={`${galleryIndex}-${images[galleryIndex]}`} src={images[galleryIndex]} alt={`${alt} (${galleryIndex + 1}/${images.length})`} fallbackLabel={copy.unavailable} fill sizes={FULLSCREEN_IMAGE_SIZES} className="object-contain" />
+          </div>
+          <div className="flex items-center justify-between gap-16 pb-[env(safe-area-inset-bottom)]">
+            <button type="button" aria-label={copy.previous} disabled={images.length < 2} onClick={() => move(-1)} className="min-h-44 rounded-md border border-surface-ivory/40 px-16 disabled:opacity-40"><span aria-hidden="true">{'←'}</span><span className="ml-8 hidden sm:inline">{copy.previous}</span></button>
+            <p role="status" aria-live="polite" className="shrink-0 text-small">{galleryIndex + 1} / {images.length}</p>
+            <button type="button" aria-label={copy.next} disabled={images.length < 2} onClick={() => move(1)} className="min-h-44 rounded-md border border-surface-ivory/40 px-16 disabled:opacity-40"><span className="mr-8 hidden sm:inline">{copy.next}</span><span aria-hidden="true">{'→'}</span></button>
+          </div>
+        </div>}
+      </dialog>
     </div>
   );
 }

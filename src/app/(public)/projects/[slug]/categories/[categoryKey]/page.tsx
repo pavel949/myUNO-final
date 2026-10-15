@@ -1,3 +1,4 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
 import { formatPropertyCount } from '@/lib/property-count';
 import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { PROPERTY_CATEGORY_UI_DRAFTS } from '@/modules/content/property-category-ui-drafts';
@@ -27,6 +28,7 @@ export default async function ProjectCategoryPage({
 
   const category = project.categories.find(item => item.key === params.categoryKey);
   if (!category) notFound();
+  const galleryLabels = await getGalleryCopy();
   const context = discoveryContext(searchParams, { projectId: project.id, inventoryCategoryId: category.id });
   const units = project.units.filter(unit => unit.categoryKey === category.key);
   const bookableUnits = units.filter(unit => unit.bookable);
@@ -95,7 +97,7 @@ export default async function ProjectCategoryPage({
 
     {category.galleryUrls.length > 0 ? <section className="stitch-panel p-20 md:p-24">
       <h2 className="mb-16 font-display text-heading-2 font-semibold text-text-ink">{labels['project_category.gallery']}</h2>
-      <UnitPhotoMosaic images={category.galleryUrls} alt={category.name}
+      <UnitPhotoMosaic galleryLabels={galleryLabels} images={category.galleryUrls} alt={category.name}
         showAllLabel={labels['project_category.gallery']}
         emptyLabel={discovery.photos} />
     </section> : null}

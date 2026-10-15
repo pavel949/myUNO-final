@@ -1,3 +1,4 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
 import { discoveryCopy } from '@/components/DiscoveryHomes';
@@ -29,6 +30,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
     projectId?: string;
   };
 }) {
+  const galleryLabels = await getGalleryCopy();
   const discovery = await discoveryCopy(getRequestLocale());
   const home = await getPublicCommercialHomeById(prisma, params.id);
   if (!home) notFound();
@@ -96,7 +98,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman"><Link href={`/projects/${home.project.slug}`} className="hover:underline">{home.project.name}</Link></p>
       <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{home.name}</h1>
       <div className="mt-24">
-        <UnitPhotoMosaic
+        <UnitPhotoMosaic galleryLabels={galleryLabels}
           emptyLabel={discovery.photos}
           images={home.images}
           alt={home.name}

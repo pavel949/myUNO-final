@@ -141,6 +141,16 @@ enum BookingStatus {
   cancelled
 }
 
+enum BookingPartyDetailsStatus {
+  known
+  source_unknown
+}
+
+enum BookingReceivableStatus {
+  collectible
+  pending_reconciliation
+}
+
 enum VerificationStatus {
   not_required
   pending
@@ -1229,6 +1239,8 @@ model Booking {
   creationFingerprint        String?            @map("creation_fingerprint") @db.VarChar(64)
   startDate                  DateTime           @map("start_date") @db.Date
   endDate                    DateTime           @map("end_date") @db.Date
+  /// Unknown counts are permitted only for reviewed external operating records.
+  partyDetailsStatus         BookingPartyDetailsStatus @default(known) @map("party_details_status")
   adults                     Int
   children                   Int
   /// Not counted toward occupancy — an infant needs a cot, not a bed.
@@ -1237,6 +1249,8 @@ model Booking {
   pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
+  /// Collection eligibility is independent of source-reported payments and stay status.
+  receivableStatus           BookingReceivableStatus @default(collectible) @map("receivable_status")
   balanceDueThb              Int                @default(0) @map("balance_due_thb")
   refundAccruedThb           Int                @default(0) @map("refund_accrued_thb")
   cancellationPolicySnapshot Json?              @map("cancellation_policy_snapshot") @db.JsonB
@@ -1682,6 +1696,7 @@ model UnitEngagement {
 }
 
 model Organization {
+  serviceSupportTickets Ticket[] @relation("serviceSupportOrganization")
   operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -1859,6 +1874,9 @@ model ServiceProject {
 }
 
 model ServiceOrder {
+  request_key String? @map("request_key") @db.VarChar(36)
+  request_fingerprint String? @map("request_fingerprint") @db.VarChar(64)
+  supportTickets Ticket[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1924,6 +1942,7 @@ model ServiceOrder {
   @@index([project_id, status, createdAt])
   @@index([provider_id, status])
   @@index([orderer_identity_id, createdAt])
+  @@unique([orderer_identity_id, request_key])
   dispatch ServiceOrderDispatch?
 
   @@map("service_order")
@@ -2556,8 +2575,10 @@ model Ticket {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId          String   @map("project_id")
+  projectId          String?  @map("project_id")
   unitId             String?  @map("unit_id")
+  serviceOrderId String? @map("service_order_id")
+  responsibleOrganizationId String? @map("responsible_organization_id")
   raisedByIdentityId String   @map("raised_by_identity_id")
   raisedByRole       RoleType @map("raised_by_role")
   assigneeIdentityId String?  @map("assignee_identity_id")
@@ -2575,7 +2596,9 @@ model Ticket {
   threadId String? @map("thread_id")
 
   // Relations
-  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
+  responsibleOrganization Organization? @relation("serviceSupportOrganization", fields: [responsibleOrganizationId], references: [id], onDelete: Restrict)
+  project  Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit     Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   raisedBy Identity      @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
   assignee Identity?     @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
@@ -2585,6 +2608,8 @@ model Ticket {
   dispute  Dispute?
 
   @@index([projectId, status])
+  @@index([serviceOrderId])
+  @@index([responsibleOrganizationId, status])
   @@index([assigneeIdentityId, slaDueAt])
   @@map("ticket")
 }
@@ -4069,3 +4094,4 @@ model RateLimitBucket {
   @@index([resetAt])
   @@map("rate_limit_bucket")
 }
+

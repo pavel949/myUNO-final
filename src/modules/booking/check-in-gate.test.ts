@@ -26,6 +26,11 @@ describe('assessCheckIn — the TM30-safe check-in rule', () => {
     expect(assessCheckIn(stay(overrides), '2026-11-10')).toBe('party_unknown');
   });
 
+  it('refuses typed source uncertainty even when counts and registered guests look complete', () => {
+    expect(assessCheckIn(stay({ partyDetailsStatus: 'source_unknown' }), '2026-11-10')).toBe('party_unknown');
+    expect(assessCheckIn(stay({ partyDetailsStatus: 'known' }), '2026-11-10')).toBeNull();
+  });
+
   it('refuses explicit source uncertainty despite complete registered guests and positive counts', () => {
     expect(assessCheckIn(stay({ priceBreakdown: { partyUnknown: true } }), '2026-11-10'))
       .toBe('party_unknown');
@@ -90,3 +95,4 @@ describe('assessCheckIn — the TM30-safe check-in rule', () => {
     ).toBe('guests_incomplete');
   });
 });
+

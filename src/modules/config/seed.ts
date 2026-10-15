@@ -480,6 +480,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'Longitude anchoring short Plus Code resolution (default: Phuket)',
       },
       {
+        key: 'services.standalone_offers',
+        valueType: 'json',
+        defaultValue: [],
+        scopeableTo: 'global',
+        groupKey: 'services',
+        description: 'Reviewed standalone service supply, organization, destination and area coverage',
+      },
+      {
         key: 'services.take_rate_pct',
         valueType: 'percent',
         defaultValue: 15,

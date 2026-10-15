@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { PrismaClient, ServiceOrderStatus, RoleType, RefundReason } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { createNotification, raiseTicket } from '@/modules/comms';
@@ -5,10 +6,14 @@ import { track } from '@/modules/analytics';
 import { recordServiceCommission, refund as requestPaymentRefund } from '@/modules/finance';
 import { notifyProviderMembers } from './provider-notify';
 import { resolveProjectServiceOffer } from './project-service-offer';
+import { StandaloneServiceContext, parseStandaloneContext, validateStandaloneServiceContext, standaloneOrganizationId } from './standalone-context';
 
 export interface CreateServiceOrderInput {
   serviceId: string;
-  projectId: string;
+  requestKey?: string;
+  requestFingerprint?: string;
+  projectId: string | null;
+  serviceContext?: StandaloneServiceContext;
   unitId?: string;
   bookingId?: string;
   ordererIdentityId: string;
@@ -124,31 +129,34 @@ async function issueServiceOrderRefunds(input: {
  * Validates service availability and computes take-rate snapshot.
  */
 
-/**
- * A service order's project, required.
- *
- * `service_order.project_id` is nullable in the database: the canonical v3
- * commerce migration made standalone orders — ones belonging to no project —
- * representable (SERVICES_MARKETPLACE.md §7). The application cannot create
- * one yet, because `createServiceOrder` still requires a project, so this is
- * currently unreachable.
- *
- * It is asserted rather than defaulted because the two callers attribute money
- * and ownership: a commission ledger entry needs a project to land against,
- * and `ticket.project_id` is NOT NULL in the schema. Quietly substituting a
- * placeholder would misattribute revenue. When standalone commerce is built,
- * this is the tripwire that says what has to be decided first.
- */
-function requireOrderProject(order: { id: string; project_id: string | null }): string {
-  if (order.project_id === null) {
-    throw new Error(
-      `Service order ${order.id} has no project, which the commission and ticket paths require`
-    );
-  }
-  return order.project_id;
+export class ServiceOrderRequestConflict extends Error {
+  statusCode = 409;
+  isPublic = true;
+  constructor() { super('This request was already used for different service details. Review the order before trying again.'); }
 }
 
-export async function createServiceOrder(
+/** Serialize retries of one customer intent. Canonical totals remain inside the writer. */
+export async function createServiceOrder(db: PrismaClient, input: CreateServiceOrderInput): Promise<{ id: string }> {
+  if (!input.requestKey) return createServiceOrderOnce(db, input);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.requestKey)) throw new Error('Invalid service request key');
+  const fingerprint = createHash('sha256').update(JSON.stringify({
+    serviceId: input.serviceId, projectId: input.projectId, unitId: input.unitId ?? null, bookingId: input.bookingId ?? null,
+    serviceContext: input.serviceContext ? parseStandaloneContext(input.serviceContext) : null,
+    scheduledStart: input.scheduledStart.toISOString(), scheduledEnd: input.scheduledEnd.toISOString(), quantity: input.quantity,
+    noteToProvider: input.noteToProvider?.trim() || null, addressNote: input.addressNote?.trim() || null,
+  })).digest('hex');
+  return db.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'service-order:' + input.ordererIdentityId + ':' + input.requestKey}))`;
+    const existing = await tx.serviceOrder.findUnique({ where: { orderer_identity_id_request_key: { orderer_identity_id: input.ordererIdentityId, request_key: input.requestKey! } }, select: { id: true, request_fingerprint: true } });
+    if (existing) {
+      if (existing.request_fingerprint !== fingerprint) throw new ServiceOrderRequestConflict();
+      return { id: existing.id };
+    }
+    return createServiceOrderOnce(tx as unknown as PrismaClient, { ...input, requestFingerprint: fingerprint });
+  }, { maxWait: 10000, timeout: 20000 });
+}
+
+async function createServiceOrderOnce(
   db: PrismaClient,
   input: CreateServiceOrderInput
 ): Promise<{ id: string }> {
@@ -184,6 +192,10 @@ export async function createServiceOrder(
     throw new Error('Provider is not vetted');
   }
 
+  if (!projectId && (unitId || bookingId)) throw new Error('Standalone orders cannot contain a property or booking');
+  const standalone = !projectId ? await validateStandaloneServiceContext(db, serviceId, input.serviceContext) : null;
+  if (projectId && input.serviceContext) throw new Error('Choose a stay or a standalone address, not both');
+
   const serviceProjects = await db.serviceProject.findMany({
     where: { service_id: serviceId },
     select: {
@@ -192,9 +204,9 @@ export async function createServiceOrder(
       effective_from: true, effective_to: true,
     },
   });
-  const offer = resolveProjectServiceOffer({
+  const offer = standalone ? { available: true, publiclyVisible: true, source: 'global' as const, unitPriceThb: service.basePriceThb, leadTimeHours: service.advanceNoticeHours, takeRatePct: null, termsVersion: standalone.offer.termsVersion } : resolveProjectServiceOffer({
     rows: serviceProjects,
-    projectId,
+    projectId: projectId ?? '',
     basePriceThb: service.basePriceThb,
     baseLeadTimeHours: service.advanceNoticeHours,
     at: scheduledStart,
@@ -250,8 +262,8 @@ export async function createServiceOrder(
   // snapshot all use the same money source.
   const totalThb = unitPriceThb * quantity;
   const configuredTakeRate =
-    ((await getConfig(db, 'services.take_rate_pct', { projectId })) as number | undefined) ?? 15;
-  const tookRatePctSnapshot = offer.takeRatePct ?? configuredTakeRate;
+    ((await getConfig(db, 'services.take_rate_pct', { projectId: projectId ?? undefined })) as number | undefined) ?? 15;
+  const tookRatePctSnapshot = standalone?.offer.takeRatePct ?? offer.takeRatePct ?? configuredTakeRate;
   if (!Number.isFinite(tookRatePctSnapshot) || tookRatePctSnapshot < 0 || tookRatePctSnapshot > 100) {
     throw new Error('Configured service take rate is invalid');
   }
@@ -265,10 +277,16 @@ export async function createServiceOrder(
     lead_time_hours: offer.leadTimeHours,
   };
 
+  const cancellationWindowHours = standalone ? Number(await getConfig(db, 'service.cancel_window_hours', { fresh: true }) ?? 24) : undefined;
+  if (standalone && (!Number.isFinite(cancellationWindowHours) || cancellationWindowHours! < 0)) throw new Error('Configured cancellation window is invalid');
+  const standaloneContext = standalone ? { ...standalone.context, responsibleOrganizationId: standalone.offer.responsibleOrganizationId } : undefined;
+  const termsSnapshot = standalone ? { version: standalone.offer.termsVersion, responsibleOrganizationId: standalone.offer.responsibleOrganizationId, responsibleOrganizationName: standalone.offer.responsibleOrganizationName ?? '', providerId: service.provider_id, collector: 'myuno', fulfilmentMode: service.fulfilmentMode, unitPriceThb, totalThb, takeRatePct: tookRatePctSnapshot, cancellationWindowHours: cancellationWindowHours!, acceptedAt: new Date().toISOString() } : undefined;
+
   // Create order in placed status
   const order = await db.serviceOrder.create({
     data: {
       service_id: serviceId,
+      ...(input.requestKey ? { request_key: input.requestKey, request_fingerprint: input.requestFingerprint } : {}),
       provider_id: service.provider_id,
       project_id: projectId,
       unit_id: unitId,
@@ -283,7 +301,8 @@ export async function createServiceOrder(
       take_rate_pct_snapshot: tookRatePctSnapshot,
       status: 'placed',
       note_to_provider: noteToProvider,
-      address_note: addressNote,
+      address_note: standalone?.context.address ?? addressNote,
+      ...(standaloneContext ? { service_context: standaloneContext, terms_snapshot: termsSnapshot } : {}),
     },
   });
 
@@ -300,7 +319,7 @@ export async function createServiceOrder(
 
   await track(db, 'service_order_placed', {
     serviceOrderId: order.id,
-    projectId,
+    projectId: projectId ?? undefined,
     unitId,
     bookingId,
     identityId: ordererIdentityId,
@@ -437,7 +456,14 @@ export async function declineServiceOrder(
  * Mark a service order as fulfilled.
  * Transitions accepted → fulfilled. Review prompt (N-27) is sent by cron 12h later.
  */
-export async function fulfillServiceOrder(
+export async function fulfillServiceOrder(db: PrismaClient, serviceOrderId: string, fulfilledByProviderId: string): Promise<void> {
+  await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${serviceOrderId} FOR UPDATE`;
+    await fulfillServiceOrderOnce(tx as unknown as PrismaClient, serviceOrderId, fulfilledByProviderId);
+  });
+}
+
+async function fulfillServiceOrderOnce(
   db: PrismaClient,
   serviceOrderId: string,
   fulfilledByProviderId: string
@@ -480,7 +506,7 @@ export async function fulfillServiceOrder(
     db,
     order.id,
     order.unit_id,
-    requireOrderProject(order),
+    order.project_id,
     commissionThb,
     new Date()
   );
@@ -553,7 +579,8 @@ export async function reportProviderNoShow(
 
   const serviceTitle = order.service?.title || 'Service';
   const { id: ticketId } = await raiseTicket(db, {
-    projectId: requireOrderProject(order),
+    projectId: order.project_id,
+    ...(order.project_id ? {} : { serviceOrderId: order.id, responsibleOrganizationId: standaloneOrganizationId(order.service_context) }),
     unitId: order.unit_id ?? undefined,
     raisedByIdentityId: reportedByIdentityId,
     raisedByRole: order.orderer_role,
@@ -622,7 +649,8 @@ export async function cancelServiceOrder(
   }
 
   // Get cancellation window from config
-  const cancelWindowHours = ((await getConfig(db, 'service.cancel_window_hours', {
+  const snapshot = order.terms_snapshot as Record<string, unknown> | null;
+  const cancelWindowHours = typeof snapshot?.cancellationWindowHours === 'number' ? snapshot.cancellationWindowHours : ((await getConfig(db, 'service.cancel_window_hours', {
     projectId: order.project_id ?? undefined,
   })) as number | undefined) || 24;
 

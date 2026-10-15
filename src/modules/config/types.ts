@@ -109,6 +109,7 @@ export interface CancellationConfig {
 // Services & tickets — marketplace and SLAs (doc 04 §6)
 export interface ServicesConfig {
   'services.take_rate_pct': number;
+  'services.standalone_offers': Array<{ serviceId: string; responsibleOrganizationId: string; destinationKey: string; areaKeys: string[]; termsVersion: number; enabled: boolean; takeRatePct?: number }>;
   'services.advance_notice_hours_default': number;
   'services.require_admin_approval': boolean;
   'services.payout_period': 'weekly' | 'biweekly' | 'monthly';

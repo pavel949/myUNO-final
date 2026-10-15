@@ -1,3 +1,4 @@
+import { stayAmenityWhere, type StayAmenityKey } from '@/modules/browse/amenity-filters';
 import { PUBLIC_SLEEPING_SPACES_QUERY, publicSleepingSpaces } from './public-sleeping';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -16,11 +17,12 @@ const photo = { id: true, storageKey: true, kind: true, mimeType: true, encrypte
 
 export async function listPublicDiscoveryUnits(filters: {
   unitId?: string; projectId?: string; areaSlug?: string; inventoryCategoryId?: string;
-  bedrooms?: number; unitTypes?: Array<'villa' | 'condo' | 'townhouse'>;
+  amenities?: StayAmenityKey[]; bedrooms?: number; unitTypes?: Array<'villa' | 'condo' | 'townhouse'>;
 } = {}) {
   const imported = await managedImportedInventoryIds(prisma);
   const units = await prisma.unit.findMany({
     where: { AND: [discoveryVisibility(imported), {
+      ...stayAmenityWhere(filters.amenities ?? []),
       ...(filters.bedrooms !== undefined ? { bedrooms: filters.bedrooms } : {}),
       ...(filters.unitTypes?.length ? { unitType: { in: filters.unitTypes } } : {}),
       ...(filters.unitId ? { id: filters.unitId } : {}),

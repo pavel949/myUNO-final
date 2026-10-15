@@ -1,4 +1,5 @@
 import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
+import { standaloneOrganizationId } from '@/modules/services/standalone-context';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
 import { refund, recordCashRefund, recordCost } from '@/modules/finance';
 
@@ -30,7 +31,9 @@ export interface RaiseDisputeInput {
 }
 
 interface SubjectContext {
-  projectId: string;
+  projectId: string | null;
+  serviceOrderId?: string;
+  responsibleOrganizationId?: string;
   unitId: string | null;
   /** The identity allowed to raise a dispute over this subject. */
   ownerIdentityId: string;
@@ -67,21 +70,16 @@ async function loadSubject(
       where: { id: subjectId },
       select: {
         project_id: true,
+        service_context: true,
         unit_id: true,
         orderer_identity_id: true,
         payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
     if (!order) throw new Error('Service order not found');
-    // `ticket.project_id` is NOT NULL, so a dispute needs the order's project.
-    // Standalone orders (no project) are representable in the schema since the
-    // canonical v3 commerce migration but cannot yet be created, so this is
-    // unreachable today — and is the tripwire for when they can be.
-    if (order.project_id === null) {
-      throw new Error(`Service order ${subjectId} has no project, which a dispute ticket requires`);
-    }
     return {
       projectId: order.project_id,
+      ...(order.project_id ? {} : { serviceOrderId: subjectId, responsibleOrganizationId: standaloneOrganizationId(order.service_context) }),
       unitId: order.unit_id,
       ownerIdentityId: order.orderer_identity_id,
       paymentId: order.payments[0]?.id ?? null,
@@ -122,6 +120,8 @@ export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): 
 
   const { id: ticketId } = await raiseTicket(db, {
     projectId: subject.projectId,
+    serviceOrderId: subject.serviceOrderId,
+    responsibleOrganizationId: subject.responsibleOrganizationId,
     unitId: subject.unitId ?? undefined,
     raisedByIdentityId,
     raisedByRole,

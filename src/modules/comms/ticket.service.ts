@@ -2,6 +2,7 @@ import { PrismaClient, TicketStatus, TicketPriority, TicketEventType, RoleType }
 import { assertCatalogKeys, getConfig, type ConfigKey } from '@/modules/config';
 import { publishMessage } from './thread.bus';
 import { track } from '@/modules/analytics';
+import { orderResponsibleOrganization, standaloneTicketAuthority } from './standalone-ticket-access';
 
 const SLA_HOURS_BY_PRIORITY: Record<TicketPriority, ConfigKey> = {
   urgent: 'tickets.sla_hours.urgent',
@@ -19,11 +20,11 @@ const DEFAULT_SLA_HOURS: Record<TicketPriority, number> = {
 
 async function resolveTicketSlaDueAt(
   db: PrismaClient,
-  projectId: string,
+  projectId: string | null,
   unitId: string | undefined,
   priority: TicketPriority
 ): Promise<Date> {
-  const configuredHours = await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId, unitId });
+  const configuredHours = await getConfig(db, SLA_HOURS_BY_PRIORITY[priority], { projectId: projectId ?? undefined, unitId });
   const slaHours =
     typeof configuredHours === 'number' ? configuredHours : DEFAULT_SLA_HOURS[priority];
   return new Date(Date.now() + slaHours * 60 * 60 * 1000);
@@ -53,7 +54,9 @@ async function resolveDefaultAssigneeIdentityId(
 }
 
 export interface RaiseTicketInput {
-  projectId: string;
+  projectId: string | null;
+  serviceOrderId?: string;
+  responsibleOrganizationId?: string;
   unitId?: string;
   raisedByIdentityId: string;
   raisedByRole: RoleType;
@@ -92,18 +95,35 @@ export async function raiseTicket(
 ): Promise<{ id: string; threadId: string }> {
   const { projectId, unitId, raisedByIdentityId, raisedByRole, categoryKey, title, description, priority = 'normal' } = input;
 
+  const { serviceOrderId, responsibleOrganizationId } = input;
+  if (projectId === null) {
+    if (!serviceOrderId || !responsibleOrganizationId || unitId) {
+      throw new Error('invalid request: standalone ticket requires an order and responsible organization');
+    }
+    const order = await db.serviceOrder.findUnique({
+      where: { id: serviceOrderId },
+      select: { project_id: true, orderer_identity_id: true, service_context: true },
+    });
+    if (!order || order.project_id !== null || order.orderer_identity_id !== raisedByIdentityId ||
+      orderResponsibleOrganization(order.service_context) !== responsibleOrganizationId) {
+      throw new Error('invalid request: standalone ticket does not match the accepted order scope');
+    }
+  }
+
   // Category must exist in the doc 04 §8 catalog (DM-3)
-  await assertCatalogKeys(db, 'catalog.ticket_categories', categoryKey, { projectId });
+  await assertCatalogKeys(db, 'catalog.ticket_categories', categoryKey, { projectId: projectId ?? undefined });
 
   const [slaDueAt, assigneeIdentityId] = await Promise.all([
     resolveTicketSlaDueAt(db, projectId, unitId, priority),
-    resolveDefaultAssigneeIdentityId(db, projectId),
+    projectId ? resolveDefaultAssigneeIdentityId(db, projectId) : Promise.resolve(null),
   ]);
 
   const ticket = await db.ticket.create({
     data: {
       projectId,
       unitId,
+      serviceOrderId,
+      responsibleOrganizationId,
       raisedByIdentityId,
       raisedByRole,
       categoryKey,
@@ -157,7 +177,7 @@ export async function raiseTicket(
 
   // Track analytics event for ticket raised
   await track(db, 'ticket_raised', {
-    projectId,
+    projectId: projectId ?? undefined,
     unitId,
     identityId: raisedByIdentityId,
     ticketId: ticket.id,
@@ -234,7 +254,7 @@ export async function updateTicketStatus(
   if (newStatus === 'resolved') {
     await track(db, 'ticket_resolved', {
       ticketId,
-      projectId: ticket.projectId,
+      projectId: ticket.projectId ?? undefined,
       unitId: ticket.unitId ?? undefined,
       identityId: ticket.raisedByIdentityId,
       actorIdentityId,
@@ -360,9 +380,15 @@ export async function getTicketDetail(
   }
 
   // Visibility check (simplified — full enforcement per doc 03 matrix)
-  const canView =
+  let canView =
     ticket.raisedByIdentityId === identityId ||
     ticket.assigneeIdentityId === identityId;
+
+  if (ticket.projectId === null) {
+    const identity = await db.identity.findUnique({ where: { id: identityId }, select: { status: true, isAdmin: true } });
+    canView = identity?.status === 'active' && (Boolean(identity.isAdmin) ||
+      ticket.raisedByIdentityId === identityId || (await standaloneTicketAuthority(db, ticket, identityId)).canView);
+  }
 
   if (!canView) {
     throw new Error('Not authorized to view this ticket');
@@ -535,7 +561,7 @@ export async function checkAndTrackSLABreaches(db: PrismaClient): Promise<number
     // Track the SLA breach event
     await track(db, 'ticket_sla_breached', {
       ticketId: ticket.id,
-      projectId: ticket.projectId,
+      projectId: ticket.projectId ?? undefined,
       unitId: ticket.unitId ?? undefined,
       identityId: ticket.raisedByIdentityId,
       category: ticket.categoryKey,

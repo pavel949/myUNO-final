@@ -1,5 +1,8 @@
 'use client';
 
+import { SimilarAvailableHomes } from '@/components/property/SimilarAvailableHomes';
+import { guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
+
 import { stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
 import { SaveHomeButton } from '@/components/property/SaveHomeButton';
 import { ShareStayOffer } from '@/components/property/ShareStayOffer';
@@ -139,12 +142,13 @@ export default function UnitDetailClient({
   unitId,
   labels,
   sleepingSummary,
-  uxCopy,
+  uxCopy, similarCopy, galleryLabels,
 }: {
   unitId: string;
   labels: UnitDetailLabels;
   sleepingSummary?: ReactNode;
-  uxCopy?: StayUxCopy;
+  galleryLabels?: { close: string; previous: string; next: string; unavailable: string };
+  uxCopy?: StayUxCopy; similarCopy?: GuestSearchCopy;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -325,7 +329,7 @@ export default function UnitDetailClient({
         </div>
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.8fr)] lg:gap-32">
           <div className="lg:col-span-2">
-            <UnitPhotoMosaic
+            <UnitPhotoMosaic galleryLabels={galleryLabels}
               images={unit.images ?? []}
               alt={unit.name}
               showAllLabel={fill(labels.showAllPhotos, { count: unit.images?.length ?? 0 })}
@@ -546,6 +550,7 @@ export default function UnitDetailClient({
           </div>
         </div>
       </div>
+      <SimilarAvailableHomes unitId={unitId} nightlyBaht={breakdown && breakdown.nights > 0 ? breakdown.subtotal / breakdown.nights : null} copy={similarCopy ?? guestSearchDefaults(locale)} photoLabel={ux.photos} />
       {(!startDate || !endDate) && <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float lg:hidden">
         <Button fullWidth onClick={() => {
           document.getElementById('stay-dates')?.scrollIntoView({ behavior: 'smooth', block: 'center' });

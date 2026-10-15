@@ -111,7 +111,9 @@ export default function SearchResults({
   labels,
   sortOptions,
   typeOptions,
+  amenityOptions = [], amenityTitle,
 }: {
+  amenityTitle?: string; amenityOptions?: { key: string; label: string }[];
   locale?: string;
   uxCopy?: StayUxCopy;
   labels: SearchResultsLabels;
@@ -150,6 +152,8 @@ export default function SearchResults({
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
   const bedrooms = searchParams?.get('bedrooms') || '';
   const unitTypes = searchParams?.get('unitTypes') || '';
+  const amenities = searchParams?.get('amenities') || '';
+  const selectedAmenities = new Set(amenities.split(',').filter(Boolean));
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
   const swLat = searchParams?.get('swLat') || '';
@@ -190,6 +194,7 @@ export default function SearchResults({
         if (stayMode) params.set('stayMode', stayMode);
         if (bedrooms) params.set('bedrooms', bedrooms);
         if (unitTypes) params.set('unitTypes', unitTypes);
+        if (amenities) params.set('amenities', amenities);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
         if (hasMapBounds) {
@@ -243,7 +248,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, inventoryCategoryId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, inventoryCategoryId, areaSlug, stayMode, sort, bedrooms, unitTypes, amenities, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -393,6 +398,15 @@ export default function SearchResults({
           </div>
         )}
 
+        {amenityOptions.length > 0 && <fieldset className="mb-24 mt-16">
+          <legend className="mb-8 text-small text-text-stone">{amenityTitle}</legend>
+          <div className="flex flex-wrap gap-8">{amenityOptions.map(option => <button key={option.key} type="button" aria-pressed={selectedAmenities.has(option.key)} onClick={() => replaceFilters(next => {
+            const selected = new Set((next.get('amenities') || '').split(',').filter(Boolean));
+            if (selected.has(option.key)) selected.delete(option.key); else selected.add(option.key);
+            if (selected.size) next.set('amenities', [...selected].join(',')); else next.delete('amenities');
+          })} className={selectedAmenities.has(option.key) ? 'rounded-full bg-brand-andaman px-16 py-8 text-small text-on-dark-text' : 'rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink'}>{option.label}</button>)}</div>
+        </fieldset>}
+
         {hasDates && (
           <div className="mb-24 space-y-16">
             <div>
@@ -454,7 +468,7 @@ export default function SearchResults({
                   className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
-              {(bedrooms || unitTypes || minPrice || maxPrice) && (
+              {(bedrooms || unitTypes || amenities || minPrice || maxPrice) && (
                 <button
                   type="button"
                   onClick={() =>
@@ -463,6 +477,7 @@ export default function SearchResults({
                       next.delete('minPrice');
                       next.delete('maxPrice');
                       next.delete('bedrooms');
+                      next.delete('amenities');
                     })
                   }
                   className="h-40 text-small font-semibold text-brand-andaman hover:underline"

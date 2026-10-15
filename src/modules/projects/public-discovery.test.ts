@@ -43,6 +43,13 @@ describe('public discovery visibility separate from booking', () => {
     expect(result).not.toHaveProperty('baseNightlyThb');
     expect(result).not.toHaveProperty('ownerIdentityId');
   });
+  it('requires all selected recorded home amenities without changing visibility', async () => {
+    await listPublicDiscoveryUnits({ amenities: ['wifi', 'washer'] });
+    expect(mocks.findMany.mock.lastCall?.[0].where.AND).toEqual([
+      discoveryVisibility({ unitIds: ['imported'], projectIds: ['imported-project'] }),
+      { amenityKeys: { hasEvery: ['wifi', 'washer'] } },
+    ]);
+  });
   it('applies project, area and exact category jointly, with visibility independent of the filters', async () => {
     await listPublicDiscoveryUnits({ projectId: 'project', areaSlug: 'layan', inventoryCategoryId: 'category' });
     expect(mocks.findMany.mock.lastCall?.[0].where.AND).toEqual([

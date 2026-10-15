@@ -1,3 +1,4 @@
+import { parseStayAmenities, stayAmenityWhere } from '@/modules/browse/amenity-filters';
 import { NextRequest, NextResponse } from 'next/server';
 import { bahtToSatang } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
@@ -188,6 +189,7 @@ export async function GET(req: NextRequest) {
         ] },
       ],
       maxGuests: { gte: totalGuests },
+      ...stayAmenityWhere(parseStayAmenities(searchParams.get('amenities'))),
       ...(unitTypes.length > 0 && { unitType: { in: unitTypes } }),
       ...(bedrooms !== undefined && { bedrooms }),
       ...(inventoryCategoryId

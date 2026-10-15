@@ -1,3 +1,5 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
+import { GUEST_SEARCH_UX_KEYS, guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
 import { ShareStayOffer } from '@/components/property/ShareStayOffer';
 import { SavedHomesProvider } from '@/components/property/SaveHomeButton';
 import { STAY_UX_KEYS, stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
@@ -87,8 +89,11 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
   const description = await unitDescription(unit.descriptionKey);
   const jsonLd = 'bookable' in unit ? unitJsonLd({ ...unit, description }) : null;
 
+  const galleryLabels = await getGalleryCopy();
   const uxLocale = getRequestLocale();
   const uxLabels = await getLabels(Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const similarLabels = await getLabels(Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const similarCopy = Object.fromEntries(Object.keys(guestSearchDefaults(uxLocale)).map(key => [key, similarLabels[`guest_search.${key}`]])) as GuestSearchCopy;
   const uxCopy = Object.fromEntries(Object.keys(stayUxDefaults(uxLocale)).map(key => [key, uxLabels[`stay_ux.${key}`]])) as StayUxCopy;
   const labels = await getLabels({
     ...publicSleepingLabelsForLocale(getRequestLocale()),
@@ -197,7 +202,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
           startDate={typeof searchParams.startDate === 'string' ? searchParams.startDate : null}
           endDate={typeof searchParams.endDate === 'string' ? searchParams.endDate : null}
           guests={Number(searchParams.adults || 1) + Number(searchParams.children || 0)} copy={uxCopy} />
-        <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
+        <UnitPhotoMosaic galleryLabels={galleryLabels} images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
         <p>{[unit.bedrooms > 0 ? formatPropertyCount(`{count} ${copy.bedrooms}`, unit.bedrooms, getRequestLocale()) : null, unit.maxGuests > 0 ? formatPropertyCount(`{count} ${copy.guests}`, unit.maxGuests, getRequestLocale()) : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
         {unit.photoScope === 'room_type' && <p className="text-small text-text-secondary">{copy.representative}</p>}
         {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
@@ -219,6 +224,8 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <SavedHomesProvider><UnitDetailClient
+        galleryLabels={galleryLabels}
+        similarCopy={similarCopy}
         uxCopy={uxCopy}
         unitId={params.id}
         sleepingSummary={<PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />}

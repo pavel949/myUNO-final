@@ -1,8 +1,9 @@
 'use client';
 
 
-import { UI_LOCALE } from '@/lib/format';
-import { useEffect, useState } from 'react';
+import { localDateTimeToInstant } from '@/lib/date';
+import { UI_LOCALE, APP_TZ } from '@/lib/format';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
@@ -42,8 +43,10 @@ export default function OrderWizard({
   unitId,
   whatsappNumber,
   labels,
+  standalone,
 }: {
   service: WizardService;
+  standalone?: { destinationKey: string; responsibleOrganizationName?: string; cancellationWindowHours?: number; areas: Array<{ key: string; label: string }> } | null;
   bookingId: string | null;
   projectId?: string | null;
   unitId?: string | null;
@@ -51,6 +54,13 @@ export default function OrderWizard({
   labels: Labels;
 }) {
   const router = useRouter();
+  const submitting = useRef(false);
+  const requestIntent = useRef<{ payload: string; key: string } | null>(null);
+  const [useStandalone, setUseStandalone] = useState(Boolean(standalone && !bookingId && !projectId && !unitId));
+  const [areaKey, setAreaKey] = useState('');
+  const [address, setAddress] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
   const [when, setWhen] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
@@ -103,7 +113,7 @@ export default function OrderWizard({
     };
   }, [bookingId, projectId, unitId]);
 
-  const effectiveBookingId = bookingId ?? autoBookingId;
+  const effectiveBookingId = useStandalone ? null : bookingId ?? autoBookingId;
   const selfPath = serviceContextPath(service.id, { bookingId: effectiveBookingId, projectId, unitId });
   // computeOrderPreviewBaht converts the satang basePriceThb to baht for
   // display only — the server always recomputes the real total from
@@ -143,7 +153,15 @@ export default function OrderWizard({
     );
   }
 
-  if (!bookingId && !projectId && !unitId && !effectiveBookingId && contextLoaded && availableStays.length === 0) {
+  // Establish identity before collecting a standalone address, so sign-in cannot discard it.
+  if (!bookingId && !projectId && !unitId && !contextLoaded) {
+    return <div className="stitch-panel p-24" role="status">{labels['services.browse.loading']}</div>;
+  }
+  if (needsLogin) {
+    return <div className="stitch-panel p-24"><p className="mb-16">{labels['services.browse.login_needed']}</p><Link href={`/login?next=${encodeURIComponent(selfPath)}`} className="inline-flex min-h-48 items-center rounded-md bg-brand-andaman px-24 text-surface-ivory">{labels['services.browse.login_needed']}</Link></div>;
+  }
+
+  if (!standalone && !bookingId && !projectId && !unitId && !effectiveBookingId && contextLoaded && availableStays.length === 0) {
     return (
       <div className="stitch-panel p-24">
         <h2 className="text-heading-3 font-semibold mb-12">{labels['services.wizard.title']}</h2>
@@ -154,25 +172,30 @@ export default function OrderWizard({
   }
 
   const placeOrder = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch('/api/service-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const payload = {
           serviceId: service.id,
-          scheduledStart: when,
+          scheduledStart: localDateTimeToInstant(when, APP_TZ).toISOString(),
+          ...(useStandalone && standalone ? { serviceContext: { kind: 'standalone', destinationKey: standalone.destinationKey, areaKey, address, recipientName, recipientPhone } } : {}),
           quantity,
           bookingId: effectiveBookingId || undefined,
           // Sent only when there is no stay to derive the context from, so a
           // guest's booking still wins and nobody can order against a
           // building they only claimed in a query string — the API validates
           // the caller's role against whatever it is given.
-          ...(!effectiveBookingId && projectId ? { projectId } : {}),
-          ...(!effectiveBookingId && unitId ? { unitId } : {}),
+          ...(!useStandalone && !effectiveBookingId && projectId ? { projectId } : {}),
+          ...(!useStandalone && !effectiveBookingId && unitId ? { unitId } : {}),
           noteToProvider: note || undefined,
-        }),
+      };
+      const fingerprint = JSON.stringify(payload);
+      if (!requestIntent.current || requestIntent.current.payload !== fingerprint) requestIntent.current = { payload: fingerprint, key: crypto.randomUUID() };
+      const response = await fetch('/api/service-orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, requestKey: requestIntent.current.key }),
       });
       if (response.status === 401) {
         router.push(`/login?next=${encodeURIComponent(selfPath)}`);
@@ -186,6 +209,7 @@ export default function OrderWizard({
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['services.wizard.error_generic']);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -252,7 +276,19 @@ export default function OrderWizard({
         {labels['services.wizard.title']}
       </h2>
       <div className="flex flex-col gap-12">
-        {!bookingId && !projectId && !unitId && availableStays.length > 1 && (
+        {standalone && !bookingId && !projectId && !unitId && availableStays.length > 0 && (
+          <label className="flex items-center gap-12 text-body"><input type="checkbox" checked={useStandalone} onChange={event => setUseStandalone(event.target.checked)} />{labels['services.standalone.another_address']}</label>
+        )}
+        {useStandalone && standalone && (
+          <fieldset className="flex flex-col gap-12 rounded-lg border border-border-line p-16">
+            <legend className="px-8 font-semibold">{labels['services.standalone.location']}</legend>
+            <label className="flex flex-col gap-4">{labels['services.standalone.area']}<select value={areaKey} onChange={event => setAreaKey(event.target.value)} className="min-h-48 border border-border-line rounded-sm px-12"><option value="">{labels['services.standalone.area']}</option>{standalone.areas.map(area => <option key={area.key} value={area.key}>{area.label}</option>)}</select></label>
+            <label className="flex flex-col gap-4">{labels['services.standalone.address']}<textarea value={address} onChange={event => setAddress(event.target.value)} minLength={8} maxLength={1000} className="border border-border-line rounded-sm p-12" /></label>
+            <label className="flex flex-col gap-4">{labels['services.standalone.recipient']}<input autoComplete="name" value={recipientName} onChange={event => setRecipientName(event.target.value)} maxLength={120} className="min-h-48 border border-border-line rounded-sm px-12" /></label>
+            <label className="flex flex-col gap-4">{labels['services.standalone.phone']}<input type="tel" autoComplete="tel" value={recipientPhone} onChange={event => setRecipientPhone(event.target.value)} maxLength={40} className="min-h-48 border border-border-line rounded-sm px-12" /></label>
+          </fieldset>
+        )}
+        {!useStandalone && !bookingId && !projectId && !unitId && availableStays.length > 1 && (
           <div className="flex flex-col gap-4">
             <label htmlFor="wizard-stay" className="text-small text-text-stone">{labels['services.wizard.choose_stay']}</label>
             <select id="wizard-stay" value={autoBookingId ?? ''} onChange={(event) => setAutoBookingId(event.target.value || null)} className="min-h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink">
@@ -263,7 +299,7 @@ export default function OrderWizard({
         )}
         <div className="flex flex-col gap-4">
           <label htmlFor="wizard-when" className="text-small text-text-stone">
-            {labels['services.wizard.when']}
+            {labels['services.wizard.when']} · {APP_TZ}
           </label>
           <input
             id="wizard-when"
@@ -299,6 +335,10 @@ export default function OrderWizard({
             className="h-48 px-12 rounded-sm bg-surface-paper border border-border-line text-text-ink"
           />
         </div>
+        {useStandalone && standalone && <div className="text-small text-text-secondary space-y-8">
+          <p>{fill(labels['services.standalone.responsibility'], { organization: standalone.responsibleOrganizationName ?? '' })}</p>
+          <p>{fill(labels['services.standalone.cancellation'], { hours: standalone.cancellationWindowHours ?? 24 })}</p>
+        </div>}
         {previewThb !== null && (
           <div className="flex items-center justify-between border-t border-border-line pt-12">
             <span className="text-body text-text-secondary">
@@ -310,7 +350,7 @@ export default function OrderWizard({
           </div>
         )}
         {error && <p role="alert" className="text-small text-state-error">{error}</p>}
-        <Button onClick={placeOrder} isLoading={busy} disabled={!contextLoaded || !when || (!bookingId && !projectId && !unitId && availableStays.length > 1 && !autoBookingId)} fullWidth>
+        <Button onClick={placeOrder} isLoading={busy} disabled={!when || (useStandalone ? !areaKey || address.trim().length < 8 || recipientName.trim().length < 2 || recipientPhone.trim().length < 5 : !contextLoaded || (!bookingId && !projectId && !unitId && availableStays.length > 1 && !autoBookingId))} fullWidth>
           {previewThb !== null
             ? fill(labels['services.wizard.place'], { total: previewThb.toLocaleString(UI_LOCALE) })
             : labels['services.wizard.place_no_total']}

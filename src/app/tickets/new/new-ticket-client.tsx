@@ -22,8 +22,10 @@ export default function NewTicketClient({
   const projectId = searchParams?.get('projectId');
   const unitId = searchParams?.get('unitId');
   const bookingId = searchParams?.get('bookingId');
+  const serviceOrderId = searchParams?.get('serviceOrderId');
 
-  const [categoryKey, setCategoryKey] = useState(categories.includes('maintenance') ? 'maintenance' : categories[0] || 'other');
+  const [categoryKey, setCategoryKey] = useState(serviceOrderId && categories.includes('other')
+    ? 'other' : categories.includes('maintenance') ? 'maintenance' : categories[0] || 'other');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('normal');
@@ -40,9 +42,11 @@ export default function NewTicketClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId,
-          unitId: unitId || undefined,
-          bookingId: bookingId || undefined,
+          ...(serviceOrderId ? { serviceOrderId } : {
+            projectId,
+            unitId: unitId || undefined,
+            bookingId: bookingId || undefined,
+          }),
           categoryKey,
           title: title.trim(),
           description: description || undefined,
@@ -74,7 +78,7 @@ export default function NewTicketClient({
           {labels['tickets.new.title']}
         </h1>
 
-        {!projectId ? (
+        {!projectId && !serviceOrderId ? (
           <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary">
               {labels['tickets.new.missing_context']}

@@ -12,7 +12,7 @@ export default async function NewTicketPage({ searchParams }: { searchParams?: R
   const user = await getCurrentUser();
   if (!user) {
     const context = new URLSearchParams();
-    for (const key of ['projectId', 'unitId', 'bookingId']) {
+    for (const key of ['projectId', 'unitId', 'bookingId', 'serviceOrderId']) {
       const value = searchParams?.[key];
       if (typeof value === 'string') context.set(key, value);
     }

@@ -121,3 +121,12 @@ describe('sourceFingerprint — cancelled stays', () => {
     expect(fp(cancelled(300_000))).toBe(fp(cancelled(300_000)));
   });
 });
+
+
+it('preserves legacy collectible fingerprints but invalidates pending source review', () => {
+  const legacy = sources();
+  const collectible = sources({ bookings: legacy.bookings.map(b => ({ ...b, receivableStatus: 'collectible' })) });
+  const pending = sources({ bookings: legacy.bookings.map(b => ({ ...b, receivableStatus: 'pending_reconciliation' })) });
+  expect(fp(collectible)).toBe(fp(legacy));
+  expect(fp(pending)).not.toBe(fp(legacy));
+});

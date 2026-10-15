@@ -34,10 +34,10 @@ export const PAYMENT_CHECKOUT_DRAFTS = {
   'payments.checkout.order_success_body': GUEST_CHECKOUT_DRAFTS['payments.checkout.order_success_body'],
   'payments.checkout.back_to_order': GUEST_CHECKOUT_DRAFTS['payments.checkout.back_to_order'],
 };
-export const GUEST_CHECKOUT_KEYS = Object.entries(GUEST_CHECKOUT_DRAFTS).map(([key, draft]) => ({
-  key,
-  namespace: key.startsWith('booking.') ? 'booking' : 'payments',
-  description: 'Guest booking and payment recovery',
-  ...draft,
-  status: 'needs_review' as const,
-}));
+export const GUEST_CHECKOUT_KEYS = [
+  { key: 'booking.review.loading_quote', namespace: 'booking', description: 'Guest checkout recovery copy', ...GUEST_CHECKOUT_DRAFTS['booking.review.loading_quote'], status: 'needs_review' as const },
+  { key: 'booking.review.retry_quote', namespace: 'booking', description: 'Guest checkout recovery copy', ...GUEST_CHECKOUT_DRAFTS['booking.review.retry_quote'], status: 'needs_review' as const },
+  { key: 'payments.checkout.receipt_body', namespace: 'payments', description: 'Guest checkout recovery copy', ...GUEST_CHECKOUT_DRAFTS['payments.checkout.receipt_body'], status: 'needs_review' as const },
+  { key: 'payments.checkout.order_success_body', namespace: 'payments', description: 'Guest checkout recovery copy', ...GUEST_CHECKOUT_DRAFTS['payments.checkout.order_success_body'], status: 'needs_review' as const },
+  { key: 'payments.checkout.back_to_order', namespace: 'payments', description: 'Guest checkout recovery copy', ...GUEST_CHECKOUT_DRAFTS['payments.checkout.back_to_order'], status: 'needs_review' as const },
+];

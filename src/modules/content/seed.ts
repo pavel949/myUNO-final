@@ -1,3 +1,5 @@
+import { GALLERY_EMERGENCY_KEYS } from './gallery-emergency.seed';
+import { GUEST_SEARCH_UX_KEYS } from './guest-search-ux.seed';
 import { GUEST_CHECKOUT_KEYS } from './guest-checkout.seed';
 import { GUEST_AUTH_SUPPORT_KEYS } from './guest-auth-support.seed';
 import { GUEST_SERVICE_CONTEXT_KEYS } from './guest-service-context.seed';
@@ -54,6 +56,8 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  ...GALLERY_EMERGENCY_KEYS,
+  ...GUEST_SEARCH_UX_KEYS,
   ...GUEST_CHECKOUT_KEYS,
   ...GUEST_AUTH_SUPPORT_KEYS,
   ...GUEST_SERVICE_CONTEXT_KEYS,

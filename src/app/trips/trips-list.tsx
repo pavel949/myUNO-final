@@ -56,6 +56,9 @@ interface TripsListProps {
 export default function TripsList({ labels }: TripsListProps) {
   const router = useRouter();
   const [trips, setTrips] = useState<Booking[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +75,7 @@ export default function TripsList({ labels }: TripsListProps) {
         }
         const data: TripsResponse = await response.json();
         setTrips(data.bookings);
+        setTotal(data.total);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : labels['booking.trips.fetch_error'] || 'An error occurred'
@@ -83,6 +87,21 @@ export default function TripsList({ labels }: TripsListProps) {
 
     fetchTrips();
   }, [router, labels]);
+
+  const loadMore = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    setMoreError(false);
+    try {
+      const response = await fetch(`/api/bookings/me?limit=50&offset=${trips.length}`);
+      if (response.status === 401) { router.push('/login?next=/trips'); return; }
+      if (!response.ok) throw new Error('Trips unavailable');
+      const data: TripsResponse = await response.json();
+      setTrips(previous => [...previous, ...data.bookings.filter(trip => !previous.some(existing => existing.id === trip.id))]);
+      setTotal(data.total);
+    } catch { setMoreError(true); }
+    finally { setLoadingMore(false); }
+  };
 
   if (loading) {
     return (
@@ -101,8 +120,9 @@ export default function TripsList({ labels }: TripsListProps) {
           <h1 className="font-display text-display-xl font-semibold text-brand-andaman md:text-display-hero-lg">
             {labels['booking.trips.title']}
           </h1>
+          <Link href="/help/emergency" className="inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">{labels['help.emergency.title']}</Link>
           <p className="text-body text-text-secondary">
-            {trips.length} {trips.length === 1 ? labels['booking.trips.count_singular'] : labels['booking.trips.count_plural']}
+            {total} {total === 1 ? labels['booking.trips.count_singular'] : labels['booking.trips.count_plural']}
           </p>
         </div>
 
@@ -206,6 +226,12 @@ export default function TripsList({ labels }: TripsListProps) {
                 )}
               </Link>
             ))}
+          </div>
+        )}
+        {!error && trips.length > 0 && trips.length < total && (
+          <div className="mt-24">
+            {moreError && <p role="alert" className="text-state-error mb-12">{labels['booking.trips.fetch_error']}</p>}
+            <button type="button" disabled={loadingMore} onClick={() => void loadMore()} className="inline-flex min-h-48 items-center rounded-md border border-brand-andaman px-24 font-semibold text-brand-andaman disabled:opacity-50">{loadingMore ? labels['booking.trips.loading'] : moreError ? labels['booking.trips.retry'] : labels['booking.trips.load_more']}</button>
           </div>
         )}
       </div>

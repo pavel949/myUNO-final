@@ -19,23 +19,30 @@ Baseline: main 82648488cb6b5cb7e0541a007166f20730ef9f70. Existing open PRs #275/
 | Services | Distinguish loading/error/empty; choose between multiple stays; preserve order context; truthful fallback without standalone context | Recovery/context/money tests |
 | Requests/messages/help | Retain request context after login, open acknowledged request, retry messages while preserving draft, useful empty states and plain-language help | Request/message/auth regressions |
 
-No schema migrations, production inventory changes, payment submissions or communications were performed. Existing booking, price, authority and financial writers are preserved. New copy is registered as needs_review; runtime draft fallbacks do not approve CMS translations.
+## Completion pass
 
-## Verification
+The remaining guest surfaces are implemented in the same PR:
 
-- Aggregate guest-route run: 31 test files, 156 tests passed.
-- Full repository ESLint: passed.
-- Production TypeScript configuration: passed.
-- Production build: passed (196 static pages generated).
-- Build ran without DATABASE_URL; database-backed content approval gate was skipped by its existing behavior. This is not live content approval.
-- Baseline production homepage, search and Villa A19 were inspected read-only in the browser. That inspection predates this branch.
-- New deployed UI, real-device mobile/keyboard, live Google OAuth, live payment and DB-backed shortlist concurrency: not checked.
+- Quick amenity filters share the canonical Unit.amenityKeys predicate in dated and undated discovery. Similar homes use actual availability and quoted prices while preserving guest/search constraints.
+- Fullscreen galleries support keyboard, swipe, focus return, scroll lock and failed images. Localized controls are wired to unit, project, category and commercial-home pages.
+- Trips paginate beyond the first 50 records. Anonymous emergency help exposes verified Thailand emergency contacts without a login or response-time promise.
+- Standalone services use an actual vetted provider, explicit service/area coverage and an active responsible organization, with no invented property or guest role. The server owns prices, organization and accepted terms. Address, recipient and commercial snapshots are immutable.
+- A stable customer request key serializes concurrent/retried order submissions; changed details with the same key return 409. Customer views exclude internal commission terms.
+- Standalone support tickets derive scope from the customer's actual order. Only its active responsible organization can manage the request; unrelated property roles do not grant access. Revoked membership loses conversation access.
+- Commission remains attributed to the real service order with nullable project/unit attribution. Existing payment and ledger writers are retained.
 
-## Remaining gaps and rollout
+## Migration and rollout
 
-1. Standalone service checkout is not implemented by the actual server/domain, despite earlier documentation. The UI now offers an honest handoff; it does not invent a project or promise an accepted order.
-2. Trips API/UI pagination beyond the first 50 stays remains a separate gap.
-3. Emergency-specific assistance needs verified contact/configuration; no numbers or response-time claims were invented.
-4. Complete additional quick amenity filters, full-screen photo viewer and recommendations ranked against canonical availability in follow-up work; existing functionality was not relabelled as complete.
-5. Before merging/deploying, inspect CI and apply this branch to a reviewable environment; run guest mobile/auth/quote/order scenarios against real configuration. No production-readiness claim is made.
-6. Rollback is a code revert; this delivery requires no data rollback.
+`20261015070000_standalone_service_support` is additive: nullable ticket property scope, real order/organization foreign keys, scoped indexes/check, immutable standalone snapshot trigger, nullable retry fields and per-customer unique request key. Historical records are not rewritten. RLS and grants are unchanged. Roll back code independently; retain additive columns and accepted order snapshots.
+
+`services.standalone_offers` defaults to `[]`. Production supply remains disabled until actual service IDs, live areas, responsible organization and reviewed terms are configured. The browser fixture configures synthetic supply only in its disposable isolated database.
+
+New copy is registered as needs_review. Runtime draft fallbacks do not approve CMS translations. No production booking, payment or customer communication is submitted as part of verification.
+
+## Verification evidence
+
+- Initial guest-route suite: 31 files / 156 tests passed; production typecheck, lint and build passed.
+- Completion regression suite: 7 files / 39 tests passed, including content registration, locale navigation, standalone parsing/public terms and retry UI.
+- PostgreSQL integration coverage includes canonical search constraints, no-property-role standalone ordering, concurrent replay/conflict, immutable snapshots, commission attribution and scoped support access.
+- The isolated Chromium workflow applies real migrations, seeds synthetic identities/inventory, builds production code and exercises actual browser/API/database behavior with external egress blocked.
+- Final CI and merge evidence is recorded in PR #280. Hosted preview configuration and live payment/OAuth providers are separate runtime dependencies; synthetic acceptance does not claim live provider settlement.

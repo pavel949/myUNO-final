@@ -85,3 +85,10 @@ ALTER TABLE "booking" ADD CONSTRAINT "booking_unknown_party_source_evidence"
   ) IS TRUE);
 ALTER TABLE "booking" ADD CONSTRAINT "booking_checkin_requires_known_party"
   CHECK (status <> 'checked_in' OR party_details_status = 'known');
+
+-- These guards are internal server routines, not public Data API RPCs.
+-- Preserve the migration owner and existing server-role grants.
+REVOKE EXECUTE ON FUNCTION public.guard_booking_receivable_payment() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.assert_period_receivables_resolved(TEXT, TIMESTAMP, TIMESTAMP) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.guard_statement_receivable_review() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.guard_owner_payout_receivable_review() FROM PUBLIC, anon, authenticated;

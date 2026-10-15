@@ -62,3 +62,28 @@ describe('source receivable review blocks new collection, not verified outcomes'
     expect(await db.payment.findUniqueOrThrow({ where: { id: payment.id } })).toMatchObject({ status: 'succeeded' });
   });
 });
+
+
+it('keeps receivable guard routines invoker-only and unavailable to Data API roles', async () => {
+  const rows = await db.$queryRaw<Array<{ name: string; security_definer: boolean; anon_execute: boolean; authenticated_execute: boolean; owner_execute: boolean; public_execute: boolean }>>`
+    SELECT p.proname AS name, p.prosecdef AS security_definer,
+      has_function_privilege('anon', p.oid, 'EXECUTE') AS anon_execute,
+      has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated_execute,
+      has_function_privilege(p.proowner, p.oid, 'EXECUTE') AS owner_execute,
+      EXISTS (SELECT 1 FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+              WHERE a.grantee = 0 AND a.privilege_type = 'EXECUTE') AS public_execute
+    FROM pg_proc p
+    WHERE p.oid IN (
+      to_regprocedure('public.guard_booking_receivable_payment()'),
+      to_regprocedure('public.assert_period_receivables_resolved(text,timestamp without time zone,timestamp without time zone)'),
+      to_regprocedure('public.guard_statement_receivable_review()'),
+      to_regprocedure('public.guard_owner_payout_receivable_review()')
+    )
+    ORDER BY p.proname
+  `;
+  expect(rows).toHaveLength(4);
+  for (const row of rows) expect(row).toMatchObject({
+    security_definer: false, anon_execute: false, authenticated_execute: false,
+    owner_execute: true, public_execute: false,
+  });
+});

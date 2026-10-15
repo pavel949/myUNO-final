@@ -176,6 +176,8 @@ try {
       await editor(sp).getByLabel('Location / floor inside complex', { exact: true }).fill('Floor 1');
       await save(sp, reception.id);
       assert.equal((await canonical(reception.id)).locationLabel, 'Floor 1');
+      await editor(sp).getByLabel('Location / floor inside complex', { exact: true }).press('Tab');
+      assert.equal(await sp.evaluate(() => document.activeElement?.getAttribute('name')), 'sort', 'Keyboard reaches the next editor field');
       const overflow = await sp.locator('body').evaluate(node => ({
         width: node.scrollWidth, viewport: window.innerWidth,
         elements: [...node.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > window.innerWidth + 1)
@@ -209,6 +211,23 @@ try {
     await pp.goto(`/projects/${project.slug}/amenities`);
     await pp.getByRole('heading', { name: cinema.name, exact: true }).waitFor();
     assert.equal(await pp.getByRole('heading', { name: 'Sauna', exact: true }).count(), 0, 'Unpublished drafts must not leak');
+  });
+  await step('Shared facility facts render in English, Russian and Thai without mobile overflow', pp, async () => {
+    for (const [locale, daily, staff, shared] of [
+      ['en', 'Daily access: 24 hours', 'Staff contact hours: 09:00–18:00', 'Shared complex facilities'],
+      ['ru', 'Ежедневный доступ: Круглосуточно', 'Связь с сотрудниками: 09:00–18:00', 'Общие удобства комплекса'],
+      ['th', 'เวลาเข้าใช้ทุกวัน: 24 ชั่วโมง', 'เวลาติดต่อเจ้าหน้าที่: 09:00–18:00', 'สิ่งอำนวยความสะดวกส่วนกลาง'],
+    ]) {
+      await publicContext.addCookies([{ name: 'locale', value: locale, url: baseUrl }]);
+      await pp.goto(`/projects/${project.slug}/amenities/reception`);
+      await pp.getByText(daily, { exact: true }).waitFor();
+      await pp.getByText(staff, { exact: true }).waitFor();
+      await pp.goto(`/units/${unit.id}`);
+      await pp.getByRole('heading', { name: shared, exact: true }).waitFor();
+      assert.ok(await pp.locator('body').evaluate(node => node.scrollWidth <= window.innerWidth), `${locale} shared facilities fit mobile`);
+      await pp.screenshot({ path: `browser-results/complex-amenities-locale-${locale}.png`, fullPage: true });
+    }
+    await publicContext.addCookies([{ name: 'locale', value: 'en', url: baseUrl }]);
   });
   await step('Existing staff shell boundary is explicit: exact-project content API reads work but the admin page redirects', null, async () => {
     const sc = await context('amenities-staff-boundary'); const staffPage = await sc.newPage();

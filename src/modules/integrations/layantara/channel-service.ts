@@ -44,6 +44,11 @@ export async function applyChannelEvent(
 ):Promise<Outcome> {
   const {event:e,rawBody,environment}=input,hash=channelPayloadHash(rawBody);
   const operatingRecord=input.operatingRecord===true;
+  // A workbook payment label is not evidence of an operator receipt.
+  // Refuse before creating even an inbox record; verified channel intake
+  // retains its separate receipt contract below.
+  if(operatingRecord&&e.eventType==='payment.received')
+    return{status:'quarantined',bookingId:null,code:'workbook_payment_reconciliation_required'};
   const system=await db.externalSystem.findFirst({
     where:{system_key:'layantara_os',environment,status:{in:['active','staging']}},
   });
@@ -141,6 +146,11 @@ export async function applyChannelEvent(
       const blocks=await tx.blockedDate.findMany({where:{
         unitId:unit.id,startDate:{lt:end},endDate:{gt:start},
       }});
+      // Workbook row dates do not prove ownership of source protection.
+      // This check runs under the unit lock, including blocks added after
+      // preview. Never consume one based on an inferred occupancyId.
+      if(operatingRecord&&blocks.length)
+        return quarantine('workbook_occupancy_reconciliation_required');
       if(blocks.some(b=>!ref||b.externalRef!==ref||
          b.startDate.getTime()!==start.getTime()||b.endDate.getTime()!==end.getTime()))
         return quarantine('unreconciled_inventory_block');
@@ -312,3 +322,4 @@ export async function applyChannelEvent(
     return{status:'processed',bookingId};
   },{timeout:15000,maxWait:10000});
 }
+

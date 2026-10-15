@@ -30,7 +30,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   const [activeStep, setActiveStep] = useState(1);
   useEffect(() => {
     const activateHashStep = () => {
-      const match = window.location.hash.match(/^#step-(\\d+)$/);
+      const match = window.location.hash.match(/^#step-(\d+)$/);
       const step = match ? Number(match[1]) : 0;
       if (step >= 1 && step <= steps.length) setActiveStep(step);
     };
@@ -202,3 +202,4 @@ export function SleepingForm({ units, submit, labels }: { units: Unit[]; labels:
   </div>;
 }
 function Readiness({ report }: { report: PropertyReadinessReport }) { return <div className="mb-16"><p className="mb-8"><strong>{report.blockers.length}</strong> blockers · <strong>{report.warnings.length}</strong> warnings</p><ul className="space-y-8">{[...report.blockers, ...report.warnings].map(item => <li key={`${item.key}-${item.unitId || ''}`} className={item.severity === 'blocker' ? 'text-state-error' : 'text-state-warning'}>{item.severity === 'blocker' ? 'Blocker' : 'Warning'}: {item.unitName ? `${item.unitName} — ` : ''}{item.message}</li>)}</ul></div>; }
+

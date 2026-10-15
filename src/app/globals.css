@@ -139,3 +139,23 @@ body {
 
 /* Public portal section anchors remain visible below the header and section navigation. */
 .stitch-workspace section[id] { scroll-margin-top: 9rem; }
+
+/* Shared Stitch responsive rules: one central fix for every consumer and
+ * operator surface, without changing application data or interaction logic. */
+@layer components {
+  .stitch-workspace :is(h1, h2, h3, p, label) {
+    overflow-wrap: break-word;
+  }
+
+  .stitch-workspace :is(.stitch-page, .stitch-panel, .stitch-panel-soft, .stitch-hero, .stitch-hero-dark) {
+    min-width: 0;
+  }
+
+  .stitch-workspace :is(input, select, textarea) {
+    max-width: 100%;
+  }
+
+  .stitch-workspace :is(img, video) {
+    max-width: 100%;
+  }
+}

@@ -177,7 +177,12 @@ try {
       await editor(sp).getByLabel('Location / floor inside complex', { exact: true }).fill('Floor 1');
       await save(sp, reception.id);
       assert.equal((await canonical(reception.id)).locationLabel, 'Floor 1');
-      assert.ok(await sp.locator('body').evaluate(node => node.scrollWidth <= window.innerWidth), `Editor must fit ${width}px`);
+      const overflow = await sp.locator('body').evaluate(node => ({
+        width: node.scrollWidth, viewport: window.innerWidth,
+        elements: [...node.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > window.innerWidth + 1)
+          .slice(0, 12).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right })),
+      }));
+      assert.ok(overflow.width <= overflow.viewport, `Editor must fit ${width}px: ${JSON.stringify(overflow)}`);
       await sp.screenshot({ path: `browser-results/complex-amenities-editor-${width}.png`, fullPage: true });
     }
     await sp.setViewportSize({ width: 1440, height: 1000 });

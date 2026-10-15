@@ -244,7 +244,7 @@ try {
     // can reach the real writer. Neither draft nor archived target is made live.
     const controlProject = await db.project.create({ data: { slug: 'synthetic-amenities-live-control', name: 'Synthetic live control',
       areaLabelKey: 'browser.amenities.area', descriptionKey: 'browser.amenities.description', handbookKey: 'browser.amenities.handbook',
-      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live' } });
+      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live', coverMediaId: project.coverMediaId } });
     const controlAmenity = await db.projectAmenity.create({ data: { projectId: controlProject.id, slug: 'control', name: 'Synthetic reservation control',
       published: true, bookingRequired: true, bookingMode: 'time_slot', reservationConfig: { slotMinutes: 60, autoConfirm: true } } });
     const controlPath = `/projects/${controlProject.slug}/amenities/${controlAmenity.slug}/book`;

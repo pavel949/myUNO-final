@@ -88,6 +88,13 @@ describe('shared property gallery composition', () => {
     const dialog = screen.getByRole('dialog');
     expect(button).toHaveAttribute('aria-expanded', 'true');
     expect(within(dialog).getByRole('status')).toHaveTextContent('1 / 7');
+    const close = within(dialog).getByRole('button', { name: 'Close gallery' });
+    const next = within(dialog).getByRole('button', { name: 'Next photo' });
+    close.focus();
+    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true });
+    expect(next).toHaveFocus();
+    fireEvent.keyDown(next, { key: 'Tab' });
+    expect(close).toHaveFocus();
     fireEvent.keyDown(dialog, { key: 'ArrowLeft' });
     expect(within(dialog).getByRole('status')).toHaveTextContent('7 / 7');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next photo' }));

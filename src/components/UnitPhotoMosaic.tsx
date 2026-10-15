@@ -8,7 +8,7 @@ const FULLSCREEN_IMAGE_SIZES = '100vw';
 const MOBILE_IMAGE_SIZES = '(max-width: 768px) 100vw, 300px';
 
 /** Image mosaic and native mobile carousel with an accessible full-screen viewer.
- * Native dialog provides modal focus containment; close restores the trigger.
+ * Native dialog blocks background interaction; keyboard focus cycles within its controls.
  */
 export function UnitPhotoMosaic({
   images,
@@ -153,6 +153,15 @@ export function UnitPhotoMosaic({
       </div>
       <dialog ref={dialogRef} id={overflowId} aria-label={`${showAllLabel}: ${alt}`} onCancel={event => { event.preventDefault(); closeGallery(); }}
         onKeyDown={event => {
+          if (event.key === 'Tab') {
+            const controls = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+            if (controls.length) {
+              event.preventDefault();
+              const currentIndex = controls.indexOf(document.activeElement as HTMLButtonElement);
+              const nextIndex = (currentIndex + (event.shiftKey ? -1 : 1) + controls.length) % controls.length;
+              controls[nextIndex].focus();
+            }
+          }
           if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
           if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
           if (event.key === 'Escape') { event.preventDefault(); closeGallery(); }

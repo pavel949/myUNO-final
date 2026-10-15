@@ -3,11 +3,12 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { classifyPropertySubmission } from '@/modules/onboarding';
 import { submissionUnitWhere } from '@/modules/onboarding/submission-unit-access';
+import { submissionDescriptionLocale } from '@/modules/onboarding/submission-description';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; descriptionLocale: string | null; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
   if (body.existingUnitId && (typeof body.projectId !== 'string' || !body.projectId)) {
@@ -37,6 +38,7 @@ function normalize(body: Record<string, unknown>): Submission {
     unitType: ['villa', 'apartment', 'condo', 'house'].includes(String(body.unitType)) ? String(body.unitType) : 'condo',
     bedrooms, bathrooms, sizeSqm, maxGuests, proposedNightlyBaht, proposedMinNights, floor: String(body.floor || '').trim().slice(0, 40),
     description: String(body.description || '').trim().slice(0, 3000),
+    descriptionLocale: submissionDescriptionLocale(body.descriptionLocale),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
     photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
     status: body.status === 'submitted' ? 'submitted' : 'draft',

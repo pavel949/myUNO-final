@@ -1,6 +1,13 @@
 /** Property application copy. All language drafts require editorial review before approval. */
 export const PROPERTY_ONBOARDING_KEYS = [
   {
+    key: 'property.onboard.details.description_language',
+    en: 'Description language',
+    ru: 'Язык описания',
+    th: 'ภาษาของคำอธิบาย',
+    zh: '描述语言',
+  },
+  {
     key: 'property.onboard.back_listings',
     en: '← My listings',
     ru: '← Мои объявления',

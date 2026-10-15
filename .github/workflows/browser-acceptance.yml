@@ -89,6 +89,7 @@ jobs:
           test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
           node scripts/e2e/founder-publication-booking.mjs
           node scripts/e2e/guest-ux-completion.mjs
+          node scripts/e2e/property-submission-description.mjs
           test ! -s browser-results/blocked-server-egress.log
       - name: Upload synthetic screenshots and step evidence
         if: always()
@@ -98,6 +99,7 @@ jobs:
           path: |
             browser-results/result.json
             browser-results/guest-ux-result.json
+            browser-results/property-submission-result.json
             browser-results/*.png
             browser-results/server.log
             browser-results/blocked-server-egress.log

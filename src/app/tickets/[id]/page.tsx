@@ -99,7 +99,7 @@ export default async function TicketDetailPage({
     'tickets.status.resolved': 'Resolved',
     'tickets.status.closed': 'Closed',
     'tickets.status.cancelled': 'Cancelled',
-  }, undefined, PAYMENT_CHECKOUT_DRAFTS);
+  }, undefined, { 'payments.checkout.back_to_order': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.back_to_order'] });
 
   const detail: TicketDetailView = {
     id: ticket.id,

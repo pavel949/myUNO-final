@@ -236,9 +236,9 @@ describe('Layantara reservations workbook import', () => {
     expect(typeof db.blockedDate.findMany).toBe('function');
   });
 
-  async function reviewedPlan() {
+  async function reviewedPlan(party: { adults?: number; children?: number } = {}) {
     const { evidenceDigest } = await import('./reviewed-workbook');
-    const parsed = parse([{ ...rows[0], payment: 'Paid', paid: 69834.96 }]);
+    const parsed = parse([{ ...rows[0], payment: 'Paid', paid: 69834.96, ...party }]);
     const row = parsed.rows[0], source = parsed.sourcePayments[0];
     const block = await db.blockedDate.findFirstOrThrow({ where: { unitId: a10 } });
     const reviewedWorkbookImport: ReviewedWorkbookManifest = { version: 1, workbookSha256: parsed.workbookSha256!,
@@ -265,7 +265,7 @@ describe('Layantara reservations workbook import', () => {
     const result = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
     expect(result.applied[0].status).toBe('processed');
     const booking = await db.booking.findUniqueOrThrow({ where: { id: result.applied[0].bookingId! } });
-    expect(booking).toMatchObject({ receivableStatus: 'pending_reconciliation', adults: 0, children: 0, status: 'confirmed', totalThb: 6983496 });
+    expect(booking).toMatchObject({ receivableStatus: 'pending_reconciliation', partyDetailsStatus: 'source_unknown', adults: 0, children: 0, status: 'confirmed', totalThb: 6983496 });
     expect(booking.priceBreakdown).toMatchObject({ sourcePaymentEvidence: { rawStatus: 'Paid', reportedPaidSatang: 6983496 },
       sourcePartyEvidence: { adults: null, children: null } });
     expect(await db.blockedDate.findUnique({ where: { id: block.id } })).toBeNull();
@@ -274,6 +274,7 @@ describe('Layantara reservations workbook import', () => {
     const replay = await planWorkbookImport(db, parsed, TODAY, { reviewedSource: true });
     const repeat = await applyWorkbookImport(db, replay, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 60000) });
     expect(repeat.applied[0]).toMatchObject({ status: 'duplicate', bookingId: booking.id });
+    expect(await db.booking.findUnique({ where: { id: booking.id } })).toMatchObject({ partyDetailsStatus: 'source_unknown', adults: 0, children: 0 });
     expect(await db.booking.count()).toBe(1);
     expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
   });
@@ -337,6 +338,20 @@ describe('Layantara reservations workbook import', () => {
     expect(await db.booking.count()).toBe(1);
     expect(await db.identity.count()).toBe(identitiesBefore + 1);
     expect(await db.blockedDate.count()).toBe(1);
+    expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
+  });
+
+  it.each([
+    { party: { adults: 2, children: 0 }, expected: 'known', adults: 2, children: 0 },
+    { party: { adults: 2 }, expected: 'source_unknown', adults: 2, children: 0 },
+    { party: { children: 1 }, expected: 'source_unknown', adults: 0, children: 1 },
+  ])('persists typed party status from reviewed facts: $expected / $adults / $children', async ({ party, expected, adults, children }) => {
+    const { plan } = await reviewedPlan(party);
+    const result = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
+    expect(result.applied[0].status).toBe('processed');
+    expect(await db.booking.findUnique({ where: { id: result.applied[0].bookingId! } })).toMatchObject({
+      partyDetailsStatus: expected, adults, children, receivableStatus: 'pending_reconciliation',
+    });
     expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
   });
 

@@ -19,7 +19,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   const booking=await prisma.booking.findUnique({where:{id:params.bookingId},
     select:{
       id:true,status:true,updatedAt:true,holdExpiresAt:true,startDate:true,endDate:true,totalThb:true,receivableStatus:true,balanceDueThb:true,
-      priceBreakdown:true,adults:true,children:true,refundAccruedThb:true,channel:true,projectId:true,unitId:true,guestNote:true,
+      partyDetailsStatus:true,priceBreakdown:true,adults:true,children:true,refundAccruedThb:true,channel:true,projectId:true,unitId:true,guestNote:true,
       unit:{select:{name:true,inventoryCategory:{select:{name:true}}}},
       project:{select:{name:true}},
       guestIdentity:{select:{firstName:true,lastName:true}},
@@ -40,6 +40,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   const access=await resolveBookingOperationsAccess(user,booking,prisma);
   if(!access.canView)notFound();
   const canSeeFinance=access.canSeeFinance;
+  const partyUnknown=booking.partyDetailsStatus==='source_unknown';
   const needsReview=booking.receivableStatus==='pending_reconciliation';
   // Source evidence is descriptive only; collection authority is the typed column.
   const snapshot=booking.priceBreakdown && typeof booking.priceBreakdown==='object' && !Array.isArray(booking.priceBreakdown)
@@ -75,6 +76,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
     'staff.stay_360.source_paid':'Source-reported paid (unverified)',
     'staff.stay_360.source_status':'Source payment status',
     'staff.stay_360.unknown':'Not provided',
+    'staff.stay_360.party_review':'Confirm the adult and child counts before check-in.',
     'staff.stay_360.adults':'Adults',
     'staff.stay_360.children':'Children',
     'staff.stay_360.refund':'Refund accrued',
@@ -141,6 +143,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
       </section>}
       {booking.status==='confirmed'&&balanceSatang>0&&(access.canManageReservations||canSeeFinance)&&
         <p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.payment_outstanding']} {amount(balanceSatang)}</p>}
+      {partyUnknown&&<p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.party_review']}</p>}
       <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
         <section className="stitch-panel p-20">
           <dl className="grid grid-cols-2 gap-12">
@@ -148,8 +151,8 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
               [labels['staff.stay_360.status'],enumLabel(labels,'bookingStatus',booking.status)],
               [labels['staff.stay_360.channel'],enumLabel(labels,'bookingChannel',booking.channel)],
               [labels['staff.stay_360.guest'],[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')],
-              [labels['staff.stay_360.adults'],Object.prototype.hasOwnProperty.call(sourceParty,'adults')?(typeof sourceParty.adults==='number'?String(sourceParty.adults):labels['staff.stay_360.unknown']):String(booking.adults)],
-              [labels['staff.stay_360.children'],Object.prototype.hasOwnProperty.call(sourceParty,'children')?(typeof sourceParty.children==='number'?String(sourceParty.children):labels['staff.stay_360.unknown']):String(booking.children)],
+              [labels['staff.stay_360.adults'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'adults')?(typeof sourceParty.adults==='number'?String(sourceParty.adults):labels['staff.stay_360.unknown']):String(booking.adults)],
+              [labels['staff.stay_360.children'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'children')?(typeof sourceParty.children==='number'?String(sourceParty.children):labels['staff.stay_360.unknown']):String(booking.children)],
               [labels['staff.stay_360.dates'],formatDate(booking.startDate,locale)+' — '+formatDate(booking.endDate,locale)],
             ].map(([label,value])=><div key={label}><dt className="text-small text-text-secondary">{label}</dt>
               <dd className="mt-4 text-body font-semibold text-text-ink">{value}</dd></div>)}
@@ -160,7 +163,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
         </section>
         <StayActions id={booking.id} status={booking.status} updatedAt={booking.updatedAt.toISOString()}
           balanceSatang={canSeeFinance||access.canManageReservations?balanceSatang:0} canConfirmUnpaid={canConfirmUnpaid}
-          canRecordMoney={access.canRecordMoney&&!needsReview} canManageReservations={access.canManageReservations} canManageFrontDesk={access.canManageFrontDesk}
+          canRecordMoney={access.canRecordMoney&&!needsReview} canManageReservations={access.canManageReservations} canManageFrontDesk={access.canManageFrontDesk&&!partyUnknown}
           guestName={[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')} unitName={booking.unit?.name??''}
           labels={labels}/>
       </div>

@@ -66,3 +66,22 @@ END;
 $$;
 CREATE TRIGGER payout_receivable_guard BEFORE INSERT ON payout
 FOR EACH ROW EXECUTE FUNCTION guard_owner_payout_receivable_review();
+
+-- Represent missing source party facts without inventing an adult. The existing
+-- non-negative party constraint remains untouched. Ordinary reservations still
+-- require an adult; source_unknown is scoped to evidenced operator imports.
+CREATE TYPE "BookingPartyDetailsStatus" AS ENUM ('known', 'source_unknown');
+ALTER TABLE "booking" ADD COLUMN "party_details_status" "BookingPartyDetailsStatus" NOT NULL DEFAULT 'known';
+ALTER TABLE "booking" DROP CONSTRAINT "booking_has_an_adult";
+ALTER TABLE "booking" ADD CONSTRAINT "booking_has_an_adult"
+  CHECK (adults >= 1 OR party_details_status = 'source_unknown');
+ALTER TABLE "booking" ADD CONSTRAINT "booking_unknown_party_source_evidence"
+  CHECK (party_details_status = 'known' OR (
+    booking_type = 'external_ota'
+    AND NULLIF(btrim(external_ref), '') IS NOT NULL
+    AND (price_breakdown->>'importedFrom' = 'operator_workbook') IS TRUE
+    AND jsonb_typeof(price_breakdown->'sourcePartyEvidence') = 'object'
+    AND NULLIF(btrim(price_breakdown#>>'{sourcePartyEvidence,provenance}'), '') IS NOT NULL
+  ) IS TRUE);
+ALTER TABLE "booking" ADD CONSTRAINT "booking_checkin_requires_known_party"
+  CHECK (status <> 'checked_in' OR party_details_status = 'known');

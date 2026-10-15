@@ -141,6 +141,11 @@ enum BookingStatus {
   cancelled
 }
 
+enum BookingPartyDetailsStatus {
+  known
+  source_unknown
+}
+
 enum BookingReceivableStatus {
   collectible
   pending_reconciliation
@@ -1234,6 +1239,8 @@ model Booking {
   creationFingerprint        String?            @map("creation_fingerprint") @db.VarChar(64)
   startDate                  DateTime           @map("start_date") @db.Date
   endDate                    DateTime           @map("end_date") @db.Date
+  /// Unknown counts are permitted only for reviewed external operating records.
+  partyDetailsStatus         BookingPartyDetailsStatus @default(known) @map("party_details_status")
   adults                     Int
   children                   Int
   /// Not counted toward occupancy — an infant needs a cot, not a bed.

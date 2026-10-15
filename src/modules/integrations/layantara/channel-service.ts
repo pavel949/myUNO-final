@@ -257,7 +257,9 @@ export async function applyChannelEvent(
           externalRef:externalKey(environment,e.externalBookingId),
           status:'confirmed',startDate:start,endDate:end,adults:e.adults,children:e.children,
           totalThb:e.totalSatang,balanceDueThb:e.totalSatang,
-          ...(reviewed?{receivableStatus:'pending_reconciliation' as const}:{}),
+          ...(reviewed?{receivableStatus:'pending_reconciliation' as const,
+            partyDetailsStatus:reviewed.entry.adults===null||reviewed.entry.children===null
+              ? 'source_unknown' as const : 'known' as const}:{}),
           priceBreakdown:{source:'layantara',externalBookingId:e.externalBookingId,
             currency:'THB',totalSatang:e.totalSatang,sourceVersion:e.eventVersion,
             ...(e.sourceChannelName?{sourceChannelName:e.sourceChannelName}:{}),

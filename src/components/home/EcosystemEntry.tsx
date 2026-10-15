@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { PlaceOption } from '@/lib/place-search';
+import { matchPlaces, type PlaceOption } from '@/lib/place-search';
 
 type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner';
 
@@ -31,7 +31,7 @@ export function EcosystemEntry({ locale, places }: { locale: string; places: Pla
   const matches = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
     if (term.length < 2) return [];
-    return places.filter((place) => place.name.toLocaleLowerCase().includes(term)).slice(0, 6);
+    return matchPlaces(places, term, 6);
   }, [places, query]);
 
   function submit(event: FormEvent<HTMLFormElement>) {

@@ -32,7 +32,7 @@ export default async function RelocationPage() {
       <h1 className="mt-12 max-w-3xl font-display text-display-hero font-semibold leading-tight hyphens-none text-text-ink">{labels['relocation.title']}</h1>
       <p className="mt-16 max-w-2xl text-body text-text-secondary">{labels['relocation.intro']}</p>
       <div className="mt-32 grid gap-16 md:grid-cols-2">
-        {STEPS.map((step, index) => <article key={step.key} className="min-w-0 rounded-xl border border-border-line bg-surface-paper p-24">
+        {STEPS.map((step, index) => <article key={step.key} className="min-w-0 rounded-lg border border-border-line bg-surface-paper p-24">
           <span className="text-small font-semibold text-brand-andaman">{String(index + 1).padStart(2, '0')}</span>
           <h2 className="mt-8 font-display text-title font-semibold leading-snug hyphens-none text-text-ink">{labels[`relocation.${step.key}.title`]}</h2>
           <p className="mt-8 text-body text-text-secondary">{labels[`relocation.${step.key}.detail`]}</p>

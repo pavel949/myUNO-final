@@ -6,13 +6,24 @@ import { requireAdmin } from '@/app/libs/onboardingGuard';
 // reached from client bundles (owner statements → finance → comms) — adding
 // it there fails `next build` (CLAUDE.md, module-boundary exception).
 import {
-  parseReservationsWorkbook, planWorkbookImport, applyWorkbookImport,
+  parseReservationsWorkbook, planWorkbookImport, applyWorkbookImport, WorkbookReconciliationRequired, type ImportPlan,
 } from '@/modules/integrations/layantara/workbook-import';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const MAX_BYTES = 5 * 1024 * 1024;
+
+function serializePlan(plan: ImportPlan, mode: 'preview' | 'apply') {
+    const stays = plan.stays.map(s => ({
+      key: s.key, ref: s.ref, unitCode: s.unitCode, guestName: s.guestName, channel: s.channel,
+      sourceChannelName: s.sourceChannelName ?? null, startDate: s.startDate, endDate: s.endDate,
+      totalSatang: s.totalSatang, paidSatang: s.paidSatang, action: s.action, reason: s.reason ?? null,
+      sourcePaymentStatus: s.sourcePaymentStatus, sourcePaymentAmountRaw: s.sourcePaymentAmountRaw,
+      completeAfterImport: s.completeAfterImport,
+    }));
+    return { mode, summary: plan.summary, problems: plan.problems, applyBlockers: plan.applyBlockers, untouchedProtections: plan.untouchedProtections, stays };
+}
 
 /**
  * POST /api/admin/layantara/reservations-import — the operator's reservations
@@ -35,19 +46,17 @@ export async function POST(req: NextRequest) {
   try {
     const parsed = parseReservationsWorkbook(new Uint8Array(await file.arrayBuffer()));
     const plan = await planWorkbookImport(prisma, parsed);
-    const stays = plan.stays.map(s => ({
-      key: s.key, ref: s.ref, unitCode: s.unitCode, guestName: s.guestName, channel: s.channel,
-      sourceChannelName: s.sourceChannelName ?? null, startDate: s.startDate, endDate: s.endDate,
-      totalSatang: s.totalSatang, paidSatang: s.paidSatang, action: s.action, reason: s.reason ?? null,
-      completeAfterImport: s.completeAfterImport,
-    }));
-    const body = { mode, summary: plan.summary, problems: plan.problems, untouchedProtections: plan.untouchedProtections, stays };
+    const body = serializePlan(plan, mode);
     if (mode === 'preview') return NextResponse.json(body);
     const result = await applyWorkbookImport(prisma, plan, { actorIdentityId: guard.actorIdentityId });
     return NextResponse.json({ ...body, applied: result.applied, groups: result.groups, completed: result.completed });
   } catch (error) {
+    if (error instanceof WorkbookReconciliationRequired) {
+      return NextResponse.json({ ...serializePlan(error.plan, 'preview'), error: error.message }, { status: 422 });
+    }
     const message = error instanceof Error ? error.message : 'import_failed';
     const known = /^(WORKBOOK_|LAYANTARA_)/.test(message);
     return NextResponse.json({ error: known ? message : 'import_failed' }, { status: known ? 422 : 500 });
   }
 }
+

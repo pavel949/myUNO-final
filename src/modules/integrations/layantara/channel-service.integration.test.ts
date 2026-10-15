@@ -31,6 +31,51 @@ describe('Layantara event ingestion: real transactional database', () => {
     startDate:'2026-10-22',endDate:'2026-10-26',blockReason:'ota_import',
   };
 
+  async function deliverWorkbook(payload:Record<string,unknown>){
+    return applyChannelEvent(db,{rawBody:JSON.stringify(payload),
+      event:parseChannelEvent(payload),environment:'staging',operatingRecord:true});
+  }
+
+  it('refuses workbook receipts before creating an inbox or financial record',async()=>{
+    await setup('myuno');
+    const before={identities:await db.identity.count(),inbox:await db.externalEventInbox.count(),
+      mappings:await db.externalMapping.count(),checkpoints:await db.externalAggregateCheckpoint.count(),
+      audit:await db.auditLog.count()};
+    expect(await deliverWorkbook({...base,eventType:'payment.received',eventId:'workbook-money',
+      externalPaymentId:'workbook:ref',paymentSatang:50000,receiptRef:'workbook:ref',
+      settlement:'received_by_operator'})).toMatchObject({status:'quarantined',
+        code:'workbook_payment_reconciliation_required',bookingId:null});
+    expect(await db.payment.count()).toBe(0);
+    expect(await db.ledgerEntry.count()).toBe(0);
+    expect(await db.booking.count()).toBe(0);
+    expect({identities:await db.identity.count(),inbox:await db.externalEventInbox.count(),
+      mappings:await db.externalMapping.count(),checkpoints:await db.externalAggregateCheckpoint.count(),
+      audit:await db.auditLog.count()}).toEqual(before);
+  });
+
+  it.each(['ota_import','owner_hold','maintenance','other'] as const)(
+    'preserves late %s blocks despite a matching workbook occupancy ID',async(reason)=>{
+      const {unit}=await setup('myuno');
+      const payload={...base,eventType:'booking.confirmed',eventId:'workbook-confirm',
+        channel:'direct',guestExternalId:'workbook-guest',guestName:'Workbook Guest',
+        adults:2,children:0,totalSatang:450000,currency:'THB'};
+      // A preview could have observed no block. Intake must re-read inside
+      // its unit lock rather than trust the prepared event's occupancyId.
+      expect(await db.blockedDate.count({where:{unitId:unit.id}})).toBe(0);
+      const block=await db.blockedDate.create({data:{unitId:unit.id,reason,
+        startDate:new Date(base.startDate),endDate:new Date(base.endDate),
+        externalRef:'layantara:occupancy:source-1',note:'Keep source evidence'}});
+      const identities=await db.identity.count();
+      expect(await deliverWorkbook(payload)).toMatchObject({status:'quarantined',
+        code:'workbook_occupancy_reconciliation_required'});
+      expect(await db.blockedDate.findUnique({where:{id:block.id}})).toEqual(block);
+      expect(await db.booking.count({where:{unitId:unit.id}})).toBe(0);
+      expect(await db.identity.count()).toBe(identities);
+      expect(await db.payment.count()).toBe(0);
+      expect(await db.ledgerEntry.count()).toBe(0);
+      expect(await db.externalMapping.count({where:{entity_type:'booking'}})).toBe(0);
+    });
+
   it('enforces verified crosswalk and disabled source authority',async()=>{
     const {system,unit}=await setup();
     await db.externalMapping.updateMany({where:{external_system_id:system.id,entity_type:'unit'},
@@ -42,6 +87,26 @@ describe('Layantara event ingestion: real transactional database', () => {
       totalSatang:50000,currency:'THB'}))
       .toMatchObject({status:'quarantined',code:'authority_not_enabled'});
     expect(await db.booking.count({where:{unitId:unit.id}})).toBe(0);
+  });
+
+  it('refuses a workbook change when protection was added after planning',async()=>{
+    const {unit}=await setup('myuno');
+    const payload={...base,eventType:'booking.confirmed',eventId:'workbook-initial',
+      channel:'direct',guestExternalId:'workbook-guest',guestName:'Workbook Guest',
+      adults:2,children:0,totalSatang:450000,currency:'THB'};
+    const first=await deliverWorkbook(payload);
+    expect(first.status).toBe('processed');
+    const before=await db.booking.findUniqueOrThrow({where:{id:first.bookingId!}});
+    const block=await db.blockedDate.create({data:{unitId:unit.id,reason:'maintenance',
+      startDate:new Date('2026-10-26'),endDate:new Date('2026-10-27')}});
+    expect(await deliverWorkbook({...payload,eventType:'booking.changed',eventId:'workbook-change',
+      eventVersion:2,endDate:'2026-10-27',totalSatang:600000}))
+      .toMatchObject({status:'quarantined',code:'workbook_occupancy_reconciliation_required'});
+    expect(await db.booking.findUnique({where:{id:first.bookingId!}})).toEqual(before);
+    expect(await db.blockedDate.findUnique({where:{id:block.id}})).toEqual(block);
+    expect(await db.bookingChange.count({where:{bookingId:first.bookingId!}})).toBe(0);
+    expect(await db.payment.count()).toBe(0);
+    expect(await db.ledgerEntry.count()).toBe(0);
   });
 
   it('protects once; exact replay and stale version do not duplicate inventory',async()=>{
@@ -153,3 +218,4 @@ describe('Layantara event ingestion: real transactional database', () => {
     expect(await db.ledgerEntry.count({where:{bookingId:first.bookingId!}})).toBe(0);
   });
 });
+

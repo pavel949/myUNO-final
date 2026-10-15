@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 /** English fallbacks for the reservations import panel (content keys, doc 05). */
 const IMPORT_LABELS = {
   'admin.layantara_import.title': 'Import reservations workbook',
-  'admin.layantara_import.body': 'Upload the reservations .xlsx. Check shows every stay and what will happen — nothing is saved. Import turns confirmed stays into bookings, replaces their calendar blocks, keeps cancelled stays as history and records payments your team received. Upload a newer workbook later to apply only the changes. Prices are not read from the file.',
+  'admin.layantara_import.body': 'Upload the reservations .xlsx to review every stay without saving. Import requires every source row to explicitly report Unpaid and zero amount paid, and no overlapping calendar protections. Other payment states and protected dates require reconciliation first. Source payment values are unverified; this import never records receipts or converts calendar blocks. System tariffs remain the pricing authority.',
   'admin.layantara_import.choose': 'Choose .xlsx file',
   'admin.layantara_import.check': 'Check file',
   'admin.layantara_import.checking': 'Checking…',
@@ -33,8 +33,12 @@ const IMPORT_LABELS = {
   'admin.layantara_import.col.channel': 'Channel',
   'admin.layantara_import.col.dates': 'Dates',
   'admin.layantara_import.col.total': 'Total',
-  'admin.layantara_import.col.paid': 'Received',
+  'admin.layantara_import.col.paid': 'Source payment (unverified)',
   'admin.layantara_import.col.result': 'Result',
+  'admin.layantara_import.error.workbook_reconciliation_required': 'Nothing was imported. Reconcile every payment or calendar blocker before applying this workbook.',
+  'admin.layantara_import.reason.source_payment_unverified': 'Source payment needs reconciliation; status must explicitly be Unpaid and amount zero',
+  'admin.layantara_import.reason.protection_identity_unverified': 'Existing calendar protection has no verified link to this reservation; block preserved',
+  'admin.layantara_import.problem.booking_ref': 'booking ID missing or invalid',
   'admin.layantara_import.reason.other': 'Needs review ({code})',
   'admin.layantara_import.reason.unknown_villa': 'Villa code not found',
   'admin.layantara_import.reason.pending_kept_protected': 'Pending — dates stay blocked until confirmed',
@@ -187,3 +191,4 @@ export default async function LayantaraOperationsPage() {
     </section>
   </main>;
 }
+

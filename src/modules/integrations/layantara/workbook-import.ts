@@ -11,8 +11,7 @@ import { applyChannelEvent } from './channel-service';
  * The founder ruled (2026-10-06) that myUNO is Layantara's booking system of
  * record. The operator's reservations sheet is turned into ChannelEvents and
  * applied through the same intake as signed channel events, so every booking
- * gets the same guarantees: idempotent replay, exact protection-block
- * conversion, BookingChange on edits, ledger only for operator-received money,
+ * gets the same guarantees: idempotent replay, protected inventory preserved, BookingChange on edits, no inferred receipts,
  * and no guest messaging, TM30 or analytics side effects.
  *
  * Prices are never read from the workbook's price list — system tariffs are
@@ -38,6 +37,28 @@ export interface WorkbookReservation {
   amountPaidSatang: number;
   adults: number | null;
   children: number | null;
+}
+
+export interface SourcePayment {
+  rowNumber: number;
+  ref: string | null;
+  paymentStatus: string;
+  amountPaidRaw: string;
+  amountPaidSatang: number | null;
+}
+export interface ApplyBlocker extends WorkbookProblem {
+  paymentStatus?: string;
+  amountPaidRaw?: string;
+  unitCode?: string;
+}
+
+function paymentBlocker(source: SourcePayment): ApplyBlocker | null {
+  const normalized = source.amountPaidRaw.replace(/[,\s฿]/g, '');
+  // Require an actual numeric zero before rounding; sub-satang payments are not unpaid.
+  const explicitZero = /^[+]?(?:0+(?:\.0*)?|\.0+)$/.test(normalized);
+  if (source.paymentStatus.trim().toLowerCase() === 'unpaid' && explicitZero) return null;
+  return { rowNumber: source.rowNumber, ref: source.ref, message: 'source_payment_unverified',
+    paymentStatus: source.paymentStatus, amountPaidRaw: source.amountPaidRaw };
 }
 
 export interface WorkbookProblem { rowNumber: number; ref: string | null; message: string }
@@ -127,7 +148,7 @@ function status(raw: string | undefined): WorkbookStatus {
   return 'unknown';
 }
 
-export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookReservation[]; problems: WorkbookProblem[] } {
+export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookReservation[]; problems: WorkbookProblem[]; sourcePayments: SourcePayment[] } {
   const sheet = readXlsxSheet(file, 'Reservations');
   const header = sheet.find(r => Object.values(r.cells).some(v => v.trim().toLowerCase() === 'booking id'));
   if (!header) throw new Error('WORKBOOK_HEADER_MISSING');
@@ -143,11 +164,26 @@ export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookRes
 
   const rows: WorkbookReservation[] = [];
   const problems: WorkbookProblem[] = [];
+  const sourcePayments: SourcePayment[] = [];
   const get = (cells: Record<string, string>, field: keyof typeof COLUMNS) => (col[field] ? cells[col[field]!] : undefined);
   for (const { rowNumber, cells } of sheet) {
     if (rowNumber <= header.rowNumber) continue;
     const ref = (get(cells, 'ref') ?? '').trim();
-    if (!/^[A-Za-z0-9_-]{1,40}$/.test(ref)) continue; // blank or summary rows
+    // Capture payment evidence before any validation/status/duplicate filtering.
+    // Only blank rows and explicitly labelled totals without stay fields are summaries.
+    const hasStayFields = ['guest', 'checkIn', 'checkOut', 'rooms', 'channel', 'status']
+      .some(field => (get(cells, field as keyof typeof COLUMNS) ?? '').trim() !== '');
+    if (!Object.values(cells).some(value => value.trim())) continue;
+    if (/^(grand total|total|subtotal)$/i.test(ref) && !hasStayFields) continue;
+    const amountPaidRaw = get(cells, 'paid') ?? '';
+    const paid = satang(amountPaidRaw);
+    sourcePayments.push({ rowNumber, ref: ref || null,
+      paymentStatus: (get(cells, 'payment') ?? '').trim(), amountPaidRaw,
+      amountPaidSatang: amountPaidRaw.trim() && Number.isSafeInteger(paid) && paid >= 0 ? paid : null });
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(ref)) {
+      problems.push({ rowNumber, ref: ref || null, message: 'booking_ref' });
+      continue;
+    }
     const startDate = isoDay(get(cells, 'checkIn'));
     const endDate = isoDay(get(cells, 'checkOut'));
     const unitCodes = (get(cells, 'rooms') ?? '').split(/[,;/]+/).map(c => c.trim().toUpperCase()).filter(Boolean);
@@ -158,7 +194,6 @@ export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookRes
     if (!unitCodes.length) { problem('villa'); continue; }
     if (!Number.isSafeInteger(revenueSatang) || revenueSatang < 0) { problem('revenue'); continue; }
     if (guestName.length < 2) { problem('guest'); continue; }
-    const paid = satang(get(cells, 'paid'));
     rows.push({
       rowNumber, ref, channelLabel: (get(cells, 'channel') ?? '').trim(), guestName, startDate, endDate,
       unitCodes, revenueSatang, status: status(get(cells, 'status')),
@@ -172,7 +207,7 @@ export function parseReservationsWorkbook(file: Uint8Array): { rows: WorkbookRes
     if (seen.has(row.ref)) problems.push({ rowNumber: row.rowNumber, ref: row.ref, message: 'duplicate_ref' });
     seen.add(row.ref);
   }
-  return { rows: rows.filter(r => !problems.some(p => p.ref === r.ref && p.message === 'duplicate_ref')), problems };
+  return { rows: rows.filter(r => !problems.some(p => p.ref === r.ref && p.message === 'duplicate_ref')), problems, sourcePayments };
 }
 
 export function mapChannel(label: string): { channel: ChannelEventChannel; sourceChannelName?: string } {
@@ -206,6 +241,8 @@ export interface PlannedStay {
   endDate: string;
   totalSatang: number;
   paidSatang: number;
+  sourcePaymentStatus: string;
+  sourcePaymentAmountRaw: string;
   alreadyPaidSatang: number;
   adults: number;
   children: number;
@@ -224,6 +261,7 @@ export interface ImportPlan {
   today: string;
   stays: PlannedStay[];
   problems: WorkbookProblem[];
+  applyBlockers: ApplyBlocker[];
   untouchedProtections: Array<{ unitCode: string; startDate: string; endDate: string; reason: string }>;
   summary: Record<StayAction, number> & { reservations: number; problems: number };
 }
@@ -256,7 +294,7 @@ function arrivalDailySatang(pricingTerms: unknown, startDate: string): number {
 
 export async function planWorkbookImport(
   db: PrismaClient,
-  parsed: { rows: WorkbookReservation[]; problems: WorkbookProblem[] },
+  parsed: ReturnType<typeof parseReservationsWorkbook>,
   now: Date = new Date(),
 ): Promise<ImportPlan> {
   const system = await db.externalSystem.findFirst({
@@ -293,7 +331,10 @@ export async function planWorkbookImport(
   for (const p of payments) if (p.bookingId) paidByBooking.set(p.bookingId, (paidByBooking.get(p.bookingId) ?? 0) + p.amountThb);
   const codeByUnit = new Map(Array.from(unitByCode, ([code, u]) => [u.unitId, code]));
   const today = iso(now);
-  const usedBlocks = new Set<string>();
+  const applyBlockers: ApplyBlocker[] = parsed.sourcePayments.flatMap(source => {
+    const blocker = paymentBlocker(source);
+    return blocker ? [blocker] : [];
+  });
 
   const stays: PlannedStay[] = [];
   for (const row of parsed.rows) {
@@ -306,14 +347,14 @@ export async function planWorkbookImport(
       const key = units.length > 1 ? `${row.ref}:${u.code}` : row.ref;
       const bookingId = bookingByKey.get(key) ?? null;
       const existing = bookingId ? bookingById.get(bookingId) ?? null : null;
-      const paidWorkbook = /paid|deposit/i.test(row.paymentStatus) && !/unpaid/i.test(row.paymentStatus)
-        ? Math.min(paidShares[i], totals[i]) : 0;
+      const source = parsed.sourcePayments.find(p => p.rowNumber === row.rowNumber)!;
       const stay: PlannedStay = {
         key, ref: row.ref, rowNumber: row.rowNumber, unitCode: u.code,
         unitId: u.mapped?.unitId ?? null, unitExternalId: u.mapped?.externalId ?? null,
         guestName: row.guestName, channel, sourceChannelName,
         startDate: row.startDate, endDate: row.endDate, totalSatang: totals[i],
-        paidSatang: paidWorkbook, alreadyPaidSatang: bookingId ? paidByBooking.get(bookingId) ?? 0 : 0,
+        paidSatang: paidShares[i], sourcePaymentStatus: source.paymentStatus,
+        sourcePaymentAmountRaw: source.amountPaidRaw, alreadyPaidSatang: bookingId ? paidByBooking.get(bookingId) ?? 0 : 0,
         adults: row.adults && row.adults > 0 ? row.adults : 1, children: row.children ?? 0,
         partyUnknown: !(row.adults && row.adults > 0),
         workbookStatus: row.status, occupancyId: null, bookingId,
@@ -321,13 +362,19 @@ export async function planWorkbookImport(
       };
       stays.push(stay);
       if (!u.mapped) { stay.reason = 'unknown_villa'; return; }
-      if (row.status === 'pending') { stay.reason = 'pending_kept_protected'; return; }
-      if (row.status === 'unknown') { stay.reason = 'unknown_status'; return; }
       const start = new Date(row.startDate + 'T00:00:00Z').getTime();
       const end = new Date(row.endDate + 'T00:00:00Z').getTime();
       const overlaps = <T extends { startDate: Date; endDate: Date; unitId: string }>(x: T) =>
         x.unitId === u.mapped!.unitId && x.startDate.getTime() < end && x.endDate.getTime() > start;
 
+      const unitBlocks = blocks.filter(overlaps);
+      if (unitBlocks.length) {
+        stay.reason = 'protection_identity_unverified';
+        applyBlockers.push({ rowNumber: row.rowNumber, ref: row.ref, unitCode: u.code, message: stay.reason });
+        return;
+      }
+      if (row.status === 'pending') { stay.reason = 'pending_kept_protected'; return; }
+      if (row.status === 'unknown') { stay.reason = 'unknown_status'; return; }
       if (existing) {
         if (row.status === 'cancelled') {
           stay.action = existing.status === 'cancelled' ? 'unchanged' : 'cancel';
@@ -338,7 +385,7 @@ export async function planWorkbookImport(
         }
         const same = iso(existing.startDate) === row.startDate && iso(existing.endDate) === row.endDate &&
           existing.totalThb === totals[i] && existing.adults === stay.adults && existing.children === stay.children;
-        if (same) stay.action = stay.paidSatang > stay.alreadyPaidSatang ? 'change' : 'unchanged';
+        if (same) stay.action = 'unchanged';
         else if (existing.status === 'confirmed') stay.action = 'change';
         else { stay.action = 'skip'; stay.reason = 'stay_already_' + existing.status; }
         if (stay.action !== 'skip') stay.completeAfterImport = row.endDate <= today && existing.status === 'confirmed';
@@ -346,17 +393,13 @@ export async function planWorkbookImport(
       }
       const otherBookings = bookings.filter(b => overlaps(b) &&
         ['confirmed', 'checked_in', 'pending_payment'].includes(b.status));
-      const unitBlocks = blocks.filter(b => overlaps(b) && !usedBlocks.has(b.id));
       if (row.status === 'cancelled') {
         // History only: a cancelled stay never takes the calendar.
         if (otherBookings.length || unitBlocks.length) { stay.reason = 'cancelled_overlaps_live_stay'; return; }
         stay.action = 'create_cancelled';
         return;
       }
-      const exact = unitBlocks.find(b => b.externalRef?.startsWith('layantara:occupancy:') &&
-        b.startDate.getTime() === start && b.endDate.getTime() === end);
-      if (otherBookings.length || unitBlocks.some(b => b !== exact)) { stay.reason = 'calendar_conflict'; return; }
-      if (exact) { stay.occupancyId = exact.externalRef!.slice('layantara:occupancy:'.length); usedBlocks.add(exact.id); }
+      if (otherBookings.length) { stay.reason = 'calendar_conflict'; return; }
       stay.action = 'create';
       stay.completeAfterImport = row.endDate <= today;
     });
@@ -372,10 +415,17 @@ export async function planWorkbookImport(
   const summary = { create: 0, create_cancelled: 0, change: 0, cancel: 0, unchanged: 0, skip: 0,
     reservations: parsed.rows.length, problems: parsed.problems.length };
   for (const s of stays) summary[s.action] += 1;
-  return { systemId: system.id, environment: system.environment, today, stays, problems: parsed.problems, untouchedProtections, summary };
+  return { systemId: system.id, environment: system.environment, today, stays, problems: parsed.problems, applyBlockers, untouchedProtections, summary };
 }
 
 // ── applying ────────────────────────────────────────────────────────────────
+
+export class WorkbookReconciliationRequired extends Error {
+  constructor(public readonly plan: ImportPlan) {
+    super('WORKBOOK_RECONCILIATION_REQUIRED');
+    this.name = 'WorkbookReconciliationRequired';
+  }
+}
 
 export interface AppliedStay { key: string; action: StayAction; status: string; code?: string; bookingId: string | null }
 
@@ -399,6 +449,17 @@ export async function applyWorkbookImport(
   plan: ImportPlan,
   input: { actorIdentityId: string; now?: Date },
 ): Promise<{ applied: AppliedStay[]; groups: number; completed: number }> {
+  // Reject the entire batch before creating identities, inbox records or any other writes.
+  if (plan.applyBlockers.length) throw new WorkbookReconciliationRequired(plan);
+  // Preview is not a lock: recheck inventory immediately before the first write.
+  const blocks = await db.blockedDate.findMany({ where: {
+    unitId: { in: plan.stays.flatMap(stay => stay.unitId ? [stay.unitId] : []) },
+  }, select: { unitId: true, startDate: true, endDate: true } });
+  const freshBlockers = plan.stays.filter(stay => blocks.some(block =>
+    block.unitId === stay.unitId && iso(block.startDate) < stay.endDate && iso(block.endDate) > stay.startDate))
+    .map(stay => ({ rowNumber: stay.rowNumber, ref: stay.ref, unitCode: stay.unitCode,
+      message: 'protection_identity_unverified' }));
+  if (freshBlockers.length) throw new WorkbookReconciliationRequired({ ...plan, applyBlockers: freshBlockers });
   await ensureIntegrationActor(db, plan.systemId, input.actorIdentityId);
   const now = input.now ?? new Date();
   const runVersion = Math.floor(now.getTime() / 1000) * 100;
@@ -424,7 +485,6 @@ export async function applyWorkbookImport(
     ...(stay.sourceChannelName ? { sourceChannelName: stay.sourceChannelName } : {}),
     guestExternalId: guestKey(stay.guestName, stay.channel), guestName: stay.guestName,
     adults: stay.adults, children: stay.children, totalSatang: stay.totalSatang, currency: 'THB' as const,
-    ...(stay.occupancyId ? { occupancyId: stay.occupancyId } : {}),
   });
 
   for (const stay of plan.stays) {
@@ -446,18 +506,7 @@ export async function applyWorkbookImport(
         outcome = { ...(await send(stay, 2, { eventType: 'booking.cancelled' })), bookingId: outcome.bookingId };
     }
     const bookingId = outcome.bookingId ?? stay.bookingId;
-    if (bookingId && (outcome.status === 'processed' || outcome.status === 'duplicate') &&
-        stay.action !== 'create_cancelled' && stay.action !== 'cancel' && stay.paidSatang > stay.alreadyPaidSatang) {
-      // Operator-recorded money only (agents, direct, walk-in). The workbook
-      // carries no payment date, so the receipt is dated when recorded.
-      const delta = stay.paidSatang - stay.alreadyPaidSatang;
-      const pay = await send(stay, 3, {
-        eventType: 'payment.received', externalPaymentId: `${stay.key}:paid-to:${stay.paidSatang}`,
-        paymentSatang: delta, receiptRef: `workbook:${stay.ref}`, settlement: 'received_by_operator',
-      });
-      if (pay.status === 'quarantined') outcome = { ...outcome, code: 'payment_' + (pay.code ?? 'quarantined') };
-    }
-    if (bookingId && stay.completeAfterImport) {
+    if (bookingId && stay.completeAfterImport && ['processed', 'duplicate'].includes(outcome.status)) {
       const done = await db.booking.updateMany({ where: { id: bookingId, status: 'confirmed' }, data: { status: 'completed' } });
       if (done.count) {
         completed += 1;
@@ -475,7 +524,7 @@ export async function applyWorkbookImport(
   const byRef = new Map<string, string[]>();
   for (const a of applied) {
     const stay = plan.stays.find(s => s.key === a.key)!;
-    if (a.bookingId && stay.key !== stay.ref) byRef.set(stay.ref, [...(byRef.get(stay.ref) ?? []), a.bookingId]);
+    if (a.bookingId && ['processed', 'duplicate'].includes(a.status) && stay.key !== stay.ref) byRef.set(stay.ref, [...(byRef.get(stay.ref) ?? []), a.bookingId]);
   }
   for (const [ref, ids] of Array.from(byRef)) {
     if (ids.length < 2) continue;
@@ -492,3 +541,4 @@ export async function applyWorkbookImport(
   } });
   return { applied, groups, completed };
 }
+

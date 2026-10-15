@@ -9,6 +9,7 @@ type Action = 'create' | 'create_cancelled' | 'change' | 'cancel' | 'unchanged' 
 type Stay = {
   key: string; ref: string; unitCode: string; guestName: string; channel: string; sourceChannelName: string | null;
   startDate: string; endDate: string; totalSatang: number; paidSatang: number; action: Action; reason: string | null;
+  sourcePaymentStatus: string; sourcePaymentAmountRaw: string;
   completeAfterImport: boolean;
 };
 type Applied = { key: string; status: string; code?: string };
@@ -17,6 +18,7 @@ type Result = {
   summary: Record<Action, number> & { reservations: number; problems: number };
   problems: Array<{ rowNumber: number; ref: string | null; message: string }>;
   untouchedProtections: Array<{ unitCode: string; startDate: string; endDate: string; reason: string }>;
+  applyBlockers: Array<{ rowNumber: number; ref: string | null; message: string; unitCode?: string; paymentStatus?: string; amountPaidRaw?: string }>;
   stays: Stay[];
   applied?: Applied[];
   groups?: number;
@@ -53,6 +55,9 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
       const res = await fetch('/api/admin/layantara/reservations-import', { method: 'POST', body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data) {
+        if (data?.error === 'WORKBOOK_RECONCILIATION_REQUIRED' && Array.isArray(data.applyBlockers)) {
+          setResult({ ...data, mode: 'preview' } as Result);
+        }
         const code = typeof data?.error === 'string' ? data.error : 'import_failed';
         throw new Error(labels['admin.layantara_import.error.' + code.split(':')[0].toLowerCase()] ?? L('admin.layantara_import.error.import_failed'));
       }
@@ -87,7 +92,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
           {busy === 'preview' ? L('admin.layantara_import.checking') : L('admin.layantara_import.check')}
         </Button>
         {result?.mode === 'preview' && writes > 0 ? (
-          <Button type="button" onClick={() => send('apply')} disabled={busy !== null}>
+          <Button type="button" onClick={() => send('apply')} disabled={busy !== null || result.applyBlockers.length > 0}>
             {busy === 'apply' ? L('admin.layantara_import.importing') : fill(L('admin.layantara_import.apply'), { count: writes })}
           </Button>
         ) : null}
@@ -112,6 +117,19 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
               </div>
             ))}
           </dl>
+
+          {result.applyBlockers.length ? (
+            <div role="alert" className="text-small text-state-error">
+              <p>{L('admin.layantara_import.error.workbook_reconciliation_required')}</p>
+              <ul>{result.applyBlockers.map((blocker, index) => (
+                <li key={index}>
+                  {fill(L('admin.layantara_import.problem'), { row: blocker.rowNumber, ref: blocker.ref ?? '—', problem: reason(blocker.message) })}
+                  {blocker.unitCode ? ' · ' + blocker.unitCode : ''}
+                  {blocker.paymentStatus !== undefined ? ' · ' + (blocker.paymentStatus || '—') + ' / ' + (blocker.amountPaidRaw || '—') : ''}
+                </li>
+              ))}</ul>
+            </div>
+          ) : null}
 
           {result.problems.length ? (
             <ul className="text-small text-state-error">
@@ -160,7 +178,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
                       <td className="py-8 pr-12">{s.sourceChannelName ?? L('common.channel.' + s.channel)}</td>
                       <td className="py-8 pr-12 tabular-nums"><LocalDate value={s.startDate} /> – <LocalDate value={s.endDate} /></td>
                       <td className="py-8 pr-12 text-right"><MoneyAmount satang={s.totalSatang} /></td>
-                      <td className="py-8 pr-12 text-right">{s.paidSatang ? <MoneyAmount satang={s.paidSatang} /> : '—'}</td>
+                      <td className="py-8 pr-12 text-right">{s.sourcePaymentStatus || '—'} · {s.sourcePaymentAmountRaw || '—'}</td>
                       <td className="py-8">
                         <span className={problem ? 'text-state-warning' : 'text-text-ink'}>
                           {L('admin.layantara_import.action.' + s.action)}
@@ -179,3 +197,4 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
     </section>
   );
 }
+

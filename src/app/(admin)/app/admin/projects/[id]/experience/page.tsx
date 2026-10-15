@@ -23,7 +23,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     select: {
-      id: true, name: true, slug: true, descriptionKey: true, handbookKey: true,
+      id: true, name: true, slug: true, timezone: true, descriptionKey: true, handbookKey: true,
       nearbyPlaces: {
         orderBy: [{ isFeatured: 'desc' }, { sort: 'asc' }, { name: 'asc' }],
         select: {
@@ -75,7 +75,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
     </div>
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />
-      <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
+      <ProjectExperienceClient projectId={project.id} timezone={project.timezone} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
       <ProjectNearbyEditor
         projectId={project.id}
         initialPlaces={project.nearbyPlaces.map(place => ({

@@ -20,7 +20,7 @@ export default async function AmenityBookingPage({
   if (!user) redirect('/login?next=' + encodeURIComponent(next));
 
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
-  if (!data) notFound();
+  if (!data || data.project.status !== 'live') notFound();
   if (!data.amenity.bookingRequired || !['time_slot','request','reception'].includes(data.amenity.bookingMode)) notFound();
 
   const labels = await getLabels({

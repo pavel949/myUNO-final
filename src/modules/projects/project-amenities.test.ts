@@ -49,3 +49,12 @@ describe('ProjectAmenity', () => {
     expect(() => projectAmenityData({ name: 'Sauna', capacity: 0 })).toThrow();
   });
 });
+
+
+it('does not infer a fee, access entitlement, or native booking workflow for a new amenity', () => {
+  const data = projectAmenityData({ name: 'Meeting room', bookingRequired: true, reservationConfig: { minLeadMinutes: 1440 } });
+  expect(data.pricingType).toBe('not_specified');
+  expect(data.accessType).toBe('not_specified');
+  expect(data.bookingMode).toBe('other');
+  expect(data.reservationConfig).toEqual({ minLeadMinutes: 1440 });
+});

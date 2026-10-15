@@ -1,8 +1,9 @@
+import { amenityRecord, singleAmenityHours } from '@/modules/projects/amenity-usage';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { listPublicProjectAmenities } from '@/modules/projects';
+import { getPublicAmenityProjectBySlug, listPublicProjectAmenities } from '@/modules/projects/project-amenities.service';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
@@ -12,11 +13,8 @@ function human(value: string) {
 }
 
 export default async function ProjectAmenitiesPage({ params }: { params: { slug: string } }) {
-  const project = await prisma.project.findUnique({
-    where: { slug: params.slug },
-    select: { id: true, slug: true, name: true, status: true },
-  });
-  if (!project || project.status !== 'live') notFound();
+  const project = await getPublicAmenityProjectBySlug(prisma, params.slug);
+  if (!project) notFound();
 
   const labels = await getLabels({
     'project_amenities.back': 'Back to project',
@@ -58,6 +56,8 @@ export default async function ProjectAmenitiesPage({ params }: { params: { slug:
                 ) : <div className="aspect-video bg-surface-subtle" />}
                 <div className="p-16">
                   <h3 className="font-semibold text-text-ink">{amenity.name}</h3>
+                  {amenity.locationLabel ? <p className="mt-8 text-small text-text-secondary">{amenity.locationLabel}</p> : null}
+                  {singleAmenityHours(amenityRecord(amenity.openingHours).daily) ? <p className="mt-4 text-small text-text-secondary">{singleAmenityHours(amenityRecord(amenity.openingHours).daily)?.join('–')}</p> : null}
                   {amenity.shortDescription ? <p className="mt-8 text-small text-text-secondary">{amenity.shortDescription}</p> : null}
                   <div className="mt-12 flex flex-wrap gap-8 text-small text-text-secondary">
                     <span className="rounded-full bg-surface-ivory px-8 py-4">{amenity.pricingType === 'free' ? labels['project_amenities.free'] : amenity.pricingType === 'included' ? labels['project_amenities.included'] : human(amenity.pricingType)}</span>

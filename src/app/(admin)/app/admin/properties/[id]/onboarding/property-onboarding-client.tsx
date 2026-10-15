@@ -30,7 +30,7 @@ export default function PropertyOnboardingClient({ initialProject, initialReadin
   const [activeStep, setActiveStep] = useState(1);
   useEffect(() => {
     const activateHashStep = () => {
-      const match = window.location.hash.match(/^#step-(\\d+)$/);
+      const match = window.location.hash.match(/^#step-([0-9]+)$/);
       const step = match ? Number(match[1]) : 0;
       if (step >= 1 && step <= steps.length) setActiveStep(step);
     };

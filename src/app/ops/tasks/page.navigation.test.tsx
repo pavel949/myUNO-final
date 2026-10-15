@@ -84,4 +84,44 @@ describe('readiness queue calendar context', () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({ spaceId, unitId: 'v1', mc: '1' });
     expect(url.hash).toBe('');
   });
+
+  it.each(['7', '14', '30'])('returns to the original date range and filters without narrowing an all-units board (%s days)', async days => {
+    const filters = { start: '2026-10-29', days, projectId: 'project-a', categoryId: 'category-a', organizationId: 'org-a' };
+    render(await OperationalTasksPage({ searchParams: {
+      spaceId: 'space', unitId: 'v1', mc: '1',
+      returnTo: '/ops/calendar/board?' + new URLSearchParams({ ...filters, spaceId: 'space', mc: '1' }),
+    } }));
+    const url = new URL(screen.getByRole('link', { name: '← Calendar' }).getAttribute('href')!, 'https://myuno.test');
+    expect(url.pathname).toBe('/ops/calendar/board');
+    expect(Object.fromEntries(url.searchParams)).toEqual({ ...filters, spaceId: 'space', mc: '1' });
+    expect(mocks.legacyUnits).toHaveBeenCalledWith(expect.anything(), 'staff', ['housekeeping'], ['v1', 'v2'], 'org', true);
+  });
+
+  it('keeps the original unit filter and URL-encodes filter values', async () => {
+    const filters = { start: '2026-10-29', days: '14', projectId: 'project /?&=+#ไทย', categoryId: 'category-a', unitId: 'v1' };
+    render(await OperationalTasksPage({ searchParams: { spaceId: 'space', unitId: 'v1', returnTo: '/ops/calendar/board?' + new URLSearchParams(filters) } }));
+    const url = new URL(screen.getByRole('link', { name: '← Calendar' }).getAttribute('href')!, 'https://myuno.test');
+    expect(Object.fromEntries(url.searchParams)).toEqual({ spaceId: 'space', ...filters });
+    expect(url.hash).toBe('');
+  });
+
+  it.each([
+    'https://evil.test/ops/calendar/board?start=2026-10-29',
+    '//evil.test/ops/calendar/board?start=2026-10-29',
+    '/ops/calendar/board/../tasks?start=2026-10-29',
+    '/ops/calendar/board?start=2026-10-29#other',
+    ['/ops/calendar/board?start=2026-10-29'],
+  ])('ignores unsafe or malformed return destinations (%j)', async returnTo => {
+    render(await OperationalTasksPage({ searchParams: { spaceId: 'space', unitId: 'v1', returnTo } }));
+    expect(screen.getByRole('link', { name: '← Calendar' })).toHaveAttribute('href', '/ops/calendar/board?spaceId=space&unitId=v1');
+  });
+
+  it('drops invalid ranges, duplicate filters and unknown parameters, and cannot override task scope', async () => {
+    render(await OperationalTasksPage({ searchParams: {
+      spaceId: 'space', unitId: 'v1', mc: '1',
+      returnTo: '/ops/calendar/board?spaceId=foreign&mc=0&start=2026-02-30&days=365&projectId=a&projectId=b&categoryId=cat&admin=1&next=https://evil.test',
+    } }));
+    const url = new URL(screen.getByRole('link', { name: '← Calendar' }).getAttribute('href')!, 'https://myuno.test');
+    expect(Object.fromEntries(url.searchParams)).toEqual({ spaceId: 'space', mc: '1', categoryId: 'cat' });
+  });
 });

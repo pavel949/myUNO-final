@@ -8,8 +8,8 @@ import {
 /**
  * Founder ruling 2026-10-06: myUNO is Layantara's booking system of record.
  * The operator's reservations workbook becomes canonical bookings through
- * the same intake as signed channel events — protection blocks converted
- * exactly, history kept, money only where the operator received it.
+ * the same intake as signed channel events. Unverified payment evidence and
+ * existing calendar protections block the entire workbook before any writes.
  */
 const TODAY = new Date('2026-10-06T08:00:00Z');
 const grid = (amountSatang: number) => ({
@@ -60,7 +60,7 @@ describe('Layantara reservations workbook import', () => {
     { ref: 'RES-0005', channel: 'Direct Booking', guest: 'Guest Five', checkIn: '2027-01-01', checkOut: '2027-01-04', rooms: 'V7', revenue: 30000, status: 'Pending' },
     { ref: 'RES-0006', channel: 'Amedeo', guest: 'Guest Six', checkIn: '2026-12-24', checkOut: '2027-01-01', rooms: 'V7', revenue: 150000, status: 'Confirmed', payment: 'Deposit paid', paid: 50000 },
   ];
-  const parse = (r = rows) => parseReservationsWorkbook(buildReservationsWorkbook(r));
+  const parse = (r: Array<Record<string, string | number | null>> = rows) => parseReservationsWorkbook(buildReservationsWorkbook(r));
 
   it('reads the Reservations sheet by its headers, with Excel dates and comma-listed villas', () => {
     const { rows: parsed, problems } = parse();
@@ -78,71 +78,161 @@ describe('Layantara reservations workbook import', () => {
     await expect(planWorkbookImport(db, parse(), TODAY)).rejects.toThrow('LAYANTARA_CUTOVER_NOT_VERIFIED');
   });
 
-  it('turns the workbook into bookings, converting protection blocks exactly', async () => {
-    const plan = await planWorkbookImport(db, parse(), TODAY);
-    expect(plan.summary).toMatchObject({ create: 5, create_cancelled: 1, skip: 1 });
-    expect(plan.stays.find(s => s.ref === 'RES-0005')).toMatchObject({ action: 'skip', reason: 'pending_kept_protected' });
+  const safeRows = rows.filter(row => !['RES-0001', 'RES-0005'].includes(row.ref))
+    .map(row => ({ ...row, payment: 'Unpaid', paid: 0 }));
+  const snapshot = async () => ({
+    identities: await db.identity.findMany({ orderBy: { id: 'asc' } }),
+    systems: await db.externalSystem.findMany({ orderBy: { id: 'asc' } }),
+    bookings: await db.booking.findMany({ orderBy: { id: 'asc' } }),
+    blocks: await db.blockedDate.findMany({ orderBy: { id: 'asc' } }),
+    payments: await db.payment.findMany({ orderBy: { id: 'asc' } }),
+    ledger: await db.ledgerEntry.findMany({ orderBy: { id: 'asc' } }),
+    inbox: await db.externalEventInbox.findMany({ orderBy: { id: 'asc' } }),
+    mappings: await db.externalMapping.findMany({ orderBy: { id: 'asc' } }),
+    checkpoints: await db.externalAggregateCheckpoint.findMany(),
+    audit: await db.auditLog.findMany({ orderBy: { id: 'asc' } }),
+  });
+
+  it('imports explicitly unpaid, unblocked bookings and replays without receipts', async () => {
+    const plan = await planWorkbookImport(db, parse(safeRows), TODAY);
+    expect(plan.applyBlockers).toEqual([]);
     const { applied, groups, completed } = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
-    expect(applied.filter(a => a.status === 'quarantined')).toEqual([]);
+    expect(applied.filter(result => result.status === 'quarantined')).toEqual([]);
     expect(groups).toBe(1);
     expect(completed).toBe(1);
-
-    // The A10 protection became the booking; the pending stay stays protected.
-    expect(await db.blockedDate.findMany({ select: { externalRef: true } }))
-      .toEqual([{ externalRef: 'layantara:occupancy:occ-pending' }]);
-    const bookings = await db.booking.findMany({ orderBy: { startDate: 'asc' } });
-    expect(bookings).toHaveLength(6);
-    const byRef = (ref: string) => bookings.filter(b => (b.priceBreakdown as { externalBookingId: string }).externalBookingId.startsWith(ref));
-
-    expect(byRef('RES-0001')[0]).toMatchObject({ channel: 'booking_com', status: 'confirmed', totalThb: 6_983_496, bookingType: 'external_ota' });
-    expect(byRef('RES-0002')[0]).toMatchObject({ channel: 'agent', status: 'completed', balanceDueThb: 0 });
-    expect(byRef('RES-0002')[0].priceBreakdown).toMatchObject({ sourceChannelName: 'Khunya', importedFrom: 'operator_workbook' });
-    expect(byRef('RES-0004')[0]).toMatchObject({ channel: 'expedia', status: 'cancelled' });
-    expect(byRef('RES-0006')[0]).toMatchObject({ totalThb: 15_000_000, balanceDueThb: 10_000_000 });
-
-    // One reservation, two villas: split by each villa's season rate, one group, one guest.
-    const pair = byRef('RES-0003');
-    expect(pair).toHaveLength(2);
-    expect(pair.reduce((s, b) => s + b.totalThb, 0)).toBe(9_820_440);
-    expect(pair.find(b => b.unitId === a10)!.totalThb).toBeGreaterThan(pair.find(b => b.unitId === v7)!.totalThb);
-    expect(new Set(pair.map(b => b.reservationGroupId)).size).toBe(1);
-    expect(pair[0].reservationGroupId).not.toBeNull();
-    expect(pair[0].guestIdentityId).toBe(pair[1].guestIdentityId);
-
-    // Money: ledger only for what the operator received (agent payments).
-    const ledger = await db.ledgerEntry.findMany({ where: { entryType: 'rental_revenue' } });
-    expect(ledger.map(l => l.amountThb).sort()).toEqual([5_000_000, 8_000_000]);
-    // Name-only guests: no email, so nobody is messaged.
+    expect(await db.booking.count()).toBe(5);
+    expect(await db.blockedDate.count()).toBe(2);
+    expect(await db.payment.count()).toBe(0);
+    expect(await db.ledgerEntry.count()).toBe(0);
     expect(await db.notification.count()).toBe(0);
+    const replay = await planWorkbookImport(db, parse(safeRows), TODAY);
+    expect(replay.applyBlockers).toEqual([]);
+    expect(replay.summary).toMatchObject({ create: 0, change: 0, cancel: 0, create_cancelled: 0 });
+    await applyWorkbookImport(db, replay, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 60_000) });
+    expect(await db.booking.count()).toBe(5);
+    expect(await db.payment.count()).toBe(0);
+    expect(await db.ledgerEntry.count()).toBe(0);
+
+    const edited = safeRows.map(row => row.ref === 'RES-0006' ? { ...row, revenue: 160000 } : row);
+    const change = await planWorkbookImport(db, parse(edited), TODAY);
+    expect(change.stays.find(stay => stay.ref === 'RES-0006')?.action).toBe('change');
+    await applyWorkbookImport(db, change, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 120_000) });
+    expect(await db.bookingChange.count()).toBe(1);
   });
 
-  it('re-uploading the same workbook changes nothing; an edited row becomes a recorded change', async () => {
-    await applyWorkbookImport(db, await planWorkbookImport(db, parse(), TODAY), { actorIdentityId: admin, now: TODAY });
-    const before = await db.booking.count();
-    const again = await planWorkbookImport(db, parse(), TODAY);
-    expect(again.summary).toMatchObject({ create: 0, create_cancelled: 0, change: 0, cancel: 0 });
-    await applyWorkbookImport(db, again, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 60_000) });
-    expect(await db.booking.count()).toBe(before);
-    expect(await db.ledgerEntry.count()).toBe(2);
-
-    const edited = rows.map(r => r.ref === 'RES-0001' ? { ...r, checkOut: '2026-11-15', revenue: 75000 }
-      : r.ref === 'RES-0006' ? { ...r, payment: 'Paid', paid: 150000 } : r);
-    const plan = await planWorkbookImport(db, parse(edited), TODAY);
-    expect(plan.stays.find(s => s.ref === 'RES-0001')!.action).toBe('change');
-    expect(plan.stays.find(s => s.ref === 'RES-0006')!.action).toBe('change');
-    const { applied } = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 120_000) });
-    expect(applied.filter(a => a.status === 'quarantined')).toEqual([]);
-    const changed = await db.booking.findFirstOrThrow({ where: { totalThb: 7_500_000 } });
-    expect(changed.endDate.toISOString().slice(0, 10)).toBe('2026-11-15');
-    expect(await db.bookingChange.count({ where: { bookingId: changed.id } })).toBe(1);
-    const six = await db.booking.findFirstOrThrow({ where: { totalThb: 15_000_000 } });
-    expect(six.balanceDueThb).toBe(0);
-    expect(await db.ledgerEntry.count()).toBe(3);
-
-    const cancelled = rows.map(r => r.ref === 'RES-0001' ? { ...r, checkOut: '2026-11-15', revenue: 75000, status: 'Cancelled' } : r);
-    const cancelPlan = await planWorkbookImport(db, parse(cancelled), TODAY);
-    expect(cancelPlan.stays.find(s => s.ref === 'RES-0001')!.action).toBe('cancel');
-    await applyWorkbookImport(db, cancelPlan, { actorIdentityId: admin, now: new Date(TODAY.getTime() + 180_000) });
-    expect((await db.booking.findUniqueOrThrow({ where: { id: changed.id } })).status).toBe('cancelled');
+  it('keeps preview read-only and rejects the whole mixed workbook before creating an actor', async () => {
+    const before = await snapshot();
+    const plan = await planWorkbookImport(db, parse(), TODAY);
+    expect(plan.applyBlockers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ref: 'RES-0002', message: 'source_payment_unverified' }),
+      expect.objectContaining({ ref: 'RES-0006', message: 'source_payment_unverified' }),
+      expect.objectContaining({ ref: 'RES-0001', message: 'protection_identity_unverified' }),
+    ]));
+    expect(await snapshot()).toEqual(before);
+    await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY }))
+      .rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+    expect(await snapshot()).toEqual(before);
   });
+
+  it.each([
+    { payment: 'Paid', paid: 0 },
+    { payment: 'Deposit paid', paid: 500 },
+    { payment: 'Unpaid', paid: 500 },
+    { payment: 'Unpaid', paid: 'invalid' },
+    { payment: 'Unpaid', paid: '0.001' },
+    { payment: 'Unpaid', paid: '-0.001' },
+    { payment: 'Unpaid', paid: '฿' },
+    { payment: 'Unpaid', paid: ' , ' },
+    { payment: 'Unpaid', paid: -1 },
+    { payment: 'Unpaid', paid: '' },
+    { payment: '', paid: 0 },
+    { payment: 'Channel collected', paid: 0 },
+    { payment: 'Refunded', paid: 0 },
+  ])('blocks unresolved source payment evidence: %j', async evidence => {
+    const before = await snapshot();
+    const plan = await planWorkbookImport(db, parse([...safeRows, {
+      ...safeRows[0], ref: 'UNVERIFIED', ...evidence,
+    }]), TODAY);
+    expect(plan.applyBlockers).toContainEqual(expect.objectContaining({ ref: 'UNVERIFIED', message: 'source_payment_unverified' }));
+    await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin })).rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it.each([
+    { status: 'Pending' }, { status: 'Cancelled' }, { status: 'Unknown' },
+    { rooms: 'MISSING' }, { guest: '' }, { checkIn: 'invalid' }, { revenue: -1 }, { ref: 'invalid ref' },
+  ])('retains paid evidence even when a row would be skipped: %j', async override => {
+    const before = await snapshot();
+    const plan = await planWorkbookImport(db, parse([...safeRows, {
+      ...safeRows[0], ref: 'SKIPPED', ...override, payment: 'Paid', paid: 500,
+    }]), TODAY);
+    expect(plan.applyBlockers.some(blocker => blocker.message === 'source_payment_unverified')).toBe(true);
+    await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin })).rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it('retains payment blockers on duplicate and unchanged rows', async () => {
+    await applyWorkbookImport(db, await planWorkbookImport(db, parse(safeRows), TODAY), { actorIdentityId: admin, now: TODAY });
+    const before = await snapshot();
+    const paidRows = safeRows.map(row => ({ ...row, payment: 'Paid', paid: 500 }));
+    for (const input of [paidRows, [...paidRows, paidRows[0]]]) {
+      const plan = await planWorkbookImport(db, parse(input), TODAY);
+      expect(plan.applyBlockers.filter(blocker => blocker.message === 'source_payment_unverified')).toHaveLength(input.length);
+      await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin })).rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+      expect(await snapshot()).toEqual(before);
+    }
+  });
+
+  it.each(['owner_hold', 'ota_import', 'maintenance'] as const)('preserves %s blocks and rejects the entire mixed batch', async reason => {
+    await db.blockedDate.create({ data: { unitId: v7, startDate: new Date('2026-12-24'),
+      endDate: new Date('2027-01-01'), reason, externalRef: 'layantara:occupancy:unverified' } });
+    const before = await snapshot();
+    const plan = await planWorkbookImport(db, parse(safeRows), TODAY);
+    expect(plan.applyBlockers).toContainEqual(expect.objectContaining({ ref: 'RES-0006', message: 'protection_identity_unverified' }));
+    expect(plan.stays.every(stay => stay.occupancyId === null)).toBe(true);
+    await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin })).rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it('rechecks protections introduced after preview before any writes', async () => {
+    const plan = await planWorkbookImport(db, parse(safeRows), TODAY);
+    expect(plan.applyBlockers).toEqual([]);
+    await db.blockedDate.create({ data: { unitId: v7, startDate: new Date('2026-12-25'),
+      endDate: new Date('2026-12-27'), reason: 'owner_hold' } });
+    const before = await snapshot();
+    await expect(applyWorkbookImport(db, plan, { actorIdentityId: admin })).rejects.toThrow('WORKBOOK_RECONCILIATION_REQUIRED');
+    expect(await snapshot()).toEqual(before);
+  });
+  it('does not complete an existing historical stay when a late block quarantines its change', async () => {
+    const input = [{ ...safeRows[0] }];
+    const earlier = new Date('2026-07-01T08:00:00Z');
+    await applyWorkbookImport(db, await planWorkbookImport(db, parse(input), earlier), { actorIdentityId: admin, now: earlier });
+    const booking = await db.booking.findFirstOrThrow();
+    expect(booking.status).toBe('confirmed');
+    const plan = await planWorkbookImport(db, parse([{ ...input[0], revenue: 81000, checkOut: '2026-09-03' }]), TODAY);
+    expect(plan.stays[0]).toMatchObject({ action: 'change', completeAfterImport: true });
+    await db.blockedDate.create({ data: { unitId: a10, startDate: new Date('2026-09-02'),
+      endDate: new Date('2026-09-03'), reason: 'owner_hold' } });
+    // Simulate a block arriving just after the read-only preflight; the intake lock must see it.
+    // Wrap only this caller. Spying on a shared Prisma delegate can remove
+    // its dynamic method during restoration and corrupt subsequent suites.
+    const stalePreflightDb = new Proxy(db, {
+      get(target, key) {
+        if (key === 'blockedDate') return new Proxy(target.blockedDate, {
+          get(model, method) {
+            if (method === 'findMany') return async () => [];
+            return Reflect.get(model, method);
+          },
+        });
+        const value = Reflect.get(target, key);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    const result = await applyWorkbookImport(stalePreflightDb, plan, { actorIdentityId: admin, now: TODAY });
+    expect(result.applied[0].status).toBe('quarantined');
+    expect(result.completed).toBe(0);
+    expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('confirmed');
+    expect(typeof db.blockedDate.findMany).toBe('function');
+  });
+
 });

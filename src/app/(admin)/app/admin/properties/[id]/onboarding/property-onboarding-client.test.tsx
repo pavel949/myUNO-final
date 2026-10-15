@@ -33,6 +33,33 @@ describe('property onboarding form wiring', () => {
     expect(container.querySelector('#step-1')).toHaveAttribute('hidden');
   });
 
+  it('opens a two-digit step from a direct hash link', async () => {
+    window.history.replaceState(null, '', '/app/admin/properties/project-1/onboarding#step-10');
+    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: '10. Review and publish' })).toBeVisible());
+  });
+
+  it('follows hash changes and preserves the current step for invalid hashes', () => {
+    render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
+
+    for (const [hash, heading] of [
+      ['#step-7', '7. Content and galleries'],
+      ['#step-10', '10. Review and publish'],
+      ['#step-1', '1. Project and area'],
+    ]) {
+      window.history.replaceState(null, '', `/app/admin/properties/project-1/onboarding${hash}`);
+      fireEvent(window, new HashChangeEvent('hashchange'));
+      expect(screen.getByRole('heading', { name: heading })).toBeVisible();
+    }
+
+    for (const hash of ['#step-0', '#step-11', '#step-seven', '#step-7-extra']) {
+      window.history.replaceState(null, '', `/app/admin/properties/project-1/onboarding${hash}`);
+      fireEvent(window, new HashChangeEvent('hashchange'));
+      expect(screen.getByRole('heading', { name: '1. Project and area' })).toBeVisible();
+    }
+  });
+
   it('submits an explicit base rate in baht, minimum nights, and the category key', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'category-1' }) });
     vi.stubGlobal('fetch', fetchMock);
@@ -89,3 +116,4 @@ describe('property onboarding form wiring', () => {
     expect(screen.getByRole('heading', { name: '7. Content and galleries' })).toBeInTheDocument();
   });
 });
+

@@ -7,6 +7,7 @@ import { TrustMark } from '@/components/TrustMark';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ServiceCard } from '@/components/ServiceCard';
 import { HomeFinder } from '@/components/home/HomeFinder';
+import { EcosystemEntry } from '@/components/home/EcosystemEntry';
 import { PublicAnalyticsLink } from '@/components/PublicAnalyticsLink';
 import { PUBLIC_ANALYTICS_EVENTS } from '@/components/public-analytics';
 import { HomeIntentProvider } from '@/components/home/HomeIntentProvider';
@@ -72,6 +73,26 @@ export default async function LandingPage({
       'landing.services.no_photo': 'Illustrative image',
       'landing.hp.meta.title': 'myUNO | Homes, property and local services in Phuket',
       'landing.hp.meta.description': 'Holiday and long-term homes, property to buy and local services in Phuket — on one platform, with clear responsibility at every step.',
+      'landing.hp.ecosystem.aria': "Choose your goal",
+      'landing.hp.ecosystem.heading': "What would you like to do in Phuket?",
+      'landing.hp.ecosystem.searchLabel': "Search myUNO",
+      'landing.hp.ecosystem.placeholder': "Villa, flowers, school, area or service…",
+      'landing.hp.ecosystem.submit': "Search",
+      'landing.hp.ecosystem.matches': "Matching places",
+      'landing.hp.ecosystem.route.stay.title': "Book a stay",
+      'landing.hp.ecosystem.route.stay.detail': "Villas and apartments",
+      'landing.hp.ecosystem.route.monthly.title': "Rent long-term",
+      'landing.hp.ecosystem.route.monthly.detail': "Homes for living",
+      'landing.hp.ecosystem.route.buy.title': "Buy property",
+      'landing.hp.ecosystem.route.buy.detail': "Properties for sale",
+      'landing.hp.ecosystem.route.move.title': "Relocate",
+      'landing.hp.ecosystem.route.move.detail': "Homes and moving support",
+      'landing.hp.ecosystem.route.services.title': "Find services",
+      'landing.hp.ecosystem.route.services.detail': "For everyday life and holidays",
+      'landing.hp.ecosystem.route.owner.title': "For owners",
+      'landing.hp.ecosystem.route.owner.detail': "Rent, sell or manage",
+      'landing.hp.ecosystem.route.partner.title': "For partners",
+      'landing.hp.ecosystem.route.partner.detail': "Agents, developers and providers",
       'landing.hp.hero.title': 'Your home and your life in Phuket.',
       'landing.hp.hero.subtitle': 'Holiday and long-term homes, property to buy and local services — on one platform.',
       'landing.hp.hero.no_dates': 'Browse the catalogue without dates',
@@ -312,7 +333,7 @@ export default async function LandingPage({
 
       <HomeIntentProvider initialIntent={initialIntent} locale={locale} destination={activeDestination.key}>
         <section
-          className="relative isolate min-h-[calc(100svh-64px)] overflow-hidden bg-surface-paper text-text-ink md:min-h-[720px]"
+          className="relative isolate min-h-[640px] overflow-hidden bg-surface-paper text-text-ink md:min-h-[760px]"
           aria-labelledby="home-title"
         >
           <Image
@@ -321,16 +342,16 @@ export default async function LandingPage({
             fill
             priority
             sizes={['100', 'vw'].join('')}
-            className="object-cover saturate-[1.08]"
+            className="object-cover saturate-[0.94] contrast-[1.03] motion-safe:animate-[fade-in_600ms_ease-out]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-surface-paper/85 via-surface-paper/30 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/20 via-transparent to-transparent" />
 
-          <div className="relative mx-auto flex min-h-[calc(100svh-64px)] max-w-content flex-col justify-end px-20 pb-24 pt-32 md:min-h-[720px] md:px-32 md:pb-56">
+          <div className="relative mx-auto flex min-h-[640px] max-w-content flex-col justify-end px-16 pb-24 pt-32 sm:px-20 md:min-h-[760px] md:px-32 md:pb-48">
             <div className="max-w-2xl">
               <h1
                 id="home-title"
-                className="max-w-2xl font-display text-display-hero font-semibold text-text-ink md:text-display-hero-lg"
+                className="max-w-2xl font-display text-display-hero font-semibold leading-tight tracking-tight text-text-ink [overflow-wrap:normal] [word-break:normal] hyphens-none md:text-display-hero-lg"
               >
                 {labels['landing.hp.hero.title']}
               </h1>
@@ -339,8 +360,30 @@ export default async function LandingPage({
               </p>
             </div>
 
-            <div className="mt-32 max-w-content">
-              <HomeFinder
+            <div className="mt-24 max-w-content rounded-xl bg-surface-paper/95 p-8 shadow-float backdrop-blur-md sm:p-12 md:p-20">
+              <EcosystemEntry locale={locale} places={places} copy={{
+                "aria": labels['landing.hp.ecosystem.aria'],
+                "heading": labels['landing.hp.ecosystem.heading'],
+                "searchLabel": labels['landing.hp.ecosystem.searchLabel'],
+                "placeholder": labels['landing.hp.ecosystem.placeholder'],
+                "submit": labels['landing.hp.ecosystem.submit'],
+                "matches": labels['landing.hp.ecosystem.matches'],
+                "route.stay.title": labels['landing.hp.ecosystem.route.stay.title'],
+                "route.stay.detail": labels['landing.hp.ecosystem.route.stay.detail'],
+                "route.monthly.title": labels['landing.hp.ecosystem.route.monthly.title'],
+                "route.monthly.detail": labels['landing.hp.ecosystem.route.monthly.detail'],
+                "route.buy.title": labels['landing.hp.ecosystem.route.buy.title'],
+                "route.buy.detail": labels['landing.hp.ecosystem.route.buy.detail'],
+                "route.move.title": labels['landing.hp.ecosystem.route.move.title'],
+                "route.move.detail": labels['landing.hp.ecosystem.route.move.detail'],
+                "route.services.title": labels['landing.hp.ecosystem.route.services.title'],
+                "route.services.detail": labels['landing.hp.ecosystem.route.services.detail'],
+                "route.owner.title": labels['landing.hp.ecosystem.route.owner.title'],
+                "route.owner.detail": labels['landing.hp.ecosystem.route.owner.detail'],
+                "route.partner.title": labels['landing.hp.ecosystem.route.partner.title'],
+                "route.partner.detail": labels['landing.hp.ecosystem.route.partner.detail'],
+              }} />
+              <details className="mt-12 rounded-lg border border-border-line bg-surface-paper p-12"><summary className="cursor-pointer text-small font-semibold text-brand-andaman">{locale === 'ru' ? 'Расширенный поиск жилья: даты, гости, район и комплекс' : 'Advanced property search: dates, guests, area and complex'}</summary><div className="mt-12"><HomeFinder
                 locale={locale}
                 places={places}
                 labels={{
@@ -398,6 +441,7 @@ export default async function LandingPage({
                   },
                 }}
               />
+              </div></details>
               <p className="mt-12 px-4 text-small text-text-ink">
                 {labels['landing.hp.hero.dates_note']}{' '}
                 <Link href="/search" className="font-semibold text-brand-andaman hover:underline">

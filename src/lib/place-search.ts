@@ -7,7 +7,7 @@
  * "Лаян"). Both sides resolve to the same option id — no aliases are stored.
  */
 
-export type PlaceKind = 'area' | 'project';
+export type PlaceKind = 'area' | 'project' | 'unit';
 
 export interface PlaceOption {
   kind: PlaceKind;
@@ -56,7 +56,7 @@ function score(option: PlaceOption, query: string): number {
 /** Areas first, then complexes; within a kind, best match first. */
 export function matchPlaces(options: readonly PlaceOption[], rawQuery: string, limit = 8): PlaceOption[] {
   const query = normalizePlaceText(rawQuery);
-  const kindRank = (kind: PlaceKind) => (kind === 'area' ? 0 : 1);
+  const kindRank = (kind: PlaceKind) => (kind === 'area' ? 0 : kind === 'project' ? 1 : 2);
   if (!query) {
     return [...options]
       .sort((a, b) => kindRank(a.kind) - kindRank(b.kind))

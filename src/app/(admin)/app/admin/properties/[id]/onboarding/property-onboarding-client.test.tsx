@@ -20,7 +20,18 @@ const readiness = {
 };
 
 describe('property onboarding form wiring', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('opens the step named by a direct hash link', async () => {
+    window.history.replaceState(null, '', '/app/admin/properties/project-1/onboarding#step-7');
+    const { container } = render(<PropertyOnboardingClient initialProject={project} initialReadiness={readiness} galleryLabels={{}} />);
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: '7. Content and galleries' })).toBeVisible());
+    expect(container.querySelector('#step-1')).toHaveAttribute('hidden');
+  });
 
   it('submits an explicit base rate in baht, minimum nights, and the category key', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'category-1' }) });

@@ -493,7 +493,7 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {/* Notes */}
-        {(order.noteToProvider || order.addressNote) && (
+        {(order.noteToProvider || (order.addressNote && order.addressNote !== standaloneContext?.address)) && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['service-order.detail.notes']}
@@ -508,7 +508,7 @@ export default async function ServiceOrderDetailPage({
                 </p>
               </div>
             )}
-            {order.addressNote && (
+            {order.addressNote && order.addressNote !== standaloneContext?.address && (
               <div>
                 <p className="text-small text-text-secondary mb-4">
                   {labels['service-order.detail.address_note']}

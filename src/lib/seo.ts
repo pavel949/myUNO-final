@@ -6,7 +6,16 @@ import { LOCALES, DEFAULT_LOCALE } from '@/modules/content/types';
  * so every environment (local, preview, production) stays consistent.
  */
 export function siteUrl(): string {
-  return (process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const normalized = configured.replace(/\\/$/, '');
+  // Only allow valid HTTP(S) origins in canonical URLs and sitemap entries.
+  try {
+    const url = new URL(normalized);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Invalid site URL protocol');
+    return url.origin;
+  } catch {
+    return 'http://localhost:3000';
+  }
 }
 
 /**

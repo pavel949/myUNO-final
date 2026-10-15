@@ -220,7 +220,10 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
 
   // Match review's project-scoped enabled methods. Do not repeat the legacy
   // static CMS promise, which may name payment rails this property lacks.
-  const enabledMethods = (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId: unit.project.id })) ?? ['cash', 'bank_transfer'];
+  const paymentScope = await prisma.unit.findUnique({ where: { id: unit.id }, select: { projectId: true } });
+  const enabledMethods = paymentScope
+    ? (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId: paymentScope.projectId })) ?? ['cash', 'bank_transfer']
+    : [];
   const paymentLabels = { cash: labels['listing.pay_cash'], bank_transfer: labels['listing.pay_transfer'], card_provider: labels['listing.pay_card'] };
   const paymentMethodsSummary = enabledMethods.map(method => paymentLabels[method]).join(' · ');
 

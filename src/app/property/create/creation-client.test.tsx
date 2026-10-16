@@ -126,8 +126,12 @@ describe('employee creation editor', () => {
     expect(mutations(fetchMock)).toHaveLength(2); expect(mutations(fetchMock)[0][1]?.body).toBe(mutations(fetchMock)[1][1]?.body);
   });
   it('keeps edits after validation failure and uses expected revision on resumed saves', async () => {
-    const fetchMock = setup({ items: [saved()], override: (_url, init) => init.method === 'PATCH' ? response({}, 400) : undefined });
+    const fetchMock = setup({ items: [saved({ draft: { ...unitDraft, description: 'Saved description', descriptionLocale: 'en' } })], override: (_url, init) => init.method === 'PATCH' ? response({}, 400) : undefined });
     render(<CreationClient labels={{}} initialId="application-a" />);
+    const description = await screen.findByRole('textbox', { name: l('field.description'), exact: true });
+    expect(description).toHaveAttribute('id', 'creation-description');
+    expect(description).toHaveValue('Saved description');
+    expect(screen.getByLabelText(l('field.description'), { exact: true })).toBe(description);
     await screen.findByLabelText(l('field.unitName')); fireEvent.change(screen.getByLabelText(l('field.unitName')), { target: { value: 'Local name' } });
     fireEvent.click(screen.getByRole('button', { name: l('save') })); await screen.findByText(l('error.validation'));
     expect(screen.getByLabelText(l('field.unitName'))).toHaveValue('Local name'); expect(screen.getByRole('button', { name: l('save') })).toBeEnabled();

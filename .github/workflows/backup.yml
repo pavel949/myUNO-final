@@ -26,7 +26,7 @@
 # Do NOT use the application's own connection string. Create a role that can
 # read everything and change nothing, and give this workflow that:
 #
-#   CREATE ROLE backup_reader LOGIN PASSWORD '<generated>';
+#   CREATE ROLE backup_reader LOGIN PASSWORD '<generated>' BYPASSRLS;
 #   GRANT pg_read_all_data TO backup_reader;
 #
 # `pg_read_all_data` (Postgres 14+) does NOT bypass row-level security. The
@@ -52,6 +52,9 @@
 #      hard ceiling on retention. A growing database will outgrow this. Watch
 #      the reported dump size in the run summary.
 
+# Scope: public application schema only, from a shared exported snapshot.
+# Managed Supabase auth/storage/vault schemas are infrastructure, not this
+# app's Identity/Session or Blob storage. Their separate recovery is not claimed.
 name: Backup
 
 on:
@@ -131,6 +134,21 @@ jobs:
               sys.exit('Backup must target the canonical production project over a direct/session connection.')
           PY
 
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install reviewed application dependencies without credentials
+        run: npm ci
+
+      - name: Verify backup target and restore safety policy
+        run: node --test scripts/backup-policy.test.mjs
+
       - name: Install the Postgres 17 client
         run: |
           set -euo pipefail
@@ -155,82 +173,22 @@ jobs:
           # Ubuntu's pg_wrapper may otherwise pick its older default (16) even
           # after client-17 is installed. Use explicit 17 binaries throughout.
 
-      - name: Dump the production database
+      - name: Dump the application database from one consistent snapshot
         env:
-          # Passed via PGPASSWORD-style URL in the environment, never on the
-          # command line — argv is visible to anything that can list processes.
-          PGDATABASE: ${{ secrets.BACKUP_DATABASE_URL }}
-          PGOPTIONS: '-c default_transaction_read_only=on'
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          PG_DUMP_BIN: /usr/lib/postgresql/17/bin/pg_dump
         run: |
           set -euo pipefail
-          # Custom format: compressed, and restorable selectively, which is
-          # what makes a partial recovery ("just the ledger") possible.
-          # --no-owner / --no-privileges so the dump restores into a scratch
-          # database whose roles do not exist.
-          /usr/lib/postgresql/17/bin/pg_dump \
-            --format=custom \
-            --no-owner \
-            --no-privileges \
-            --file=dump.pgc
+          node scripts/backup-public-schema.mjs dump
           size="$(du -h dump.pgc | cut -f1)"
           echo "Dump size: ${size}"
-          echo "DUMP_SIZE=${size}" >> "$GITHUB_ENV"
 
-      - name: Restore it into a scratch database
+      - name: Restore and compare every application table against the source snapshot
         env:
-          PGPASSWORD: scratch
-        run: |
-          set -euo pipefail
-          # This is the step that makes the backup real. If the dump cannot be
-          # restored, the run fails here and nothing is stored.
-          /usr/lib/postgresql/17/bin/pg_restore \
-            --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check \
-            --no-owner --no-privileges \
-            --exit-on-error \
-            dump.pgc
-
-      - name: Assert the restored copy is intact
-        env:
-          PGPASSWORD: scratch
-        run: |
-          set -euo pipefail
-          q() { /usr/lib/postgresql/17/bin/psql --host="$PG_HOST" --port="$PG_PORT" --username=postgres --dbname=restore_check -tAc "$1"; }
-
-          tables="$(q "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';")"
-          echo "Tables restored: ${tables}"
-          # The schema has been well over 70 tables since the CRM foundation
-          # landed. A dump that restores a handful of them restored *something*
-          # and is still a failed backup.
-          if [ "$tables" -lt 70 ]; then
-            echo "::error::Only ${tables} tables restored — expected the full schema."
-            exit 1
-          fi
-
-          # Migration history is what proves the restored copy is a coherent
-          # point in the chain rather than an arbitrary subset of tables.
-          applied="$(q "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL;")"
-          echo "Migrations applied in the restored copy: ${applied}"
-          if [ "$applied" -lt 1 ]; then
-            echo "::error::Restored copy has no completed migration history."
-            exit 1
-          fi
-
-          # Row counts on the tables a recovery would actually be judged by.
-          # Reported, never asserted against a threshold: an empty pilot
-          # database is legitimate, and a backup job is the wrong place to
-          # start having opinions about how much business there should be.
-          {
-            echo "### Restore verified"
-            echo
-            echo "| Table | Rows |"
-            echo "|---|---|"
-            for t in identity project unit booking payment ledger_entry tm30_filing owner_statement; do
-              n="$(q "SELECT count(*) FROM ${t};" 2>/dev/null || echo 'n/a')"
-              echo "| \`${t}\` | ${n} |"
-            done
-            echo
-            echo "Tables: ${tables} · Migrations: ${applied} · Dump size: ${DUMP_SIZE}"
-          } >> "$GITHUB_STEP_SUMMARY"
+          SCRATCH_DATABASE_URL: postgresql://postgres:scratch@127.0.0.1:5433/restore_check
+          PG_RESTORE_BIN: /usr/lib/postgresql/17/bin/pg_restore
+          PSQL_BIN: /usr/lib/postgresql/17/bin/psql
+        run: node scripts/backup-public-schema.mjs restore
 
       - name: Encrypt the verified dump
         env:
@@ -269,3 +227,7 @@ jobs:
       #     AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET }}
       #     AWS_DEFAULT_REGION: ${{ vars.BACKUP_S3_REGION }}
       #   run: aws s3 cp dump-*.pgc.gpg "s3://${{ vars.BACKUP_S3_BUCKET }}/db/"
+
+      - name: Remove unencrypted recovery intermediates
+        if: always()
+        run: rm -f dump.pgc backup-manifest.json restore-list.txt

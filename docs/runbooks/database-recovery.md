@@ -87,6 +87,37 @@ present regardless of what the migration chain does.
 
 ## Restoring a backup into a scratch database
 
+### Current automated path (2026-10-16)
+
+`.github/workflows/backup.yml` captures the **public application schema**.
+Application Identity/Session, financial facts, private snapshot rows and media
+metadata live there. Managed Supabase auth/storage/vault internals, Vercel
+secrets and external Blob bytes require their own recovery paths; this dump
+does not claim to restore those services.
+
+`scripts/backup-public-schema.mjs dump` uses a dedicated read-only principal,
+an exported repeatable-read snapshot shared with pg_dump, and a manifest of
+every public table's row count and row digest. The restore command is restricted
+to named localhost scratch databases. It installs omitted citext/btree_gist
+extension prerequisites and verifies exact table/data parity before encryption
+and artifact retention. CI rehearses this with synthetic local credentials.
+
+Connection URLs are parsed into libpq's individual PGHOST/PGPORT/PGDATABASE/
+PGUSER/PGPASSWORD variables. Do not put a URI in PGDATABASE: pg_dump may treat it
+as a database name and attempt a local socket. No credential is passed in argv.
+
+Production backup principal `myuno_backup_reader` was provisioned as an operator
+action on 2026-10-16 with pg_read_all_data and BYPASSRLS, no superuser, role-create,
+database-create or replication privileges, and default_transaction_read_only.
+Verification: SELECT on120 public tables, write privileges on0. No application
+Identity/RoleAssignment or public Data API policy was created. Its login and the
+independent GPG passphrase are encrypted GitHub Actions secrets. The GPG recovery
+key has a separate private operator copy; never commit it or print it in logs.
+
+The original run38894672702 failed before exporting data because of the
+PGDATABASE URI bug. A successful backup/restore run is still required before
+production migrations; configured secrets alone are not release evidence.
+
 `pg_read_all_data` does not bypass RLS. A dedicated backup login needs
 separately reviewed all-row access; do not assume the example grants below
 are sufficient on this server-only, RLS-enabled schema. A failed or partial

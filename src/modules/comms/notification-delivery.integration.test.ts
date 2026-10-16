@@ -1,9 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createIdentity, db, resetDb } from '@/test/util';
+import { createIdentity, db, resetDb, setGlobalConfig } from '@/test/util';
 import { createNotification } from './comms.service';
 import { dispatchNotificationDelivery, flushPendingNotificationDeliveries, QUEUED_DELIVERY } from './notification-delivery';
 import * as email from './email.seam';
+import * as integrations from '@/modules/integrations';
+import { seedConfig } from '@/modules/config';
 
 beforeEach(async () => {
   await resetDb();
@@ -81,4 +83,14 @@ describe('durable post-commit notification delivery', () => {
     expect(await dispatchNotificationDelivery(db, delivery.id)).toBe('failed');
     expect(send).not.toHaveBeenCalled();
   });
+  it('does not persist an arbitrary provider or database exception in the delivery record', async () => {
+    await seedConfig(db);
+    await setGlobalConfig('notify.channel.telegram.enabled', true);
+    const delivery = await queued();
+    await db.notificationDelivery.update({ where: { id: delivery.id }, data: { channel: 'telegram' } });
+    vi.spyOn(integrations, 'sendMessengerMessage').mockResolvedValue({ success: false, error: 'postgresql://private-user:private-password@private-db.example/production' });
+    expect(await dispatchNotificationDelivery(db, delivery.id)).toBe('failed');
+    expect(await db.notificationDelivery.findUniqueOrThrow({ where: { id: delivery.id } })).toMatchObject({ failureReason: 'Messenger delivery unavailable', externalRef: null });
+  });
+
 });

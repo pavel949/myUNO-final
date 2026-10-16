@@ -30,6 +30,9 @@ export async function dispatchNotificationDelivery(db: PrismaClient, id: string)
         failureReason = 'Delivery muted by recipient';
       } else if (channel === 'email' && await getConfig(tx, 'notify.channel.email.enabled', { fresh: true }) === false) {
         failureReason = 'Email channel is disabled';
+      } else if ((channel === 'whatsapp' || channel === 'telegram') &&
+          await getConfig(tx, channel === 'whatsapp' ? 'notify.channel.whatsapp.enabled' : 'notify.channel.telegram.enabled', { fresh: true }) !== true) {
+        failureReason = 'Messenger channel is disabled';
       } else if (identity?.email) {
         const { subject, body } = await buildNotificationEmail(tx as unknown as PrismaClient, { titleKey: notification.titleKey, bodyKey: notification.bodyKey, params: notification.params as Record<string, unknown>, locale: identity.preferredLocale });
         if (channel === 'email') {
@@ -42,7 +45,7 @@ export async function dispatchNotificationDelivery(db: PrismaClient, id: string)
           const result = await sendMessengerMessage(tx as unknown as PrismaClient, channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM, identity.email, body, undefined, false);
           sent = result.success;
           externalRef = result.messageId ?? null;
-          failureReason = result.error ?? 'MESSENGER_ADAPTER_UNAVAILABLE';
+          failureReason = result.error?.startsWith('MESSENGER_ADAPTER_UNAVAILABLE:') ? 'MESSENGER_ADAPTER_UNAVAILABLE' : 'Messenger delivery unavailable';
         }
       }
       await tx.notificationDelivery.update({ where: { id }, data: { status: sent ? 'sent' : 'failed', sentAt: sent ? new Date() : null, externalRef: sent ? externalRef : null, failureReason: sent ? null : failureReason } });

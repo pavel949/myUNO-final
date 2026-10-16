@@ -77,3 +77,7 @@
 В полном CI run38900018681 обнаружены исходные ошибки Transaction already closed в fire-and-forget email после accept/fulfil. Добавлена durable post-commit queue на существующем NotificationDelivery: TransactionClient только сохраняет pending; frequent sweep обрабатывает после commit; advisory lock, provider Idempotency-Key, bounded network timeout и retry window, no legacy replay. Unit/DB tests покрывают rollback/no-send, competing workers, transient retry, mute и expiry. Scope не включает реализацию WhatsApp/Telegram adapters; они продолжают честно fail-closed. [Контракт Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
 
 Первый полный CI:5975 passed/2 failed, оба сбоя — static seeded key discovery (двойные кавычки в новых entries); формат исправлен, локальные coverage tests проходят. PostgreSQL confirm/dispute/close7/7 и route authorization в этом run прошли. Первый isolated browser run38900018460 успешен; новый service-fulfilment runner требует отдельного execution evidence.
+
+### Совпадение runtime для финальной приёмки
+
+Vercel project подтверждает Node24.x. Финальные CI и isolated Chromium переведены на Node24, чтобы проверять тот же major runtime. Предыдущие Node20 результаты сохраняются как regression evidence, но не подменяют финальный build/test на production runtime.

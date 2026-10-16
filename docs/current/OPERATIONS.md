@@ -100,6 +100,16 @@ Recovery: остановить writers/webhooks/jobs → сохранить по
 
 - iCal не является real-time ARI; источник может отставать.
 - Внешние мессенджеры пока не доставляют сообщения через provider adapter.
-- Внутренние realtime buses требуют решения для нескольких экземпляров.
+- Внутренний polling читает durable данные между экземплярами; in-memory SSE не используется как гарантия доставки.
 - Opn, email, storage, cron, backup требуют реальной проверки конфигурации и фактов выполнения.
 - Документационный commit не означает новый production deployment.
+
+CI и isolated browser acceptance используют Node24, как подтверждённый Vercel project runtime24.x.
+
+## 10. Доставка notification email после commit
+
+Новые external deliveries имеют status=pending и marker queued_after_commit_v1. TransactionClient не вызывает внешний provider. Root writer может обработать сохранённую запись сразу; booking_lifecycle в frequent slot подбирает bounded batch после commit. Workers сериализуются по delivery id. При временной ошибке/неопределённом provider response запись остаётся pending, повтор использует тот же Idempotency-Key. Provider ack записывает sent; console или queued не считаются delivered.
+
+Ретраи ограничены23h. Старые unmarked pending и expired retry window требуют ручной сверки с provider, не массового replay. Изменение content/recipient между attempts может быть отклонено provider как changed payload. Проверять в операционном контроле: oldest marked pending, failed reasons, disabled/muted channels, реальную cadence booking_lifecycle и provider ack. Provider errors/driver messages/credentials не сохраняются в failureReason; технические состояния имеют фиксированные безопасные формулировки.
+
+В production на read-only срезе этого пакета NotificationDelivery был пуст; реальная доставка email не подтверждена синтетическими tests.

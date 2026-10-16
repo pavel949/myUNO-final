@@ -1,6 +1,6 @@
 # Текущее устройство myUNO
 
-Сверка исходников 2026-10-16, main `712fbc1f191eca246390ab1313e55805232b2e45`. Production не проверен. Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
+Сверка исходников 2026-10-16; exact codeRevision в REFERENCE. Факты production и текущая оценка отделены от кода в [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md). Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
 
 ## Границы приложения
 
@@ -40,11 +40,11 @@ Availability учитывает canonical blocking booking statuses/active payme
 
 ## Финансы
 
-Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint, lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period.
+Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint (включая start/end dates брони), lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period.
 
 ## Коммуникации, фоновые работы и федерация
 
-Email использует Resend; без конфигурации dev может писать в console. Internal notifications/messages имеют in-process SSE buses: доставка между несколькими function instances не обеспечивается общим broker. WhatsApp/Telegram integration records не являются реализацией отправки.
+Email использует Resend; console без provider config не считается доставкой. NotificationDelivery образует post-commit queue: TransactionClient сохраняет pending, root writer или frequent sweep выполняет bounded dispatch с advisory lock, стабильным Idempotency-Key и ограниченным retry window; legacy ambiguous pending не переотправляются автоматически. Внутренние сообщения/уведомления читаются из БД polling (15/30s), с refresh по focus/visibility и защитой от запоздалых responses. In-process SSE buses остаются локальными. WhatsApp/Telegram integration records не являются реализацией отправки.
 
 Production migration workflow требует successful push CI на точном main SHA, успешный backup/restore, approved pending migrations/checksums и financial parity; deployment остаётся отдельным действием.
 

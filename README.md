@@ -1,6 +1,6 @@
 # myUNO — Property, Hospitality & Services OS
 
-**Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Срез реализации: `712fbc1f191eca246390ab1313e55805232b2e45`. Это описание исходников; состояние production в рамках этой сверки не проверялось.
+**Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Точный срез исходников: codeRevision в [REFERENCE](docs/current/REFERENCE.md). Реальная production-готовность и проверенные ограничения: [оценка](docs/current/READINESS_ASSESSMENT.md); план достижения 9/10: [критерии и работы](docs/current/PRODUCTION_READINESS_PLAN.md).
 
 myUNO объединяет поиск жилья, прямое бронирование, проживание, PMS, владельцев, управляющих, CRM, услуги и финансовый учёт Ignatev Estate. Один физический объект и одна Identity связывают эти процессы. Внутри — Next.js modular monolith с PostgreSQL; публичные страницы и рабочие кабинеты работают в одном приложении.
 
@@ -10,6 +10,7 @@ myUNO объединяет поиск жилья, прямое брониров�
 |---|---|
 | Понять всю систему и каждый модуль | [Описание системы](docs/current/SYSTEM.md) |
 | Увидеть реализованное и оставшиеся работы | [Матрица реализации и backlog](docs/current/IMPLEMENTATION_STATUS.md) |
+| Готовность к production и план 9/10 | [Оценка](docs/current/READINESS_ASSESSMENT.md) · [План](docs/current/PRODUCTION_READINESS_PLAN.md) |
 | Сверить все 30 целевых бизнес-процессов | [CO01–CO30 и функции без реализации](docs/current/PROCESS_COVERAGE.md) |
 | Найти любой экран, API, модель, enum или тест | [Полный справочник кода](docs/current/REFERENCE.md) |
 | Установить и запустить проект | [Разработка](CONTRIBUTING.md) |
@@ -27,7 +28,7 @@ myUNO объединяет поиск жилья, прямое брониров�
 - **Владелец и управляющий:** портфель, own stay, bookings, compliance/readiness, statements/sign-off, выплаты; MC scoped portfolio.
 - **Сотрудники:** ограниченные права на контент, тарифы, режим бронирования; предложения изменений с review/approval; scoped creation и делегирование доступа.
 - **CRM:** лиды, общий Identity, opportunities, activities, consent, attribution, property deals и приватные доказательства.
-- **Услуги:** проверка поставщиков, каталог, project/standalone заказы, оплата/принятие/исполнение, no-show/cancel/refund, отзывы, выплаты поставщикам.
+- **Услуги:** проверка поставщиков, каталог, project/standalone заказы, оплата/принятие/исполнение, подтверждение заказчиком и окно спора, автоматическое закрытие, no-show/cancel/refund, отзывы, выплаты поставщикам.
 - **Контроль:** конфигурация, CMS/i18n, audit, KPI, scheduler/launch readiness, integration health и Layantara import.
 
 Наличие кода не означает, что все эти процессы прошли production-приёмку. По каждому модулю ограничения и проверки указаны в [матрице](docs/current/IMPLEMENTATION_STATUS.md).

@@ -8,6 +8,7 @@
 |---|---|
 | [README](../README.md) | Вход в репозиторий, стек, процессы, запуск и важные ограничения |
 | [SYSTEM](current/SYSTEM.md) | Все модули, связи, роли, данные, money и интеграции |
+| [Оценка готовности](current/READINESS_ASSESSMENT.md) | Новая оценка1–10, доказательства и причины оставшегося риска |
 | [План 9/10](current/PRODUCTION_READINESS_PLAN.md) | Критерии приёмки, последовательность исправлений и доказательства |
 | [PROCESS_COVERAGE](current/PROCESS_COVERAGE.md) | Все 30 целевых бизнес-процессов и функции, у которых ещё нет runtime-модуля |
 | [IMPLEMENTATION_STATUS](current/IMPLEMENTATION_STATUS.md) | Что реализовано, что осталось, confirmed gaps, runtime unknowns, open PRs |
@@ -27,6 +28,8 @@
 
 | Документ | Тип |
 |---|---|
+| [current/READINESS_ASSESSMENT.md](current/READINESS_ASSESSMENT.md) | current |
+| [current/PRODUCTION_READINESS_PLAN.md](current/PRODUCTION_READINESS_PLAN.md) | current |
 | [current/PROCESS_COVERAGE.md](current/PROCESS_COVERAGE.md) | current |
 | [current/AUDIT_EVIDENCE.md](current/AUDIT_EVIDENCE.md) | current |
 | [00_legacy_audit.md](<00_legacy_audit.md>) | current |

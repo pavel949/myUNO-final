@@ -60,6 +60,9 @@ export function checkMigrationLedger(files, rows, requireComplete = false) {
 export function migrationFailureSummary(stage, error) {
   const stages = new Set(['ledger_read', 'ledger_policy', 'snapshot_before', 'migrate', 'ledger_verify', 'snapshot_after']);
   const safeStage = stages.has(stage) ? stage : 'unknown';
-  const code = typeof error?.code === 'string' && (/^P[0-9]{4}$/.test(error.code) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(error.code)) ? error.code : 'unclassified';
+  // PrismaClientInitializationError uses errorCode, unlike known query errors.
+  // Inspect only these bounded codes; never fall back to parsing the message.
+  const code = [error?.code, error?.errorCode].find(value => typeof value === 'string'
+    && (/^P[0-9]{4}$/.test(value) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(value))) ?? 'unclassified';
   return `Production migration/verification failed: stage=${safeStage}; code=${code}. Inspect the release configuration and ledger; no automatic history repair attempted.`;
 }

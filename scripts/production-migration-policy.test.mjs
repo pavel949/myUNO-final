@@ -48,4 +48,9 @@ test('release failures expose only allowlisted stages and driver codes', async (
   const { migrationFailureSummary } = await import('./production-migration-policy.mjs');
   assert.match(migrationFailureSummary('ledger_read', { code: 'P1001', message: 'postgresql://private:secret@db.example/production' }), /stage=ledger_read; code=P1001/);
   assert.doesNotMatch(migrationFailureSummary('private-token', { code: 'password', message: 'SECRET' }), /private-token|password|SECRET/);
+  const { Prisma } = await import('@prisma/client');
+  const initError = new Prisma.PrismaClientInitializationError('postgresql://private:secret@db.example/production', '5.22.0', 'P1000');
+  assert.match(migrationFailureSummary('ledger_read', initError), /stage=ledger_read; code=P1000/);
+  assert.doesNotMatch(migrationFailureSummary('ledger_read', initError), /private|secret|db.example/);
+  assert.doesNotMatch(migrationFailureSummary('ledger_read', { errorCode: 'TOKEN', message: 'SECRET' }), /TOKEN|SECRET/);
 });

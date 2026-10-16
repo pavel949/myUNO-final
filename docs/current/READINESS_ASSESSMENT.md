@@ -56,3 +56,12 @@ Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a2432762
 | Дополнительный provider payout source/overlap hardening |8.5/10 после exact-head success|5/10| PostgreSQL race/overlap/refund tests, полный CI и browser на final PR294 head; до их success остаётся8/10 |
 
 Половина балла — экспертная оценка снижения конкретного денежного риска, не математический процент. Production повышается только после соответствующего live evidence; merge не равен deploy.
+
+
+### Следующий пакет: границы финансовых периодов и release diagnostics
+
+16 октября2026, после main fc0508fe. Исправлено исчезновение оплаченных отмен при пересечении отчётного периода и добавлена повторная проверка allocation перед unsigned signature. Восемь дополнительных DB regressions проверяют обе границы, non-rental/unpaid исключения и неизменность подписанного снимка. Диагностика migration теперь читает errorCode настоящего Prisma initialization error, не раскрывая credentials. Exact-head выполнение смотрится в текущем PR/CI; прежние5997 tests относятся к fc0508fe.
+
+**После этого пакета оценка остаётся8.5/10 для кода и5/10 для production.** Исправление конкретного денежного дефекта уменьшает риск, но не закрывает оставшиеся сценарии и не обосновывает9/10. Переоценка применяется после успешных exact-head проверок; до них подтверждён предыдущий пакет.
+
+Новое эксплуатационное evidence: [release38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) прошёл backup/restore, затем остановился на ledger_read до migration SQL. [Scheduler38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) сработал по schedule в15:01UTC, но устойчивую частоту5min один запуск не доказывает. Live alias остаётся прежним deployment dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v. Контент и live acceptance по-прежнему блокируют повышение production score.

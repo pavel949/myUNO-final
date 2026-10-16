@@ -118,3 +118,10 @@ CI и isolated browser acceptance используют Node24, как подтв
 ### Read-only migration diagnostics
 
 production-migration.yml принимает preflight_only=true: выполняются reviewed-main и protected read-only preflight, а backup/migrate пропускаются. Такой run не доказывает применение SQL. pooler_host выбирается явно из configured и двух session hosts ap-south-1; выбор одинаков для preflight и реального migration job. Credentials сохраняются. Для нормального release preflight_only=false, после successful read-only проверки выполняются прежние backup/restore и financial parity gates. Диагностика выводит только validated host/port, Prisma kind/code и фиксированную категорию; raw driver message/URI/SQL не выводятся.
+
+
+### Endpoint проверяется по фактическому backup-подключению
+
+Production migration по умолчанию использует `pooler_host=backup_route`: protected route job проверяет BACKUP_DATABASE_URL через backup policy и передаёт только hostname. Preflight и migrate используют этот host:5432 с исходным паролем DATABASE_URL, сопоставляя только root username direct/session. Backup reader не получает DDL-полномочий и его пароль не используется миграцией. TLS-параметры миграции сохраняются; direct route не переписывается runtime resolver. `configured` оставлен для явно настроенного маршрута. Ручной перебор regional pooler hosts прекращён.
+
+Read-only probes на main0286152c: [configured38936441214](https://github.com/pavel949/myUNO-final/actions/runs/38936441214) — P1001/network_unreachable на aws-1; [alternate38936756732](https://github.com/pavel949/myUNO-final/actions/runs/38936756732) — initialization/unclassified на aws-0. В обоих случаях backup и migrate skipped: это не successful migration. До успешного preflight/нового exact-SHA backup не запускать SQL и не менять ledger. Non-public schema в migration URL запрещена.

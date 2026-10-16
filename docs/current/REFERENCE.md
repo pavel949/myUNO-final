@@ -6126,6 +6126,7 @@ model RateLimitBucket {
 | `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
+| `GITHUB_OUTPUT` | [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
 | `GITHUB_REF` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>) |
 | `GITHUB_SHA` | [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>) |
 | `GITHUB_STEP_SUMMARY` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
@@ -6136,6 +6137,7 @@ model RateLimitBucket {
 | `LAYANTARA_WEBHOOK_SECRET` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
 | `LOG_SILENT` | [src/lib/observability.ts](<../../src/lib/observability.ts>), [.env.example](<../../.env.example>) |
 | `MEDIA_IMPORT_TOKEN` | [src/app/api/cron/import-managed-yandex-media/route.ts](<../../src/app/api/cron/import-managed-yandex-media/route.ts>) |
+| `MIGRATION_DATABASE_HOST` | [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>) |
 | `MYUNO_BROWSER_ACCEPTANCE` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>) |
 | `NEXT_PUBLIC_APP_URL` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/login/google-login-button.tsx](<../../src/app/login/google-login-button.tsx>), [src/app/login/login-form.tsx](<../../src/app/login/login-form.tsx>), [.env.example](<../../.env.example>) |

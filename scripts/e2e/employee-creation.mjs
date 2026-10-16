@@ -260,7 +260,11 @@ try {
       people.push(person); ownIdentityIds.push(person.id);
     }
     [unitCreator, complexCreator, unsupportedCreator] = people;
-    area = await db.area.create({ data: { slug: 'synthetic-employee-creation-area', nameKey: 'browser.employee_creation.area', status: 'live' } });
+    // Reuse the original local destination with its covered live project.
+    // An otherwise empty live area invokes external editorial photography on
+    // the homepage; the acceptance environment deliberately blocks egress.
+    area = await db.area.findUniqueOrThrow({ where: { slug: 'synthetic-browser-area' } });
+    assert.equal(area.status, 'live');
     const projectData = { projectType: 'condominium', areaId: area.id, areaLabelKey: 'browser.employee_creation.area', descriptionKey: 'browser.employee_creation.project.description',
       handbookKey: 'browser.employee_creation.handbook', latitude: '8.01', longitude: '98.30', timezone: 'Asia/Bangkok', status: 'draft' };
     project = await db.project.create({ data: { ...projectData, slug: 'synthetic-employee-creation-scope', name: 'Synthetic Employee Creation Scope', address: 'Synthetic scoped address only' } });

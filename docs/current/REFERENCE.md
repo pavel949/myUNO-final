@@ -6103,7 +6103,7 @@ model RateLimitBucket {
 | `ADMIN_PASSWORD` | [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>) |
 | `ALERT_WEBHOOK_URL` | [src/lib/observability.ts](<../../src/lib/observability.ts>), [.env.example](<../../.env.example>) |
 | `APP_BASE_URL` | [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>) |
-| `BACKUP_DATABASE_URL` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
+| `BACKUP_DATABASE_URL` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>), [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
 | `BACKUP_PASSPHRASE` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
 | `BACKUP_S3_BUCKET` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_S3_KEY_ID` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
@@ -6123,6 +6123,7 @@ model RateLimitBucket {
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `GITHUB_REF` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `GITHUB_SHA` | [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
+| `GITHUB_STEP_SUMMARY` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `GOOGLE_CLIENT_SECRET` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [.env.example](<../../.env.example>) |
 | `ICAL_FEED_SECRET` | [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [.env.example](<../../.env.example>) |
 | `LAYANTARA_MEDIA_WRITE` | [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>) |
@@ -6142,8 +6143,13 @@ model RateLimitBucket {
 | `OMISE_SECRET_KEY` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
 | `OMISE_WEBHOOK_SECRET` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
 | `PAYMENT_PROVIDER` | [src/app/api/webhooks/opn/route.ts](<../../src/app/api/webhooks/opn/route.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
+| `PG_DUMP_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `PG_RESTORE_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `PGDATABASE` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `PSQL_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `RESEND_API_KEY` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `SCHEDULER_MODE` | [src/jobs/registry.ts](<../../src/jobs/registry.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
+| `SCRATCH_DATABASE_URL` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `SESSION_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [.env.example](<../../.env.example>) |
 | `SUPABASE_PROJECT_REF` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `UNIFIED_BOOKING_INTAKE_ENABLED` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |

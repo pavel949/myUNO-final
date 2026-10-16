@@ -46,6 +46,9 @@ jobs:
       - name: Test production migration safety policy
         run: node --test scripts/production-migration-policy.test.mjs
 
+      - name: Test backup connection and restore policy
+        run: node --test scripts/backup-policy.test.mjs
+
       - name: Test Claude Code guard hook
         run: npm run agents:guard:test
 
@@ -114,6 +117,19 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
         run: npm run db:verify
         timeout-minutes: 10
+
+      - name: Rehearse backup and restore with isolated PostgreSQL
+        env:
+          PGPASSWORD: test
+          BACKUP_DATABASE_URL: postgresql://backup_test_reader:synthetic-backup-only@127.0.0.1:5432/myuno_test
+          SCRATCH_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/myuno_backup_restore_test
+        run: |
+          set -euo pipefail
+          psql -h localhost -U test -d myuno_test -v ON_ERROR_STOP=1 -c "CREATE ROLE backup_test_reader LOGIN PASSWORD 'synthetic-backup-only' BYPASSRLS; GRANT pg_read_all_data TO backup_test_reader; ALTER ROLE backup_test_reader SET default_transaction_read_only=on;"
+          psql -h localhost -U test -d myuno_test -v ON_ERROR_STOP=1 -c 'CREATE DATABASE myuno_backup_restore_test;'
+          node scripts/backup-public-schema.mjs dump --test-source
+          node scripts/backup-public-schema.mjs restore
+          rm -f dump.pgc backup-manifest.json restore-list.txt
 
       - name: Focused unified-engine tests
         env:

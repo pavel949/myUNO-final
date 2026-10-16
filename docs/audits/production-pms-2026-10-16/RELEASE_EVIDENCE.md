@@ -6,6 +6,15 @@ Code baseline [main CI](https://github.com/pavel949/myUNO-final/actions/runs/388
 
 ## Production stage
 
+Update2026-10-16 11:57UTC: backup repair head777278b8 passed fullCI38895690959
+(5959tests/548files, types, lint, build, migration replay/drift and actual isolated
+backup/restore). Browser38895691149 passed9runners/112steps. Real production
+backup38896564642 captured and restored120 public application tables with exact
+row-count/digest parity; AES256 artifact12043314893 expires2026-11-15. Dedicated
+read-only backup credentials and a separate private recovery-key copy are
+configured. Main subsequently incorporated documentation PR292; the combined
+revision needs its own CI. Production migration/deployment/upload are still pending.
+
 1. Configure GitHub repository secrets BACKUP_DATABASE_URL (dedicated read-only backup connection to burcnghheyzbzffzgmjz; not the app credential) and BACKUP_PASSPHRASE. Retain the passphrase in the operator's password manager independently of repository/artifacts. Existing DATABASE_URL secret must identify that same production project using direct/session port5432.
 2. Run Production migration (backup required) on reviewed main. It requires a successful push CI for the exact SHA and unchanged main after backup. Backup must finish dump, scratch restore, verification, encryption and storage before the protected production job can execute Prisma migrate deploy.
 3. The runner validates target, unfinished migrations, exact pending allowlist, historical checksums and financial snapshot parity. No db push, MCP migration, ledger repair or grant creation. Failure stops code promotion; do not repair financial rows to make parity pass. Concurrent real business writes require operator reconciliation.

@@ -624,3 +624,8 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Open:** fill the columns for future stays; a re-upload updates the bookings as recorded changes.
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*
+
+
+## 2026-10-16 — Booking-mode compatibility URL
+
+The administrator PUT `/api/admin/units/[id]/booking-mode` remains a compatibility alias to the same reviewed scoped writer. The current UI uses `/api/property-booking-mode/[unitId]`. There is no current in-repository UI caller of the old URL; audit external callers before removing it. Neither endpoint bypasses preview baselines or current authorization.

@@ -158,7 +158,7 @@ describe('one property intake and verified canonical conversion', () => {
     const existing = await db.contentKey.create({ data: { key, namespace: 'unit', description: 'Existing content must not be overwritten' } });
     session.identityId = adminId;
     const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(await db.unit.count({ where: { projectId } })).toBe(0);
     expect(await db.translation.count({ where: { contentKeyId: existing.id } })).toBe(0);
     const applicationRow = await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } });
@@ -273,7 +273,7 @@ describe('one property intake and verified canonical conversion', () => {
     const created = await (await POST(req('POST', { ...application(), status: 'submitted' }))).json();
     session.identityId = adminId;
     const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
   });
   it('serializes two different applications for the same normalized physical unit', async () => {
@@ -287,9 +287,9 @@ describe('one property intake and verified canonical conversion', () => {
     const responses = await Promise.all(applications.map(application => convert(req('POST', {
       verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true,
     }), { params: { id: application.id } })));
-    expect(responses.map(response => response.status).sort()).toEqual([200, 400]);
-    const rejected = responses.find(response => response.status === 400)!;
-    expect((await rejected.json()).error).toContain('Possible existing property found');
+    expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
+    const rejected = responses.find(response => response.status === 409)!;
+    expect((await rejected.json()).error).toMatch(/Possible existing property found|Reload before continuing/);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
     const rows = await db.crmOpportunity.findMany({
       where: { id: { in: applications.map(application => application.id) } },

@@ -111,6 +111,21 @@ jobs:
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
         run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts
 
+      - name: Employee release integration regressions
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: >-
+          npx vitest run src/app/reachability.test.ts
+          src/modules/core/permissions-active-identity.test.ts
+          src/modules/core/people.service.integration.test.ts
+          src/modules/content/content.test.ts
+          src/app/api/property-submissions/property-submissions.integration.test.ts
+          src/app/api/property-submissions/submission-description-route.test.ts
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test

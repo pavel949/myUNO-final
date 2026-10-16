@@ -215,6 +215,10 @@ const API_ENTRY_POINTS = new Set([
  * it here — should shrink this list, never grow it back.
  */
 const API_DEBT = new Set([
+  // Compatibility alias retained for existing admin API integrations. Current
+  // UI previews/applies through /api/property-booking-mode/[unitId]. Both URLs
+  // share the reviewed canonical writer; removal requires a caller audit.
+  '/api/admin/units/[id]/booking-mode',
   // Two SSE endpoints that cannot work on this deployment target, kept only
   // until the founder rules on deleting them (Q59, plan D-9). Do NOT wire
   // these up to replace the polling in NotificationBell — that would trade

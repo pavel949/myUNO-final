@@ -56,3 +56,90 @@ it('keeps every reviewer select discoverable by its exact label when populated',
   fireEvent.change(screen.getByLabelText(projectLabel, { exact: true }), { target: { value: 'project' } });
   expect(screen.getByLabelText(projectLabel, { exact: true })).toHaveValue('project');
 });
+
+const employee = { kind: 'unit' as const, spaceId: 'space-a', organizationId: 'org-a', scopeProjectId: 'project' };
+const reviewOptions = { units: [{ id: 'existing-unit', name: 'Existing eligible unit', projectId: 'project' }], projects: [{ id: 'existing-project', name: 'Existing complex', address: 'Verified address' }] };
+const employeeLabels = {
+  rights: 'I checked the creator’s identity and current creation permission for this organization and workspace.',
+  duplicates: 'I checked duplicates and the selected new-draft or existing-record outcome.',
+  media: 'I checked the submitted descriptive facts and photos for the requested scope.',
+};
+function verifyEmployee() { for (const label of Object.values(employeeLabels)) fireEvent.click(screen.getByRole('checkbox', { name: label })); }
+
+describe('employee creation review', () => {
+  it('keeps the parent complex fixed and never exposes owner, engagement or merge controls', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ projectId: 'project', unitId: 'new-unit', createdProjectId: null, createdUnitId: 'new-unit', matchedExisting: false }) }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={employee} employeeReviewOptions={reviewOptions} />);
+    expect(screen.getAllByRole('combobox')).toHaveLength(1);
+    expect(screen.getByRole('combobox')).toHaveAccessibleName('Existing unit match');
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
+    expect(screen.queryByRole('checkbox', { name: /unit owner/ })).not.toBeInTheDocument();
+    verifyEmployee(); fireEvent.click(screen.getByRole('button', { name: 'Create canonical draft', exact: true }));
+    await screen.findByText('Canonical draft created');
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ descriptionLocale: 'en', projectId: 'project', existingUnitId: null, verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, verifiedOwner: false, organizationId: null });
+    expect(screen.getByRole('link', { name: 'Open new unit draft' })).toHaveAttribute('href', '/app/admin/units/new-unit');
+    expect(screen.queryByRole('link', { name: /project onboarding/i })).not.toBeInTheDocument();
+  });
+  it('creates a complex without matching an existing project or choosing an owner', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ projectId: 'new-project', unitId: null, createdProjectId: 'new-project', createdUnitId: null, matchedExisting: false }) }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={{ ...employee, kind: 'complex', scopeProjectId: null }} employeeReviewOptions={reviewOptions} />);
+    verifyEmployee(); fireEvent.click(screen.getByRole('button', { name: 'Create canonical draft', exact: true }));
+    await screen.findByText('Canonical draft created');
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).projectId).toBeNull();
+    expect(screen.getByRole('link', { name: 'Open new complex draft' })).toHaveAttribute('href', '/app/admin/properties/new-project/onboarding');
+  });
+  it('disables the whole review during conversion and requires refresh after response loss', async () => {
+    let reject!: (error: Error) => void;
+    const fetchMock = vi.fn(() => new Promise((_resolve, fail) => { reject = fail; }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={employee} employeeReviewOptions={reviewOptions} />);
+    verifyEmployee(); fireEvent.click(screen.getByRole('button', { name: 'Create canonical draft', exact: true }));
+    expect(screen.getByRole('checkbox', { name: employeeLabels.rights })).toBeDisabled();
+    reject(new Error('Lost response'));
+    await screen.findByRole('button', { name: 'Refresh review' });
+    expect(screen.getByRole('button', { name: 'Create canonical draft', exact: true })).toBeDisabled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+it('lets an administrator match only the provided eligible unit and reports no new draft', async () => {
+  const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ projectId: 'project', unitId: 'existing-unit', createdProjectId: null, createdUnitId: null, matchedExisting: true }) }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={employee} employeeReviewOptions={reviewOptions} />);
+  fireEvent.change(screen.getByLabelText('Existing unit match'), { target: { value: 'existing-unit' } });
+  verifyEmployee(); fireEvent.click(screen.getByRole('button', { name: 'Confirm existing match' }));
+  await screen.findByText('Matched to the reviewed existing record. No new draft or content access was created.');
+  expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ projectId: 'project', existingUnitId: 'existing-unit', verifiedOwner: false, organizationId: null });
+  expect(screen.queryByRole('link', { name: 'Open new unit draft' })).not.toBeInTheDocument();
+});
+
+it('requires duplicate review again after changing the selected complex outcome', () => {
+  render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={{ ...employee, kind: 'complex', scopeProjectId: null }} employeeReviewOptions={reviewOptions} />);
+  verifyEmployee(); expect(screen.getByRole('button', { name: 'Create canonical draft', exact: true })).toBeEnabled();
+  fireEvent.change(screen.getByLabelText('Existing complex match'), { target: { value: 'existing-project' } });
+  expect(screen.getByRole('checkbox', { name: employeeLabels.duplicates })).not.toBeChecked();
+  expect(screen.getByRole('button', { name: 'Confirm existing match' })).toBeDisabled();
+});
+
+it('does not offer conversion when current scoped match options cannot be loaded', () => {
+  render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={employee} employeeReviewOptions={null} />);
+  expect(screen.getByRole('combobox', { name: 'Existing unit match' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Create canonical draft', exact: true })).toBeDisabled();
+  expect(screen.getByText('Review options are unavailable. Refresh this page or check the creator’s current workspace permission.')).toBeInTheDocument();
+});
+
+it('sends an explicit existing-complex match without unit or ownership actions', async () => {
+  const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ projectId: 'existing-project', unitId: null, createdProjectId: null, createdUnitId: null, matchedExisting: true }) }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ConvertPropertySubmission {...props} descriptionLocale="en" employeeCreation={{ ...employee, kind: 'complex', scopeProjectId: null }} employeeReviewOptions={reviewOptions} />);
+  fireEvent.change(screen.getByLabelText('Existing complex match'), { target: { value: 'existing-project' } });
+  verifyEmployee(); fireEvent.click(screen.getByRole('button', { name: 'Confirm existing match' }));
+  await screen.findByText('Matched to the reviewed existing record. No new draft or content access was created.');
+  const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+  expect(body).toMatchObject({ projectId: 'existing-project', verifiedOwner: false, organizationId: null });
+  expect(body).not.toHaveProperty('existingUnitId');
+  expect(screen.queryByRole('link', { name: 'Open new complex draft' })).not.toBeInTheDocument();
+});

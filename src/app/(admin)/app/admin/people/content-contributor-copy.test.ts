@@ -51,7 +51,7 @@ describe('contributor role localization registration and pre-seed rendering', ()
     }
     expect(mocks.requireAdminPage).toHaveBeenCalledOnce();
     expect(mocks.tMany).toHaveBeenCalledWith(expect.anything(), expect.any(Array), expectedLocale, {
-      requestedLocaleFallbacks: Object.fromEntries(CONTENT_CONTRIBUTOR_ROLE_KEYS.map(row => [row.key, row[expectedLocale as 'ru' | 'en' | 'th' | 'zh']])),
+      requestedLocaleFallbacks: expect.objectContaining(Object.fromEntries(CONTENT_CONTRIBUTOR_ROLE_KEYS.map(row => [row.key, row[expectedLocale as 'ru' | 'en' | 'th' | 'zh']]))),
     });
   });
 

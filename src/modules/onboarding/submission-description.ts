@@ -1,11 +1,13 @@
 import type { Prisma } from '@prisma/client';
 import { LOCALES, type Locale } from '@/modules/content/types';
 
+export class SubmissionDescriptionError extends Error {}
+
 /** Missing locale is retained for legacy drafts; never infer it from the reviewer. */
 export function submissionDescriptionLocale(value: unknown): Locale | null {
   if (value === undefined || value === null || value === '') return null;
   if (typeof value !== 'string' || !LOCALES.includes(value as Locale)) {
-    throw new Error('Choose a supported description language.');
+    throw new SubmissionDescriptionError('Choose a supported description language.');
   }
   return value as Locale;
 }
@@ -18,7 +20,7 @@ export function resolveSubmissionDescription(
   if (!value) return null;
   const locale = submissionDescriptionLocale(data.descriptionLocale)
     ?? submissionDescriptionLocale(reviewedLocale);
-  if (!locale) throw new Error('Choose the language of the submitted description before conversion.');
+  if (!locale) throw new SubmissionDescriptionError('Choose the language of the submitted description before conversion.');
   return { value, locale };
 }
 

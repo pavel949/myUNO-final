@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/Button';
+import { safeNextPath } from '@/lib/safe-next-path';
 
 export interface ClaimLabels {
   title: string;
@@ -33,7 +34,7 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
-  const next = searchParams?.get('next') || '/trips';
+  const next = safeNextPath(searchParams?.get('next')) || '/trips';
 
   const [identity, setIdentity] = useState<ClaimIdentity | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,7 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!token || !identity) return;
+    if (!token || !identity || submitting) return;
     if (password !== confirm) {
       setError(labels.errorMismatch);
       return;
@@ -87,6 +88,7 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
         return;
       }
       router.push(next);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels.errorGeneric);
     } finally {
@@ -128,6 +130,8 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
                 type="password"
                 required
                 minLength={8}
+                maxLength={72}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={fieldClass}
@@ -142,6 +146,8 @@ export default function ClaimClient({ labels }: { labels: ClaimLabels }) {
                 type="password"
                 required
                 minLength={8}
+                maxLength={72}
+                autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 className={fieldClass}

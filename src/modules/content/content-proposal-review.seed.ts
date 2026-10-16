@@ -1,4 +1,4 @@
-/** Registered reviewer copy; locale fallback remains available for TH/ZH. */
+/** Registered reviewer copy; new facility review labels have EN/RU/TH/ZH drafts. */
 export const CONTENT_PROPOSAL_REVIEW_KEYS = [
   {
     key: 'property.content.review.title',
@@ -7,8 +7,10 @@ export const CONTENT_PROPOSAL_REVIEW_KEYS = [
   },
   {
     key: 'property.content.review.intro',
-    "en": "Review assigned employees’ proposed facts, descriptions and galleries before applying them to the property.",
-    "ru": "Проверьте характеристики, описания и галереи, которые подготовили назначенные сотрудники, прежде чем применить их к объекту."
+    "en": "Review assigned employees’ proposed facts, descriptions, galleries and complex facilities before applying them to the property.",
+    "ru": "Проверьте характеристики, описания, галереи и инфраструктуру комплекса, которые подготовили назначенные сотрудники, прежде чем применить их к объекту.",
+    "th": "ตรวจสอบข้อมูลพื้นฐาน คำอธิบาย แกลเลอรีรูปภาพ และสิ่งอำนวยความสะดวกส่วนกลางของโครงการที่พนักงานผู้ได้รับมอบหมายเสนอ ก่อนนำไปใช้กับที่พัก",
+    "zh": "在应用到房源前，请审核获指派员工提交的房源信息、描述、相册及项目配套设施修改建议。"
   },
   {
     key: 'property.content.review.filter',
@@ -156,6 +158,27 @@ export const CONTENT_PROPOSAL_REVIEW_KEYS = [
     "ru": "Галерея, порядок и обложка"
   },
   {
+    key: 'property.content.review.amenities',
+    "en": "Complex facilities",
+    "ru": "Инфраструктура комплекса",
+    "th": "สิ่งอำนวยความสะดวกส่วนกลางของโครงการ",
+    "zh": "项目配套设施"
+  },
+  {
+    key: 'property.content.review.amenities_unchanged',
+    "en": "No facility changes proposed; all existing facilities are preserved.",
+    "ru": "Изменения инфраструктуры не предложены; все существующие объекты сохраняются.",
+    "th": "ไม่มีการเสนอแก้ไขสิ่งอำนวยความสะดวก โดยคงสิ่งอำนวยความสะดวกเดิมทั้งหมดไว้",
+    "zh": "未提出设施变更；所有现有设施均予保留。"
+  },
+  {
+    key: 'property.content.review.amenities_hint',
+    "en": "Only the facilities listed below are updated or added. Nothing is removed. New facilities stay unpublished and have no booking offer. Publishing requires a separate action by an authorized user. Approval does not enable booking or change prices. Changed text in the selected language also updates the shared fallback; empty text may still display another existing translation.",
+    "ru": "Будут изменены или добавлены только перечисленные ниже объекты инфраструктуры. Ничего не удаляется. Новые объекты остаются неопубликованными и без предложения для бронирования. Публикация требует отдельного действия сотрудника с соответствующими правами. Одобрение не включает бронирование и не меняет цены. Изменённый текст выбранного языка также обновляет общий текст для подстановки при отсутствии перевода; вместо пустого текста может отображаться другой существующий перевод.",
+    "th": "จะปรับปรุงหรือเพิ่มเฉพาะสิ่งอำนวยความสะดวกที่ระบุด้านล่างเท่านั้น โดยไม่มีการลบรายการใด สิ่งอำนวยความสะดวกใหม่จะยังไม่เผยแพร่และยังไม่มีข้อเสนอให้จอง การเผยแพร่ต้องดำเนินการแยกต่างหากโดยผู้ใช้ที่มีสิทธิ์ การอนุมัติไม่เปิดให้จองและไม่เปลี่ยนราคา การแก้ไขข้อความในภาษาที่เลือกจะอัปเดตข้อความสำรองที่ใช้ร่วมกันด้วย หากข้อความว่าง ระบบอาจยังแสดงคำแปลภาษาอื่นที่มีอยู่",
+    "zh": "仅更新或新增下方列出的设施，不会删除任何设施。新设施仍不公开，且不提供可预订的项目。发布须由获授权用户另行操作。批准不会开放预订或更改价格。修改所选语言的文本时，也会更新缺少翻译时使用的通用文本；空文本仍可能显示其他已有译文。"
+  },
+  {
     key: 'property.content.review.review_note',
     "en": "Reviewer note",
     "ru": "Комментарий проверяющего"
@@ -167,8 +190,10 @@ export const CONTENT_PROPOSAL_REVIEW_KEYS = [
   },
   {
     key: 'property.content.review.confirm',
-    "en": "I checked the facts, description and each photo for this exact property and approve applying these changes.",
-    "ru": "Я проверил характеристики, описание и каждое фото именно этого объекта и согласен применить эти изменения."
+    "en": "I checked the facts, description, each photo and any proposed complex facilities for this exact property and approve applying these changes.",
+    "ru": "Я проверил характеристики, описание, каждое фото и предложенные изменения инфраструктуры комплекса именно этого объекта и согласен применить эти изменения.",
+    "th": "ฉันได้ตรวจสอบข้อมูลพื้นฐาน คำอธิบาย รูปภาพทุกรูป และข้อเสนอแก้ไขสิ่งอำนวยความสะดวกส่วนกลางของโครงการสำหรับที่พักนี้แล้ว และอนุมัติให้นำการแก้ไขเหล่านี้ไปใช้",
+    "zh": "我已核查此房源的信息、描述、每张照片及所有拟议的项目配套设施变更，并批准应用这些修改。"
   },
   {
     key: 'property.content.review.note',
@@ -187,4 +212,4 @@ export const CONTENT_PROPOSAL_REVIEW_KEYS = [
   }
 ].map(entry => ({ ...entry, namespace: 'property', description: 'Scoped property content review copy', status: 'needs_review' as const }));
 
-export const CONTENT_PROPOSAL_REVIEW_DRAFTS = Object.fromEntries(CONTENT_PROPOSAL_REVIEW_KEYS.map(({ key, en, ru }) => [key, { en, ru }]));
+export const CONTENT_PROPOSAL_REVIEW_DRAFTS = Object.fromEntries(CONTENT_PROPOSAL_REVIEW_KEYS.map(({ key, en, ru, th, zh }) => [key, { en, ru, ...(th ? { th } : {}), ...(zh ? { zh } : {}) }]));

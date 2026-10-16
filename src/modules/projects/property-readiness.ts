@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { isCredentialCurrentlyVerified } from '@/modules/compliance/commercial-eligibility.engine';
 import {
   assessGalleryReadiness,
@@ -34,7 +34,7 @@ export interface PropertyReadinessReport {
  * presenting a weaker definition of "ready" than the status transition uses.
  */
 export async function getPropertyReadiness(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   projectId: string
 ): Promise<PropertyReadinessReport | null> {
   const project = await db.project.findUnique({
@@ -324,7 +324,7 @@ export async function getPropertyReadiness(
   };
 }
 
-export async function assertUnitReadyForActivation(db: PrismaClient, unitId: string) {
+export async function assertUnitReadyForActivation(db: PrismaClient | Prisma.TransactionClient, unitId: string) {
   const unit = await db.unit.findUnique({
     where: { id: unitId },
     select: { projectId: true, project: { select: { projectType: true } } },
@@ -340,7 +340,7 @@ export async function assertUnitReadyForActivation(db: PrismaClient, unitId: str
   }
 }
 
-export async function assertProjectReadyForActivation(db: PrismaClient, projectId: string) {
+export async function assertProjectReadyForActivation(db: PrismaClient | Prisma.TransactionClient, projectId: string) {
   const project = await db.project.findUnique({ where: { id: projectId }, select: { projectType: true } });
   if (!project) throw new Error(`Project ${projectId} not found`);
   if (!project.projectType) return;

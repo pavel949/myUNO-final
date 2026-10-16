@@ -159,3 +159,26 @@ body {
     max-width: 100%;
   }
 }
+
+/* The explicit workspace switch and mobile tabs reserve their measured space.
+ * Existing edit/booking actions remain reachable above the lower navigation. */
+.workspace-navigation-frame :is(.workspace-context-rail, nav.sticky.top-64, aside.sticky.top-64) {
+  top: calc(64px + var(--workspace-switcher-height, 0px));
+}
+@media (min-width: 768px) {
+  .workspace-navigation-frame aside.sticky.top-64 {
+    height: calc(100dvh - 64px - var(--workspace-switcher-height, 0px));
+  }
+}
+@media (max-width: 767px) {
+  .workspace-content-clearance {
+    padding-bottom: var(--workspace-tab-height, calc(72px + env(safe-area-inset-bottom, 0px)));
+  }
+  .workspace-has-tabs :is(.sticky.bottom-0, .sticky.bottom-64, .fixed.bottom-64) {
+    bottom: var(--workspace-tab-height, calc(72px + env(safe-area-inset-bottom, 0px)));
+  }
+}
+
+.workspace-navigation-frame .stitch-workspace section[id] {
+  scroll-margin-top: calc(9rem + var(--workspace-switcher-height, 0px));
+}

@@ -89,6 +89,15 @@ try {
     ordinaryDraft = await db.project.create({ data: { ...data, slug: 'synthetic-unmanaged-amenities', name: 'Synthetic Unmanaged Draft' } });
     unit = await db.unit.create({ data: { projectId: project.id, name: 'Synthetic Amenities Condo', unitType: 'condo', bedrooms: 1,
       bathrooms: 1, maxGuests: 2, addressSupplement: 'A101', amenityKeys: ['wifi'], baseNightlyThb: 100000, minNights: 1, instantBook: false, status: 'draft' } });
+    // Reuse only the initial fixture's actual localhost PNGs. Missing covers
+    // otherwise select external editorial images, which isolation must block.
+    const photos = await db.unitMedia.findMany({ where: { unitId: fixture.unitId }, include: { media: true }, orderBy: { sort: 'asc' } });
+    assert.ok(photos.length >= 3);
+    assert.ok(photos.every(row => row.media.storageKey.startsWith('/browser-acceptance/') && !row.media.encrypted));
+    await db.projectMedia.createMany({ data: photos.map((row, sort) => ({ projectId: project.id, mediaId: row.mediaId, sort })) });
+    await db.unitMedia.createMany({ data: photos.map((row, sort) => ({ unitId: unit.id, mediaId: row.mediaId, sort })) });
+    project = await db.project.update({ where: { id: project.id }, data: { coverMediaId: photos[0].mediaId } });
+    unit = await db.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0].mediaId } });
     const system = await db.externalSystem.create({ data: { system_key: 'layantara_os', environment: 'synthetic_amenity_browser', display_name: 'Synthetic browser only' } });
     await db.externalMapping.createMany({ data: [['project', project.id], ['unit', unit.id]].map(([entity_type, internal_id]) => ({ external_system_id: system.id, entity_type, internal_id, external_id: `synthetic-${internal_id}` })) });
     for (const [identityId, role] of [[fixture.staffId, 'staff_ops'], [fixture.serviceCustomerId, 'content_contributor']]) {
@@ -262,7 +271,12 @@ try {
     // can reach the real writer. Neither draft nor archived target is made live.
     const controlProject = await db.project.create({ data: { slug: 'synthetic-amenities-live-control', name: 'Synthetic live control',
       areaLabelKey: 'browser.amenities.area', descriptionKey: 'browser.amenities.description', handbookKey: 'browser.amenities.handbook',
-      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live' } });
+      latitude: '8.01', longitude: '98.30', address: 'Synthetic control only', timezone: 'Asia/Bangkok', status: 'live', coverMediaId: project.coverMediaId } });
+    // The live positive control also appears on the public homepage later.
+    // Give it the same existing localhost gallery instead of remote fallbacks.
+    const controlPhotos = await db.projectMedia.findMany({ where: { projectId: project.id }, orderBy: { sort: 'asc' } });
+    assert.ok(controlPhotos.length >= 3);
+    await db.projectMedia.createMany({ data: controlPhotos.map((row, sort) => ({ projectId: controlProject.id, mediaId: row.mediaId, sort })) });
     const controlAmenity = await db.projectAmenity.create({ data: { projectId: controlProject.id, slug: 'control', name: 'Synthetic reservation control',
       published: true, bookingRequired: true, bookingMode: 'time_slot', reservationConfig: { slotMinutes: 60, autoConfirm: true } } });
     const controlPath = `/projects/${controlProject.slug}/amenities/${controlAmenity.slug}/book`;

@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { people } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
+import { PropertyCapabilityError } from '@/modules/core/property-capability-access';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -35,13 +36,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const roleAssignment = await people.revokeRole(prisma, { roleAssignmentId });
+    const roleAssignment = await people.revokeRole(prisma, { roleAssignmentId, actorIdentityId: user.identityId });
 
     return NextResponse.json({ success: true, roleAssignment });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to revoke role' },
-      { status: 400 }
+      { status: error instanceof PropertyCapabilityError ? error.status : 400 }
     );
   }
 }

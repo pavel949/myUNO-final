@@ -56,7 +56,7 @@ export function StitchWorkspaceShell({
 
   return (
     <div className="pms-touch stitch-workspace flex min-h-screen flex-col md:flex-row">
-      <aside className="sticky top-64 z-40 shrink-0 border-b border-console-border bg-console-deep text-on-dark-text shadow-float md:h-[calc(100dvh-64px)] md:w-[256px] md:border-b-0 md:border-r">
+      <aside className="workspace-context-rail sticky top-64 z-40 shrink-0 border-b border-console-border bg-console-deep text-on-dark-text shadow-float md:h-[calc(100dvh-64px)] md:w-[256px] md:border-b-0 md:border-r">
         <div className="p-12 md:flex md:h-full md:flex-col md:p-16">
           {eyebrow ? (
             <p className="stitch-kicker text-brand-sun-soft">{eyebrow}</p>

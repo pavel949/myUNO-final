@@ -1,10 +1,12 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ContentClient from './content-client';
 import { CONTENT_UI_LABELS } from './UI-labels';
 
 const API = '/api/property-content-proposals';
+const PUT_URL = 'https://vercel.com/api/blob/?pathname=media%2Fphoto.jpg&signature=synthetic';
+const PHOTO_URL = 'https://store.public.blob.vercel-storage.com/media/photo.jpg';
 const A = 'a1234567-1234-4123-8123-123456789abc';
 const B = 'b1234567-1234-4123-8123-123456789abc';
 const C = 'c1234567-1234-4123-8123-123456789abc';
@@ -35,7 +37,11 @@ function setup(options: {
       return ok({ target: scope === 'project' ? projectTarget : unitTarget, snapshot: snapshot(scope ?? 'unit'), baselineVersion: 'baseline-v1' });
     }
     if (url === `${API}/proposal-1` && !init.method) return ok(saved ?? detail());
-    if (url === '/api/media/upload') return ok({ mediaAssetId: C, url: '/media/c.jpg' }, 201);
+    if (url === '/api/media/upload') {
+      const body = JSON.parse(String(init.body));
+      return body.action === 'initiate' ? ok({ intent: 'synthetic-intent', uploadUrl: PUT_URL, headers: { 'Content-Type': body.mimeType }, expiresAt: new Date(Date.now() + 60_000).toISOString() }, 201) : ok({ mediaAssetId: C, url: PHOTO_URL }, 201);
+    }
+    if (url === PUT_URL) return ok(null);
     if (init.method === 'POST' || init.method === 'PATCH') {
       const body = JSON.parse(String(init.body));
       const scope = body.scope ?? saved?.scope ?? 'unit';
@@ -230,15 +236,18 @@ describe('assigned-target content editor', () => {
     expect(fetchMock.mock.calls.every(([url]) => !url.includes('/api/admin/'))).toBe(true);
   });
 
-  it('uploads an owned photo using multipart and keeps attachment changes in the proposal', async () => {
+  it('uploads an owned photo directly with scoped JSON registration and keeps attachment changes in the proposal', async () => {
     const fetchMock = setup(); render(<ContentClient labels={{}}/>); await openTarget();
     const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' });
     fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [file] } });
     await screen.findByAltText(`${label('photo')} 3`);
     const [, init] = fetchMock.mock.calls.find(([url]) => url === '/api/media/upload')!;
-    expect(init.method).toBe('POST'); expect(init.headers).toBeUndefined();
-    expect((init.body as FormData).get('kind')).toBe('photo');
-    expect(((init.body as FormData).get('file') as File).name).toBe('photo.jpg');
+    expect(init.method).toBe('POST'); expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(JSON.parse(String(init.body))).toEqual({ action: 'initiate', scope: 'unit', targetId: unitTarget.id, mimeType: file.type, sizeBytes: file.size });
+    const [, put] = fetchMock.mock.calls.find(([url]) => url === PUT_URL)!;
+    expect(put.method).toBe('PUT'); expect(put.body).toBe(file); expect(put.credentials).toBe('omit');
+    const finalize = fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')[1][1];
+    expect(JSON.parse(String(finalize.body))).toEqual({ action: 'finalize', intent: 'synthetic-intent' });
     expect(saveCalls(fetchMock)).toHaveLength(0);
     await waitFor(() => expect(screen.getByRole('button', { name: label('save') })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: label('save') }));
@@ -257,14 +266,14 @@ describe('assigned-target content editor', () => {
 
   it('retains successful photos after a partial upload failure and allows retry', async () => {
     let count = 0;
-    const fetchMock = setup({ override: url => url === '/api/media/upload' && ++count === 2 ? ok({}, 500) : undefined });
+    const fetchMock = setup({ override: (url, init) => url === '/api/media/upload' && JSON.parse(String(init.body)).action === 'initiate' && ++count === 2 ? ok({}, 500) : undefined });
     render(<ContentClient labels={{}}/>); await openTarget();
     const files = ['one.jpg', 'two.jpg'].map(name => new File(['photo'], name, { type: 'image/jpeg' }));
     fireEvent.change(screen.getByLabelText(label('upload')), { target: { files } });
     await screen.findByText(label('upload_partial'));
     expect(screen.getByAltText(`${label('photo')} 3`)).toBeInTheDocument();
     expect(screen.getByLabelText(label('upload'))).toBeEnabled();
-    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(2);
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(3);
   });
 
   it('blocks writes after a grant is revoked and reloads current assignments', async () => {
@@ -303,6 +312,7 @@ describe('assigned-target content editor', () => {
     fireEvent.click(button); fireEvent.click(button);
     expect(saveCalls(fetchMock)).toHaveLength(1);
     expect(button).toBeDisabled(); expect(screen.getByLabelText(label('target'))).toBeDisabled();
+    expect(screen.getByLabelText(label('upload'))).toBeDisabled();
     resolve(ok(detail()));
     await screen.findByText(label('saved'));
   });
@@ -370,5 +380,595 @@ describe('assigned-target content editor', () => {
     const signal = fetchMock.mock.calls[0][1].signal;
     view.unmount();
     expect(signal?.aborted).toBe(true);
+  });
+});
+
+const amenitySnapshot = {
+  id: 'facility-pool', name: 'Main pool', shortDescription: 'Outdoor pool', description: 'Original pool details\nSecond line',
+  locationLabel: 'Roof / floor 4', accessInstructions: 'Use your resident card',
+  openingHours: { monday: [['07:00', '12:00'], ['15:00', '20:00']], timezone: 'Asia/Bangkok' },
+  rules: { safety: ['No diving', 'Children need supervision'] },
+  translations: { en: { name: 'Main pool' }, ru: { name: 'Главный бассейн', description: 'Русское описание' } },
+};
+const secondAmenity = { ...amenitySnapshot, id: 'facility-gym', name: 'Gym', translations: {}, openingHours: { daily: [['06:00', '23:00']] }, rules: ['Wear sports shoes'] };
+const amenityProposal = {
+  id: 'facility-pool', locale: 'en' as const, name: 'Main pool', shortDescription: 'Outdoor pool', description: 'Original pool details\nSecond line',
+  locationLabel: 'Roof / floor 4', accessInstructions: 'Use your resident card', openingHours: { mode: 'keep' as const }, rules: { mode: 'keep' as const },
+};
+function setupAmenities(options: { saved?: ReturnType<typeof detail>; baseline?: unknown[]; rejectSave?: boolean } = {}) {
+  const baseline = options.baseline ?? [amenitySnapshot, secondAmenity];
+  return setup({ saved: options.saved, override: (url, init) => {
+    if (url.startsWith(`${API}/target?`) && url.includes('scope=project')) return ok({ target: projectTarget, snapshot: { ...snapshot('project'), amenities: baseline }, baselineVersion: 'baseline-v2' });
+    if (['POST', 'PATCH'].includes(init.method ?? '') && url.startsWith(API)) {
+      if (options.rejectSave) return ok({}, 409);
+      const body = JSON.parse(String(init.body));
+      return ok({ ...detail(body.status, 'project'), baselineVersion: 'baseline-v2', baseline: { ...snapshot('project'), amenities: baseline }, proposal: body.action === 'rebase' ? payload('project') : body.proposal });
+    }
+    return undefined;
+  } });
+}
+
+describe('project facility proposals', () => {
+  it('exposes facilities only for projects and requires explicit selection of existing rows', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget();
+    expect(screen.queryByText(label('amenities.title'))).not.toBeInTheDocument();
+    await openTarget('project');
+    expect(screen.getByText(label('amenities.review_hint'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(label('amenities.name'))).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal).not.toHaveProperty('amenities');
+  });
+
+  it('submits only the selected existing facility and preserves custom schedule and rules by default', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    expect(screen.getByLabelText(label('amenities.hours'))).toHaveValue('keep');
+    expect(screen.getByLabelText(label('amenities.rules'))).toHaveValue('keep');
+    expect(screen.getByText(label('amenities.custom_hours'))).toBeInTheDocument();
+    expect(screen.getByText(label('amenities.custom_rules'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(/JSON|booking|capacity|price|slug|publish/i, { selector: 'input, select, textarea' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(label('amenities.locationLabel')), { target: { value: 'Pool deck / floor 5' } });
+    fireEvent.click(screen.getByText(label('amenities.compare')));
+    expect(screen.getAllByText('monday: 07:00–12:00')).toHaveLength(2);
+    expect(screen.getAllByText('safety: No diving')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities).toEqual([{ ...amenityProposal, description: 'Русское описание', locationLabel: 'Pool deck / floor 5' }]);
+  });
+
+  it('creates a new unpublished proposal using normal time controls, explicit all-day and plain text rules', async () => {
+    const fetchMock = setupAmenities({ baseline: [] }); render(<ContentClient labels={{}} initialLocale="ru"/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: label('amenities.add') }));
+    expect(screen.getByLabelText(label('amenities.locale'))).toHaveValue('ru');
+    fireEvent.change(screen.getByLabelText(label('amenities.name')), { target: { value: 'Сауна' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.description')), { target: { value: 'Первая строка\nВторая строка' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.locationLabel')), { target: { value: 'Этаж 2' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.accessInstructions')), { target: { value: 'Обратитесь на стойку' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    expect(screen.getByLabelText(label('amenities.open'))).toHaveAttribute('type', 'time');
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('');
+    fireEvent.click(screen.getByLabelText(label('amenities.all_day')));
+    expect(screen.getByLabelText(label('amenities.open'))).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(label('amenities.rules')), { target: { value: 'replace' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.rules_lines')), { target: { value: '  Чистая обувь  \n\nБез стекла\n' } });
+    fireEvent.click(screen.getByRole('button', { name: label('submit') }));
+    await screen.findByText(label('submitted'));
+    const proposed = JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities;
+    expect(proposed).toEqual([{ id: null, locale: 'ru', name: 'Сауна', shortDescription: null, description: 'Первая строка\nВторая строка', locationLabel: 'Этаж 2', accessInstructions: 'Обратитесь на стойку', openingHours: { mode: 'daily', open: '00:00', close: '24:00', timezone: null }, rules: { mode: 'replace', lines: ['Чистая обувь', 'Без стекла'] } }]);
+    expect(screen.getByLabelText(label('amenities.name'))).toBeDisabled();
+    expect(screen.getByRole('button', { name: label('amenities.add') })).toBeDisabled();
+  });
+
+  it('permits overnight schedules and never invents the time zone', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    expect(screen.getByLabelText(label('amenities.open'))).toHaveValue('06:00');
+    fireEvent.change(screen.getByLabelText(label('amenities.open')), { target: { value: '22:00' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.close')), { target: { value: '02:00' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0].openingHours).toEqual({ mode: 'daily', open: '22:00', close: '02:00', timezone: null });
+  });
+
+  it('blocks equal times and excessive rule lines without a request or lost edits', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.close')), { target: { value: '06:00' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    expect(screen.getByRole('alert')).toHaveTextContent(label('validation'));
+    expect(saveCalls(fetchMock)).toHaveLength(0);
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Gym');
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'keep' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.rules')), { target: { value: 'replace' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.rules_lines')), { target: { value: Array.from({ length: 51 }, (_, i) => `Rule ${i}`).join('\n') } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    expect(saveCalls(fetchMock)).toHaveLength(0);
+    expect(screen.getByLabelText(label('amenities.rules_lines'))).toHaveValue(Array.from({ length: 51 }, (_, i) => `Rule ${i}`).join('\n'));
+  });
+
+  it('loads locale fallbacks and retains entered unsaved text while switching facility languages', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}} initialLocale="ru"/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Главный бассейн` }));
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Главный бассейн');
+    expect(screen.getByLabelText(label('amenities.description'))).toHaveValue('Русское описание');
+    fireEvent.change(screen.getByLabelText(label('amenities.name')), { target: { value: 'Новый бассейн' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.locale')), { target: { value: 'en' } });
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Main pool');
+    fireEvent.change(screen.getByLabelText(label('amenities.name')), { target: { value: 'New pool name' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.locale')), { target: { value: 'th' } });
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Main pool');
+    fireEvent.change(screen.getByLabelText(label('amenities.locale')), { target: { value: 'ru' } });
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Новый бассейн');
+    fireEvent.change(screen.getByLabelText(label('amenities.locale')), { target: { value: 'en' } });
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('New pool name');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    const proposed = JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0];
+    expect(proposed).toMatchObject({ locale: 'en', name: 'New pool name', description: 'Русское описание' });
+    expect(proposed).not.toHaveProperty('textsByLocale');
+    expect(proposed).not.toHaveProperty('translations');
+  });
+
+  it('discarding an existing facility proposal removes only its proposed change', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` }));
+    fireEvent.click(screen.getByRole('button', { name: label('amenities.discard_change') }));
+    expect(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities).toEqual([]);
+  });
+
+  it('keeps an older project proposal editable without adding amenities until explicit rebase', async () => {
+    const saved = detail('returned', 'project'); const fetchMock = setupAmenities({ saved });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<ContentClient labels={{}} initialProposalId="proposal-1"/>);
+    await screen.findByText(label('amenities.legacy_baseline'));
+    expect(screen.queryByRole('button', { name: label('amenities.add') })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(label('field.address')), { target: { value: 'Updated address' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal).not.toHaveProperty('amenities');
+    fireEvent.click(screen.getByRole('button', { name: label('refresh') })); await screen.findByText(label('rebased'));
+    expect(screen.getByRole('button', { name: label('amenities.add') })).toBeEnabled();
+    expect(JSON.parse(String(saveCalls(fetchMock)[1][1].body))).toEqual({ expectedRevision: 2, action: 'rebase' });
+  });
+
+  it('preserves resumed facility changes and keeps conflicts and dirty-navigation guards intact', async () => {
+    const saved = { ...detail('returned', 'project'), baseline: { ...snapshot('project'), amenities: [amenitySnapshot, secondAmenity] }, proposal: { ...payload('project'), amenities: [{ ...amenityProposal, name: 'Saved name' }] } };
+    const fetchMock = setupAmenities({ saved, rejectSave: true }); const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<ContentClient labels={{}} initialProposalId="proposal-1"/>); await screen.findByLabelText(label('amenities.name'));
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Saved name');
+    fireEvent.change(screen.getByLabelText(label('amenities.name')), { target: { value: 'Unsaved facility edit' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('conflict'));
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Unsaved facility edit');
+    fireEvent.change(screen.getByLabelText(label('target')), { target: { value: `unit:${unitTarget.id}` } });
+    fireEvent.click(screen.getByRole('button', { name: label('new') }));
+    expect(confirm).toHaveBeenCalledWith(label('discard_confirm'));
+    expect(screen.getByLabelText(label('amenities.name'))).toHaveValue('Unsaved facility edit');
+    expect(saveCalls(fetchMock)).toHaveLength(1);
+  });
+
+  it('keeps existing access instructions up to the canonical 4000-character limit editable', async () => {
+    const accessInstructions = 'a'.repeat(3500);
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, accessInstructions }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    expect(screen.getByLabelText(label('amenities.accessInstructions'))).toHaveValue(accessInstructions);
+    expect(screen.getByLabelText(label('amenities.accessInstructions'))).toHaveAttribute('maxlength', '4000');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0].accessInstructions).toBe(accessInstructions);
+  });
+
+  it.each(['07:00–20:00', [['07:00', '20:00']]])('keeps unsupported legacy hours and disables an unsafe daily edit: %j', async openingHours => {
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    expect(screen.getByRole('option', { name: label('amenities.replace_hours') })).toBeDisabled();
+    expect(screen.getByText(label('amenities.unsupported_hours'))).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    expect(screen.getByLabelText(label('amenities.hours'))).toHaveValue('keep');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0].openingHours).toEqual({ mode: 'keep' });
+  });
+
+
+  it('retains end-of-day 24:00 for daily and staff controls on an unchanged round trip', async () => {
+    const openingHours = { daily: [['18:00', '24:00']], staffContact: [['09:00', '24:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    expect(screen.getByLabelText(label('amenities.close'))).toHaveValue('00:00');
+    expect(screen.getByLabelText(label('amenities.staff_close'))).toHaveValue('00:00');
+    expect(screen.getByLabelText(label('amenities.all_day'))).not.toBeChecked();
+    expect(screen.getByLabelText(label('amenities.staff_all_day'))).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'daily', open: '18:00', close: '24:00', timezone: 'Asia/Bangkok' }, staffHours: { mode: 'range', open: '09:00', close: '24:00' } });
+    expect(openingHours).toEqual({ daily: [['18:00', '24:00']], staffContact: [['09:00', '24:00']], timezone: 'Asia/Bangkok' });
+  });
+
+  it('edits staff hours independently while preserving weekly/split access schedules', async () => {
+    const openingHours = { weekly: { monday: [['07:00', '12:00'], ['15:00', '20:00']] }, staffContact: [['09:00', '17:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    expect(screen.getByLabelText(label('amenities.staff_hours'))).toHaveValue('keep');
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_open')), { target: { value: '10:00' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_close')), { target: { value: '18:00' } });
+    fireEvent.click(screen.getByText(label('amenities.compare')));
+    const proposed = screen.getByRole('region', { name: label('amenities.after') });
+    expect(within(proposed).getByText('weekly: monday: 07:00–12:00')).toBeInTheDocument();
+    expect(within(proposed).getByText('weekly: monday: 15:00–20:00')).toBeInTheDocument();
+    expect(within(proposed).getByText(`${label('amenities.staff_hours')}: 10:00–18:00`)).toBeInTheDocument();
+    expect(within(proposed).getByText(`${label('amenities.timezone')}: Asia/Bangkok`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'keep' }, staffHours: { mode: 'range', open: '10:00', close: '18:00' } });
+  });
+
+  it('clears access and staff hours independently and previews their exact shared result', async () => {
+    const openingHours = { daily: [['07:00', '20:00']], staffContact: [['09:00', '17:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'clear' } });
+    fireEvent.click(screen.getByText(label('amenities.compare')));
+    let proposed = screen.getByRole('region', { name: label('amenities.after') });
+    expect(within(proposed).queryByText(`${label('amenities.daily')}: 07:00–20:00`)).not.toBeInTheDocument();
+    expect(within(proposed).getByText(`${label('amenities.staff_hours')}: 09:00–17:00`)).toBeInTheDocument();
+    expect(within(proposed).getByText(`${label('amenities.timezone')}: Asia/Bangkok`)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'clear' } });
+    proposed = screen.getByRole('region', { name: label('amenities.after') });
+    expect(within(proposed).queryByText(`${label('amenities.staff_hours')}: 09:00–17:00`)).not.toBeInTheDocument();
+    expect(within(proposed).queryByText(`${label('amenities.timezone')}: Asia/Bangkok`)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'clear' }, staffHours: { mode: 'clear' } });
+  });
+
+  it('requires clearing incompatible legacy access data before editing or clearing staff hours', async () => {
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours: '07:00–20:00' }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    expect(screen.getByRole('option', { name: label('amenities.set_staff_hours') })).toBeDisabled();
+    expect(screen.getByRole('option', { name: label('amenities.clear_staff_hours') })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    expect(screen.getByLabelText(label('amenities.staff_hours'))).toHaveValue('keep');
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'clear' } });
+    expect(screen.getByRole('option', { name: label('amenities.set_staff_hours') })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.click(screen.getByLabelText(label('amenities.staff_all_day')));
+    expect(screen.getByRole('option', { name: label('amenities.keep_hours') })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'keep' } });
+    expect(screen.getByLabelText(label('amenities.hours'))).toHaveValue('clear');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'clear' }, staffHours: { mode: 'range', open: '00:00', close: '24:00' } });
+  });
+
+  it('rejects equal staff-contact times and accepts an explicit 24-hour choice without a timezone guess', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_open')), { target: { value: '09:00' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_close')), { target: { value: '09:00' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    expect(screen.getByRole('alert')).toHaveTextContent(label('validation')); expect(saveCalls(fetchMock)).toHaveLength(0);
+    fireEvent.click(screen.getByLabelText(label('amenities.staff_all_day')));
+    expect(screen.getByLabelText(label('amenities.staff_open'))).toBeDisabled();
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'keep' }, staffHours: { mode: 'range', open: '00:00', close: '24:00' } });
+  });
+
+
+  it('shows the known shared timezone for staff-only editing without silently rewriting it', async () => {
+    const openingHours = { weekly: { monday: [['07:00', '12:00']] }, staffContact: [['09:00', '17:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('Asia/Bangkok');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    const entry = JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0];
+    expect(entry.openingHours).toEqual({ mode: 'keep' });
+    expect(entry.staffHours).toEqual({ mode: 'range', open: '09:00', close: '17:00' });
+  });
+
+  it('allows an explicit timezone for new staff-only hours and retains it when choosing 24 hours', async () => {
+    const fetchMock = setupAmenities({ baseline: [] }); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: label('amenities.add') }));
+    fireEvent.change(screen.getByLabelText(label('amenities.name')), { target: { value: 'Reception desk' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('');
+    fireEvent.change(screen.getByLabelText(label('amenities.timezone')), { target: { value: 'Asia/Bangkok' } });
+    fireEvent.click(screen.getByLabelText(label('amenities.staff_all_day')));
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('Asia/Bangkok');
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'keep' }, staffHours: { mode: 'range', open: '00:00', close: '24:00', timezone: 'Asia/Bangkok' } });
+  });
+
+  it('uses the access timezone when daily and staff hours are both proposed, omitting hidden staff timezone', async () => {
+    const openingHours = { daily: [['07:00', '20:00']], staffContact: [['09:00', '17:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.timezone')), { target: { value: 'Asia/Singapore' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.hours')), { target: { value: 'daily' } });
+    expect(screen.getAllByLabelText(label('amenities.timezone'))).toHaveLength(1);
+    fireEvent.change(screen.getByLabelText(label('amenities.timezone')), { target: { value: 'Asia/Tokyo' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    const entry = JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0];
+    expect(entry.openingHours).toEqual({ mode: 'daily', open: '07:00', close: '20:00', timezone: 'Asia/Tokyo' });
+    expect(entry.staffHours).toEqual({ mode: 'range', open: '09:00', close: '17:00' });
+  });
+
+  it('can explicitly clear the shared timezone from staff-only hours while preserving access data', async () => {
+    const openingHours = { weekly: { monday: [['07:00', '12:00']] }, staffContact: [['09:00', '17:00']], timezone: 'Asia/Bangkok' };
+    const fetchMock = setupAmenities({ baseline: [{ ...amenitySnapshot, openingHours }] });
+    render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Main pool` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.change(screen.getByLabelText(label('amenities.timezone')), { target: { value: '' } });
+    fireEvent.click(screen.getByText(label('amenities.compare')));
+    const proposed = screen.getByRole('region', { name: label('amenities.after') });
+    expect(within(proposed).getByText('weekly: monday: 07:00–12:00')).toBeInTheDocument();
+    expect(within(proposed).queryByText(/Asia\/Bangkok/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal.amenities[0]).toMatchObject({ openingHours: { mode: 'keep' }, staffHours: { mode: 'range', open: '09:00', close: '17:00', timezone: null } });
+  });
+
+  it('rejects an invalid staff-only timezone without sending or discarding entered text', async () => {
+    const fetchMock = setupAmenities(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.click(screen.getByRole('button', { name: `${label('amenities.edit')}: Gym` }));
+    fireEvent.change(screen.getByLabelText(label('amenities.staff_hours')), { target: { value: 'range' } });
+    fireEvent.click(screen.getByLabelText(label('amenities.staff_all_day')));
+    fireEvent.change(screen.getByLabelText(label('amenities.timezone')), { target: { value: 'Unknown/Zone' } });
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    expect(screen.getByRole('alert')).toHaveTextContent(label('validation'));
+    expect(screen.getByLabelText(label('amenities.timezone'))).toHaveValue('Unknown/Zone');
+    expect(saveCalls(fetchMock)).toHaveLength(0);
+  });
+
+});
+
+it('opens an exact converted-output link only after resolving the server-authorized target', async () => {
+  const fetchMock = setup();
+  render(<ContentClient labels={{}} initialTarget={{ scope: 'unit', id: unitTarget.id }} />);
+  await screen.findByLabelText(label('field.unitName'));
+  expect(screen.getByLabelText(label('target'))).toHaveValue(`unit:${unitTarget.id}`);
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([API, `${API}/target?scope=unit&id=${unitTarget.id}`]);
+  expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('D201');
+});
+
+it('does not request a guessed deep-link target missing from the server-authorized list', async () => {
+  const fetchMock = setup();
+  render(<ContentClient labels={{}} initialTarget={{ scope: 'project', id: 'foreign-project' }} />);
+  await screen.findByText(label('forbidden'));
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([API]);
+  expect(screen.queryByLabelText(label('field.name'))).not.toBeInTheDocument();
+});
+
+describe('direct-upload recovery in the content editor', () => {
+  it('preserves a dirty deep-linked editor when retrying assignments after initiation fails', async () => {
+    const fetchMock = setup({ override: url => url === '/api/media/upload' ? ok({}, 500) : undefined });
+    render(<ContentClient labels={{}} initialTarget={{ scope: 'unit', id: unitTarget.id }}/>);
+    await screen.findByLabelText(label('field.unitName'));
+    await waitFor(() => expect(screen.getByRole('button', { name: label('save') })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText(label('field.unitName')), { target: { value: 'Keep deep-linked edits' } });
+    fireEvent.click(screen.getByRole('button', { name: `${label('move_up')} 2` }));
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(label('request_error'));
+    fireEvent.click(screen.getByRole('button', { name: label('retry') }));
+    await waitFor(() => expect(screen.getByRole('button', { name: label('save') })).toBeEnabled());
+    expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('Keep deep-linked edits');
+    expect(screen.getByAltText(`${label('photo')} 1`)).toHaveAttribute('src', '/media/b.jpg');
+    expect(fetchMock.mock.calls.filter(([url]) => url.startsWith(`${API}/target?`))).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([url]) => url === API)).toHaveLength(2);
+  });
+
+  it('warns before closing the page during preparation even if the editor was clean', async () => {
+    const pending = new Promise<Response>(() => {});
+    setup({ override: url => url === '/api/media/upload' ? pending : undefined });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(`${label('upload_preparing')} 1/1`);
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event); expect(event.defaultPrevented).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: label('upload_stop_waiting') }));
+    expect(screen.getByText(label('upload_stopped'))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: label('save') })).toBeEnabled();
+  });
+
+  it('requires an explicit warning before leaving an unconfirmed photo for another property', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const fetchMock = setup({ override: url => url === PUT_URL ? Promise.reject(new Error('lost')) : undefined });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(label('upload_transfer_uncertain'));
+    fireEvent.change(screen.getByLabelText(label('target')), { target: { value: `project:${projectTarget.id}` } });
+    fireEvent.click(screen.getByRole('button', { name: label('new') }));
+    expect(confirm).toHaveBeenCalledWith(label('upload_leave_confirm'));
+    expect(screen.getByRole('button', { name: label('upload_retry_finalize') })).toBeInTheDocument();
+    expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('D201');
+    confirm.mockReturnValue(true); fireEvent.click(screen.getByRole('button', { name: label('new') }));
+    await screen.findByLabelText(label('field.address'));
+    expect(screen.queryByRole('button', { name: label('upload_retry_finalize') })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(1);
+  });
+
+  it('binds a project photo to the exact loaded project, even when another selector choice is present', async () => {
+    const fetchMock = setup(); render(<ContentClient labels={{}}/>); await openTarget('project');
+    fireEvent.change(screen.getByLabelText(label('target')), { target: { value: `unit:${unitTarget.id}` } });
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'pool.webp', { type: 'image/webp' })] } });
+    await screen.findByText(label('upload_complete'));
+    const [, init] = fetchMock.mock.calls.find(([url]) => url === '/api/media/upload')!;
+    expect(JSON.parse(String(init.body))).toEqual({ action: 'initiate', scope: 'project', targetId: projectTarget.id, mimeType: 'image/webp', sizeBytes: 5 });
+    expect(saveCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it.each(['initiate', 'put', 'finalize'])('locks every editor action until %s is confirmed and shows the current stage', async stage => {
+    let resolve!: (response: Response) => void;
+    const pending = new Promise<Response>(done => { resolve = done; });
+    const fetchMock = setup({ override: (url, init) => {
+      if (stage === 'put' ? url === PUT_URL : url === '/api/media/upload' && JSON.parse(String(init.body)).action === stage) return pending;
+      return undefined;
+    } });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [file] } });
+    await screen.findByText(`${label(stage === 'initiate' ? 'upload_preparing' : stage === 'put' ? 'upload_transferring' : 'upload_finalizing')} 1/1`);
+    for (const name of ['save', 'submit', 'refresh', 'new', 'clear_cover']) expect(screen.getByRole('button', { name: label(name) })).toBeDisabled();
+    for (const name of ['field.unitName', 'description_enabled', 'upload', 'target']) expect(screen.getByLabelText(label(name))).toBeDisabled();
+    for (const name of ['make_cover', 'remove', 'move_down']) expect(screen.getByRole('button', { name: `${label(name)} 1` })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: label('save') }));
+    fireEvent.change(screen.getByLabelText(label('field.unitName')), { target: { value: 'Should not change' } });
+    expect(saveCalls(fetchMock)).toHaveLength(0);
+    expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('D201');
+    expect(screen.queryByAltText(`${label('photo')} 3`)).not.toBeInTheDocument();
+    resolve(ok(stage === 'initiate' ? { intent: 'synthetic-intent', uploadUrl: PUT_URL, headers: { 'Content-Type': file.type }, expiresAt: new Date(Date.now() + 60_000).toISOString() } : { mediaAssetId: C, url: PHOTO_URL }));
+    await screen.findByText(label('upload_complete'));
+    expect(screen.getByRole('button', { name: label('save') })).toBeEnabled();
+    expect(screen.getByAltText(`${label('photo')} 3`)).toBeInTheDocument();
+  });
+
+  it('keeps names, description, image order and cover on a lost PUT response and recovers using only registration', async () => {
+    const fetchMock = setup({ override: url => url === PUT_URL ? Promise.reject(new TypeError(PUT_URL)) : undefined });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('field.unitName')), { target: { value: 'Keep this name' } });
+    fireEvent.click(screen.getByLabelText(label('description_enabled')));
+    fireEvent.change(screen.getByLabelText(label('description_value')), { target: { value: 'Keep this description' } });
+    fireEvent.click(screen.getByRole('button', { name: `${label('move_up')} 2` }));
+    fireEvent.click(screen.getByRole('button', { name: `${label('make_cover')} 1` }));
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(label('upload_transfer_uncertain'));
+    expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('Keep this name');
+    expect(screen.getByLabelText(label('description_value'))).toHaveValue('Keep this description');
+    expect(screen.getByRole('button', { name: `${label('make_cover')} 1` })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByAltText(`${label('photo')} 1`)).toHaveAttribute('src', '/media/b.jpg');
+    expect(screen.queryByAltText(`${label('photo')} 3`)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(label('upload'))).toBeDisabled();
+    expect(screen.getByRole('button', { name: label('save') })).toBeDisabled();
+    expect(screen.getByRole('alert').textContent).not.toContain('signature');
+    fireEvent.click(screen.getByRole('button', { name: label('upload_retry_finalize') }));
+    await screen.findByText(label('upload_complete'));
+    expect(fetchMock.mock.calls.filter(([url]) => url === PUT_URL)).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: label('save') })); await screen.findByText(label('saved'));
+    expect(JSON.parse(String(saveCalls(fetchMock)[0][1].body)).proposal).toMatchObject({ facts: { name: 'Keep this name' }, description: { value: 'Keep this description' }, gallery: { mediaIds: [B, A, C], coverMediaId: B } });
+  });
+
+  it.each(['network', 'malformed', 'unsafe-url'])('keeps an uncertain %s registration retry bound to the existing intent without reupload', async failure => {
+    let attempts = 0;
+    const fetchMock = setup({ override: (url, init) => {
+      if (url !== '/api/media/upload' || JSON.parse(String(init.body)).action !== 'finalize' || ++attempts !== 1) return undefined;
+      return failure === 'network' ? Promise.reject(new TypeError('lost response')) : ok(failure === 'malformed' ? {} : { mediaAssetId: C, url: 'https://untrusted.test/unsafe.jpg' });
+    } });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByRole('button', { name: label('upload_retry_finalize') });
+    expect(screen.queryByAltText(`${label('photo')} 3`)).not.toBeInTheDocument();
+    expect(screen.queryByText(label('upload_complete'))).not.toBeInTheDocument();
+    const retry = screen.getByRole('button', { name: label('upload_retry_finalize') });
+    fireEvent.click(retry); fireEvent.click(retry);
+    await screen.findByText(label('upload_complete'));
+    expect(screen.getAllByRole('img')).toHaveLength(3);
+    expect(fetchMock.mock.calls.filter(([url]) => url === PUT_URL)).toHaveLength(1);
+    const bodies = fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload').map(([, init]) => JSON.parse(String(init.body)));
+    expect(bodies).toHaveLength(3); expect(bodies.slice(1)).toEqual(Array(2).fill({ action: 'finalize', intent: 'synthetic-intent' }));
+  });
+
+  it.each(['put', 'finalize'])('can stop waiting during %s, ignore a late response and recover without duplicate upload', async stage => {
+    let resolve!: (response: Response) => void; let intercepted = false;
+    const pending = new Promise<Response>(done => { resolve = done; });
+    const fetchMock = setup({ override: (url, init) => {
+      if (!intercepted && (stage === 'put' ? url === PUT_URL : url === '/api/media/upload' && JSON.parse(String(init.body)).action === 'finalize')) { intercepted = true; return pending; }
+      return undefined;
+    } });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(`${label(stage === 'put' ? 'upload_transferring' : 'upload_finalizing')} 1/1`);
+    const current = fetchMock.mock.calls.at(-1)![1];
+    fireEvent.click(screen.getByRole('button', { name: label('upload_stop_waiting') }));
+    expect(current.signal?.aborted).toBe(true);
+    expect(screen.getByRole('button', { name: label('upload_retry_finalize') })).toBeEnabled();
+    resolve(ok({ mediaAssetId: C, url: PHOTO_URL }));
+    await Promise.resolve();
+    expect(screen.queryByAltText(`${label('photo')} 3`)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label('upload_retry_finalize') }));
+    await screen.findByText(label('upload_complete'));
+    expect(screen.getAllByRole('img')).toHaveLength(3);
+    expect(fetchMock.mock.calls.filter(([url]) => url === PUT_URL)).toHaveLength(1);
+  });
+
+  it('requires explicit discard of an unconfirmed photo and preserves earlier edits and gallery', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const fetchMock = setup({ override: url => url === PUT_URL ? ok({}, 500) : undefined });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('field.unitName')), { target: { value: 'Unsaved name' } });
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(label('upload_transfer_failed'));
+    fireEvent.click(screen.getByRole('button', { name: label('upload_discard') }));
+    expect(confirm).toHaveBeenCalledWith(label('upload_discard_confirm'));
+    expect(screen.getByRole('button', { name: label('save') })).toBeDisabled();
+    confirm.mockReturnValue(true); fireEvent.click(screen.getByRole('button', { name: label('upload_discard') }));
+    expect(screen.getByRole('button', { name: label('save') })).toBeEnabled();
+    expect(screen.getByLabelText(label('field.unitName'))).toHaveValue('Unsaved name');
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(1);
+    expect(fetchMock.mock.calls.some(([, init]) => init.method === 'DELETE')).toBe(false);
+  });
+
+  it('keeps a confirmed partial batch and reports remaining unprocessed files after pending recovery', async () => {
+    let attempts = 0;
+    const D = 'd1234567-1234-4123-8123-123456789abc';
+    const fetchMock = setup({ override: (url, init) => {
+      if (url !== '/api/media/upload' || JSON.parse(String(init.body)).action !== 'finalize') return undefined;
+      attempts += 1;
+      if (attempts === 2) return Promise.reject(new Error('lost'));
+      if (attempts === 3) return ok({ mediaAssetId: D, url: PHOTO_URL });
+      return undefined;
+    } });
+    render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: ['one', 'two', 'three'].map(name => new File(['photo'], name + '.jpg', { type: 'image/jpeg' })) } });
+    await screen.findByText(label('upload_partial'));
+    expect(screen.getAllByRole('img')).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button', { name: label('upload_retry_finalize') }));
+    await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(4));
+    expect(screen.getByText(label('upload_partial'))).toBeInTheDocument();
+    expect(screen.queryByText(label('upload_complete'))).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([url]) => url === PUT_URL)).toHaveLength(2);
+    expect(fetchMock.mock.calls.filter(([url, init]) => url === '/api/media/upload' && JSON.parse(String(init.body)).action === 'initiate')).toHaveLength(2);
+  });
+
+  it('aborts an unmounted upload before registration even if the PUT later resolves', async () => {
+    let resolve!: (response: Response) => void;
+    const pending = new Promise<Response>(done => { resolve = done; });
+    const fetchMock = setup({ override: url => url === PUT_URL ? pending : undefined });
+    const view = render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(`${label('upload_transferring')} 1/1`);
+    const put = fetchMock.mock.calls.find(([url]) => url === PUT_URL)![1];
+    view.unmount(); expect(put.signal?.aborted).toBe(true); resolve(ok({}));
+    await new Promise(done => setTimeout(done, 0));
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/media/upload')).toHaveLength(1);
+  });
+
+  it('ignores an old finalize result after navigation opens a different target', async () => {
+    let resolve!: (response: Response) => void;
+    const pending = new Promise<Response>(done => { resolve = done; });
+    const fetchMock = setup({ override: (url, init) => url === '/api/media/upload' && JSON.parse(String(init.body)).action === 'finalize' ? pending : undefined });
+    const view = render(<ContentClient labels={{}}/>); await openTarget();
+    fireEvent.change(screen.getByLabelText(label('upload')), { target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] } });
+    await screen.findByText(`${label('upload_finalizing')} 1/1`);
+    const finalize = fetchMock.mock.calls.at(-1)![1];
+    view.rerender(<ContentClient labels={{}} initialTarget={{ scope: 'project', id: projectTarget.id }}/>);
+    await screen.findByLabelText(label('field.address'));
+    expect(finalize.signal?.aborted).toBe(true);
+    resolve(ok({ mediaAssetId: C, url: PHOTO_URL })); await new Promise(done => setTimeout(done, 0));
+    expect(screen.getByLabelText(label('field.name'))).toHaveValue('Legendary');
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: label('upload_retry_finalize') })).not.toBeInTheDocument();
   });
 });

@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     let raisedByRole = user.roles.find(
       // Draft-content scope does not establish a property-support relationship.
       // The independent booking and ownership checks below still apply.
-      (r) => r.role !== 'content_contributor' && (r.projectId === projectId || r.projectId === null)
+      (r) => r.role !== 'content_contributor' && r.role !== 'pricing_editor' && r.role !== 'booking_mode_editor' && (r.projectId === projectId || r.projectId === null)
     )?.role;
 
     if (bookingId) {

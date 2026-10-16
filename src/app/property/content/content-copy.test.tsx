@@ -3,6 +3,8 @@ import { CONTENT_UI_LABELS } from './UI-labels';
 import { CONTENT_PROPOSAL_EDITOR_KEYS, CONTENT_PROPOSAL_EDITOR_DRAFTS } from '@/modules/content/content-proposal-editor.seed';
 import { CONTENT_PROPOSAL_REVIEW_KEYS, CONTENT_PROPOSAL_REVIEW_DRAFTS } from '@/modules/content/content-proposal-review.seed';
 import PropertyContentPage from './page';
+import ContentProposalEditor from './content-client';
+import PropertyWorkspaceNav from '@/app/property/workspace-nav';
 import PropertyContentReviewPage from '@/app/(admin)/app/admin/property-content-proposals/page';
 const mocks = vi.hoisted(() => ({ user: { identityId: 'employee', isAdmin: false } as { identityId: string; isAdmin: boolean } | null, locale: 'ru', tMany: vi.fn() }));
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => ({ value: mocks.locale }) }) }));
@@ -22,11 +24,14 @@ describe('contributor pages and registered Russian copy', () => {
     }
   });
   it('keeps employee entry available with Russian drafts before seeding and preserves login destination', async () => {
-    const page = await PropertyContentPage();
-    expect(page.props.initialLocale).toBe('ru');
-    for (const row of CONTENT_PROPOSAL_EDITOR_KEYS) expect(page.props.labels[row.key]).toBe(CONTENT_PROPOSAL_EDITOR_DRAFTS[row.key].ru);
+    const page = await PropertyContentPage({});
+    const editor = page.props.children.find((child: { type: unknown }) => child.type === ContentProposalEditor);
+    const nav = page.props.children.find((child: { type: unknown }) => child.type === PropertyWorkspaceNav);
+    expect(nav.props).toEqual({ identityId: 'employee', current: 'content' });
+    expect(editor.props.initialLocale).toBe('ru');
+    for (const row of CONTENT_PROPOSAL_EDITOR_KEYS) expect(editor.props.labels[row.key]).toBe(CONTENT_PROPOSAL_EDITOR_DRAFTS[row.key].ru);
     mocks.user = null;
-    await expect(PropertyContentPage()).rejects.toThrow('Redirect:/login?next=%2Fproperty%2Fcontent');
+    await expect(PropertyContentPage({})).rejects.toThrow('Redirect:/login?next=%2Fproperty%2Fcontent');
   });
   it('denies non-admin review and uses registered reviewer drafts for an admin', async () => {
     await expect(PropertyContentReviewPage()).rejects.toThrow('Redirect:/');

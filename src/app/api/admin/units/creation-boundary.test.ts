@@ -1,0 +1,17 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+const h = vi.hoisted(() => ({ user: null as null | { identityId: string }, identity: null as null | { id: string; status: string; isAdmin: boolean }, createUnit: vi.fn(), can: vi.fn(), identityRead: vi.fn() }));
+vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: async () => h.user }));
+vi.mock('@/modules/core', () => ({ can: h.can }));
+vi.mock('@/modules/projects', () => ({ createUnit: h.createUnit }));
+vi.mock('@/lib/prisma', () => ({ prisma: { identity: { findUnique: h.identityRead } } }));
+import { POST } from './route';
+const request = () => new NextRequest('http://localhost/api/admin/units', { method: 'POST', body: JSON.stringify({ projectId: 'project-a', name: 'A101', unitType: 'condo', bedrooms: 1, bathrooms: 1, maxGuests: 2, baseNightlyThb: 0, status: 'live', ownerIdentityId: 'forged-owner' }), headers: { 'Content-Type': 'application/json' } });
+beforeEach(() => { vi.clearAllMocks(); h.user = { identityId: 'employee' }; h.identity = { id: 'employee', status: 'active', isAdmin: false }; h.identityRead.mockImplementation(async () => h.identity); h.can.mockResolvedValue(true); h.createUnit.mockResolvedValue({ id: 'new-unit', status: 'draft' }); });
+describe('canonical unit creation compatibility boundary', () => {
+  it('requires authentication before any writer', async () => { h.user = null; const response = await POST(request()); expect(response.status).toBe(401); expect(await response.json()).toEqual({ error: 'Unauthorized' }); expect(h.identityRead).not.toHaveBeenCalled(); expect(h.createUnit).not.toHaveBeenCalled(); });
+  it('routes any nonadministrator, including legacy staff or explicit creation grantees, to reviewed intake', async () => { const response = await POST(request()); expect(response.status).toBe(403); expect(await response.json()).toEqual({ error: 'Employee property creation requires an explicit workspace capability and administrator review.', code: 'employee_creation_review_required', next: '/property/create?kind=unit&from=operations' }); expect(h.can).not.toHaveBeenCalled(); expect(h.createUnit).not.toHaveBeenCalled(); });
+  it.each(['blocked', 'invited', 'merged', 'deletion_requested'])('denies a %s administrator', async status => { h.identity = { id: 'employee', status, isAdmin: true }; const response = await POST(request()); expect(response.status).toBe(403); expect(await response.json()).toEqual({ error: 'Forbidden' }); expect(h.createUnit).not.toHaveBeenCalled(); });
+  it('preserves an active authorized administrator canonical draft writer and strict allowlist', async () => { h.identity = { id: 'employee', status: 'active', isAdmin: true }; const response = await POST(request()); expect(response.status).toBe(201); expect(await response.json()).toEqual({ id: 'new-unit', status: 'draft' }); expect(h.can).toHaveBeenCalledWith(expect.objectContaining({ action: 'units:create', resource: { projectId: 'project-a' } })); expect(h.createUnit).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'project-a', name: 'A101', status: 'draft', actorIdentityId: 'employee' })); expect(h.createUnit.mock.calls[0][0]).not.toHaveProperty('ownerIdentityId'); });
+  it('retains the administrator domain authorization gate', async () => { h.identity = { id: 'employee', status: 'active', isAdmin: true }; h.can.mockResolvedValue(false); const response = await POST(request()); expect(response.status).toBe(403); expect(h.createUnit).not.toHaveBeenCalled(); });
+});

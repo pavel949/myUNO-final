@@ -1,5 +1,7 @@
 # Stitch fidelity audit — production source correction
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Baseline: main `f90a5644993247fe0df52af19e27c1d3c91714e9`. This report separates implementation coverage from actual visual verification. The earlier integration map's “done” did not establish reference fidelity on every screen; its terminology is corrected.
 
 ## References inspected

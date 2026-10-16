@@ -1,5 +1,7 @@
 # What works, for whom — a reachability audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **What this is.** Every flow in doc 07, every role in doc 03, and every model in doc 02, checked against what the running application can actually reach. Method as before: a function that exists but nothing calls is recorded as **unreachable, not as built**. Tests passing is not evidence a user can get there.
 
 Verified 2026-08-19 against `main` at `92aeeb1`. **Refreshed 2026-09-04** on branch `cursor/design-md-login-polish-c326` (PMS parity pass) — §1 headline corrected, §2 role table updated, §3 flows/notifications/payments brought current. Structural tests (`state-machine-is-wired.test.ts`, `reachability.test.ts`) are the live evidence; this document is commentary on them.

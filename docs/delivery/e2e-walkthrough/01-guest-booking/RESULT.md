@@ -1,5 +1,7 @@
 # Process 1 — guest books a stay (search → request → approve → pay → cancel → refund)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Run on a **local production build** against a throw-away database (never prod). Script: `p1.mjs.txt`. Screenshots in this folder.
 
 | Step | Result |

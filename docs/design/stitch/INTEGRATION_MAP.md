@@ -1,5 +1,7 @@
 # Stitch → myUNO integration map
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../current/SYSTEM.md) и [остатка работ](../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 How each Stitch screen maps to a real route in this repo, and its status. Reference only; canonical rules win (`docs/canonical/`). Update this file whenever a screen is restyled.
 
 Status: **implemented** = source uses the adopted Stitch system; this is not a visual parity or authenticated runtime certification. **gap** = missing functionality; **n/a** = reference only. Production screenshots and verification limits live in `docs/stitch-fidelity-audit.md`. Work is on main, without design branches.

@@ -1,5 +1,7 @@
 # Layantara → myUNO: live, read-only reconciliation
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Observed:** 2026-09-29 03:05 UTC. **Source:** connected Layan Tara OS Supabase, **destination:** connected MyUno-final Supabase. These queries were executed read-only; no production writes, migrations, credential changes, activation, booking insertion, or deployment took place.
 
 ## Evidence as of this snapshot

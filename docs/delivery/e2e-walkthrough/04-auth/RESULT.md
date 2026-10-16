@@ -1,5 +1,7 @@
 # Process 4 — register, verify e-mail, log in/out, forgot/reset password, access boundaries
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Local production build; real browser. E-mail delivery cannot be exercised here (no mail key in the sandbox) — one-time tokens were minted in the test database, then used through the real pages.
 
 | Step | Result |

@@ -1,6 +1,22 @@
-# Booking Module
+# booking — Бронирование и проживание
 
-Owns booking lifecycle, availability, pricing, hold logic.
+Сверено по main 2026-10-16. **Статус: код присутствует; production-проверка отдельно.**
+
+Quote/selection exact unit или category, request/approve/decline, pending payment, confirmation, отмена, перенос дат, extension, no-show, check-in/out, группы броней, Home Space, отзывы и lifecycle reminders.
+
+## Пользовательские поверхности
+
+/book/review · /trips · /ops/reservations · /ops/stays/[bookingId].
+
+## Что остаётся
+
+Полный сценарий BookingReschedule с replacement hold и оплатой разницы не найден: модель существует, текущий changeBookingDates меняет бронь напрямую. Проверить гонки и все денежные переходы на отдельной БД.
+
+## Источники и сопровождение
+
+[Полный состав файлов, exports и тестов](../../../docs/current/REFERENCE.md#module-booking) · [система](../../../docs/current/SYSTEM.md) · [матрица реализации](../../../docs/current/IMPLEMENTATION_STATUS.md).
+
+Контракты API задаются route handlers и вызываемыми domain services; права проверяются server-side. Наличие тестового файла не означает прохождение теста.
 
 ## Inventory-selection contract (CO07, 2026-10-09)
 

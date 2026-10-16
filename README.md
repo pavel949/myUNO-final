@@ -1,150 +1,110 @@
-# Ignatev Estate Property Operating System
+# myUNO — Property, Hospitality & Services OS
 
-Proprietary digital core for **Ignatev Estate Co., Ltd.** and the **myUNO** operating standard on Phuket.
+**Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Срез реализации: `436dd93567e4647e15c04fdafea850e0e103bf3a`. Это описание исходников; состояние production в рамках этой сверки не проверялось.
 
-The platform connects the complete commercial lifecycle of a real-estate asset:
+myUNO объединяет поиск жилья, прямое бронирование, проживание, PMS, владельцев, управляющих, CRM, услуги и финансовый учёт Ignatev Estate. Один физический объект и одна Identity связывают эти процессы. Внутри — Next.js modular monolith с PostgreSQL; публичные страницы и рабочие кабинеты работают в одном приложении.
 
-`inquiry → stay → purchase → ownership → operation → sale`
+## Начать здесь
 
-It is not a generic CRM, an OTA clone, or a collection of disconnected dashboards. The same identity, asset, commercial history, consent record, booking, operating event, and owner mandate remain linked throughout the relationship.
+| Задача | Документ |
+|---|---|
+| Понять всю систему и каждый модуль | [Описание системы](docs/current/SYSTEM.md) |
+| Увидеть реализованное и оставшиеся работы | [Матрица реализации и backlog](docs/current/IMPLEMENTATION_STATUS.md) |
+| Найти любой экран, API, модель, enum или тест | [Полный справочник кода](docs/current/REFERENCE.md) |
+| Установить и запустить проект | [Разработка](CONTRIBUTING.md) |
+| Деплой, БД, секреты, scheduler, backup, восстановление | [Эксплуатация и Vercel](docs/current/OPERATIONS.md) |
+| Операционные инструкции команды | [SOP](docs/SOPs/README.md) |
+| Безопасность и доступ | [Security](SECURITY.md) |
+| Продуктовая цель и правила изменений | [PROJECT.md](PROJECT.md) и [canonical](docs/canonical/README.md) |
+| Найти остальные документы и понять их статус | [Каталог документации](docs/README.md) |
 
-## Product surfaces
+## Что уже есть
 
-| Surface | Primary user | Purpose |
-|---|---|---|
-| **Stay** | Guest | Direct booking, payment, pre-arrival, in-stay service, extension and repeat stay |
-| **Owners** | Owner or developer | Asset review, mandate, reporting, compliance and performance visibility |
-| **Buy** | Buyer | Verified managed inventory and a controlled purchase process |
-| **Operations** | Internal team | Properties, units, reservations, tasks, service, incidents and owner reporting |
-| **CRM** | Commercial team | One relationship record across guest, buyer, owner, seller and partner journeys |
+- **Гость:** поиск/фильтры/карта/избранное → проект/категория/квартира → quote/review → request или instant booking → оплата → Trips/Home Space → паспортные данные/check-in → услуги/support → checkout/review.
+- **PMS:** Today, календарь, reservations/stays, карточка объекта, operating spaces/teams, заезды/выезды, уборка, inspection, maintenance/preventive plans, TM30, расходы и возвраты.
+- **Недвижимость:** комплексы, районы, структура/категории/квартиры, факты/спальные места, фото/видео, инфраструктура и её правила/часы/бронь, nearby places, редакторы, drafts/review/publish gates.
+- **Владелец и управляющий:** портфель, own stay, bookings, compliance/readiness, statements/sign-off, выплаты; MC scoped portfolio.
+- **Сотрудники:** ограниченные права на контент, тарифы, режим бронирования; предложения изменений с review/approval; scoped creation и делегирование доступа.
+- **CRM:** лиды, общий Identity, opportunities, activities, consent, attribution, property deals и приватные доказательства.
+- **Услуги:** проверка поставщиков, каталог, project/standalone заказы, оплата/принятие/исполнение, no-show/cancel/refund, отзывы, выплаты поставщикам.
+- **Контроль:** конфигурация, CMS/i18n, audit, KPI, scheduler/launch readiness, integration health и Layantara import.
 
-## Core architecture
+Наличие кода не означает, что все эти процессы прошли production-приёмку. По каждому модулю ограничения и проверки указаны в [матрице](docs/current/IMPLEMENTATION_STATUS.md).
 
-- **Next.js 14 and TypeScript** for public, guest, owner and administration surfaces.
-- **PostgreSQL and Prisma** as the system of record.
-- **Identity as Party ID**: a person is stored once and may move from guest to buyer, owner and seller without duplicate profiles.
-- **Modular monolith first**: clear domain boundaries without premature microservices.
-- **API and event-ready design** for channel managers, payments, messaging, analytics and AI workers.
-- **Human approval for consequential actions**: pricing overrides, refunds, contracts, legal statements and outbound commitments.
+## Реальный стек
 
-## Business domains
+| Слой | Реализация |
+|---|---|
+| Web | Next.js 14 App Router, React 18, TypeScript |
+| UI | Tailwind CSS 3, локальные компоненты и Stitch tokens |
+| Карта | MapLibre GL 4.7.1; поиск мест в `src/lib/place-search.ts` |
+| Данные | PostgreSQL через Prisma 5; Supabase используется как PostgreSQL, без Supabase JS/Auth SDK |
+| Авторизация | Собственные Identity/AuthAccount, bcrypt, signed session cookies, Google OAuth |
+| Деплой | **Vercel**, `vercel.json`, функции `sin1` |
+| Файлы | Vercel Blob; внешние разрешённые фото отдельно перечислены в `next.config.js` |
+| Email | Resend через HTTP adapter |
+| Оплаты | Cash/transfer accounting; Opn adapter; mock только для разработки |
+| Проверки | Vitest, Testing Library, ESLint, TypeScript, GitHub Actions, isolated Chromium acceptance |
+| Языки | RU/EN/TH/ZH в коде, RU default; полнота переводов проверяется отдельно |
 
-```text
-src/modules/
-├── crm/              identity, lifecycle, opportunities, activity and attribution
-├── inventory/        projects, units, availability and restrictions
-├── reservations/     quotes, holds, bookings and stay lifecycle
-├── revenue/          rates, fees, commissions and performance logic
-├── operations/       tasks, service requests, inspections and incidents
-├── owner/            mandates, reports and asset performance
-├── distribution/     direct demand, OTA/channel connections and partner supply
-├── compliance/       consent, audit trail and operating controls
-└── integrations/     payment, messaging and external adapters
-```
+Git auto-deploy сейчас **отключён** (`git.deploymentEnabled: false`). Merge в main сам по себе не доказывает публикацию. [Процедура релиза](docs/current/OPERATIONS.md) требует сверки SHA приложения и миграций.
 
-The CRM foundation added in this branch includes:
+## Быстрый локальный запуск
 
-- lifecycle profiles for contacts, guests, prospects, buyers, owners and sellers;
-- opportunity pipelines for rental, purchase, sale, management, developer advisory, capex and compliance;
-- tasks and commercial activities;
-- consent records and source attribution;
-- conversion of public website inquiries into the internal CRM;
-- support for rental demand fulfilled by an approved external partner when no managed unit matches;
-- an initial administration pipeline at `/app/admin/crm`.
-
-## Asset and brand coverage
-
-The data model supports four operating situations without splitting them into separate systems:
-
-1. Several managed units in a condominium.
-2. All units in a condominium or residence.
-3. All villas in a branded or unbranded complex.
-4. A complete hotel or resort that keeps its own asset brand and may use **Managed by myUNO** as an endorsement.
-
-Brand visibility is a contractual and operational attribute of the managed scope. It is not inferred merely because an asset exists in the database.
-
-## Demand outside managed inventory
-
-A request is never discarded merely because the required property is not directly managed. It enters the same CRM and follows one of three paths:
-
-1. Match against managed inventory first.
-2. Match against approved partner supply with disclosed responsibility and commission.
-3. Retain as qualified unmet demand and use the evidence to acquire the right asset or owner mandate.
-
-Partner properties are not presented as managed by myUNO. Service responsibility, data permissions, pricing source, commission and complaint ownership must be explicit.
-
-## Repository policy
-
-This repository is the target product and the sole production system of record. Other repositories may donate reviewed components, but their schemas and authentication models are not merged wholesale.
-
-Recommended donor roles:
-
-- **OFFPLAN** — verified property catalogue and ClearView-style evidence patterns.
-- **farang-marketplace** — selected lead intake and commercial workflow patterns.
-- **MyUNO-Capital** — selected AI analysis patterns after security and data review.
-
-Every imported component must pass an architecture, licensing, security and data-ownership review.
-
-## Documentation
-
-- [Architecture decisions](docs/01_architecture_decisions.md)
-- [Data model](docs/02_data_model.md)
-- [Security and privacy](docs/12_security_privacy.md)
-- [Operating flows](docs/07_flows.md)
-- [Technical specification](docs/14_tech_spec.md)
-- [Build plan](docs/16_build_plan.md)
-- [CRM and commercial system](docs/17_crm_and_commercial_system.md)
-- [Target platform architecture](docs/18_platform_architecture.md)
-
-## Connecting a database
-
-One command creates every table and loads the business rules and RU/EN/TH copy:
+Node.js 20 и отдельная PostgreSQL БД; production credentials сюда не копировать.
 
 ```bash
-DATABASE_URL="postgresql://..." node scripts/provision-database.mjs
-```
-
-It is idempotent, verifies its own result, and never writes demo inventory. For
-the connection string, the Vercel variables and how to check it worked, see
-**[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)** — start there.
-
-Note that **deployments do not run migrations**; a schema change reaches an
-environment only when the command above is run against it.
-
-## Local development
-
-```bash
-npm install
+npm ci
 cp .env.example .env
-npx prisma generate
+# Заполнить локальные DATABASE_URL, отдельный DATABASE_URL_TEST и dev secrets.
+# На обычном PostgreSQL сначала создать совместимые роли для migration chain:
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/sql/supabase-compat-roles.sql
+node scripts/provision-database.mjs
 npm run dev
 ```
 
-The application requires PostgreSQL. Use a separate test database through `DATABASE_URL_TEST`; integration tests intentionally refuse to run against a non-test database.
+Provision применяет миграции и seed реестров config/content. Demo inventory не создаёт. `npm run db:seed` содержит демонстрационные данные и разрешён только на изолированной dev/test БД. Перед любыми миграциями проверить целевой host/database.
 
-Useful checks:
+## Навигация по исходникам
+
+| Путь | Назначение |
+|---|---|
+| `src/app/` | App Router pages, route handlers, server actions и route-local helpers |
+| `src/modules/` | 21 каталог: 20 runtime-доменов и `workflows` с integration tests |
+| `src/components/` | Переиспользуемые интерфейсы, Stitch, calendar/property/guest components |
+| `src/lib/` | Сессия, Prisma, money/date/i18n/SEO, launch readiness, navigation |
+| `src/jobs/` | Реестр 10 задач, dispatch, auth, история и health |
+| `prisma/schema.prisma` | 118 моделей; источник точных полей и связей |
+| `prisma/migrations/` | 94 SQL-миграции; наличие в Git не доказывает применение |
+| `scripts/` | Provision, audit, verification, import, browser acceptance и maintenance |
+| `.github/workflows/` | CI, isolated browser acceptance, scheduler, backup |
+| `docs/current/` | Текущее состояние и воспроизводимый справочник |
+| `docs/canonical/` | Целевые требования; требования не считаются автоматически реализованными |
+| `legacy/` | Справочные материалы; не runtime приложения |
+
+В срезе: **174 page entry points, 247 route handlers (244 API), 547 файлов тестов, 0 выявленных совпадений нормализованных URL**. Это статические количества, не число пройденных проверок. Справочник содержит все записи, методы API и source links.
+
+## Проверки и обновление документации
 
 ```bash
-npx prisma validate
+npm run audit:inventory:test
+npm run audit:inventory -- --out /tmp/myuno-inventory.json
+node scripts/generate-repository-reference.mjs
+node scripts/check-repository-docs.mjs
 npm run lint
+npx tsc --noEmit --project tsconfig.production.json
 npm test
 npm run build
 ```
 
-## Security and governance baseline
+DB-backed тесты очищают тестовые таблицы. Запускать только с отдельным `DATABASE_URL_TEST`. Успешная сборка не проверяет реальные письма, платежи, фото, права, scheduler и восстановление.
 
-- no secrets or production personal data in Git;
-- role-based access and least privilege;
-- explicit consent and purpose tracking;
-- immutable audit events for material actions;
-- idempotency for payment and booking writes;
-- AI-generated recommendations remain traceable to source data;
-- accounting remains an external specialist system and receives approved exports or integrations.
+При изменении маршрута, модели, модуля или интеграции обновлять [SYSTEM](docs/current/SYSTEM.md), [IMPLEMENTATION_STATUS](docs/current/IMPLEMENTATION_STATUS.md), перегенерировать [REFERENCE](docs/current/REFERENCE.md). Политика классификации документов — [DOCS_POLICY](docs/current/DOCS_POLICY.md).
 
-## Current status
+## Что ещё остаётся
 
-This is an active product foundation. The CRM domain is the first part of the unified commercial system; production rollout still requires environment configuration, database migration review, access-control verification, payment/channel credentials, observability and deployment approval.
+Подтверждённые разрывы: внешняя отправка WhatsApp/Telegram; полный OTA ARI; рабочий quote lifecycle услуг и replacement-hold reschedule; общий транспорт realtime для нескольких экземпляров; согласование launch-readiness с фактическими Opn/Blob adapters. Production schema/config/data, live платежи/письма/media, права и recovery требуют отдельной проверки. Открытые PR не включены в описание main. Все пункты с доказательствами и приёмкой — в [backlog](docs/current/IMPLEMENTATION_STATUS.md).
 
-## Ownership
+## Права
 
 Proprietary software of Ignatev Estate Co., Ltd. All rights reserved.

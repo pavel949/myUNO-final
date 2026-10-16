@@ -1,5 +1,7 @@
 # P0/P1 product consolidation — 2026-10-03
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Scope
 
 This release closes the product-design P0/P1 consolidation without introducing

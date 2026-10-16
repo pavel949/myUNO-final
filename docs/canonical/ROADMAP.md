@@ -1,5 +1,7 @@
 # ROADMAP.md — Canonical Delivery Sequence
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## Phase 0 — Baseline and safety
 Current HEAD/open-PR reconciliation, schema/routes/runtime map, backup/restore proof, migration-hook risk, current public/mobile screenshots and current data ownership matrix. **Exit:** current system recoverable and facts separated from target state.
 

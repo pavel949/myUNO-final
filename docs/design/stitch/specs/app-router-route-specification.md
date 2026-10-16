@@ -1,4 +1,6 @@
 # myUNO Next.js App Router & Architecture Route Specification
+
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../../current/SYSTEM.md) и [остатка работ](../../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
 **Target Framework:** Next.js 14/15 (App Router, Route Groups, Server Components & Parallel Routes)  
 **Date:** October 2026 | **Version:** 2.4-canonical  
 **Design System:** Andaman Sanctuary & Architectural Living  

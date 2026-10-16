@@ -1,5 +1,7 @@
 # DATA_MODEL.md — Canonical Models and Data Ownership
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Identity
 Evolve existing `Identity` as canonical Party. Roles are relationships, not separate people. Preserve contact points, consent, lifecycle, merge/alias history. Never create separate global guest/owner/buyer person tables.
 

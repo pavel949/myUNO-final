@@ -1,5 +1,7 @@
 # T-042 · Hardening pass — evidenced checklist
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Each item below is either **verified** (with the evidence that proves it) or
 **not verified** (with the reason). Nothing is ticked on the strength of code
 existing; a header that is set but never asserted is a header that silently

@@ -1,5 +1,7 @@
 # myUNO-final — 12-process / 7-engine implementation audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-09-28. Compared `main` (`00836c1`) with draft PR #137; reviewed source, schema and GitHub CI. This is **source-based verification**, not a production E2E certification. Do not infer live dataset migration from the presence of schema, seed or route code.
 
 ## Architecture

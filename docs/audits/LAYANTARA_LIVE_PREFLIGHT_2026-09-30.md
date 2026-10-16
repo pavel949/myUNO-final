@@ -1,5 +1,7 @@
 # Layantara live preflight — 2026-09-30 (read-only)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 This is a refreshed non-PII verification against the connected, active source and target Supabase databases. It is **not a cutover authorization**. No live database write, inventory activation, migration, storage byte copy, deployment or booking-writer switch was performed.
 
 ## Verified now

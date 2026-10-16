@@ -1,5 +1,7 @@
 # Content Key Audit & Review Prioritization Plan
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Document Date:** August 26, 2026  
 **Status:** Active review phase  
 **Owner:** Platform team + Founder (review gate)

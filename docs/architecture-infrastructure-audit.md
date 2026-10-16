@@ -1,5 +1,7 @@
 # Infrastructure, background execution and module boundary audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Source baseline main 24138a2d717773534d923244a102631987aad641; assessed 2026-10-08 Asia/Bangkok. Read-only code assessment, no production cron/DB/restore operations. Deployment READY establishes deployability, not operational scheduler/backup health. Static inventory: 160 pages, 227 handlers (224 APIs), 22 modules, 311 test files, 115 Prisma models, 77 migrations, zero discovered route collisions. Machine evidence in evidence/architecture-2026-10-08.
 
 ## Preserve

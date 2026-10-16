@@ -1,5 +1,7 @@
 # Property onboarding: Airbnb-like experience, canonical myUNO records
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Status: implementation contract; audit of current main on 2026-09-30. Do not treat a specification as deployed functionality.
 
 ## Existing evidence

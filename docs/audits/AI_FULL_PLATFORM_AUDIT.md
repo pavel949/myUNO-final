@@ -1,5 +1,7 @@
 # AI Full-Platform Assessment Contract — myUNO
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Status:** operational audit playbook; subordinate to PROJECT.md and docs/canonical/.  
 **Baseline observed:** main at 4a8ed81b24aee51020486fc049e9ef0af329ffd8, 2026-09-29.  
 **Purpose:** let any coding agent assess the *current deployed and repository implementation* against the canonical product program, without confusing a specification, a branch, a passing unit test or a screen with working production behavior.

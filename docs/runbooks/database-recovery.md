@@ -1,5 +1,7 @@
 # Database recovery and reproducibility
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 How to rebuild this system's database from the repository, prove a backup can
 actually be restored, and keep the datamodel honest about what the database
 contains.

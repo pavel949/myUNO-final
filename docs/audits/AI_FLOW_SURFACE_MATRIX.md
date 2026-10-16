@@ -1,5 +1,7 @@
 # AI Flow / Surface / Canonical Writer Crosswalk
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Status:** audited locator index against main 4a8ed81b24aee51020486fc049e9ef0af329ffd8 (2026-09-29), NOT a pass report.  
 All paths are discovery anchors, not proof of reachability, authorization, deployment, complete process or correct writes. Rebuild from the current HEAD with npm run audit:inventory and trace each flow. Normative transitions: docs/canonical/PROCESS_MAP.md and PROCESS_PASSPORTS.md; test contract: READINESS_ACCEPTANCE.md.
 

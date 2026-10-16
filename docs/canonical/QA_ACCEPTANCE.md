@@ -1,5 +1,7 @@
 # QA_ACCEPTANCE.md — Hard Product Acceptance Gates
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Public portal
 - practical purpose understood quickly;
 - search works;

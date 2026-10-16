@@ -1,5 +1,7 @@
 # Airbnb-Level Guest Journey Gap Analysis
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 This document audits the myUNO guest journey against an Airbnb-benchmark level of continuity, low cognitive load, and persistent context, while maintaining myUNO's deep resort operating model.
 
 ## Domain Gap Analysis Table

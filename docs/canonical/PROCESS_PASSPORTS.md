@@ -1,5 +1,7 @@
 # PROCESS_PASSPORTS.md — Canonical CO01–CO30 Process Passports
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 This file is normative. `PROCESS_MAP.md` defines the process catalog; this file defines the minimum executable contract for each process. Implementation details may extend these passports but may not weaken authority, transaction, audit, idempotency, money, or handover rules.
 
 ## Common contract

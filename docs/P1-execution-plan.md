@@ -1,5 +1,7 @@
 # P1 Maturity Fixes: Execution Plan
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Status:** In Progress  
 **Owner:** Platform Team  
 **Target:** Complete all 5 P1 items + document findings

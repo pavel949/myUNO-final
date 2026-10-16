@@ -1,5 +1,7 @@
 # Surface / architecture crosswalk
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 | Audience/job | Primary routes | Application/domain seam | Scope | Detailed evidence | Runtime here |
 |---|---|---|---|---|---|
 | Public discover | /,/areas,/projects,/search,/units/[id] | home/publicdiscovery/projects,searchquote,booking | published project/unit; destination missing | ../../architecture-funnel-audit.md and architecture-destination-audit.md | service/areas/project read-only checked; not whole funnel |

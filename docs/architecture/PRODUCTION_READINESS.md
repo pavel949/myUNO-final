@@ -1,5 +1,7 @@
 # Production Readiness Scorecard
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Date:** 2026-08-18 · **Baseline:** `75bf763` · Evidence: `PHASE0_EVIDENCE_REPORT.md`
 
 Scores are 0–5. Launch severity: **P0** must be fixed before any real booking · **P1** before public

@@ -1,5 +1,7 @@
 # Employee property creation: isolated Chromium acceptance
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Status on 2026-10-15: runner authored; syntax, scoped ESLint, and pre-import isolation-denial checks passed. The full PostgreSQL + Next application + Chromium journey has **not been executed** for this slice. No production or publication action was performed. Do not describe source tests or these static checks as browser acceptance.
 
 ## Runner and artifacts

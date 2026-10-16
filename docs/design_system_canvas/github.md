@@ -1,3 +1,5 @@
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 repo: pavel949/myUNO-final
 branch: claude/project-repo-clarification-bavpp0
 path: src/, docs/06_design_system.md, prisma/schema.prisma, tailwind.config.ts

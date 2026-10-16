@@ -380,7 +380,11 @@ try {
     await login(adminPage, founder); await assertTabs(adminPage, 'Personal', 'My');
     await adminPage.goto('/app/admin/people');
     await adminPage.getByRole('link', { name: 'Employee sign-in link', exact: true }).waitFor();
+    // At 390px the administrator rail is inside a closed disclosure.
+    const adminMenu = adminPage.getByText('Open admin navigation', { exact: true });
+    await adminMenu.click();
     await adminPage.getByRole('navigation', { name: 'Admin workspace', exact: true }).waitFor();
+    await adminMenu.click();
     assert.equal(await nav(adminPage).count(), 0);
     assert.equal(await switcher(adminPage).locator('button[aria-pressed="true"]').count(), 0);
     await switcher(adminPage).getByText('Administration', { exact: true }).waitFor();

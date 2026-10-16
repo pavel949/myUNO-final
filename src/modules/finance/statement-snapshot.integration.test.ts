@@ -205,6 +205,35 @@ describe('unit ledger lock', () => {
     const fresh = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
     await expect(verifyStatementSnapshot(db, fresh)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
   });
+
+  it('rejects a signature when a new paid crossing cancellation was absent from the contained-source hash', async () => {
+    const crossing = await createBooking({
+      unitId: world.unit.id, projectId: world.project.id, guestIdentityId: world.newOwner.id,
+      startDate: new Date('2026-06-29'), endDate: new Date('2026-07-03'), status: 'cancelled', totalThb: 12_000,
+    });
+    await db.payment.create({ data: {
+      bookingId: crossing.id, payerIdentityId: world.newOwner.id, purpose: 'stay_balance',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: 'succeeded', succeededAt: NOW,
+    } });
+    await expect(collectSnapshotSources(db, world.period)).rejects.toMatchObject({ code: 'STATEMENT_ALLOCATION_REQUIRED', bookingId: crossing.id });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id)).rejects.toMatchObject({ reason: 'stale' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).signedOffByOperatorAt).toBeNull();
+  });
+
+  it('preserves an operator-signed snapshot when a paid crossing cancellation is added later', async () => {
+    await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
+    const signed = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
+    const crossing = await createBooking({
+      unitId: world.unit.id, projectId: world.project.id, guestIdentityId: world.newOwner.id,
+      startDate: new Date('2026-07-29'), endDate: new Date('2026-08-03'), status: 'cancelled', totalThb: 12_000,
+    });
+    await db.payment.create({ data: {
+      bookingId: crossing.id, payerIdentityId: world.newOwner.id, purpose: 'stay',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: 'succeeded', succeededAt: NOW,
+    } });
+    await expect(verifyStatementSnapshot(db, signed)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: signed.id } })).snapshotHash).toBe(signed.snapshotHash);
+  });
 });
 
 describe('owner change vs statement approval', () => {

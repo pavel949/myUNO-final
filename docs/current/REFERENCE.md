@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `1124919b5071249f60ca2aa73731398e250221f4`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `c61412e71801e345fb7d3cde0168a6631b0b4932`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -769,7 +769,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/finance/remittance.service.ts](<../../src/modules/finance/remittance.service.ts>) | implementation | `resolveProviderPayoutPeriod`, `getProviderRemittancesView`, `computeProviderRemittance` |
 | [src/modules/finance/statement-expense.ts](<../../src/modules/finance/statement-expense.ts>) | implementation | `OPERATING_EXPENSE_ENTRY_TYPES`, `NON_EXPENSE_STATEMENT_ENTRY_TYPES`, `isReversalRow`, `isStatementLedgerRow`, `operatingExpenseContribution`, `sumOperatingExpenses`, `sumByType`, `buildLedgerLines` |
 | [src/modules/finance/statement-signoff.service.ts](<../../src/modules/finance/statement-signoff.service.ts>) | implementation | `OWNER_VISIBLE_STATEMENT_STATUSES`, `isOwnerVisibleStatementStatus`, `SIGNABLE_STATEMENT_STATUSES`, `isSignableStatementStatus`, `StatementSignOffError`, `getStatementSignOffState`, `hasSignedOff`, `recordStatementSignOff` |
-| [src/modules/finance/statement-snapshot.ts](<../../src/modules/finance/statement-snapshot.ts>) | implementation | `REVENUE_BOOKING_STATUSES`, `STATEMENT_BOOKING_STATUSES`, `dayAfter`, `StatementReceivableReviewError`, `hasPendingStatementReceivables`, `assertStatementReceivablesResolved`, `collectSnapshotSources`, `sourceFingerprint`, `snapshotHash`, `verifyStatementSnapshot` |
+| [src/modules/finance/statement-snapshot.ts](<../../src/modules/finance/statement-snapshot.ts>) | implementation | `REVENUE_BOOKING_STATUSES`, `STATEMENT_BOOKING_STATUSES`, `dayAfter`, `StatementReceivableReviewError`, `hasPendingStatementReceivables`, `assertStatementReceivablesResolved`, `StatementAllocationReviewError`, `findUnallocatedStatementStay`, `collectSnapshotSources`, `sourceFingerprint`, `snapshotHash`, `verifyStatementSnapshot` |
 
 <a id="module-home"></a>
 

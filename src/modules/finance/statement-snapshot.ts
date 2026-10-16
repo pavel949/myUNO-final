@@ -105,6 +105,38 @@ export async function assertStatementReceivablesResolved(db: Pick<PrismaClient, 
   if (await hasPendingStatementReceivables(db, period)) throw new StatementReceivableReviewError();
 }
 
+/** A period cannot silently lose retained cancellation revenue or part of a stay. */
+export class StatementAllocationReviewError extends Error {
+  readonly code = 'STATEMENT_ALLOCATION_REQUIRED';
+  constructor(readonly bookingId: string) {
+    super('A stay crosses this accounting period. Resolve the stay allocation policy before generating a statement.');
+  }
+}
+
+export async function findUnallocatedStatementStay(db: Pick<PrismaClient, 'booking'>, period: SnapshotPeriod) {
+  const nextPeriodDay = dayAfter(period.periodEnd);
+  return db.booking.findFirst({
+    where: {
+      unitId: period.unitId,
+      startDate: { lt: nextPeriodDay },
+      endDate: { gt: period.periodStart },
+      AND: [
+        { OR: [{ startDate: { lt: period.periodStart } }, { endDate: { gt: nextPeriodDay } }] },
+        { OR: [
+          { status: { in: REVENUE_BOOKING_STATUSES } },
+          // An unpaid cancellation contributes no rental revenue. Deposits,
+          // failed charges and unreconciled provider claims are not rent.
+          { status: 'cancelled', payments: { some: {
+            status: 'succeeded', reconciliationReason: null, amountThb: { gt: 0 },
+            purpose: { in: ['stay', 'stay_balance'] },
+          } } },
+        ] },
+      ],
+    },
+    select: { id: true },
+  });
+}
+
 /** Statuses at which a statement has been issued and is never rewritten. */
 const ISSUED_STATEMENT_STATUSES = ['published', 'pending_owner_review', 'signed_off', 'distributed'] as const;
 
@@ -118,6 +150,8 @@ export async function collectSnapshotSources(
   ownStatementId?: string
 ): Promise<SnapshotSources> {
   await assertStatementReceivablesResolved(db, period);
+  const crossing = await findUnallocatedStatementStay(db, period);
+  if (crossing) throw new StatementAllocationReviewError(crossing.id);
   const nextPeriodDay = dayAfter(period.periodEnd);
 
   const stays = await db.booking.findMany({
@@ -374,6 +408,11 @@ export async function verifyStatementSnapshot(
   statement: StoredStatement
 ): Promise<SnapshotVerdict> {
   if (await hasPendingStatementReceivables(db, statement)) return { ok: false, reason: 'receivable_review' };
+  // An added or moved crossing stay is absent from the contained-source hash.
+  // Refuse unsigned close explicitly; already issued signatures stay intact.
+  if (!statement.signedOffByOperatorAt && await findUnallocatedStatementStay(db, statement)) {
+    return { ok: false, reason: 'stale' };
+  }
 
   // Statements generated before the snapshot columns existed carry no hashes.
   // They are not "stale" — they cannot be judged — and are signed as before.

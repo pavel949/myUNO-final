@@ -91,3 +91,23 @@ Node20 CI38901926718 на e54c5497:5990/5990 tests в553 files, lint/typecheck/b
 Дополнительная сверка показала TOCTOU: route считал remittance до transaction записи payout. В writer добавлены provider mutex, общие order advisory/row locks, повторный расчёт под locks, запрет пересекающихся/неопределённых payout periods и требование завершённого периода. Route возвращает тот report, который прошёл проверку внутри transaction.
 
 Requested/processing refunds для eligible current orders блокируют выплату независимо от даты создания refund. Succeeded refund после конца периода, но до первой выплаты, не покрывается существующей моделью captured-period/late-clawback: writer возвращает409 для явной financial reconciliation вместо завышенной выплаты. Полноценная allocation/snapshot-модель таких поздних корректировок остаётся отдельной работой; существующие financial records не переписываются. Добавлены PostgreSQL tests для source-lock race, overlapping concurrent periods, exact ledger consequence, open period, amount tampering и post-period refunds.
+
+
+### R18–R19 — продолжение 16 октября, после main fc0508fe
+
+- R18: оплаченная отменённая бронь на границе периода могла отсутствовать в источниках отчёта, а прежний guard проверял только active revenue statuses. Единый allocation guard теперь вызывается при чтении snapshot sources и перед unsigned sign-off. Он учитывает только succeeded/reconciled stay/stay_balance payment для отмен; unpaid/failed/deposit/unreconciled не блокируют close. Generation возвращает409 STATEMENT_ALLOCATION_REQUIRED с bookingId; unsigned signature отклоняется как stale. Подписанный operator snapshot сохраняет integrity-only проверку. Добавлены8 PostgreSQL regressions; их выполнение проверяется CI текущего PR, а не наличием файлов.
+- R19: повторный защищённый release [38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) на fc0508fe прошёл fresh backup/actual restore, но migrate остановился на ledger_read, до SQL, code=unclassified. В безопасной диагностике добавлено чтение errorCode настоящего PrismaClientInitializationError; credential или raw message не выводятся. Причина подключения ещё не установлена; history repair и подмена подключения на backup principal не выполнялись.
+- Scheduler active; [38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) — настоящий schedule, HTTP200, все frequent jobs ok в15:01UTC/22:01ICT. Один tick не доказывает регулярную5-minute cadence: при следующей сверке в15:34UTC новых JobRun не было. SCHEDULER_MODE=external ещё нельзя объявить подтверждённым.
+- Последний проверенный merged-main [CI38906673035](https://github.com/pavel949/myUNO-final/actions/runs/38906673035):5997 tests/554 files, lint/typecheck/build passed. Продолжение имеет отдельные exact-head Checks; до их success оно не заменяет этот baseline.
+
+
+### Live media evidence —22:53ICT
+
+[Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.
+
+
+### R20 — одинаковый проверенный connection path для migration read и DDL
+
+Application Prisma использует resolveDatabaseUrl, а release script использовал raw DATABASE_URL. Для canonical direct Supabase URL это оставляло IPv6-only endpoint в migration runner, хотя приложение работает через IPv4 session pooler. Runner теперь применяет тот же существующий resolver; raw и resolved URL оба проходят canonical project/port/username validation. Transaction-pooler/foreign input не нормализуется в допустимый target. PrismaClient и subprocess migrate deploy получают одну и ту же resolved URL; пароль не извлекается, не заменяется и не выводится. Node24 требуется для общего TypeScript resolver, как уже настроено в workflow.
+
+Добавлены два policy regression: encoded credentials/transport preservation и отказ для foreign/transaction/host override. Семь policy tests локально passed. Это исправляет подтверждённое различие в коде, но пока не доказывает, что фактическая ошибка ledger_read вызвана именно IPv6: нужен новый protected release на проверенном main. [Официальный контракт Supabase/Prisma](https://supabase.com/docs/guides/database/prisma). Backup/unchanged-main/ledger/checksum/financial parity gates сохранены.

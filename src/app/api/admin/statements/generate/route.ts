@@ -1,14 +1,12 @@
-import { StatementReceivableReviewError } from '@/modules/finance/statement-snapshot';
+import { StatementAllocationReviewError, StatementReceivableReviewError } from '@/modules/finance/statement-snapshot';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
 import { getConfig } from '@/modules/config'
 import {
-  REVENUE_BOOKING_STATUSES,
   buildLedgerLines,
   collectSnapshotSources,
-  dayAfter,
   lockUnitLedgerExclusive,
   snapshotHash,
   sourceFingerprint,
@@ -171,7 +169,6 @@ export async function POST(req: NextRequest) {
 
     const period = { unitId: unit.id, periodStart: startDate, periodEnd: endDate }
     // Period end is an inclusive calendar day for statements.
-    const nextPeriodDay = dayAfter(endDate)
 
     // One transaction under the unit's EXCLUSIVE ledger lock. No cost, reversal
     // or receipt can commit while the figures are read and the statement is
@@ -245,29 +242,6 @@ export async function POST(req: NextRequest) {
                   hint: 'Only an unsigned draft, or an issued report the owner has not signed, can be regenerated.',
                 }
               : {}),
-          })
-        }
-
-        // A stay that crosses the boundary cannot be silently omitted:
-        // allocation must be explicitly defined before financial close.
-        const crossingStay = await tx.booking.findFirst({
-          where: {
-            unitId: unit.id,
-            status: { in: REVENUE_BOOKING_STATUSES },
-            startDate: { lt: nextPeriodDay },
-            endDate: { gt: startDate },
-            OR: [
-              { startDate: { lt: startDate } },
-              { endDate: { gt: nextPeriodDay } },
-            ],
-          },
-          select: { id: true },
-        })
-        if (crossingStay) {
-          throw new StatementConflict(409, {
-            error:
-              'A stay crosses this accounting period. Resolve the stay allocation policy before generating a statement.',
-            bookingId: crossingStay.id,
           })
         }
 
@@ -546,6 +520,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
+    if (error instanceof StatementAllocationReviewError) return NextResponse.json({ error: error.message, code: error.code, bookingId: error.bookingId }, { status: 409 });
     if (error instanceof StatementReceivableReviewError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     if (error instanceof StatementConflict) {
       return NextResponse.json(error.body, { status: error.status })

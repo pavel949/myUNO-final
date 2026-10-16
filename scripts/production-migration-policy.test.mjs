@@ -2,7 +2,35 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { assertProductionTarget, checkMigrationLedger, PROJECT_REF, APPROVED_PENDING } from './production-migration-policy.mjs';
+import { assertProductionTarget, productionMigrationConnection, checkMigrationLedger, PROJECT_REF, APPROVED_PENDING } from './production-migration-policy.mjs';
+
+test('canonical direct migration uses the runtime session route and preserves encoded credentials', () => {
+  const raw = `postgresql://postgres:p%40ss%2Fword%3A%25@db.${PROJECT_REF}.supabase.co:5432/postgres?schema=public`;
+  const resolved = new URL(productionMigrationConnection(raw));
+  assert.equal(resolved.hostname, 'aws-1-ap-south-1.pooler.supabase.com');
+  assert.equal(resolved.port, '5432');
+  assert.equal(resolved.username, `postgres.${PROJECT_REF}`);
+  assert.equal(resolved.password, new URL(raw).password);
+  assert.equal(resolved.searchParams.get('sslmode'), 'require');
+  assert.equal(resolved.searchParams.get('connection_limit'), '1');
+  assert.equal(resolved.searchParams.get('schema'), 'public');
+  assert.equal(new URL(productionMigrationConnection(resolved.toString())).href, resolved.href);
+});
+
+test('migration validates input before rewriting and refuses a foreign resolver override', () => {
+  for (const raw of [
+    `postgresql://postgres:test@db.foreign.supabase.co:5432/postgres`,
+    `postgresql://postgres.${PROJECT_REF}:test@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true`,
+  ]) assert.throws(() => productionMigrationConnection(raw));
+  const previous = process.env.DATABASE_POOLER_HOST;
+  try {
+    process.env.DATABASE_POOLER_HOST = 'db.attacker.example';
+    assert.throws(() => productionMigrationConnection(`postgresql://postgres:test@db.${PROJECT_REF}.supabase.co:5432/postgres`));
+  } finally {
+    if (previous === undefined) delete process.env.DATABASE_POOLER_HOST;
+    else process.env.DATABASE_POOLER_HOST = previous;
+  }
+});
 
 test('release target refuses foreign project, local DB, transaction pooler and lookalike host', () => {
   assertProductionTarget(`postgresql://postgres.${PROJECT_REF}:test@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`);
@@ -48,4 +76,9 @@ test('release failures expose only allowlisted stages and driver codes', async (
   const { migrationFailureSummary } = await import('./production-migration-policy.mjs');
   assert.match(migrationFailureSummary('ledger_read', { code: 'P1001', message: 'postgresql://private:secret@db.example/production' }), /stage=ledger_read; code=P1001/);
   assert.doesNotMatch(migrationFailureSummary('private-token', { code: 'password', message: 'SECRET' }), /private-token|password|SECRET/);
+  const { Prisma } = await import('@prisma/client');
+  const initError = new Prisma.PrismaClientInitializationError('postgresql://private:secret@db.example/production', '5.22.0', 'P1000');
+  assert.match(migrationFailureSummary('ledger_read', initError), /stage=ledger_read; code=P1000/);
+  assert.doesNotMatch(migrationFailureSummary('ledger_read', initError), /private|secret|db.example/);
+  assert.doesNotMatch(migrationFailureSummary('ledger_read', { errorCode: 'TOKEN', message: 'SECRET' }), /TOKEN|SECRET/);
 });

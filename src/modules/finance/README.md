@@ -10,6 +10,8 @@ Cash/transfer records, Opn checkout/webhook/refund adapter, append-only ledger/r
 
 Provider payout записывается с повторным canonical расчётом под provider/order locks; overlapping/open periods и unresolved refunds блокируются. Late pre-payout refund требует reconciliation до записи, поскольку текущая captured-period модель не описывает такую allocation полностью.
 
+Отчёт и unsigned sign-off проверяют пересечение периода для активных броней и оплаченных отмен. Пока распределение суммы по периодам не определено, возвращается conflict вместо потери удержанной выручки. Неоплаченные отмены и депозиты не создают ложный блокер; подписанная история не переписывается.
+
 ## Что остаётся
 
 Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Launch-readiness согласован с PAYMENT_PROVIDER=opn и реальной public/secret key конфигурацией; live charge/refund остаётся отдельной проверкой.

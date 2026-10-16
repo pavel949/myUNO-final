@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.ts';
 
 export const PROJECT_REF = 'burcnghheyzbzffzgmjz';
 export const APPROVED_PENDING = new Set([
@@ -36,6 +37,17 @@ export function assertProductionTarget(value) {
   }
 }
 
+/** Keep Prisma queries and its migration subprocess on the same IPv4 session route. */
+export function productionMigrationConnection(value) {
+  // Validate before normalization: runtime compatibility must never turn a
+  // foreign project, transaction pooler or malformed input into a release target.
+  assertProductionTarget(value);
+  const resolved = resolveDatabaseUrl(value);
+  // The runtime host override is configuration, not authority to change targets.
+  assertProductionTarget(resolved);
+  return resolved;
+}
+
 export function checkMigrationLedger(files, rows, requireComplete = false) {
   if (rows.some(row => !row.finished_at && !row.rolled_back_at)) throw new Error('Unfinished migration requires operator recovery');
   const finished = new Map(rows.filter(row => row.finished_at && !row.rolled_back_at).map(row => [row.migration_name, row]));
@@ -60,6 +72,9 @@ export function checkMigrationLedger(files, rows, requireComplete = false) {
 export function migrationFailureSummary(stage, error) {
   const stages = new Set(['ledger_read', 'ledger_policy', 'snapshot_before', 'migrate', 'ledger_verify', 'snapshot_after']);
   const safeStage = stages.has(stage) ? stage : 'unknown';
-  const code = typeof error?.code === 'string' && (/^P[0-9]{4}$/.test(error.code) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(error.code)) ? error.code : 'unclassified';
+  // PrismaClientInitializationError uses errorCode, unlike known query errors.
+  // Inspect only these bounded codes; never fall back to parsing the message.
+  const code = [error?.code, error?.errorCode].find(value => typeof value === 'string'
+    && (/^P[0-9]{4}$/.test(value) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(value))) ?? 'unclassified';
   return `Production migration/verification failed: stage=${safeStage}; code=${code}. Inspect the release configuration and ledger; no automatic history repair attempted.`;
 }

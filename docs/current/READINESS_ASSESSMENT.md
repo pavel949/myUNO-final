@@ -73,3 +73,6 @@ Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a2432762
 
 
 Продолжение release hardening: migration read и Prisma CLI используют тот же canonical session resolver, что приложение, с проверкой target до и после преобразования. Это устраняет различие raw direct URL/IPv4 session path; фактическая причина последнего ledger_read failure и успешность миграции до повторного protected run остаются not confirmed. Две новые transport policy regressions входят в7 passed локальных policy tests. Общая оценка8.5/5 сохраняется.
+
+
+Повторный release38932599598 на main1ffa40f6 снова остановился на ledger_read/unclassified до SQL после успешного backup/restore. Значит, общий session resolver сам по себе не подтвердил устранение actual failure. Следующий пакет добавляет только read-only preflight и безопасные фиксированные категории неизвестных Prisma errors; до фактического successful migration повышение production score не обосновано. Оценка остаётся8.5/5.

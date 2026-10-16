@@ -42,10 +42,16 @@ export function productionMigrationConnection(value) {
   // Validate before normalization: runtime compatibility must never turn a
   // foreign project, transaction pooler or malformed input into a release target.
   assertProductionTarget(value);
-  const resolved = resolveDatabaseUrl(value);
+  if (process.env.DATABASE_POOLER_HOST && !/^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/.test(process.env.DATABASE_POOLER_HOST)) {
+    throw new Error('Refusing an invalid migration session host override');
+  }
+  const resolved = new URL(resolveDatabaseUrl(value));
+  // A reviewed workflow may choose the project's alternate session cluster.
+  // Apply that explicit route to already-pooled URLs as well as direct ones.
+  if (process.env.DATABASE_POOLER_HOST) resolved.hostname = process.env.DATABASE_POOLER_HOST;
   // The runtime host override is configuration, not authority to change targets.
-  assertProductionTarget(resolved);
-  return resolved;
+  assertProductionTarget(resolved.toString());
+  return resolved.toString();
 }
 
 export function checkMigrationLedger(files, rows, requireComplete = false) {
@@ -76,5 +82,23 @@ export function migrationFailureSummary(stage, error) {
   // Inspect only these bounded codes; never fall back to parsing the message.
   const code = [error?.code, error?.errorCode].find(value => typeof value === 'string'
     && (/^P[0-9]{4}$/.test(value) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(value))) ?? 'unclassified';
-  return `Production migration/verification failed: stage=${safeStage}; code=${code}. Inspect the release configuration and ledger; no automatic history repair attempted.`;
+  const kinds = new Set(['PrismaClientInitializationError', 'PrismaClientKnownRequestError', 'PrismaClientUnknownRequestError', 'PrismaClientValidationError', 'PrismaClientRustPanicError', 'Error']);
+  const kind = kinds.has(error?.name) ? error.name : 'unknown';
+  return `Production migration/verification failed: stage=${safeStage}; code=${code}; kind=${kind}; category=${migrationFailureCategory(error)}. Inspect the release configuration and ledger; no automatic history repair attempted.`;
+}
+
+/** Fixed diagnostic buckets only: no captured text or extracted secret reaches logs. */
+export function migrationFailureCategory(error) {
+  const message = typeof error?.message === 'string'
+    ? error.message.replace(/postgres(?:ql)?:\/\/[^\s)]+/gi, '[connection]') : '';
+  if (/^(Unfinished migration|Migration checksum mismatch|Unexpected pending migration|Migration ledger is incomplete)/.test(message)) return 'ledger_policy_rejected';
+  if (/tenant or user not found/i.test(message)) return 'pooler_tenant_rejected';
+  if (/circuit breaker open|too many authentication errors/i.test(message)) return 'pooler_auth_circuit_open';
+  if (/password authentication failed|authentication failed against database/i.test(message)) return 'authentication_rejected';
+  if (/maxclientsinsessionmode|max clients reached|remaining connection slots/i.test(message)) return 'pool_capacity';
+  if (/permission denied for (?:table )?["']?_prisma_migrations/i.test(message)) return 'ledger_permission_denied';
+  if (/can.t reach database server|network is unreachable|connection refused|getaddrinfo/i.test(message)) return 'network_unreachable';
+  if (/ssl error|tls handshake|error opening a tls connection|certificate verif(?:y|ication) failed/i.test(message)) return 'tls_failure';
+  if (/timed out|timeout/i.test(message)) return 'connection_timeout';
+  return 'unclassified';
 }

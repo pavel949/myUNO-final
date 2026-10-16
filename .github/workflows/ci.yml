@@ -47,7 +47,7 @@ jobs:
         run: node --test scripts/content-review-gate-policy.test.mjs
 
       - name: Test production migration safety policy
-        run: node --test scripts/production-migration-policy.test.mjs
+        run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs
 
       - name: Test backup connection and restore policy
         run: node --test scripts/backup-policy.test.mjs

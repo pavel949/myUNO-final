@@ -1,6 +1,6 @@
 # Текущее устройство myUNO
 
-Сверка исходников 2026-10-16, main `436dd93567e4647e15c04fdafea850e0e103bf3a`. Production не проверен. Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
+Сверка исходников 2026-10-16, main `712fbc1f191eca246390ab1313e55805232b2e45`. Production не проверен. Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
 
 ## Границы приложения
 
@@ -24,7 +24,7 @@ Area → Project → optional ProjectStructureNode → InventoryCategory → Uni
 | Публикация | `/property/onboard`, `/property/listings`, admin submissions | Draft → review/convert → readiness → activation; нет автоматической публикации любого draft |
 | Сотрудник | `/property/create`, `/property/content`, `/property/pricing`, `/property/booking-mode` | Scoped creation/proposals, тарифы и booking mode с отдельными полномочиями |
 | PMS | `/ops`, `/ops/calendar`, `/ops/reservations`, `/ops/spaces` | Общая Booking projection; календарь не второй источник броней |
-| Уборка/ремонт | `/ops/housekeeping`, `/ops/maintenance`, `/ops/tasks` | Task transitions, turnover/inspection readiness, preventive maintenance |
+| Уборка/ремонт | `/ops/housekeeping`, `/ops/maintenance`, `/ops/tasks` | Task transitions, turnover/inspection readiness, blocking maintenance запрещает заезд и сохраняется после уборки, preventive maintenance |
 | Владельцы/MC | `/owner`, `/owner/statements`, `/mc/portfolio` | Scope-based portfolio, owner stays, отчёты/sign-off, bookings/compliance |
 | Продажи | `/homes`, `/buying`, `/app/admin/crm` | Commercial discovery, leads/opportunities/deals; не автоматическая юридическая сделка |
 | Услуги | `/services`, `/services/orders`, `/provider` | Project/stay/standalone order, payment, accept, fulfillment, refund/review |
@@ -45,6 +45,8 @@ Cash/transfer — запись подтверждённого сотрудник
 ## Коммуникации, фоновые работы и федерация
 
 Email использует Resend; без конфигурации dev может писать в console. Internal notifications/messages имеют in-process SSE buses: доставка между несколькими function instances не обеспечивается общим broker. WhatsApp/Telegram integration records не являются реализацией отправки.
+
+Production migration workflow требует successful push CI на точном main SHA, успешный backup/restore, approved pending migrations/checksums и financial parity; deployment остаётся отдельным действием.
 
 10 registry jobs покрывают booking lifecycle, TM30 escalation, iCal sync, verification deadlines, retention, metrics rollup, guest lifecycle, service expiry, deposit release, preventive maintenance. GitHub scheduler вызывает frequent slot каждые 5 минут и nightly в 19:00 UTC; Vercel содержит daily backup slots и отдельный media import cron. Факт запуска подтверждается JobRun, не наличием yaml.
 

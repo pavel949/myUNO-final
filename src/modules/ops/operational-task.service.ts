@@ -12,6 +12,7 @@ export type UnitReadinessState =
   | 'ready'
   | 'needs_cleaning'
   | 'needs_inspection'
+  | 'blocked'
   | 'in_progress';
 
 export async function ensureTurnoverTasksForCheckout(
@@ -57,7 +58,10 @@ export async function assertUnitReadyForCheckIn(
   const blockers = await db.operationalTask.findMany({
     where: {
       unitId,
-      taskType: { in: ['turnover_cleaning', 'turnover_inspection'] },
+      OR: [
+        { taskType: { in: ['turnover_cleaning', 'turnover_inspection'] } },
+        { blocksInventory: true },
+      ],
       status: { in: OPEN_STATUSES },
     },
     select: { id: true, taskType: true, status: true, dueAt: true },
@@ -127,13 +131,17 @@ export async function getUnitReadinessMap(
       unitId: { in: unitIds },
       status: { in: OPEN_STATUSES },
     },
-    select: { unitId: true, taskType: true, status: true },
+    select: { unitId: true, taskType: true, status: true, blocksInventory: true },
   });
 
   for (const task of tasks) {
     const current = result[task.unitId] ?? { state: 'ready' as const, openTaskCount: 0 };
     current.openTaskCount += 1;
-    if (task.status === 'in_progress' || task.status === 'inspected') {
+    if (task.blocksInventory && !['turnover_cleaning', 'turnover_inspection'].includes(task.taskType)) {
+      current.state = 'blocked';
+    } else if (current.state === 'blocked') {
+      // Completing cleaning cannot clear an independent maintenance blocker.
+    } else if (task.status === 'in_progress' || task.status === 'inspected') {
       current.state = 'in_progress';
     } else if (current.state !== 'in_progress' && task.taskType === 'turnover_cleaning') {
       current.state = 'needs_cleaning';

@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Reference revision needs full history, not the synthetic PR merge.
 
       - uses: actions/setup-node@v4
         with:
@@ -40,6 +42,9 @@ jobs:
 
       - name: Test platform inventory discovery
         run: npm run audit:inventory:test
+
+      - name: Test production migration safety policy
+        run: node --test scripts/production-migration-policy.test.mjs
 
       - name: Test Claude Code guard hook
         run: npm run agents:guard:test

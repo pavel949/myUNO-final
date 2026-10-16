@@ -1,6 +1,6 @@
 # Реализованное, незавершённое и проверки
 
-Дата 2026-10-16; main `436dd93567e4647e15c04fdafea850e0e103bf3a`. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
+Дата 2026-10-16; main `712fbc1f191eca246390ab1313e55805232b2e45`. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
 
 ## Как читать статус
 

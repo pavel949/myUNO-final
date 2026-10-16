@@ -31,3 +31,9 @@ Repository pavel949/myUNO-final, main 436dd93567e4647e15c04fdafea850e0e103bf3a. 
 | Full app tests/build/DB/browser acceptance | Локально не запускались для documentation/tooling change; CI результат фиксируется отдельно |
 
 Статический результат: 174 pages, 247 handlers (244 API), 21 module directories (20 runtime + workflows tests), 118 Prisma models, 94 migrations, 547 test files, 0 normalized route collisions. Это количество файлов/определений, не успешных runtime checks.
+
+## Обновление по новому main и CI
+
+Включён main PR #291 (712fbc1f): maintenance blocks check-in/readiness и production-migration safety workflow. Точный SHA текущего code baseline генерируется в REFERENCE. Новые датированные отчёты production-pms-2026-10-16 включены как evidence указанного там окружения, не независимая повторная проверка production.
+
+Первый CI PR #292 выявил зависимость revision generator от shallow checkout: synthetic merge SHA ошибочно принимался за последний runtime commit. Исправлено full-history checkout, требование не ослаблено. Browser acceptance на b16b562da796577bdbdc0a35923bcfba7f51ba80 прошёл; новый состав требует нового CI/browser run.

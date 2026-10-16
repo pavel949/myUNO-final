@@ -1,6 +1,6 @@
 # myUNO — Property, Hospitality & Services OS
 
-**Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Срез реализации: `436dd93567e4647e15c04fdafea850e0e103bf3a`. Это описание исходников; состояние production в рамках этой сверки не проверялось.
+**Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Срез реализации: `712fbc1f191eca246390ab1313e55805232b2e45`. Это описание исходников; состояние production в рамках этой сверки не проверялось.
 
 myUNO объединяет поиск жилья, прямое бронирование, проживание, PMS, владельцев, управляющих, CRM, услуги и финансовый учёт Ignatev Estate. Один физический объект и одна Identity связывают эти процессы. Внутри — Next.js modular monolith с PostgreSQL; публичные страницы и рабочие кабинеты работают в одном приложении.
 
@@ -77,7 +77,7 @@ Provision применяет миграции и seed реестров config/co
 | `prisma/schema.prisma` | 118 моделей; источник точных полей и связей |
 | `prisma/migrations/` | 94 SQL-миграции; наличие в Git не доказывает применение |
 | `scripts/` | Provision, audit, verification, import, browser acceptance и maintenance |
-| `.github/workflows/` | CI, isolated browser acceptance, scheduler, backup |
+| `.github/workflows/` | CI, isolated browser acceptance, scheduler, backup, protected production migration |
 | `docs/current/` | Текущее состояние и воспроизводимый справочник |
 | `docs/canonical/` | Целевые требования; требования не считаются автоматически реализованными |
 | `legacy/` | Справочные материалы; не runtime приложения |

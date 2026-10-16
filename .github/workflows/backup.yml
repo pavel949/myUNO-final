@@ -29,8 +29,10 @@
 #   CREATE ROLE backup_reader LOGIN PASSWORD '<generated>';
 #   GRANT pg_read_all_data TO backup_reader;
 #
-# `pg_read_all_data` (Postgres 14+) reads through row-level security without
-# needing ownership, which is what a dump requires and nothing more. A
+# `pg_read_all_data` (Postgres 14+) does NOT bypass row-level security. The
+# operator must separately provision reviewed all-row backup access for RLS
+# tables and prove the restore. Do not add public Data API policies or use
+# --enable-row-security to turn an incomplete dump into a passing backup. A
 # compromised backup credential then leaks a copy of the data — bad — but
 # cannot alter or destroy the live database, which is worse.
 #
@@ -59,6 +61,15 @@ on:
     # a half-finished night.
     - cron: '0 20 * * *'
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      BACKUP_DATABASE_URL:
+        required: true
+      BACKUP_PASSPHRASE:
+        required: true
+
+permissions:
+  contents: read
 
 concurrency:
   group: backup
@@ -91,6 +102,35 @@ jobs:
       PG_PORT: 5433
 
     steps:
+      - name: Check required configuration
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=0
+          [ -n "$BACKUP_DATABASE_URL" ] || { echo "::error::Secret BACKUP_DATABASE_URL is not set."; missing=1; }
+          [ -n "$BACKUP_PASSPHRASE" ]   || { echo "::error::Secret BACKUP_PASSPHRASE is not set."; missing=1; }
+          exit $missing
+
+      - name: Validate production backup target
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          from urllib.parse import urlparse, unquote
+          try:
+              u = urlparse(os.environ['BACKUP_DATABASE_URL'])
+              ref = 'burcnghheyzbzffzgmjz'
+              direct = u.hostname == f'db.{ref}.supabase.co'
+              pooler = (u.hostname or '').endswith('.pooler.supabase.com') and unquote(u.username or '').endswith('.' + ref)
+              valid = u.scheme in ('postgres', 'postgresql') and (direct or pooler) and u.port in (None, 5432) and u.path == '/postgres'
+          except Exception:
+              valid = False
+          if not valid:
+              sys.exit('Backup must target the canonical production project over a direct/session connection.')
+          PY
+
       - name: Install the Postgres 17 client
         run: |
           set -euo pipefail
@@ -115,28 +155,19 @@ jobs:
           # Ubuntu's pg_wrapper may otherwise pick its older default (16) even
           # after client-17 is installed. Use explicit 17 binaries throughout.
 
-      - name: Check required configuration
-        env:
-          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
-        run: |
-          missing=0
-          [ -n "$BACKUP_DATABASE_URL" ] || { echo "::error::Secret BACKUP_DATABASE_URL is not set."; missing=1; }
-          [ -n "$BACKUP_PASSPHRASE" ]   || { echo "::error::Secret BACKUP_PASSPHRASE is not set."; missing=1; }
-          exit $missing
-
       - name: Dump the production database
         env:
           # Passed via PGPASSWORD-style URL in the environment, never on the
           # command line — argv is visible to anything that can list processes.
-          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          PGDATABASE: ${{ secrets.BACKUP_DATABASE_URL }}
+          PGOPTIONS: '-c default_transaction_read_only=on'
         run: |
           set -euo pipefail
           # Custom format: compressed, and restorable selectively, which is
           # what makes a partial recovery ("just the ledger") possible.
           # --no-owner / --no-privileges so the dump restores into a scratch
           # database whose roles do not exist.
-          /usr/lib/postgresql/17/bin/pg_dump "$BACKUP_DATABASE_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump \
             --format=custom \
             --no-owner \
             --no-privileges \

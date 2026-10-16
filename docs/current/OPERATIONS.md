@@ -14,7 +14,7 @@
 
 Node 20 (как в CI), npm lockfile, PostgreSQL. `npm ci` → настроить локальную .env → Supabase-compatible test roles → migrate/provision → dev. Полные команды — [CONTRIBUTING](../../CONTRIBUTING.md).
 
-CI поднимает disposable PostgreSQL 16, создаёт совместимые роли, применяет реальную migration chain, проверяет drift/Data API grants, выполняет tests/lint/production typecheck/build. Browser acceptance поднимает отдельную БД и production app, использует synthetic seed и egress guard. Backup restore использует PostgreSQL 17. Это разные назначения, не доказательство версии live DB.
+CI использует full Git checkout (fetch-depth=0) для точного revision справочника и поднимает disposable PostgreSQL 16, создаёт совместимые роли, применяет реальную migration chain, проверяет drift/Data API grants, выполняет tests/lint/production typecheck/build. Browser acceptance поднимает отдельную БД и production app, использует synthetic seed и egress guard. Backup restore использует PostgreSQL 17; production-migration runner — Node 24. Это разные назначения, не доказательство версии live DB.
 
 ## 3. База и миграции
 
@@ -24,8 +24,10 @@ Runtime resolver может переписать direct Supabase host/transactio
 
 Перед schema rollout: проверить target host/database и backup, изучить SQL и совместимость старого/new app, применить forward-only migrations, сверить drift/history и grants/RLS. Не запускать db push или массовый migrate resolve. Failed migration требует исследования фактической схемы и точечного восстановления; `db:repair` не является обязательным или автоматическим шагом.
 
+Следующие команды — provisioning локального/изолированного окружения. Production schema rollout — через `.github/workflows/production-migration.yml`, а не обход его safety gate. Workflow требует exact-main successful push CI, вызывает reusable backup, затем protected production job: target validation, unchanged main, BACKUP_VERIFIED_SHA, pending allowlist/checksums, Prisma migrate deploy и financial snapshot parity. Config/content seed остаётся отдельным reviewed шагом. Допуск новых migrations меняется только после review policy.
+
 ```bash
-# DATABASE_URL уже установлен безопасным способом для нужного окружения.
+# DATABASE_URL уже установлен безопасным способом для изолированного окружения.
 npx prisma migrate status
 node scripts/provision-database.mjs
 npx prisma migrate status
@@ -60,7 +62,7 @@ Provision запускает migrate deploy, seed-registries, затем счи�
 1. Зафиксировать main SHA, содержимое открытых PR и scope; проверить CI на точном SHA.
 2. Для schema change подготовить reviewed migration, backup/restore evidence и expand/contract rollout; проверить compatibility.
 3. На изолированном окружении выполнить schema/config, build и затронутые browser/API процессы.
-4. Отдельно применить production schema/config согласованным rollout. Ни install, ни Vercel deploy этого не делают.
+4. Отдельно выполнить production-migration workflow с успешным exact-SHA backup/restore; seed config/content применить отдельно согласованным rollout. Ни install, ни Vercel deploy этого не делают.
 5. Создать явный Vercel production deployment из нужного main SHA или проверенного эквивалентного checkout. Для CLI использовать установленную актуальную версию и её `--help`; не считать merge триггером.
 6. Проверить deployment ready, source SHA, production alias, `/api/health`, страницы и затронутый процесс. Не отправлять тестовые письма/платежи реальным людям без отдельной авторизации.
 7. Записать environment, commit/deployment, migration state, tests, runtime result и оставшиеся ограничения.

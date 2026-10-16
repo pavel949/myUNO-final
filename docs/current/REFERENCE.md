@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `436dd93567e4647e15c04fdafea850e0e103bf3a`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `712fbc1f191eca246390ab1313e55805232b2e45`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -6103,12 +6103,13 @@ model RateLimitBucket {
 | `ADMIN_PASSWORD` | [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>) |
 | `ALERT_WEBHOOK_URL` | [src/lib/observability.ts](<../../src/lib/observability.ts>), [.env.example](<../../.env.example>) |
 | `APP_BASE_URL` | [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>) |
-| `BACKUP_DATABASE_URL` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
-| `BACKUP_PASSPHRASE` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
+| `BACKUP_DATABASE_URL` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
+| `BACKUP_PASSPHRASE` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
 | `BACKUP_S3_BUCKET` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_S3_KEY_ID` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_S3_REGION` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_S3_SECRET` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
+| `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
 | `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
@@ -6116,11 +6117,12 @@ model RateLimitBucket {
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
-| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/check-content-review-gate.mjs](<../../scripts/check-content-review-gate.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/check-content-review-gate.mjs](<../../scripts/check-content-review-gate.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
-| `GITHUB_SHA` | [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>) |
+| `GITHUB_REF` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
+| `GITHUB_SHA` | [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `GOOGLE_CLIENT_SECRET` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [.env.example](<../../.env.example>) |
 | `ICAL_FEED_SECRET` | [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [.env.example](<../../.env.example>) |
 | `LAYANTARA_MEDIA_WRITE` | [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>) |
@@ -6712,6 +6714,7 @@ model RateLimitBucket {
 - [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>)
 - [.github/workflows/browser-acceptance.yml](<../../.github/workflows/browser-acceptance.yml>)
 - [.github/workflows/ci.yml](<../../.github/workflows/ci.yml>)
+- [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>)
 - [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>)
 - [package.json](<../../package.json>)
 - [package-lock.json](<../../package-lock.json>)

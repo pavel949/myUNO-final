@@ -230,3 +230,11 @@
 | [verification/guest-tm30-snapshot-20261012.md](<verification/guest-tm30-snapshot-20261012.md>) | reference |
 
 Документы вне docs/: README/PROJECT/AGENTS/CLAUDE/CONTRIBUTING/SECURITY и deployment entry points находятся в корне. Каждый module README ссылается на текущую матрицу и полный reference. Design HTML/images, SQL и binary artifacts — reference/evidence; их содержание не является production instruction.
+
+- [audits/production-pms-2026-10-16/BASELINE.md](audits/production-pms-2026-10-16/BASELINE.md) — historical evidence.
+- [audits/production-pms-2026-10-16/DATA_RECONCILIATION.md](audits/production-pms-2026-10-16/DATA_RECONCILIATION.md) — historical evidence.
+- [audits/production-pms-2026-10-16/FLOW_MATRIX.md](audits/production-pms-2026-10-16/FLOW_MATRIX.md) — historical evidence.
+- [audits/production-pms-2026-10-16/GAPS.md](audits/production-pms-2026-10-16/GAPS.md) — historical evidence.
+- [audits/production-pms-2026-10-16/RELEASE_EVIDENCE.md](audits/production-pms-2026-10-16/RELEASE_EVIDENCE.md) — historical evidence.
+- [audits/production-pms-2026-10-16/SOURCE_OF_TRUTH.md](audits/production-pms-2026-10-16/SOURCE_OF_TRUTH.md) — historical evidence.
+- [audits/production-pms-2026-10-16/SURFACE_MAP.md](audits/production-pms-2026-10-16/SURFACE_MAP.md) — historical evidence.

@@ -330,7 +330,7 @@ export function WorkspaceTabs() {
             const active = isWorkspaceTabActive(tab, navigation, pathname, search);
             const className = `flex min-h-64 w-full min-w-0 flex-col items-center justify-center gap-4 rounded-md px-4 py-8 text-center text-small ${FOCUS_STYLE} ${active
               ? 'font-semibold text-brand-andaman' : 'text-text-secondary hover:text-brand-andaman'}`;
-            const content = <><NavigationIcon id={tab.id} /><span className="w-full break-words leading-tight">{labels[tab.labelKey]}</span></>;
+            const content = <><NavigationIcon id={tab.id} /><span className="w-full break-words text-[11px] leading-tight">{labels[tab.labelKey]}</span></>;
             return (
               <li key={tab.id} className="min-w-0 flex-1">
                 {tab.href ? (

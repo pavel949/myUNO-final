@@ -52,7 +52,7 @@ try {
     const plan = restorePlan(run(binary, ['--list', 'dump.pgc'], env));
     for (const name of plan.missingExtensions) run(process.env.PSQL_BIN || 'psql', ['-X', '-v', 'ON_ERROR_STOP=1', '-c', `CREATE EXTENSION IF NOT EXISTS ${quote(name)} WITH SCHEMA public`], env);
     await writeFile('restore-list.txt', plan.list, { mode: 0o600 });
-    run(binary, ['--no-owner', '--no-privileges', '--exit-on-error', '--use-list=restore-list.txt', 'dump.pgc'], env);
+    run(binary, [`--dbname=${env.PGDATABASE}`, '--no-owner', '--no-privileges', '--exit-on-error', '--use-list=restore-list.txt', 'dump.pgc'], env);
     db = new PrismaClient({ datasources: { db: { url } } });
     await db.$executeRawUnsafe("SET TIME ZONE 'UTC'");
     const expected = JSON.parse(await readFile('backup-manifest.json', 'utf8'));

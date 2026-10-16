@@ -254,6 +254,7 @@ export default async function UnifiedStayCalendarPage({
       'staff.unified_calendar.needs_cleaning': 'Needs cleaning',
       'staff.unified_calendar.needs_inspection': 'Needs inspection',
       'staff.unified_calendar.in_progress': 'In progress',
+      'staff.unified_calendar.blocked': 'Blocked by operational work',
       'staff.unified_calendar.channel_health': 'Channels',
       'staff.unified_calendar.homes': 'Homes',
       'staff.unified_calendar.channel_state.healthy': 'Healthy',

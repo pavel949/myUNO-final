@@ -18,7 +18,7 @@ interface UnitRow {
   categoryId: string | null;
   categoryName: string;
   sellable: boolean;
-  readiness: 'ready' | 'needs_cleaning' | 'needs_inspection' | 'in_progress';
+  readiness: 'ready' | 'needs_cleaning' | 'needs_inspection' | 'in_progress' | 'blocked';
   openTaskCount: number;
   channelState: 'healthy' | 'delayed' | 'error' | 'connected' | 'manual_only';
   channelRows: Array<{

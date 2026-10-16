@@ -30,13 +30,32 @@ describe('launch readiness (environment facts)', () => {
     expect(items.find((i) => i.id === 'card_payments')?.blocking).toBe(false);
   });
 
-  it('treats the scheduler as ready only in external mode, and cards only with provider and all three keys', () => {
-    const base = { SCHEDULER_MODE: 'vercel-daily', PAYMENT_PROVIDER: 'omise', OMISE_PUBLIC_KEY: 'p', OMISE_SECRET_KEY: 's' };
+  it('treats the scheduler as ready only in external mode, and cards only with an implemented provider and usable credentials', () => {
+    const base = { SCHEDULER_MODE: 'vercel-daily', PAYMENT_PROVIDER: 'opn', OMISE_PUBLIC_KEY: 'p', OMISE_SECRET_KEY: '' };
     const get = (env: Record<string, string>, id: string) => evaluateEnvReadiness(env).find((i) => i.id === id)?.state;
     expect(get(base, 'scheduler_mode')).toBe('action');
     expect(get(base, 'card_payments')).toBe('action');
     expect(get({ ...base, SCHEDULER_MODE: 'external', OMISE_WEBHOOK_SECRET: 'w' }, 'scheduler_mode')).toBe('ok');
-    expect(get({ ...base, OMISE_WEBHOOK_SECRET: 'w' }, 'card_payments')).toBe('ok');
+    expect(get({ ...base, OMISE_SECRET_KEY: 'skey_test_synthetic' }, 'card_payments')).toBe('ok');
+  });
+
+  it('recognises only the implemented Opn provider and the webhook API verification path', () => {
+    const configured = { PAYMENT_PROVIDER: 'opn', OMISE_PUBLIC_KEY: 'pkey_test_synthetic', OMISE_SECRET_KEY: 'skey_test_synthetic' };
+    const card = (env: Record<string, string>) => evaluateEnvReadiness(env).find(row => row.id === 'card_payments')?.state;
+    expect(card(configured)).toBe('ok');
+    for (const provider of ['omise', 'stripe', 'mock']) expect(card({ ...configured, PAYMENT_PROVIDER: provider })).toBe('action');
+    expect(card({ ...configured, OMISE_SECRET_KEY: '' })).toBe('action');
+    expect(card({ ...configured, OMISE_SECRET_KEY: 'skey_live_synthetic', NODE_ENV: 'test' })).toBe('action');
+  });
+
+  it('recognises durable Blob token or deployment OIDC storage, never a local store ID alone', () => {
+    const storage = (env: Record<string, string>) => evaluateEnvReadiness(env).find(row => row.id === 'media_storage')?.state;
+    expect(storage({ BLOB_READ_WRITE_TOKEN: 'synthetic-token' })).toBe('ok');
+    expect(storage({ VERCEL_OIDC_TOKEN: 'synthetic-oidc', BLOB_STORE_ID: 'store_example' })).toBe('ok');
+    expect(storage({ BLOB_STORE_ID: 'store_example' })).toBe('action');
+    expect(storage({ VERCEL_OIDC_TOKEN: 'synthetic-oidc' })).toBe('action');
+    expect(storage({ BLOB_READ_WRITE_TOKEN: '   ' })).toBe('action');
+    expect(storage({ VERCEL_OIDC_TOKEN: 'synthetic-oidc', BLOB_STORE_ID: '../foreign' })).toBe('action');
   });
 
   it('keeps catalogue names unique and valid', () => {

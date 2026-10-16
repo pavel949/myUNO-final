@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `712fbc1f191eca246390ab1313e55805232b2e45`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `1124919b5071249f60ca2aa73731398e250221f4`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -11,10 +11,10 @@
 | Объект | Количество |
 |---|---:|
 | pages | 174 |
-| handlers | 247 |
-| apiHandlers | 244 |
+| handlers | 248 |
+| apiHandlers | 245 |
 | modules | 21 |
-| tests | 547 |
+| tests | 553 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -430,6 +430,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/service-orders/[id]/accept` | POST | [src/app/api/service-orders/[id]/accept/route.ts](<../../src/app/api/service-orders/[id]/accept/route.ts>) |
 | `/api/service-orders/[id]/cancel` | POST | [src/app/api/service-orders/[id]/cancel/route.ts](<../../src/app/api/service-orders/[id]/cancel/route.ts>) |
 | `/api/service-orders/[id]/checkout` | POST | [src/app/api/service-orders/[id]/checkout/route.ts](<../../src/app/api/service-orders/[id]/checkout/route.ts>) |
+| `/api/service-orders/[id]/confirm` | POST | [src/app/api/service-orders/[id]/confirm/route.ts](<../../src/app/api/service-orders/[id]/confirm/route.ts>) |
 | `/api/service-orders/[id]/decline` | POST | [src/app/api/service-orders/[id]/decline/route.ts](<../../src/app/api/service-orders/[id]/decline/route.ts>) |
 | `/api/service-orders/[id]/fulfil` | POST | [src/app/api/service-orders/[id]/fulfil/route.ts](<../../src/app/api/service-orders/[id]/fulfil/route.ts>) |
 | `/api/service-orders/[id]/no-show` | POST | [src/app/api/service-orders/[id]/no-show/route.ts](<../../src/app/api/service-orders/[id]/no-show/route.ts>) |
@@ -556,18 +557,19 @@ Exports перечислены синтаксически, без вывода �
 
 ### comms
 
-Файлов: 27; тестовых файлов: 12. [Описание](../../src/modules/comms/README.md).
+Файлов: 30; тестовых файлов: 14. [Описание](../../src/modules/comms/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
 | [src/modules/comms/announcement.service.ts](<../../src/modules/comms/announcement.service.ts>) | implementation | `resolvePostingAuthority`, `getPostableProjects`, `createAnnouncement`, `publishAnnouncement`, `unpublishAnnouncement`, `updateAnnouncement`, `deleteAnnouncement`, `getProjectAnnouncements`, `markAnnouncementRead`, `getUnreadCount`, `inStayGuestIdentityIds` |
 | [src/modules/comms/booking-thread-access.ts](<../../src/modules/comms/booking-thread-access.ts>) | implementation | `getBookingThreadParticipants` |
 | [src/modules/comms/comms.service.ts](<../../src/modules/comms/comms.service.ts>) | implementation | `createNotification`, `markNotificationRead`, `getUnreadNotifications`, `getRecentNotifications`, `isNotificationMuted`, `setNotificationMute` |
-| [src/modules/comms/dispute.service.ts](<../../src/modules/comms/dispute.service.ts>) | implementation | `raiseDispute`, `decideDispute`, `getOpenDisputes`, `getDisputeDetail` |
-| [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>) | implementation | `redactEmail`, `sendEmail`, `buildNotificationEmail` |
+| [src/modules/comms/dispute.service.ts](<../../src/modules/comms/dispute.service.ts>) | implementation | `DisputeRequestError`, `raiseDispute`, `decideDispute`, `getOpenDisputes`, `getDisputeDetail` |
+| [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>) | implementation | `redactEmail`, `EmailDeliveryRetryableError`, `sendEmail`, `buildNotificationEmail` |
 | [src/modules/comms/index.ts](<../../src/modules/comms/index.ts>) | barrel | см. исходник |
 | [src/modules/comms/inquiry-thread-access.ts](<../../src/modules/comms/inquiry-thread-access.ts>) | implementation | `getInquiryThreadRecipients`, `getInquiryThreadAudience`, `materializeInquiryThreadAudience`, `synchronizeInquiryParticipant` |
 | [src/modules/comms/lead.service.ts](<../../src/modules/comms/lead.service.ts>) | implementation | `LEAD_AUDIENCES`, `submitLead` |
+| [src/modules/comms/notification-delivery.ts](<../../src/modules/comms/notification-delivery.ts>) | implementation | `QUEUED_DELIVERY`, `dispatchNotificationDelivery`, `flushPendingNotificationDeliveries` |
 | [src/modules/comms/notification.bus.ts](<../../src/modules/comms/notification.bus.ts>) | implementation | `subscribe`, `publishNotification`, `hasSubscribers` |
 | [src/modules/comms/standalone-ticket-access.ts](<../../src/modules/comms/standalone-ticket-access.ts>) | implementation | `orderResponsibleOrganization`, `hasResponsibleOrganizationSupportAccess`, `standaloneTicketAuthority` |
 | [src/modules/comms/statement-thread-access.ts](<../../src/modules/comms/statement-thread-access.ts>) | implementation | `getStatementThreadParticipants`, `hasLiveThreadAuthority`, `getAuthorizedThreadParticipants`, `canAccessThread`, `requireThreadAccess` |
@@ -743,7 +745,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### finance
 
-Файлов: 44; тестовых файлов: 21. [Описание](../../src/modules/finance/README.md).
+Файлов: 45; тестовых файлов: 22. [Описание](../../src/modules/finance/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -758,7 +760,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/finance/ledger.service.ts](<../../src/modules/finance/ledger.service.ts>) | implementation | `recordCost`, `recordBookingRevenue`, `recordRefundOut`, `recordServiceCommission`, `reverseLedgerEntry`, `getUnitLedgerEntries`, `getProjectLedgerEntries`, `getLedgerEntry`, `computeUnitLedgerTotals`, `lockUnitLedgerShared`, `lockUnitLedgerExclusive`, `LedgerCorrectionError`, `REVERSAL_REASON_MIN`, `REVERSAL_REASON_MAX`, `reverseManualCost` |
 | [src/modules/finance/manual-cost-input.ts](<../../src/modules/finance/manual-cost-input.ts>) | implementation | `MANUAL_COST_TYPES`, `MANUAL_COST_SIGN`, `MAX_COST_SATANG`, `DESCRIPTION_MIN`, `DESCRIPTION_MAX`, `EARLIEST_COST_DAY`, `ManualCostInputError`, `isIdempotencyKey`, `isManualCostType`, `isCalendarDayString`, `normalizeDescription`, `assertBusinessDay`, `businessDayToStoredDate`, `parseManualCostRequest`, `manualCostFingerprint` |
 | [src/modules/finance/manual-cost.service.ts](<../../src/modules/finance/manual-cost.service.ts>) | implementation | `ManualCostError`, `reportImpactFor`, `recordManualCost` |
-| [src/modules/finance/payout-ledger.service.ts](<../../src/modules/finance/payout-ledger.service.ts>) | implementation | `recordOwnerPayoutAtomic`, `recordProviderPayoutAtomic` |
+| [src/modules/finance/payout-ledger.service.ts](<../../src/modules/finance/payout-ledger.service.ts>) | implementation | `recordOwnerPayoutAtomic`, `ProviderPayoutConflict`, `recordProviderPayoutAtomic` |
 | [src/modules/finance/payout.service.ts](<../../src/modules/finance/payout.service.ts>) | implementation | `resolveProviderPayoutPeriod`, `getProviderRemittancesView`, `computeProviderRemittance`, `getReconciliationData`, `reconcilePayout`, `resolveFailedRefund` |
 | [src/modules/finance/provider-webhook.service.ts](<../../src/modules/finance/provider-webhook.service.ts>) | implementation | `processOpnEvent` |
 | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>) | barrel | `PaymentProviderUnavailableError`, `getPaymentProvider`, `getProviderConfig` |
@@ -810,7 +812,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### media
 
-Файлов: 15; тестовых файлов: 5. [Описание](../../src/modules/media/README.md).
+Файлов: 16; тестовых файлов: 5. [Описание](../../src/modules/media/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -822,6 +824,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/media/managed-yandex-import.ts](<../../src/modules/media/managed-yandex-import.ts>) | implementation | `MANAGED_YANDEX_SOURCES`, `importManagedYandexBatch`, `runManagedYandexImport` |
 | [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>) | implementation | `MAX_UPLOAD_BYTES`, `isAllowedImageType`, `storeMedia`, `mediaUrl` |
 | [src/modules/media/public-readiness.ts](<../../src/modules/media/public-readiness.ts>) | implementation | `MIN_PUBLIC_GALLERY_PHOTOS`, `RECOMMENDED_PUBLIC_GALLERY_PHOTOS`, `PUBLIC_PHOTO_MIME_TYPES`, `assessGalleryReadiness`, `isRepresentativeRoom`, `assessUnitMediaReadiness`, `publicMediaReadinessMessage` |
+| [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>) | implementation | `mediaStorageCredentials` |
 | [src/modules/media/video-policy.ts](<../../src/modules/media/video-policy.ts>) | implementation | `MAX_VIDEO_UPLOAD_BYTES`, `VIDEO_MIME_TYPES`, `GALLERY_UPLOAD_ACCEPT`, `VIDEO_UPLOAD_HINT`, `isAllowedVideoType`, `validVideoContent`, `validateVideoUpload` |
 
 <a id="module-onboarding"></a>
@@ -924,7 +927,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### services
 
-Файлов: 20; тестовых файлов: 10. [Описание](../../src/modules/services/README.md).
+Файлов: 23; тестовых файлов: 12. [Описание](../../src/modules/services/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -933,6 +936,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/services/project-service-offer.ts](<../../src/modules/services/project-service-offer.ts>) | implementation | `resolveProjectServiceOffer` |
 | [src/modules/services/provider-notify.ts](<../../src/modules/services/provider-notify.ts>) | implementation | `notifyProviderMembers` |
 | [src/modules/services/provider.service.ts](<../../src/modules/services/provider.service.ts>) | implementation | `createProviderApplication`, `getProviderApplications`, `approveProvider`, `rejectProvider`, `getProviderForIdentity`, `getProvider` |
+| [src/modules/services/service-order-closure.ts](<../../src/modules/services/service-order-closure.ts>) | implementation | `FULFILMENT_WINDOW_KEY`, `ServiceOrderClosureError`, `lockServiceOrder`, `fulfilmentDeadline`, `serviceOrderDeadline`, `assertServiceOrderDisputable`, `confirmServiceOrder`, `closeFulfilledServiceOrders` |
 | [src/modules/services/service-order-customer-view.ts](<../../src/modules/services/service-order-customer-view.ts>) | implementation | `getServiceOrderCustomerView`, `customerServiceTerms` |
 | [src/modules/services/service-order.service.ts](<../../src/modules/services/service-order.service.ts>) | implementation | `ServiceOrderRequestConflict`, `createServiceOrder`, `acceptServiceOrder`, `declineServiceOrder`, `fulfillServiceOrder`, `reportProviderNoShow`, `cancelServiceOrder`, `getServiceOrder`, `getServiceOrdersByProvider`, `rateServiceOrder`, `expireStaleServiceOrders` |
 | [src/modules/services/service.service.ts](<../../src/modules/services/service.service.ts>) | implementation | `pickLocalizedServiceCopy`, `createService`, `getService`, `updateService`, `getServicesByProvider`, `listPublicServices`, `getPublicMarketplaceServiceDetail`, `listPublicMarketplaceServices`, `approveService`, `rejectService`, `getServiceAverageRating` |
@@ -6110,15 +6114,16 @@ model RateLimitBucket {
 | `BACKUP_S3_REGION` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_S3_SECRET` | [.github/workflows/backup.yml](<../../.github/workflows/backup.yml>) |
 | `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
-| `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
-| `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
-| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
-| `CONTENT_REVIEW_GATE_ENABLED` | [scripts/check-content-review-gate.mjs](<../../scripts/check-content-review-gate.mjs>), [.env.example](<../../.env.example>) |
+| `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
+| `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
+| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
+| `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
-| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/check-content-review-gate.mjs](<../../scripts/check-content-review-gate.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
-| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `GITHUB_REF` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
@@ -6131,16 +6136,16 @@ model RateLimitBucket {
 | `LAYANTARA_WEBHOOK_SECRET` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
 | `LOG_SILENT` | [src/lib/observability.ts](<../../src/lib/observability.ts>), [.env.example](<../../.env.example>) |
 | `MEDIA_IMPORT_TOKEN` | [src/app/api/cron/import-managed-yandex-media/route.ts](<../../src/app/api/cron/import-managed-yandex-media/route.ts>) |
-| `MYUNO_BROWSER_ACCEPTANCE` | [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>) |
+| `MYUNO_BROWSER_ACCEPTANCE` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>) |
 | `NEXT_PUBLIC_APP_URL` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/login/google-login-button.tsx](<../../src/app/login/google-login-button.tsx>), [src/app/login/login-form.tsx](<../../src/app/login/login-form.tsx>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_MYUNO_DESTINATION` | [src/modules/destinations/index.ts](<../../src/modules/destinations/index.ts>) |
 | `NEXT_PUBLIC_VERCEL_BLOB_API_URL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
 | `NEXTAUTH_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `NEXTAUTH_URL` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/api/auth/claim/generate-link/route.ts](<../../src/app/api/auth/claim/generate-link/route.ts>), [src/app/api/auth/guest-access/route.ts](<../../src/app/api/auth/guest-access/route.ts>), [src/app/libs/bookingCancelled.ts](<../../src/app/libs/bookingCancelled.ts>), [src/app/libs/bookingConfirmed.ts](<../../src/app/libs/bookingConfirmed.ts>), [src/lib/seo.ts](<../../src/lib/seo.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>), [src/modules/booking/lifecycle.jobs.ts](<../../src/modules/booking/lifecycle.jobs.ts>), [src/modules/booking/notify-modified.ts](<../../src/modules/booking/notify-modified.ts>), [src/modules/booking/notify-request-reminder.ts](<../../src/modules/booking/notify-request-reminder.ts>), [src/modules/booking/notify-requested.ts](<../../src/modules/booking/notify-requested.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/projects/notify-owner-stay.ts](<../../src/modules/projects/notify-owner-stay.ts>), [src/modules/services/notify-order-reminder.ts](<../../src/modules/services/notify-order-reminder.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
-| `NODE_ENV` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/app/global-error.tsx](<../../src/app/global-error.tsx>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [src/middleware.ts](<../../src/middleware.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/content/content.hook.ts](<../../src/modules/content/content.hook.ts>), [src/modules/content/content.service.ts](<../../src/modules/content/content.service.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/check-content-review-gate.mjs](<../../scripts/check-content-review-gate.mjs>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
+| `NODE_ENV` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/app/global-error.tsx](<../../src/app/global-error.tsx>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [src/middleware.ts](<../../src/middleware.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/content/content.hook.ts](<../../src/modules/content/content.hook.ts>), [src/modules/content/content.service.ts](<../../src/modules/content/content.service.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
 | `OMISE_PUBLIC_KEY` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
-| `OMISE_SECRET_KEY` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
+| `OMISE_SECRET_KEY` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
 | `OMISE_WEBHOOK_SECRET` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
 | `PAYMENT_PROVIDER` | [src/app/api/webhooks/opn/route.ts](<../../src/app/api/webhooks/opn/route.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
 | `PG_DUMP_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
@@ -6157,10 +6162,10 @@ model RateLimitBucket {
 | `VERCEL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>) |
 | `VERCEL_BLOB_API_URL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
-| `VERCEL_ENV` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
-| `VERCEL_OIDC_TOKEN` | [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
+| `VERCEL_ENV` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
+| `VERCEL_OIDC_TOKEN` | [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
 | `VERCEL_PROJECT_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
-| `VERCEL_TARGET_ENV` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
+| `VERCEL_TARGET_ENV` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `VERCEL_URL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
 
 ## Все тестовые файлы
@@ -6387,6 +6392,7 @@ model RateLimitBucket {
 - [src/components/LeadForm.test.tsx](<../../src/components/LeadForm.test.tsx>)
 - [src/components/MoneyAmount.test.tsx](<../../src/components/MoneyAmount.test.tsx>)
 - [src/components/Navbar.test.tsx](<../../src/components/Navbar.test.tsx>)
+- [src/components/NotificationBell.test.tsx](<../../src/components/NotificationBell.test.tsx>)
 - [src/components/OwnerEvidenceDraftEditor.test.tsx](<../../src/components/OwnerEvidenceDraftEditor.test.tsx>)
 - [src/components/Placeholder.test.tsx](<../../src/components/Placeholder.test.tsx>)
 - [src/components/RoleContextBanner.test.tsx](<../../src/components/RoleContextBanner.test.tsx>)
@@ -6507,11 +6513,13 @@ model RateLimitBucket {
 - [src/modules/comms/announcement.service.integration.test.ts](<../../src/modules/comms/announcement.service.integration.test.ts>)
 - [src/modules/comms/delivery-truth.integration.test.ts](<../../src/modules/comms/delivery-truth.integration.test.ts>)
 - [src/modules/comms/dispute.service.integration.test.ts](<../../src/modules/comms/dispute.service.integration.test.ts>)
+- [src/modules/comms/email.seam.test.ts](<../../src/modules/comms/email.seam.test.ts>)
 - [src/modules/comms/inquiry-nonactive-participant.integration.test.ts](<../../src/modules/comms/inquiry-nonactive-participant.integration.test.ts>)
 - [src/modules/comms/inquiry-thread-access.integration.test.ts](<../../src/modules/comms/inquiry-thread-access.integration.test.ts>)
 - [src/modules/comms/inquiry-thread-access.test.ts](<../../src/modules/comms/inquiry-thread-access.test.ts>)
 - [src/modules/comms/lead.service.integration.test.ts](<../../src/modules/comms/lead.service.integration.test.ts>)
 - [src/modules/comms/messenger-delivery.integration.test.ts](<../../src/modules/comms/messenger-delivery.integration.test.ts>)
+- [src/modules/comms/notification-delivery.integration.test.ts](<../../src/modules/comms/notification-delivery.integration.test.ts>)
 - [src/modules/comms/statement-thread-access.test.ts](<../../src/modules/comms/statement-thread-access.test.ts>)
 - [src/modules/comms/thread.service.integration.test.ts](<../../src/modules/comms/thread.service.integration.test.ts>)
 - [src/modules/comms/ticket.service.integration.test.ts](<../../src/modules/comms/ticket.service.integration.test.ts>)
@@ -6598,6 +6606,7 @@ model RateLimitBucket {
 - [src/modules/finance/manual-cost-input.test.ts](<../../src/modules/finance/manual-cost-input.test.ts>)
 - [src/modules/finance/manual-cost-statement.integration.test.ts](<../../src/modules/finance/manual-cost-statement.integration.test.ts>)
 - [src/modules/finance/payout.integration.test.ts](<../../src/modules/finance/payout.integration.test.ts>)
+- [src/modules/finance/provider-payout-safety.integration.test.ts](<../../src/modules/finance/provider-payout-safety.integration.test.ts>)
 - [src/modules/finance/provider-webhook.integration.test.ts](<../../src/modules/finance/provider-webhook.integration.test.ts>)
 - [src/modules/finance/providers/opn.test.ts](<../../src/modules/finance/providers/opn.test.ts>)
 - [src/modules/finance/providers/provider-seam.test.ts](<../../src/modules/finance/providers/provider-seam.test.ts>)
@@ -6704,6 +6713,8 @@ model RateLimitBucket {
 - [src/modules/services/notify-order-reminder.integration.test.ts](<../../src/modules/services/notify-order-reminder.integration.test.ts>)
 - [src/modules/services/project-service-offer.test.ts](<../../src/modules/services/project-service-offer.test.ts>)
 - [src/modules/services/provider.service.integration.test.ts](<../../src/modules/services/provider.service.integration.test.ts>)
+- [src/modules/services/service-order-closure.integration.test.ts](<../../src/modules/services/service-order-closure.integration.test.ts>)
+- [src/modules/services/service-order-closure.test.ts](<../../src/modules/services/service-order-closure.test.ts>)
 - [src/modules/services/service-order-customer-view.integration.test.ts](<../../src/modules/services/service-order-customer-view.integration.test.ts>)
 - [src/modules/services/service-order-public-terms.test.ts](<../../src/modules/services/service-order-public-terms.test.ts>)
 - [src/modules/services/service-order.service.integration.test.ts](<../../src/modules/services/service-order.service.integration.test.ts>)

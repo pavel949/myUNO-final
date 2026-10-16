@@ -10,7 +10,7 @@ Vercel Blob upload, signed direct upload/finalization, MIME/size/signature check
 
 ## Что остаётся
 
-Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness проверяет только token и не учитывает OIDC+store, хотя upload поддерживает этот путь.
+Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness и upload используют общий parser token либо OIDC+store; наличие config не заменяет actual upload/finalize acceptance.
 
 ## Источники и сопровождение
 

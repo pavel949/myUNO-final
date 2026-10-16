@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ThreadClient from './thread-client';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
 const labels = {
   'messages.thread.loading': 'Loading conversation', 'messages.thread.not_found': 'Conversation not found',
   'messages.thread.error_generic': 'Could not send. Please try again.', 'messages.thread.back': 'Messages',
@@ -59,4 +60,27 @@ describe('conversation interrupted requests', () => {
     expect(postBodies[1]).toEqual(postBodies[0]);
     await waitFor(() => expect(input).toHaveValue(''));
   });
+});
+
+
+it('refreshes on focus and refuses a late response after access has been revoked', async () => {
+  let reads = 0;
+  let resolveOld!: (value: unknown) => void;
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url.includes('/auth/me')) return { ok: true, json: async () => ({ id: 'guest', roles: [] }) };
+    reads++;
+    if (reads === 1) return { ok: true, json: async () => ({ thread }) };
+    if (reads === 2) return new Promise(resolve => { resolveOld = resolve; });
+    return { ok: false, status: 403 };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ThreadClient threadId={thread.id} labels={labels} />);
+  await screen.findByRole('textbox', { name: 'Write a message' });
+  fireEvent(window, new Event('focus'));
+  await waitFor(() => expect(reads).toBe(2));
+  fireEvent(window, new Event('focus'));
+  await screen.findByText('Conversation not found');
+  await act(async () => resolveOld({ ok: true, json: async () => ({ thread }) }));
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith(`/api/threads/${thread.id}`, { cache: 'no-store' });
 });

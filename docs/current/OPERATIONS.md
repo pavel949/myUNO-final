@@ -8,7 +8,7 @@
 
 `vercel.json`: install `npm ci`, build `npm run build`, output `.next`, functions region `sin1`, **git.deploymentEnabled=false**. Автоматическая публикация после push/merge отключена. Preview также создаётся явным Vercel deployment и получает отдельную БД/секреты.
 
-`postinstall`: только Prisma generate. Build: Prisma generate → content review gate → Next production build. Никакого автоматического migration repair или schema rollout. Content gate пропускает проверку при отсутствии DATABASE_URL или недоступной БД даже в production; это известный fail-open, а не подтверждение reviewed content (D15). Server rendering также может обращаться к БД; поведение сборки без БД проверять отдельно.
+`postinstall`: только Prisma generate. Build: Prisma generate → content review gate → Next production build. Никакого автоматического migration repair или schema rollout. Content gate теперь fail-closed в production при отсутствующей/недоступной БД или needs_review; production bypass запрещён. Исключение разрешено только explicit isolated CI с совпадающими DATABASE_URL/DATABASE_URL_TEST на loopback/test DB, без VERCEL_ENV/VERCEL_TARGET_ENV. Server rendering также может обращаться к БД; поведение сборки без БД проверять отдельно.
 
 ## 2. Локальная среда и CI
 
@@ -86,7 +86,7 @@ Registry имеет 3 frequent job keys и 7 nightly. Intended intervals: bookin
 
 `GET /api/health`: 200 status=ok/db=ok после SELECT 1; 503 degraded с db=pool_exhausted/unreachable. Это DB reachability, не проверка миграций, mail, Blob, payment или booking correctness.
 
-Launch readiness `/app/admin/launch-readiness` объединяет env presence, scheduler и data/config. Известны несоответствия Opn enum и Blob OIDC; см. backlog D01/D02. Даже зелёная env presence не доказывает работоспособность provider.
+Launch readiness `/app/admin/launch-readiness` объединяет env presence, scheduler и data/config. Opn enum и Blob OIDC config согласованы с runtime; scheduler требует freshness каждого frequent job. См. evidence и оставшиеся runtime проверки D01/D02. Даже зелёная env presence не доказывает работоспособность provider.
 
 Unexpected errors проходят observability webhook, если он настроен. Retention/uptime settings внешней платформы не гарантированы кодом. Не выводить сырые credentials, PII, passport/deal files или secret values в evidence/log.
 
@@ -100,6 +100,16 @@ Recovery: остановить writers/webhooks/jobs → сохранить по
 
 - iCal не является real-time ARI; источник может отставать.
 - Внешние мессенджеры пока не доставляют сообщения через provider adapter.
-- Внутренние realtime buses требуют решения для нескольких экземпляров.
+- Внутренний polling читает durable данные между экземплярами; in-memory SSE не используется как гарантия доставки.
 - Opn, email, storage, cron, backup требуют реальной проверки конфигурации и фактов выполнения.
 - Документационный commit не означает новый production deployment.
+
+CI и isolated browser acceptance используют Node24, как подтверждённый Vercel project runtime24.x.
+
+## 10. Доставка notification email после commit
+
+Новые external deliveries имеют status=pending и marker queued_after_commit_v1. TransactionClient не вызывает внешний provider. Root writer может обработать сохранённую запись сразу; booking_lifecycle в frequent slot подбирает bounded batch после commit. Workers сериализуются по delivery id. При временной ошибке/неопределённом provider response запись остаётся pending, повтор использует тот же Idempotency-Key. Provider ack записывает sent; console или queued не считаются delivered.
+
+Ретраи ограничены 23h. Старые unmarked pending и expired retry window требуют ручной сверки с provider, не массового replay. Изменение content/recipient между attempts может быть отклонено provider как changed payload. Проверять в операционном контроле: oldest marked pending, failed reasons, disabled/muted channels, реальную cadence booking_lifecycle и provider ack. Provider errors/driver messages/credentials не сохраняются в failureReason; технические состояния имеют фиксированные безопасные формулировки.
+
+В production на read-only срезе этого пакета NotificationDelivery был пуст; реальная доставка email не подтверждена синтетическими tests.

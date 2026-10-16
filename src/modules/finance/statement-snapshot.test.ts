@@ -40,6 +40,14 @@ describe('sourceFingerprint', () => {
     expect(fp(a)).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it('invalidates an unsigned source snapshot when a booking moves inside the same period without changing revenue', () => {
+    const old = sources();
+    const moved = sources({ bookings: old.bookings.map(b => ({ ...b, startDate: new Date('2026-07-03'), endDate: new Date('2026-07-06') })) });
+    expect(fp(moved)).not.toBe(fp(old));
+    const extended = sources({ bookings: old.bookings.map(b => ({ ...b, endDate: new Date('2026-07-06') })) });
+    expect(fp(extended)).not.toBe(fp(old));
+  });
+
   it('changes when a cost is added, reversed, or its amount differs', () => {
     const base = fp(sources());
     const extra = sources({

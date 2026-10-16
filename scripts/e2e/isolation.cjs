@@ -14,7 +14,8 @@ function assertIsolation(env = process.env) {
   assert.equal(env.ENCRYPTION_KEY, '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
   for (const name of ['RESEND_API_KEY', 'BLOB_READ_WRITE_TOKEN', 'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET', 'TELEGRAM_BOT_TOKEN', 'STRIPE_SECRET_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY', 'VERCEL_TOKEN']) {
+    'SUPABASE_SERVICE_ROLE_KEY', 'VERCEL_TOKEN', 'OMISE_SECRET_KEY', 'OMISE_PUBLIC_KEY',
+    'OMISE_WEBHOOK_SECRET', 'VERCEL_OIDC_TOKEN', 'BLOB_STORE_ID']) {
     assert.ok(!env[name], `${name} must be absent from browser acceptance`);
   }
   return { databaseUrl: DATABASE_URL, baseUrl: BASE_URL };

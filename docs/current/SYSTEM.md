@@ -1,6 +1,6 @@
 # Текущее устройство myUNO
 
-Сверка исходников 2026-10-16, main `712fbc1f191eca246390ab1313e55805232b2e45`. Production не проверен. Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
+Сверка исходников 2026-10-16; exact codeRevision в REFERENCE. Факты production и текущая оценка отделены от кода в [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md). Полная статическая карта: [REFERENCE](REFERENCE.md). Пробелы и критерии приёмки: [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md).
 
 ## Границы приложения
 
@@ -40,11 +40,11 @@ Availability учитывает canonical blocking booking statuses/active payme
 
 ## Финансы
 
-Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint, lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period.
+Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint (включая start/end dates брони), lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period. Writer payout повторно проверяет сумму и unresolved refunds под provider/order locks, запрещает пересекающиеся/открытые периоды; неоднозначная late pre-payout refund adjustment блокируется для reconciliation, а не исчезает из расчёта.
 
 ## Коммуникации, фоновые работы и федерация
 
-Email использует Resend; без конфигурации dev может писать в console. Internal notifications/messages имеют in-process SSE buses: доставка между несколькими function instances не обеспечивается общим broker. WhatsApp/Telegram integration records не являются реализацией отправки.
+Email использует Resend; console без provider config не считается доставкой. NotificationDelivery образует post-commit queue: TransactionClient сохраняет pending, root writer или frequent sweep выполняет bounded dispatch с advisory lock, стабильным Idempotency-Key и ограниченным retry window; legacy ambiguous pending не переотправляются автоматически. Внутренние сообщения/уведомления читаются из БД polling (15/30s), с refresh по focus/visibility и защитой от запоздалых responses. In-process SSE buses остаются локальными. WhatsApp/Telegram integration records не являются реализацией отправки.
 
 Production migration workflow требует successful push CI на точном main SHA, успешный backup/restore, approved pending migrations/checksums и financial parity; deployment остаётся отдельным действием.
 
@@ -110,7 +110,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /messages · /tickets · /announcements · /app/admin/tickets.
 
-**Остаток / проверка:** Для нескольких экземпляров требуется общий транспорт событий; внешние messenger adapters отсутствуют. Проверить фактическую доставку и повторы.
+**Остаток / проверка:** Клиенты уже читают durable messages/notifications polling через БД (15/30 секунд); добавлены refresh на focus/visibility и защита от stale responses/revoked access. In-memory SSE не является межсерверным транспортом. Внешние messenger adapters отсутствуют; фактическая доставка проверяется отдельно.
 
 [Исходники](../../src/modules/comms/README.md) · [полный состав файлов/exports](REFERENCE.md#module-comms)
 
@@ -180,7 +180,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /ops/costs · /ops/refunds · /owner/statements · /app/admin/statements · /app/admin/payouts.
 
-**Остаток / проверка:** Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Найдено расхождение launch-readiness: omise вместо opn.
+**Остаток / проверка:** Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Launch-readiness согласован с PAYMENT_PROVIDER=opn и реальной public/secret key конфигурацией; live charge/refund остаётся отдельной проверкой.
 
 [Исходники](../../src/modules/finance/README.md) · [полный состав файлов/exports](REFERENCE.md#module-finance)
 
@@ -210,7 +210,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /app/admin/projects/[id]/media · /property/content.
 
-**Остаток / проверка:** Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness проверяет только token и не учитывает OIDC+store, хотя upload поддерживает этот путь.
+**Остаток / проверка:** Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness и upload используют общий parser token либо OIDC+store; наличие config не заменяет actual upload/finalize acceptance.
 
 [Исходники](../../src/modules/media/README.md) · [полный состав файлов/exports](REFERENCE.md#module-media)
 
@@ -250,7 +250,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /services · /services/orders · /provider · /app/admin/service-orders.
 
-**Остаток / проверка:** ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Customer confirm/dispute/auto-close после fulfillment не найден как законченный lifecycle. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
+**Остаток / проверка:** ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Добавлены customer confirm, окно подтверждения/спора (по умолчанию 48h), общая row/advisory lock с dispute creation, auto-close в service-order sweep и customer UI deadline; незавершённый спор блокирует закрытие. Закрытие не создаёт commission/payout повторно. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
 
 [Исходники](../../src/modules/services/README.md) · [полный состав файлов/exports](REFERENCE.md#module-services)
 

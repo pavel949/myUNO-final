@@ -15,6 +15,10 @@ interface ConfigChangeInput {
  * Validation rules for specific config parameters
  */
 const VALIDATION_RULES: Record<string, (value: any) => { valid: boolean; error?: string }> = {
+  'service.fulfilment_confirm_window_hours': (value: unknown) => ({
+    valid: typeof value === 'number' && Number.isSafeInteger(value) && value > 0 && Number.isFinite(new Date(Date.now() + value * 3_600_000).getTime()),
+    error: 'fulfilment window must be a positive whole number of hours within the supported date range',
+  }),
   'compliance.tm30_sla_hours': (value: any) => {
     if (typeof value !== 'number' || value < 0 || value > 24) {
       return { valid: false, error: 'tm30_sla_hours must be between 0 and 24 hours' };

@@ -37,3 +37,9 @@ Repository pavel949/myUNO-final, main 436dd93567e4647e15c04fdafea850e0e103bf3a. 
 Включён main PR #291 (712fbc1f): maintenance blocks check-in/readiness и production-migration safety workflow. Точный SHA текущего code baseline генерируется в REFERENCE. Новые датированные отчёты production-pms-2026-10-16 включены как evidence указанного там окружения, не независимая повторная проверка production.
 
 Первый CI PR #292 выявил зависимость revision generator от shallow checkout: synthetic merge SHA ошибочно принимался за последний runtime commit. Исправлено full-history checkout, требование не ослаблено. Browser acceptance на b16b562da796577bdbdc0a35923bcfba7f51ba80 прошёл; новый состав требует нового CI/browser run.
+
+## Пакет production readiness и новая оценка
+
+[PR294](https://github.com/pavel949/myUNO-final/pull/294) меняет runtime logic: launch/content gates, statement fingerprint, customer fulfilment closure, polling и durable post-commit notification queue. Статический audit выше является evidence первоначальной документационной фазы, а не утверждением, что subsequent runtime code не менялся.
+
+Актуальные acceptance results, read-only production факты, новая оценка по прежней шкале1–10 и причины оставшегося риска: [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md). Работы до9/10, критерии и незавершённые части: [PRODUCTION_READINESS_PLAN](PRODUCTION_READINESS_PLAN.md). Проверки текущего exact SHA доступны в PR294 Checks.

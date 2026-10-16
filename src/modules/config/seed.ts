@@ -428,6 +428,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'No-show refund treatment',
       },
       {
+        key: 'service.fulfilment_confirm_window_hours',
+        valueType: 'int',
+        defaultValue: 48,
+        scopeableTo: 'project',
+        groupKey: 'cancellation',
+        description: 'Positive whole hours after fulfilment for customer confirmation or dispute',
+      },
+      {
         key: 'service.cancel_window_hours',
         valueType: 'int',
         defaultValue: 24,

@@ -1,3 +1,4 @@
+import { serviceOrderDeadline } from './service-order-closure';
 import { parseStandaloneContext } from './standalone-context';
 import type { PrismaClient } from '@prisma/client';
 
@@ -79,14 +80,20 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
 
   // Has the orderer already rated it? The rating route refuses a second
   // review, so the surface must not offer one.
-  const existingReview = await db.review.findFirst({
+  const [existingReview, deadline, dispute] = await Promise.all([db.review.findFirst({
     where: {
       target_type: 'service_order',
       target_id: order.id,
       author_identity_id: identityId,
     },
     select: { id: true },
-  });
+  }),
+  order.status === 'fulfilled' ? serviceOrderDeadline(db, order) : Promise.resolve(null),
+  db.dispute.findFirst({
+    where: { subjectType: 'service_order', subjectId: id },
+    select: { id: true, ticketId: true, decidedAt: true },
+  })]);
+  const inWindow = deadline !== null && new Date() < deadline;
 
   // Parse price breakdown
   const priceBreakdown = typeof order.price_breakdown === 'string'
@@ -99,6 +106,12 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     updatedAt: order.updatedAt.toISOString(),
     status: order.status,
     quantity: order.quantity,
+    fulfilledAt: order.fulfilled_at?.toISOString() ?? null,
+    closedAt: order.closed_at?.toISOString() ?? null,
+    confirmationDeadline: deadline?.toISOString() ?? null,
+    canConfirm: order.status === 'fulfilled' && inWindow && (!dispute || dispute.decidedAt !== null),
+    canDispute: ['accepted', 'failed'].includes(order.status) || (order.status === 'fulfilled' && inWindow),
+    dispute: dispute ? { id: dispute.id, ticketId: dispute.ticketId, pending: dispute.decidedAt === null } : null,
     scheduledStart: order.scheduled_start.toISOString(),
     scheduledEnd: order.scheduled_end.toISOString(),
     totalThb: order.total_thb,

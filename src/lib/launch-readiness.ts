@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { getSchedulerHealth, jobsNeedingAttention } from '@/jobs';
 import { getConfig } from '@/modules/config';
+import { mediaStorageCredentials } from '@/modules/media/storage-config';
 
 /**
  * Launch readiness: what the platform still needs from its owner before it can
@@ -54,17 +55,17 @@ export function evaluateEnvReadiness(env: ReadinessEnv): ReadinessItem[] {
   const sessionSecret = env.SESSION_SECRET || env.NEXTAUTH_SECRET;
 
   const cardReady =
-    env.PAYMENT_PROVIDER === 'omise' &&
+    env.PAYMENT_PROVIDER === 'opn' &&
     present(env, 'OMISE_PUBLIC_KEY') &&
     present(env, 'OMISE_SECRET_KEY') &&
-    present(env, 'OMISE_WEBHOOK_SECRET');
+    !(env.OMISE_SECRET_KEY?.startsWith('skey_live_') && env.NODE_ENV !== 'production');
 
   return [
     item('encryption_key', 'security', /^[0-9a-fA-F]{64}$/.test(env.ENCRYPTION_KEY ?? ''), true),
     item('session_secret', 'security', Boolean(sessionSecret?.trim()), true),
     item('app_url', 'security', isPublicHttpsUrl(env.NEXT_PUBLIC_APP_URL), true),
     item('email', 'delivery', present(env, 'RESEND_API_KEY') && present(env, 'EMAIL_FROM'), true),
-    item('media_storage', 'delivery', present(env, 'BLOB_READ_WRITE_TOKEN'), true),
+    item('media_storage', 'delivery', mediaStorageCredentials(env) !== null, true),
     item('cron_secret', 'automation', present(env, 'CRON_SECRET'), true),
     item('scheduler_mode', 'automation', env.SCHEDULER_MODE === 'external', true),
     item('alert_webhook', 'automation', present(env, 'ALERT_WEBHOOK_URL'), true),
@@ -91,14 +92,15 @@ export async function evaluateDataReadiness(db: PrismaClient): Promise<Readiness
   ]);
 
   const attention = jobsNeedingAttention(health);
-  const frequent = health.find((row) => row.cadence === 'frequent' && row.lastFinishedAt);
-  const freshMs = frequent?.lastFinishedAt ? Date.now() - frequent.lastFinishedAt.getTime() : Infinity;
+  const frequent = health.filter((row) => row.cadence === 'frequent');
+  const allFrequentFresh = frequent.length > 0 && frequent.every((row) =>
+    row.lastFinishedAt && Date.now() - row.lastFinishedAt.getTime() < 30 * 60 * 1000);
 
   return [
     {
       id: 'scheduler_running',
       group: 'automation',
-      state: attention.length === 0 && freshMs < 30 * 60 * 1000 ? 'ok' : 'action',
+      state: attention.length === 0 && allFrequentFresh ? 'ok' : 'action',
       blocking: true,
     },
     {

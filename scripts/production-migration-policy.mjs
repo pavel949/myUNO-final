@@ -54,3 +54,12 @@ export function checkMigrationLedger(files, rows, requireComplete = false) {
   if (requireComplete && pending.length) throw new Error('Migration ledger is incomplete');
   return pending;
 }
+
+
+/** Diagnostics may identify a release stage/code, never a driver message, URL or SQL. */
+export function migrationFailureSummary(stage, error) {
+  const stages = new Set(['ledger_read', 'ledger_policy', 'snapshot_before', 'migrate', 'ledger_verify', 'snapshot_after']);
+  const safeStage = stages.has(stage) ? stage : 'unknown';
+  const code = typeof error?.code === 'string' && (/^P[0-9]{4}$/.test(error.code) || ['ECONNREFUSED', 'ENETUNREACH', 'ETIMEDOUT'].includes(error.code)) ? error.code : 'unclassified';
+  return `Production migration/verification failed: stage=${safeStage}; code=${code}. Inspect the release configuration and ledger; no automatic history repair attempted.`;
+}

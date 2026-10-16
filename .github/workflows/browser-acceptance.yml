@@ -46,7 +46,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - name: Validate strict isolation guard
         run: |
@@ -90,7 +90,7 @@ jobs:
           journey_failed=0
           for journey in founder-publication-booking guest-ux-completion property-submission-description \
             content-contributor complex-amenities project-amenity-content employee-workspaces \
-            employee-creation workspace-navigation; do
+            employee-creation workspace-navigation service-fulfilment; do
             # Preserve every assertion and collect all failures in one run.
             # Each runner retains its own isolation and prerequisite guards.
             node "scripts/e2e/$journey.mjs" || journey_failed=1
@@ -112,6 +112,7 @@ jobs:
             browser-results/employee-workspaces-result.json
             browser-results/employee-creation-result.json
             browser-results/workspace-navigation-result.json
+            browser-results/service-fulfilment-result.json
             browser-results/*.png
             browser-results/server.log
             browser-results/blocked-server-egress.log

@@ -46,11 +46,14 @@ export default function ThreadClient({
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
+  const readVersion = useRef(0);
   const requestRef = useRef<{ body: string; id: string } | null>(null);
 
   const load = useCallback(async () => {
+    const version = ++readVersion.current;
     try {
-      const response = await fetch(`/api/threads/${threadId}`);
+      const response = await fetch(`/api/threads/${threadId}`, { cache: 'no-store' });
+      if (version !== readVersion.current) return;
       if (response.status === 401) {
         setThread(null);
         router.push(`/login?next=/messages/${threadId}`);
@@ -64,19 +67,31 @@ export default function ThreadClient({
         return;
       }
       const data = await response.json();
+      if (version !== readVersion.current) return;
       setThread(data.thread);
       setLoadError(null);
     } catch {
+      if (version !== readVersion.current) return;
       setLoadError(labels['messages.thread.load_error'] || labels['messages.thread.error_generic']);
     } finally {
-      setLoading(false);
+      if (version === readVersion.current) setLoading(false);
     }
   }, [threadId, router, labels]);
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000); // light polling until SSE lands
-    return () => clearInterval(interval);
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const interval = setInterval(refresh, 15000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      // This is a request generation counter, not a DOM ref; invalidate every pending read.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ++readVersion.current; // Late reads cannot restore revoked or replaced conversation data.
+      clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [load]);
 
   useEffect(() => {

@@ -56,3 +56,5 @@ export {
   type ServiceOrderCustomerView,
   type ServiceOrderCustomerViewResult,
 } from './service-order-customer-view';
+
+export { confirmServiceOrder, closeFulfilledServiceOrders } from './service-order-closure';

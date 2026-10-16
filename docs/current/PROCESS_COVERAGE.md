@@ -1,6 +1,6 @@
 # Покрытие целевых процессов: CO01–CO30
 
-Срез кода main 712fbc1f191eca246390ab1313e55805232b2e45, 2026-10-16. Это сверка наличия и границ реализации, **не отметка прохождения E2E**. Целевые определения: [PROCESS_MAP](../canonical/PROCESS_MAP.md), [паспорта](../canonical/PROCESS_PASSPORTS.md), [AT01–AT30](../canonical/READINESS_ACCEPTANCE.md). Конкретные источники/методы API/модели/тесты: [REFERENCE](REFERENCE.md); известные технические разрывы D01–D15: [матрица](IMPLEMENTATION_STATUS.md).
+Срез исходников 2026-10-16; exact codeRevision в [REFERENCE](REFERENCE.md). Это сверка наличия и границ реализации, **не отметка прохождения E2E**. Целевые определения: [PROCESS_MAP](../canonical/PROCESS_MAP.md), [паспорта](../canonical/PROCESS_PASSPORTS.md), [AT01–AT30](../canonical/READINESS_ACCEPTANCE.md). Конкретные источники/методы API/модели/тесты: [REFERENCE](REFERENCE.md); известные технические разрывы D01–D15: [матрица](IMPLEMENTATION_STATUS.md).
 
 «Код пути есть» означает, что найдены связанные services/UI; полнота всех требований паспорта и production acceptance требует отдельного доказательства. «Частично» не означает, что отсутствующая часть может быть заменена ручным изменением БД.
 
@@ -19,7 +19,7 @@
 | CO11 | Уборка | Turnover tasks, housekeeping, inspection/readiness transitions | Проверить recurring entitlement/shift/checklist/supervisor exceptions. Уборка не снимает независимый maintenance blocker |
 | CO12 | Техобслуживание | Reactive/preventive tasks/plans, blocksInventory, costs/evidence; `/ops/maintenance` | Полный estimate→approval threshold→parts/vendor/procurement→inspection/reopen ещё не доказан |
 | CO13 | F&B | Project amenity/F&B editorial, provider/service catalogue и reservations могут описывать реальную supply | Специализированный kitchen/menu/allergy/pax/stock/waste workflow не найден как законченный контур; не обещать работу ресторана по amenity record |
-| CO14 | Услуга/товар/аренда | Standalone/project service order, fixed/hourly/person price model, payment→accept→fulfill, cancel/no-show/refund | Quote version acceptance/closure/capacity требует завершения/проверки; goods/SKU/delivery/recurring не реализованы как полный commerce engine |
+| CO14 | Услуга/товар/аренда | Standalone/project service order, fixed/hourly/person price model, payment→accept→fulfill, cancel/no-show/refund | Customer confirmation/48h dispute window/auto-close добавлены и требуют проверок, указанных в оценке; quote version acceptance/capacity требуют завершения; goods/SKU/delivery/recurring не реализованы как полный commerce engine |
 | CO15 | Выезд | Checkout, condition report, claim/refund/deposit paths, turnover task generation, post-stay messages/reviews | Проверить access return, final finance/claim и handover к cleaning/inspection одним сценарием |
 | CO16 | Отмена/перенос/продление/no-show | Cancellation policy/refund quote, cancel/changeBookingDates/extension/no-show | Replacement-hold BookingReschedule lifecycle не найден в runtime; linked service reconciliation/funding failure требуют доказательства |
 | CO17 | Жалоба/инцидент/спор | Tickets/events/media, incidents, Dispute decision/remedy links | Проверить все типы subject/approver scopes, reopen и late refund; fulfillment/dispute/closure race пока не завершён как общий services workflow |

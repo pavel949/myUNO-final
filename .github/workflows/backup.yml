@@ -26,7 +26,19 @@ jobs:
           import { PrismaClient } from '@prisma/client';
           import { spawnSync } from 'node:child_process';
           import { assertProductionTarget, PROJECT_REF } from './scripts/production-migration-policy.mjs';
-          const safeCode = error => /^[A-Z][0-9]{4}$/.test(error?.code || '') ? error.code : 'UNCLASSIFIED';
+          const safeCode = error => {
+            const explicit = error?.code || error?.errorCode;
+            if (/^[A-Z][0-9]{4}$/.test(explicit || '')) return explicit;
+            const message = String(error?.message || '');
+            const matched = message.match(/\bP[0-9]{4}\b/);
+            if (matched) return matched[0];
+            if (/authentication failed|password authentication|invalid password/i.test(message)) return 'AUTHENTICATION';
+            if (/reach database|unreachable|ENETUNREACH|connection refused|DNS/i.test(message)) return 'UNREACHABLE';
+            if (/certificate|SSL|TLS/i.test(message)) return 'TLS';
+            if (/permission denied/i.test(message)) return 'PERMISSION';
+            if (/invalid connection|string|datasource/i.test(message)) return 'CONNECTION_FORMAT';
+            return 'UNCLASSIFIED';
+          };
           async function probe(value) {
             const url = new URL(value); url.searchParams.set('connect_timeout', '10');
             const db = new PrismaClient({ datasources: { db: { url: url.toString() } } });
@@ -36,7 +48,7 @@ jobs:
                 return tx.$queryRawUnsafe('SELECT count(*)::int AS rows FROM public._prisma_migrations');
               }, { timeout: 15000 });
               return { ok: true, ledgerRows: rows[0].rows };
-            } catch (error) { return { ok: false, code: safeCode(error) }; }
+            } catch (error) { return { ok: false, code: safeCode(error), errorType: /^Prisma[A-Za-z]+Error$/.test(error?.name || '') ? error.name : 'Error' }; }
             finally { await db.$disconnect(); }
           }
           try {

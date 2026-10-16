@@ -608,9 +608,24 @@ try {
   async function setBookingMode(instant) {
     const region = fp.getByRole('region', { name: 'How guests book', exact: true });
     await region.getByRole('radio', { name: instant ? 'Instant booking' : 'Request to book', exact: true }).click();
-    const savedResponse = fp.waitForResponse(r => r.url().endsWith(`/api/admin/units/${fixture.unitId}/booking-mode`) && r.request().method() === 'PUT');
+    const endpoint = `/api/property-booking-mode/${fixture.unitId}`;
+    const previewResponse = fp.waitForResponse(r => r.url().endsWith(endpoint) && r.request().method() === 'POST');
+    previewResponse.catch(() => {});
+    await region.getByRole('button', { name: 'Preview this unit', exact: true }).click();
+    const inspected = await previewResponse; assert.equal(inspected.status(), 200);
+    const preview = await inspected.json();
+    assert.equal(preview.instantBook, instant);
+    assert.deepEqual(preview.units.map(unit => unit.id), [fixture.unitId]);
+    assert.deepEqual(preview.blocked, []);
+    assert.equal(typeof preview.baseline, 'string');
+    // Preview is read-only; confirmation is required before the canonical write.
+    assert.notEqual((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId } })).instantBook, instant);
+    const apply = region.getByRole('button', { name: 'Apply reviewed change', exact: true });
+    assert.equal(await apply.isDisabled(), true);
+    await region.getByLabel('I reviewed every affected unit and the selected booking mode.', { exact: true }).check();
+    const savedResponse = fp.waitForResponse(r => r.url().endsWith(endpoint) && r.request().method() === 'PUT');
     savedResponse.catch(() => {});
-    await region.getByRole('button', { name: 'Save for this villa', exact: true }).click();
+    await apply.click();
     const saved = await savedResponse; assert.equal(saved.status(), 200);
     const result = await saved.json(); assert.equal(result.instantBook, instant); assert.equal(result.updated, 1);
     assert.equal((await db.unit.findUniqueOrThrow({ where: { id: fixture.unitId } })).instantBook, instant);

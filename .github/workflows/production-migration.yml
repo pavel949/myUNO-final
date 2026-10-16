@@ -7,13 +7,12 @@ on:
         type: boolean
         default: false
       pooler_host:
-        description: 'Canonical session pooler route; keeps the existing credential and project'
+        description: 'Use the verified backup endpoint metadata or the configured migration route'
         type: choice
-        default: configured
+        default: backup_route
         options:
+          - backup_route
           - configured
-          - aws-0-ap-south-1.pooler.supabase.com
-          - aws-1-ap-south-1.pooler.supabase.com
 
 permissions:
   contents: read
@@ -37,8 +36,34 @@ jobs:
           [ "$current" = "$GITHUB_SHA" ] || { echo '::error::Main changed; start a fresh release.'; exit 1; }
           passed="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=10" --jq '[.workflow_runs[] | select(.event == "push" and .head_branch == "main")] | length')"
           [ "$passed" -gt 0 ] || { echo '::error::Exact main SHA has no successful push CI.'; exit 1; }
-  preflight:
+  route:
     needs: reviewed-main
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      host: ${{ steps.endpoint.outputs.host }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Extract canonical endpoint metadata without exporting credentials
+        id: endpoint
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { backupConnection } from './scripts/backup-policy.mjs';
+          try {
+            const { PGHOST } = backupConnection(process.env.BACKUP_DATABASE_URL);
+            appendFileSync(process.env.GITHUB_OUTPUT, `host=${PGHOST}\n`);
+          } catch { console.error('Canonical backup endpoint metadata rejected'); process.exitCode = 1; }
+          JS
+  preflight:
+    needs: route
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 5
@@ -55,7 +80,8 @@ jobs:
       - name: Read-only canonical connection and migration ledger
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_POOLER_HOST: ${{ inputs.pooler_host != 'configured' && inputs.pooler_host || vars.DATABASE_POOLER_HOST }}
+          DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
+          MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}
         run: node scripts/production-migration-preflight.mjs
   backup:
     needs: preflight
@@ -65,7 +91,7 @@ jobs:
       BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
   migrate:
-    needs: backup
+    needs: [backup, route]
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 10
@@ -89,6 +115,7 @@ jobs:
       - name: Explicit Prisma migration and financial parity
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_POOLER_HOST: ${{ inputs.pooler_host != 'configured' && inputs.pooler_host || vars.DATABASE_POOLER_HOST }}
+          DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
+          MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}
           BACKUP_VERIFIED_SHA: ${{ github.sha }}
         run: node scripts/production-migrate.mjs

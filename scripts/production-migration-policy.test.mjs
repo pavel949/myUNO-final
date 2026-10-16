@@ -57,6 +57,9 @@ test('release target refuses foreign project, local DB, transaction pooler and l
   for (const url of [undefined, 'postgresql://test@localhost/test', `postgresql://postgres.other:test@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`,
     `postgresql://postgres:test@db.${PROJECT_REF}.supabase.co.evil.test/postgres`,
     `postgresql://postgres:test@db.${PROJECT_REF}.supabase.co:6543/postgres`,
+    `postgresql://postgres:test@db.${PROJECT_REF}.supabase.co/postgres?schema=auth`,
+    `postgresql://postgres.${PROJECT_REF}:test@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?schema=public&schema=auth`,
+    `postgresql://postgres:test@db.${PROJECT_REF}.supabase.co/postgres?SCHEMA=auth`,
     `postgresql://postgres:test@db.${PROJECT_REF}.supabase.co/postgres?pgbouncer=true`]) {
     assert.throws(() => assertProductionTarget(url));
   }
@@ -100,4 +103,32 @@ test('release failures expose only allowlisted stages and driver codes', async (
   assert.match(migrationFailureSummary('ledger_read', initError), /stage=ledger_read; code=P1000/);
   assert.doesNotMatch(migrationFailureSummary('ledger_read', initError), /private|secret|db.example/);
   assert.doesNotMatch(migrationFailureSummary('ledger_read', { errorCode: 'TOKEN', message: 'SECRET' }), /TOKEN|SECRET/);
+});
+
+
+test('backup endpoint metadata preserves migration credentials and explicit direct routing', () => {
+  const previous = process.env.MIGRATION_DATABASE_HOST;
+  const raw = `postgresql://postgres:synthetic%40migration@db.${PROJECT_REF}.supabase.co:5432/postgres?schema=public&sslmode=verify-full`;
+  try {
+    for (const host of [`db.${PROJECT_REF}.supabase.co`, 'aws-0-ap-south-1.pooler.supabase.com']) {
+      process.env.MIGRATION_DATABASE_HOST = host;
+      const routed = new URL(productionMigrationConnection(raw));
+      assert.equal(routed.hostname, host);
+      assert.equal(routed.password, new URL(raw).password);
+      assert.equal(routed.username, host.startsWith('db.') ? 'postgres' : `postgres.${PROJECT_REF}`);
+      assert.equal(routed.searchParams.get('sslmode'), 'verify-full');
+      assert.equal(routed.searchParams.get('schema'), 'public');
+      assert.equal(routed.port, '5432');
+    }
+    for (const host of ['foreign.example', 'aws-0-ap-south-1.pooler.supabase.com:5432', `db.foreign.supabase.co`]) {
+      process.env.MIGRATION_DATABASE_HOST = host;
+      assert.throws(() => productionMigrationConnection(raw));
+    }
+    process.env.MIGRATION_DATABASE_HOST = `db.${PROJECT_REF}.supabase.co`;
+    assert.throws(() => productionMigrationConnection(raw.replace('postgres:synthetic', 'backup_reader:synthetic')));
+    assert.throws(() => productionMigrationConnection(raw.replace('schema=public', 'schema=auth')));
+  } finally {
+    if (previous === undefined) delete process.env.MIGRATION_DATABASE_HOST;
+    else process.env.MIGRATION_DATABASE_HOST = previous;
+  }
 });

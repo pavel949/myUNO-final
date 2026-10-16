@@ -32,8 +32,9 @@ export function assertProductionTarget(value) {
     && decodeURIComponent(url.username) === `postgres.${PROJECT_REF}`;
   if (!['postgres:', 'postgresql:'].includes(url.protocol) || (!direct && !session)
     || (url.port && url.port !== '5432') || url.pathname !== '/postgres'
+    || [...url.searchParams].some(([key, value]) => key.toLowerCase() === 'schema' && (key !== 'schema' || value !== 'public'))
     || url.searchParams.get('pgbouncer') === 'true') {
-    throw new Error('Refusing a foreign database or transaction pooler');
+    throw new Error('Refusing a foreign database, non-public schema or transaction pooler');
   }
 }
 
@@ -42,6 +43,26 @@ export function productionMigrationConnection(value) {
   // Validate before normalization: runtime compatibility must never turn a
   // foreign project, transaction pooler or malformed input into a release target.
   assertProductionTarget(value);
+  const explicitHost = process.env.MIGRATION_DATABASE_HOST;
+  if (explicitHost) {
+    const direct = explicitHost === `db.${PROJECT_REF}.supabase.co`;
+    if (!direct && !/^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/.test(explicitHost)) {
+      throw new Error('Refusing an invalid migration session host override');
+    }
+    const routed = new URL(value);
+    if (!['postgres', `postgres.${PROJECT_REF}`].includes(decodeURIComponent(routed.username))) {
+      throw new Error('Refusing a foreign database principal');
+    }
+    // Only endpoint metadata comes from the working backup route. Authentication
+    // always remains the migration credential; the reader secret is never copied.
+    routed.hostname = explicitHost;
+    routed.port = '5432';
+    routed.username = direct ? 'postgres' : `postgres.${PROJECT_REF}`;
+    if (!routed.searchParams.has('sslmode')) routed.searchParams.set('sslmode', 'require');
+    if (!routed.searchParams.has('connection_limit')) routed.searchParams.set('connection_limit', '1');
+    assertProductionTarget(routed.toString());
+    return routed.toString();
+  }
   if (process.env.DATABASE_POOLER_HOST && !/^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/.test(process.env.DATABASE_POOLER_HOST)) {
     throw new Error('Refusing an invalid migration session host override');
   }
@@ -91,6 +112,7 @@ export function migrationFailureSummary(stage, error) {
 export function migrationFailureCategory(error) {
   const message = typeof error?.message === 'string'
     ? error.message.replace(/postgres(?:ql)?:\/\/[^\s)]+/gi, '[connection]') : '';
+  if (/^Refusing (?:a foreign database|an invalid migration session host override)/.test(message)) return 'target_rejected';
   if (/^(Unfinished migration|Migration checksum mismatch|Unexpected pending migration|Migration ledger is incomplete)/.test(message)) return 'ledger_policy_rejected';
   if (/tenant or user not found/i.test(message)) return 'pooler_tenant_rejected';
   if (/circuit breaker open|too many authentication errors/i.test(message)) return 'pooler_auth_circuit_open';

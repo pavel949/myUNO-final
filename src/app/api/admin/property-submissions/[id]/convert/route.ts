@@ -143,7 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           : typeof data.existingUnitId === 'string' && data.existingUnitId ? data.existingUnitId : null;
         const resolved = await resolveCanonicalUnitTx(tx, { projectId, existingUnitId, unitName });
         if (resolved.duplicateCandidateId && !existingUnitId) {
-          throw new EmployeeCreationError(400, 'Possible existing property found. Select the existing Unit instead of creating another.');
+          throw new EmployeeCreationError(409, 'Possible existing property found. Select the existing Unit instead of creating another.');
         }
 
         if (resolved.unitId) {

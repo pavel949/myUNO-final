@@ -289,7 +289,7 @@ describe('one property intake and verified canonical conversion', () => {
     }), { params: { id: application.id } })));
     expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
     const rejected = responses.find(response => response.status === 409)!;
-    expect((await rejected.json()).error).toContain('Reload before continuing');
+    expect((await rejected.json()).error).toMatch(/Possible existing property found|Reload before continuing/);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
     const rows = await db.crmOpportunity.findMany({
       where: { id: { in: applications.map(application => application.id) } },

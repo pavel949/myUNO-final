@@ -1,5 +1,7 @@
 # Homepage visual review — 2026-10-02
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Evidence: supplied Android screenshots, current public production DOM and desktop rendering, source inspection, and the supplied App design system project (8)(1).zip. The reference uses IQI branding; myUNO retains its own identity and canonical operating model.
 
 ## Defects and changes

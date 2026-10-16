@@ -1,5 +1,7 @@
 # PMS runtime access audit — 2026-10-08 (Asia/Bangkok)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Verdict and evidence boundary
 
 The signed-out production browser cannot enter the PMS. Full unit, condominium portfolio or resort operating readiness is **not checked**; inner-screen layout, tariffs and task completion cannot be certified from this run. Authentication correctly gates sampled operations. Two return-navigation defects are directly observed. No credentials, bookings, cash receipts, payment actions, guest records or operational writes were entered.

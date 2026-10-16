@@ -1,5 +1,7 @@
 # Stitch surface coverage audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-10-08 (Asia/Bangkok). Repository baseline: `main e92f4a0080ac97698e77ad7b11f70170dfd0455d`.
 
 This is a **source audit of all 160 page routes**, not a claim that all 160 screens have been clicked in production. The parallel PMS runtime audit records authenticated access and screenshots separately. Shared files were being changed by the PMS agents during this inspection; the route inventory below describes structure, and outstanding findings must be reconciled with the final diff before release.

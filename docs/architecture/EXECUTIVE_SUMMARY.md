@@ -1,5 +1,7 @@
 # Executive Summary — Phase 0 Verification
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Date:** 2026-08-18 · **Branch:** `claude/project-repo-clarification-bavpp0` · **Baseline:** `75bf763`
 
 ## The short version

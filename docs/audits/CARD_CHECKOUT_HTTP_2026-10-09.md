@@ -1,5 +1,7 @@
 # Current-build HTTP smoke - 9 October 2026 (Phuket)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **PASS: 24/24; failed: 0.** Runtime application: `79dcba041362ff933d938c39c018cfaf1fc945f1`. Workspace documentation HEAD at execution: `edb1aec42186105ec9a5989157ef0820e6fdae1c`. Completed UTC: `2026-10-08T21:37:53.348Z`. This repeats the same 24 assertions used at the previous checkpoint; no product code, feature, assertion or readiness rule was changed.
 
 The existing Next production build was reused without running the full suite or build again. Build ID: `4GcRDb3qFPh74MWsnUNDZ`; BUILD_ID SHA-256 before and after: `0026e5b7ebf6d072e4d814a4ebc145afdd10a1816849991594d9ab481a0c90a5`. Application sources matched 79dcba04; only audit documentation differed. Origin: `http://127.0.0.1:3010`; database: isolated PostgreSQL at `127.0.0.1:55432/myuno_night_test`.

@@ -1,5 +1,7 @@
 # Process 6 — service order: order → pay (cash) → provider accepts → fulfils → guest rates
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Local production build; browser as guest, admin (cash desk), provider.
 
 | Step | Result |

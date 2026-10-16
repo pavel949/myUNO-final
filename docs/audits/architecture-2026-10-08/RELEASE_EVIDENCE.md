@@ -1,5 +1,7 @@
 # Release and test evidence
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Stitch source change24138a2: exact final production build passed; selected ESLint56TS/TSX passed;40tests/8files passed. ProductiondeploymentREADY and service afterscreenshot, areas→Layan→Layantara navigation observed. Screenshot links ../../evidence/stitch-fidelity. Authenticated allsurface/mobilestateparity notclaimed.
 
 Architectureaudit: destination43tests/6files;security57tests/9files;operations19tests/6passingfiles plusDBavailabilitysuite failedinitialization dueabsent safeDATABASE_URL_TEST;infrastructure30tests/3files. These suites overlap; do notsum into unique coverage. No DB migration replay/loadtest/production authorization or financial command executed. Staticinventory generated. Detailedcommands/results in domainreports.

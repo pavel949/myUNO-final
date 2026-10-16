@@ -1,25 +1,19 @@
-# Content Module
+# content — Контент и языки
 
-Owns content keys and translations (i18n). Shared layer.
+Сверено по main 2026-10-16. **Статус: код присутствует; production-проверка отдельно.**
 
-## Reading copy
+ContentKey/Translation, CMS CRUD/CSV, namespaces, review status, draft fallback, локали ru/en/th/zh; RU по умолчанию.
 
-Two functions, both fed by one in-process cache (60s TTL, per locale):
+## Пользовательские поверхности
 
-- `t(db, key, params?, locale?)` — one key, with `{placeholder}` substitution.
-- `tMany(db, keys[], locale?)` — a batch, resolved in **one** query.
+/app/admin/content · /app/admin/content/homepage.
 
-`getLabels()` in `src/lib/i18n.ts` is what pages and layouts use; it wraps
-`tMany` and falls back to the EN draft passed at the call site whenever a key
-is missing or the database is unreachable.
+## Что остаётся
 
-**Always resolve a screen's copy in one `getLabels` call.** This is the app's
-hottest read: a single admin page asks for ~120 keys across the root layout,
-the admin shell and the page itself. Resolving them one at a time cost ~500
-serialized round trips per navigation, which is what made the app feel
-unresponsive; the batch costs one.
+ZH поддерживается кодом, но полнота переводов не подтверждена. Проверить review gate, реальные ключи, fallback и мобильные подписи.
 
-The cache stores **misses as well as hits**. A key with no row used to re-walk
-the whole locale fallback chain against the database on every request, forever.
-Missing keys are also warned about only once per process rather than once per
-render.
+## Источники и сопровождение
+
+[Полный состав файлов, exports и тестов](../../../docs/current/REFERENCE.md#module-content) · [система](../../../docs/current/SYSTEM.md) · [матрица реализации](../../../docs/current/IMPLEMENTATION_STATUS.md).
+
+Контракты API задаются route handlers и вызываемыми domain services; права проверяются server-side. Наличие тестового файла не означает прохождение теста.

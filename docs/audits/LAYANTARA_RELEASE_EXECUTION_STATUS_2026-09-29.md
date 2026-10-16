@@ -1,5 +1,7 @@
 # Layantara → myUNO: release execution and QA evidence
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Observed:** 2026-09-29. **Scope:** connected GitHub PR #144/#147 and read-only checks of connected source Layan Tara OS and target MyUno-final databases. **Deployment decision: NO-GO.** This is an evidence log, not approval to switch the production writer.
 
 ## 1. CI / integration — PASS for code, not production

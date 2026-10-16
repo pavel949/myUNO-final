@@ -54,7 +54,7 @@ export function inventory(root) {
   const collisions = [...grouped].filter(([, sources]) => sources.length > 1)
     .map(([route, sources]) => ({ route, sources }));
   const tests = all.filter((file) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(file));
-  const modules = [...new Set(all.filter((file) => file.startsWith('src/modules/'))
+  const modules = [...new Set(all.filter((file) => file.startsWith('src/modules/') && file.split('/').length > 3)
     .map((file) => file.split('/')[2]).filter(Boolean))].sort().map((name) => ({
       name,
       files: all.filter((file) => file.startsWith('src/modules/' + name + '/')).length,

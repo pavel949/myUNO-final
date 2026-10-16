@@ -1,5 +1,7 @@
 # ARCHITECTURE.md — myUNO Target Technical Architecture
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Style
 Use a modular monolith by default. Boundaries are domain contracts first. Do not split into microservices for aesthetics.
 

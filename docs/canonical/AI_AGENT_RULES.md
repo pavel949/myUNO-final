@@ -1,5 +1,7 @@
 # AI_AGENT_RULES.md — Vendor-Neutral Coding Agent Protocol
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 These rules apply to ChatGPT/Codex, Claude Code, Cursor, Gemini or equivalent.
 
 ## 1. Read order

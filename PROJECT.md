@@ -1,5 +1,7 @@
 # PROJECT.md — myUNO Canonical Platform Program
 
+> **Текущий код (2026-10-16):** [README](README.md), [SYSTEM](docs/current/SYSTEM.md), [реализовано/остаток](docs/current/IMPLEMENTATION_STATUS.md), [полный справочник](docs/current/REFERENCE.md). Canonical — целевые требования; historical reports не доказывают состояние main или production. Vercel — единственный deploy; Git auto-deploy сейчас отключён.
+
 **Status:** authoritative product, architecture and implementation specification  
 **Repository:** `pavel949/myUNO-final`  
 **Target:** `myUNO.app`  

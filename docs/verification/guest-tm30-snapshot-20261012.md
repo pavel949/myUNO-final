@@ -1,5 +1,7 @@
 # Guest registration / TM30 snapshot correction
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Base: schema-independent PMS slice38e9e2f1. No schema, authority, authentication/session or legal-deadline change.
 
 A deterministic actual-handler test pauses check-in after its outer empty-party read, commits an authorized foreign-guest registration, then resumes check-in. Baseline successfully checked in without the required filing. Late foreign registration on an already checked-in stay likewise created no filing, and a synthetic filing failure could not roll back that registration. Baseline: three failures, one existing-party/Thai case passed.

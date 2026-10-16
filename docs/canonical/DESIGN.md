@@ -1,5 +1,7 @@
 # DESIGN.md — myUNO Experience and Visual Direction
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Thesis
 
 myUNO should feel like a **quiet premium hospitality network with serious operating machinery underneath**.

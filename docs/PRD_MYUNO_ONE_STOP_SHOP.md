@@ -1,5 +1,7 @@
 # PRD — myUNO Integrated Phuket Property, Hospitality & Services Platform
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Status:** implementation PRD and assessment extension; subordinate to PROJECT.md and docs/canonical/.  
 **Baseline:** main 4a8ed81b24aee51020486fc049e9ef0af329ffd8, 2026-09-29. Re-evaluate at each new HEAD.  
 **Users:** guests, tenants, buyers, owners, managers, frontline staff, agents, providers, myUNO control plane.  

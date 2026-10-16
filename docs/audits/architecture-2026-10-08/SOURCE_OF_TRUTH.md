@@ -1,5 +1,7 @@
 # Source-of-truth / writer contract
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 | Fact | Canonical records/writer | Consumers | Boundary/constraint | Gap |
 |---|---|---|---|---|
 | Physical unit | Project/InventoryCategory/Unit,projects/onboarding commands | public,search,ops,owner | one physical inventory identity | missing stable destination membership; no ordinary-property DBfork |

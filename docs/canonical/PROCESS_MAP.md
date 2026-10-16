@@ -1,5 +1,7 @@
 # PROCESS_MAP.md — Canonical Company Process Map
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 This file is the canonical process catalog. The executable contract for every process is in [`PROCESS_PASSPORTS.md`](./PROCESS_PASSPORTS.md). Each CO01–CO30 implementation MUST comply with its corresponding passport before it may be marked complete.
 
 Every process must be implemented/spec'd with this passport:

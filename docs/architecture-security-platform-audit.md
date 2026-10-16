@@ -1,5 +1,7 @@
 # Architecture and security platform audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-10-08, Asia/Bangkok. Source baseline: `main 24138a2d717773534d923244a102631987aad641`.
 
 ## Conclusion and scope

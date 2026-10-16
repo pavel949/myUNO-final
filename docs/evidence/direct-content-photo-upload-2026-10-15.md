@@ -1,5 +1,7 @@
 # Direct content-photo upload candidate — 2026-10-15
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Status: local candidate; not deployed or verified against real storage. This extends the existing property-content editor and MediaAsset registration, not the private-evidence or video path. Process: CO05 / CO24. Acceptance: AT16 / AT28 / AT29.
 
 ## Defect and bounded change

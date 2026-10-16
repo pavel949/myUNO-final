@@ -1,5 +1,7 @@
 # Cursor task: bring myUNO into line with the design system
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 You have the design canvas (`myUNO Design System.html`, 21 boards) and this repository. The canvas is the specification. Where the two disagree, **the canvas wins** — except where this document says otherwise.
 
 Do not do this in one pass. Work through the phases below in order, opening a separate PR per phase. Phase 1 must land before anything else, because every later phase depends on the tokens existing.

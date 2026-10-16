@@ -1,5 +1,7 @@
 # Unified myUNO user journeys — implementation and release ledger
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-09-29. Baseline: main 4a8ed81b24aee51020486fc049e9ef0af329ffd8. This document is an execution ledger, not production sign-off. Use docs/canonical/PROCESS_MAP.md, PROCESS_PASSPORTS.md and READINESS_ACCEPTANCE.md as normative contracts.
 
 ## Existing release dependencies — do not duplicate

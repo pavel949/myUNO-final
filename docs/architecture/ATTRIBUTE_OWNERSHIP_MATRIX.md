@@ -1,5 +1,7 @@
 # Attribute Ownership Matrix
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Which entity is the single source of truth for each attribute, who may change it, and whether a
 change reaches a confirmed booking.
 

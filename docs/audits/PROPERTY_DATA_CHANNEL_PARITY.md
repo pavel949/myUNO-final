@@ -1,4 +1,6 @@
 # PROPERTY DATA CHANNEL PARITY MATRIX
+
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
 **Repository:** `pavel949/myUNO-final`
 **Domain:** Channel Parity & Adapter Mapping
 

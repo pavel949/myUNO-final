@@ -1,5 +1,7 @@
 # Operations architecture audit: inventory, PMS and money
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Assessed source: `pavel949/myUNO-final`, main `24138a2d717773534d923244a102631987aad641`, 2026-10-08. This is a read-only architectural assessment. No DB writes, roles, bookings, provider operations, financial transactions, code changes or publication were performed by this worker. File/line references describe this baseline; concurrent work outside these files is not evidence that findings are deployed or fixed.
 
 ## Executive assessment

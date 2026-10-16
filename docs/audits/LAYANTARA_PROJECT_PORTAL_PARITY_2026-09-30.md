@@ -1,5 +1,7 @@
 # Project Space: Layantara parity and reusable development template
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-09-30. Branch: `release/myuno-integrated-139-144-159` / PR #160.
 This is an implementation/evidence ledger, NOT production acceptance.
 

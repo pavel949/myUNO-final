@@ -1,5 +1,7 @@
 # Guest journey UX delivery — 2026-10-15
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: public discovery → project/category → home → review → authentication → checkout → trips → services → messages/help/requests.
 Baseline: main 82648488cb6b5cb7e0541a007166f20730ef9f70. Existing open PRs #275/#277/#278/#279 were inspected and kept separate.
 

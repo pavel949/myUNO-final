@@ -1,5 +1,7 @@
 # Static Repository Route Baseline — 2026-09-29
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Source:** GitHub main commit 4a8ed81b24aee51020486fc049e9ef0af329ffd8. Generated from the Git tree and Prisma source, not by exercising the application. **This is not an E2E, production or authorization pass.** Re-run npm run audit:inventory on latest checkout and compare changed paths and PR branches. See AI_FULL_PLATFORM_AUDIT.md.
 
 ## Static counts

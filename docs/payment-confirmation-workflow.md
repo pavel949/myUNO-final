@@ -1,5 +1,7 @@
 # Payment Confirmation Workflow
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 ## Overview
 
 When a guest successfully pays for a booking, the system must transition the booking from `pending_payment` → `confirmed`. This document outlines the complete workflow and the critical states involved.

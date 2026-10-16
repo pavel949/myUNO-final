@@ -1,61 +1,9 @@
-# 12 · Security & Data Privacy
+# Безопасность и приватность
 
-**What this document is.** How the platform protects the most sensitive things it touches — passports, payment data, personal information — under Thailand's **PDPA**, and how the system itself is secured: authentication, permission enforcement, secrets, and the audit trail. Written so the founder can answer "how do you handle my passport?" truthfully and precisely.
+Актуализировано по main 2026-10-16. Server scopes, session revoke, encrypted PII/private evidence, shared DB rate limits, audit, retention, Data API/RLS checks. Policy не является юридическим заключением. Live access isolation и ключи проверяются отдельно.
 
----
+## Проверяемый источник
 
-## 1. The data inventory (what we hold, why, and how long)
+[Код](../SECURITY.md) · [Полное описание системы](current/SYSTEM.md) · [Реализация и остаток](current/IMPLEMENTATION_STATUS.md) · [Полный справочник](current/REFERENCE.md).
 
-| Data | Where (doc 02) | Lawful purpose | Protection | Retention |
-|---|---|---|---|---|
-| Passport number, DOB, nationality, latin name | `BookingGuest`, `Identity` 🔒 | **Legal obligation** — TM30 filing | Field-level encryption (§4); access-logged | Structured fields: as long as the booking record must exist (tax/immigration defensibility) |
-| Passport image | `MediaAsset(kind=passport)` 🔒 | TM30 filing support | Envelope-encrypted object storage; signed, expiring URLs; access-logged | **Auto-deleted** `[cfg] retention.passport_media_days_after_checkout` (default 30) after check-out — the `delete_after` job |
-| Payment card data | **Never touches our systems** | — | Cards are entered on the licensed provider's hosted checkout (doc 10 §1); we store only provider session/charge IDs | n/a |
-| Contact data (email, phone) | `Identity` 🔒 | Contract performance, notifications | Encrypted at rest (DB-level), unique-indexed | Life of the account + legal minimum |
-| Bank/payout details | `Provider.payout_method`, payout records 🔒 | Paying providers/owners | Field-level encryption | Life of the relationship |
-| Mandates, receipts, compliance docs | `MediaAsset(document)` 🔒 | Contract, legal obligation | Encrypted bucket, role-gated | Contract life + statutory period |
-| Messages, tickets, reviews | Communication tables | Contract performance | Standard at-rest encryption; participant-only access | Life of the account |
-| Analytics events | `AnalyticsEvent` | Legitimate interest | Identity-linked events minimized; no 🔒 fields in payloads (§5) | 24 months, then aggregate-only |
-
-**Minimization in practice:** owners see guests as "first name + country" (doc 03 §4); providers see contact/address only while an order is active; exports never include 🔒 fields; logs are scrubbed of PII by the logging helper.
-
-## 2. PDPA posture
-
-- **Controller:** **Ignatev Estate Co., Ltd** (DBD 083-5-56602358-7; Plaza Del Mar, No.1 Pasak-Koktanod Rd, office 115–116, Cherngtalay, Thalang, Phuket 83110; director Pavel Ignatev; pavel@ignatevestate.com; +66 92 240 7355) — the operating entity and PDPA data controller (Q16). Displayed in `legal.privacy`. A dedicated privacy-contact mailbox may be added later if different from the above.
-- **Consent & notice:** registration and checkout consent lines link the privacy notice (`legal.privacy`, RU/EN/TH); passport capture screens carry the purpose explainer (`checkin.tm30.explainer` — "Thai immigration law requires…").
-- **Data-subject rights:** access/export (account settings → "download my data" produces the identity's records minus others' data), rectification (profile editing; staff-assisted for records), deletion (account deletion anonymizes the identity — name → "Deleted user", contact fields nulled — while preserving financial/compliance records the law requires; the request and outcome are audit-logged).
-- **Cross-border:** hosting region choice (doc 15) and the provider list are disclosed in the privacy notice.
-- **Breach response:** §7.
-
-## 3. Authentication & sessions
-
-Password auth with bcrypt (cost ≥ 12); optional OAuth (Google/Apple); **rate-limited** login/reset/claim endpoints (per-IP and per-account, exponential backoff); single-use hashed tokens for reset/verify/claim (doc 02 §2.3) with TTLs from config; sessions as signed HTTP-only, `Secure`, `SameSite=Lax` cookies with rotation on privilege change; password change invalidates other sessions; admin accounts require strong passwords + (phase-marked) TOTP 2FA — the schema field exists from day one, enforcement configurable. Blocked identity (`status=blocked`) = immediate session kill (doc 03 §4).
-
-**Guest access by booking reference (LY-7).** `POST /api/auth/guest-access` takes `{bookingRef, email}`; a booking code **alone never opens anything** — when the pair matches the booking's guest, the way in (a single-use claim link for invited identities, a login link otherwise) is emailed to the guest's **own** address. The response is byte-identical for known and unknown pairs (no enumeration), rate-limited per IP, and errors collapse into the same uniform response. The admin "guest link" action mints the same single-use claim token (`account_claim`, `people:edit`-gated) for hand-delivery over WhatsApp.
-
-## 4. Encryption & secrets
-
-- **In transit:** TLS everywhere, HSTS; webhooks signature-verified.
-- **At rest:** full-disk/DB-level encryption from the host, **plus field-level (application-layer) encryption** for 🔒-marked columns (passport numbers, payout details, integration credentials) with keys held in the deployment platform's secret manager — a DB dump alone never yields passports.
-- **Objects:** the media bucket is private; `passport/document` kinds additionally envelope-encrypted; all access via short-lived signed URLs from the upload/download seam.
-- **Secrets:** environment-injected via the platform's secret store (doc 15); never in the repo, never in client bundles; `.env` files git-ignored; per-environment values; rotation documented per integration in the admin's integration health view.
-
-**Founder key register (admin → Launch readiness → Keys register).** A storage-only register of every key and account the platform needs (`src/lib/secret-catalog.ts`). Values live in `secret_vault_entry`, AES-256-GCM encrypted with `ENCRYPTION_KEY`; listings expose only the last four characters; reveal is an explicit POST (`Cache-Control: no-store`) and every save, reveal and delete is written to `audit_log` (`secret_vault:*`) without the value. Admin-only (`admin:edit_configuration`). **Nothing at runtime reads the register** — a key takes effect only when also set in Vercel or GitHub. Consequence worth knowing: losing `ENCRYPTION_KEY` also makes the register unreadable, so keep the offline copy listed in the catalogue.
-
-## 5. Permission enforcement & auditability
-
-Every read and mutation passes the `can()` helper against `RoleAssignment` scope (doc 03 §5) **server-side**; queries are ownership-scoped in the `where` clause (never fetch-then-filter). 🔒 field access by staff (e.g. opening the TM30 queue's passport panel) writes an `AuditLog` row — "who saw whose passport, when" is answerable. All privileged mutations (config/content edits, role grants, statement publication, manual ledger/refund actions, retention overrides) are audit-logged append-only. Admin panel is role-gated at the layout level *and* per-action server-side.
-
-**Rate-limit counters (`rate_limit_bucket`).** Shared brake counters for sign-in and public endpoints. The key is a sha256 of the caller's address or e-mail — personal data is never stored in readable form — and rows are removed by the nightly retention job a day after their window ends (and opportunistically by the limiter itself).
-
-## 6. Retention jobs
-
-A daily job: deletes `MediaAsset` rows past `delete_after` (passport images), anonymizes deletion-requested identities past their grace window, expires stale `OneTimeToken`s, sweeps expired rate-limit counters, and reports counts to the admin compliance view (doc 08 §6.11) — retention is *visible*, not assumed.
-
-## 7. Operational security & incident response
-
-Dependency updates via automated PRs; no `eval`/dynamic SQL (Prisma parameterization); file uploads validated by type/size with strict stored-name scheme (legacy-proven traversal guard); CSP + standard security headers; error messages never leak internals (unified error page, details to logs only). **Incident playbook (plain language):** contain (revoke keys/sessions, disable integration), assess scope from audit/access logs, notify the founder immediately, notify affected persons and the PDPC when thresholds require (72-hour clock), record the post-mortem in the repo. Backups & restore drills are doc 15 §5.
-
-## 8. What builders must never do
-
-Store card numbers; log request bodies containing 🔒 fields; put PII in analytics payloads, URLs, or content keys; bypass the media seam for uploads; widen a query's scope to "fix" a permission bug; ship an endpoint without the `can()` check. These are review-blocking rules, restated in `CLAUDE.md`.
+Текущие исходники определяют фактическое поведение. [PROJECT](../PROJECT.md) и [canonical](canonical/README.md) задают продуктовую цель, которую нельзя автоматически считать реализованной. Production version/schema/data/runtime в этой сверке не проверялись.

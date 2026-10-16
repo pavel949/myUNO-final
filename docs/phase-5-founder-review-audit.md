@@ -1,5 +1,7 @@
 # Phase 5: Founder Review of Flagged Content Keys
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Status:** Ready for founder review
 **Effort:** 10–15 hours
 **Task:** T-P1-001 Phase 5 — Founder review of 27 flagged content keys

@@ -1,5 +1,7 @@
 # AI Audit Report Template — copy for a specific branch and environment
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Do not fill statuses from assumptions. Attach exact file/line or runtime evidence. This report is an output artifact, not the canonical product specification.
 
 ## Assessment identity

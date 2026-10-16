@@ -1,5 +1,7 @@
 # Project Space + myUNO Services — user journeys, roles and access
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Date: 2026-09-30
 Scope: canonical Project Space, stay inventory, service marketplace, guest context and project operations.
 This document describes the implemented target paths in PR #160. It is not a production sign-off.

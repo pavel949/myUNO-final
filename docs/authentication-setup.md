@@ -1,5 +1,7 @@
 # Authentication Setup Guide
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 This document covers password recovery email configuration, Google OAuth implementation, and evaluates Supabase auth options for myUNO.
 
 ## Current Status

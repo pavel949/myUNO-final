@@ -1,5 +1,7 @@
 # Consolidated release: Property → Offering → Booking → PMS → Finance → Owner Hub
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-09-29. Branch: `release/layantara-unified-cutover`. Source PRs: #139 and #140. This is a pre-cutover evidence ledger; source snapshots and real production data are NOT authorized for activation by test-file existence.
 
 ## Consolidation result

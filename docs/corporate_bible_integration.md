@@ -1,5 +1,7 @@
 # Corporate Bible Integration Plan
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Status:** Analysis complete, phased implementation ready  
 **Document Reference:** Ignatev Estate Corporate Bible v9 (August 2026)  
 **Last Updated:** August 13, 2026

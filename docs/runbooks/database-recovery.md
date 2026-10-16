@@ -1,5 +1,7 @@
 # Database recovery and reproducibility
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 How to rebuild this system's database from the repository, prove a backup can
 actually be restored, and keep the datamodel honest about what the database
 contains.
@@ -115,8 +117,11 @@ independent GPG passphrase are encrypted GitHub Actions secrets. The GPG recover
 key has a separate private operator copy; never commit it or print it in logs.
 
 The original run38894672702 failed before exporting data because of the
-PGDATABASE URI bug. A successful backup/restore run is still required before
-production migrations; configured secrets alone are not release evidence.
+PGDATABASE URI bug. [Production backup38896564642](https://github.com/pavel949/myUNO-final/actions/runs/38896564642)
+then captured all120 application tables and restored them with exact row-count
+and digest parity on2026-10-16. The AES256-encrypted artifact12043314893 is retained
+until2026-11-15. The protected migration workflow repeats this proof for its exact
+main SHA; an earlier successful backup alone does not authorize migration.
 
 `pg_read_all_data` does not bypass RLS. A dedicated backup login needs
 separately reviewed all-row access; do not assume the example grants below

@@ -1,8 +1,19 @@
 # Release evidence and operator sequence
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Code baseline [main CI](https://github.com/pavel949/myUNO-final/actions/runs/38881807483): all5956 tests /548 files, lint/types/build/migration replay/drift passed. Follow-up local: 11 focused tests +4 migration-policy tests passed; actual PostgreSQL regression and full CI pending PR. Do not transfer the old CI result to the follow-up commit.
 
 ## Production stage
+
+Update2026-10-16 11:57UTC: backup repair head777278b8 passed fullCI38895690959
+(5959tests/548files, types, lint, build, migration replay/drift and actual isolated
+backup/restore). Browser38895691149 passed9runners/112steps. Real production
+backup38896564642 captured and restored120 public application tables with exact
+row-count/digest parity; AES256 artifact12043314893 expires2026-11-15. Dedicated
+read-only backup credentials and a separate private recovery-key copy are
+configured. Main subsequently incorporated documentation PR292; the combined
+revision needs its own CI. Production migration/deployment/upload are still pending.
 
 1. Configure GitHub repository secrets BACKUP_DATABASE_URL (dedicated read-only backup connection to burcnghheyzbzffzgmjz; not the app credential) and BACKUP_PASSPHRASE. Retain the passphrase in the operator's password manager independently of repository/artifacts. Existing DATABASE_URL secret must identify that same production project using direct/session port5432.
 2. Run Production migration (backup required) on reviewed main. It requires a successful push CI for the exact SHA and unchanged main after backup. Backup must finish dump, scratch restore, verification, encryption and storage before the protected production job can execute Prisma migrate deploy.

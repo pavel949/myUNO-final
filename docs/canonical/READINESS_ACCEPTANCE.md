@@ -1,5 +1,7 @@
 # READINESS_ACCEPTANCE.md — Capability Evidence and AT01–AT30
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## Readiness dimensions
 For every capability report separately:
 - specification_complete

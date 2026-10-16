@@ -1,5 +1,7 @@
 # MIGRATION_DELIVERY.md — No-Loss Migration, Release and Recovery
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Never mutate migration history from build/install
 Normal install/build must not change Prisma migration history. Recovery is a deliberate operator action after migration logs, schema inspection, lock/process verification, backup and checksum/statement review.
 

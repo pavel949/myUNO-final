@@ -1,5 +1,7 @@
 # Canonical Models · Project & Unit — Maturity, Usability, and the Project↔Unit Link
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Date:** 2026-09-07 · **Head:** `10cb75b` · **Scope:** `Project`, `Area`, `Unit` and every place
 the two are joined. Read against the running code and the schema, not against the specification.
 

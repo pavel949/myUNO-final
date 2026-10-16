@@ -1,5 +1,7 @@
 # Reproducible isolated founder → publication → guest booking acceptance
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Status
 
 Prepared after the historical PR #251 walkthrough and PR #254 description/publication fixes. **Do not treat the presence of this runner as a pass.** The authoritative evidence is the completed `Browser acceptance (isolated)` job for the exact candidate commit, its `result.json`, screenshots and Chromium traces.

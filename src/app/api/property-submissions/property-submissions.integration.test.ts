@@ -273,7 +273,7 @@ describe('one property intake and verified canonical conversion', () => {
     const created = await (await POST(req('POST', { ...application(), status: 'submitted' }))).json();
     session.identityId = adminId;
     const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
   });
   it('serializes two different applications for the same normalized physical unit', async () => {

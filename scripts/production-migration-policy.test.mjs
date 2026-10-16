@@ -42,3 +42,10 @@ test('accepts only the audited historical comment removal without repairing the 
   assert.throws(() => checkMigrationLedger([{ name, sql: Buffer.concat([sql, Buffer.from('\nSELECT 42;')]) }], [row]));
   assert.throws(() => checkMigrationLedger([{ name, sql }], [{ ...row, checksum: 'unknown' }]));
 });
+
+
+test('release failures expose only allowlisted stages and driver codes', async () => {
+  const { migrationFailureSummary } = await import('./production-migration-policy.mjs');
+  assert.match(migrationFailureSummary('ledger_read', { code: 'P1001', message: 'postgresql://private:secret@db.example/production' }), /stage=ledger_read; code=P1001/);
+  assert.doesNotMatch(migrationFailureSummary('private-token', { code: 'password', message: 'SECRET' }), /private-token|password|SECRET/);
+});

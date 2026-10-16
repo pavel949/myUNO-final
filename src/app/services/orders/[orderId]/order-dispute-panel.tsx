@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
 type Labels = Record<string, string>;
@@ -14,6 +15,7 @@ export default function OrderDisputePanel({
   labels: Labels;
   deadline?: string | null;
 }) {
+  const router = useRouter();
   const [expired, setExpired] = useState(() => Boolean(deadline && Date.now() >= new Date(deadline).getTime()));
   useEffect(() => {
     if (!deadline) return;
@@ -51,6 +53,7 @@ export default function OrderDisputePanel({
       setOpen(false);
       setTitle('');
       setDescription('');
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['service-order.detail.dispute_error']);
     } finally {

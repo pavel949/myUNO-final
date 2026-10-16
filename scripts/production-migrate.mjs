@@ -1,7 +1,7 @@
 // Explicit operator stage. Never imported by build/install or test runners.
 import { readdir, readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { assertProductionTarget, checkMigrationLedger } from './production-migration-policy.mjs';
+import { assertProductionTarget, checkMigrationLedger, migrationFailureSummary } from './production-migration-policy.mjs';
 
 assertProductionTarget(process.env.DATABASE_URL);
 if (process.env.GITHUB_REF !== 'refs/heads/main' || !/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA ?? '')
@@ -24,17 +24,27 @@ async function financialSnapshot() {
   }
   return JSON.stringify(result);
 }
+let stage = 'ledger_read';
 try {
-  const pending = checkMigrationLedger(files, await ledger());
+  const rows = await ledger();
+  stage = 'ledger_policy';
+  const pending = checkMigrationLedger(files, rows);
   console.log(`Reviewed pending migrations: ${pending.join(', ') || 'none'}`);
+  stage = 'snapshot_before';
   const before = await financialSnapshot();
-  const command = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { stdio: 'inherit', env: process.env });
-  if (command.error || command.status !== 0) throw new Error('Prisma migrate deploy failed; no automatic history repair attempted');
+  stage = 'migrate';
+  const command = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { stdio: 'pipe', encoding: 'utf8', env: process.env });
+  if (command.error || command.status !== 0) {
+    const code = `${command.stdout ?? ''} ${command.stderr ?? ''}`.match(/\bP[0-9]{4}\b/)?.[0];
+    throw Object.assign(new Error('Prisma migrate deploy failed'), { code });
+  }
+  stage = 'ledger_verify';
   checkMigrationLedger(files, await ledger(), true);
+  stage = 'snapshot_after';
   if (before !== await financialSnapshot()) throw new Error('Financial records changed during release: reconcile before deploying; never overwrite live records');
   console.log(`Migration ledger complete: ${files.length} files; financial snapshot unchanged. Code deployment is a separate stage.`);
-} catch {
+} catch (error) {
   // Prisma exceptions can include credentials. Only safe status reaches logs.
-  console.error('Production migration/verification failed. Inspect migration ledger and reconcile before retrying.');
+  console.error(migrationFailureSummary(stage, error));
   process.exitCode = 1;
 } finally { await db.$disconnect(); }

@@ -17,6 +17,7 @@ import {
   sendPostStayReengage,
 } from '@/modules/booking';
 import { closeFulfilledServiceOrders, expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
+import { flushPendingNotificationDeliveries } from '@/modules/comms/notification-delivery';
 import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { syncAllICalAccounts } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
@@ -38,10 +39,11 @@ export async function runBookingLifecycleJob(db: PrismaClient) {
       const expired = await expireHolds(db);
       const declined = await autoDeclineRequests(db);
       const reminded = await remindUnansweredRequests(db);
-      return { expired, declined, reminded };
+      const deliveries = await flushPendingNotificationDeliveries(db);
+      return { expired, declined, reminded, deliveries };
     },
     (r) =>
-      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders`
+      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders, ${r.deliveries.sent} deliveries sent, ${r.deliveries.failed} failed, ${r.deliveries.deferred} deferred`
   );
 }
 

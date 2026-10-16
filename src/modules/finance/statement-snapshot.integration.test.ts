@@ -180,6 +180,23 @@ describe('unit ledger lock', () => {
     expect(audit.data).toMatchObject({ verified: 'legacy_unverifiable' });
   });
 
+  it('rejects an unsigned statement after a same-total date move within its period', async () => {
+    const stay = await db.booking.findFirstOrThrow({ where: { unitId: world.unit.id } });
+    await db.booking.update({ where: { id: stay.id }, data: { startDate: new Date('2026-07-06'), endDate: new Date('2026-07-11') } });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id)).rejects.toMatchObject({ reason: 'stale' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).signedOffByOperatorAt).toBeNull();
+    expect((await db.booking.findUniqueOrThrow({ where: { id: stay.id } })).totalThb).toBe(stay.totalThb);
+  });
+
+  it('preserves issued signed snapshot integrity after a same-total date move', async () => {
+    await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
+    const signed = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
+    const stay = await db.booking.findFirstOrThrow({ where: { unitId: world.unit.id } });
+    await db.booking.update({ where: { id: stay.id }, data: { startDate: new Date('2026-07-06'), endDate: new Date('2026-07-11') } });
+    await expect(verifyStatementSnapshot(db, signed)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
+    expect(await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).toMatchObject({ sourceFingerprint: signed.sourceFingerprint, snapshotHash: signed.snapshotHash });
+  });
+
   it('verifies integrity only once the operator has signed', async () => {
     await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
     await db.ledgerEntry.create({

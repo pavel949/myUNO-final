@@ -80,20 +80,19 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
 
   // Has the orderer already rated it? The rating route refuses a second
   // review, so the surface must not offer one.
-  const existingReview = await db.review.findFirst({
+  const [existingReview, deadline, dispute] = await Promise.all([db.review.findFirst({
     where: {
       target_type: 'service_order',
       target_id: order.id,
       author_identity_id: identityId,
     },
     select: { id: true },
-  });
-
-  const deadline = order.status === 'fulfilled' ? await serviceOrderDeadline(db, order) : null;
-  const dispute = await db.dispute.findFirst({
+  }),
+  order.status === 'fulfilled' ? serviceOrderDeadline(db, order) : Promise.resolve(null),
+  db.dispute.findFirst({
     where: { subjectType: 'service_order', subjectId: id },
     select: { id: true, ticketId: true, decidedAt: true },
-  });
+  })]);
   const inWindow = deadline !== null && new Date() < deadline;
 
   // Parse price breakdown

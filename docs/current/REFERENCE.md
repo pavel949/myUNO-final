@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 550 |
+| tests | 552 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -557,7 +557,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### comms
 
-Файлов: 27; тестовых файлов: 12. [Описание](../../src/modules/comms/README.md).
+Файлов: 30; тестовых файлов: 14. [Описание](../../src/modules/comms/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -565,10 +565,11 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/comms/booking-thread-access.ts](<../../src/modules/comms/booking-thread-access.ts>) | implementation | `getBookingThreadParticipants` |
 | [src/modules/comms/comms.service.ts](<../../src/modules/comms/comms.service.ts>) | implementation | `createNotification`, `markNotificationRead`, `getUnreadNotifications`, `getRecentNotifications`, `isNotificationMuted`, `setNotificationMute` |
 | [src/modules/comms/dispute.service.ts](<../../src/modules/comms/dispute.service.ts>) | implementation | `DisputeRequestError`, `raiseDispute`, `decideDispute`, `getOpenDisputes`, `getDisputeDetail` |
-| [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>) | implementation | `redactEmail`, `sendEmail`, `buildNotificationEmail` |
+| [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>) | implementation | `redactEmail`, `EmailDeliveryRetryableError`, `sendEmail`, `buildNotificationEmail` |
 | [src/modules/comms/index.ts](<../../src/modules/comms/index.ts>) | barrel | см. исходник |
 | [src/modules/comms/inquiry-thread-access.ts](<../../src/modules/comms/inquiry-thread-access.ts>) | implementation | `getInquiryThreadRecipients`, `getInquiryThreadAudience`, `materializeInquiryThreadAudience`, `synchronizeInquiryParticipant` |
 | [src/modules/comms/lead.service.ts](<../../src/modules/comms/lead.service.ts>) | implementation | `LEAD_AUDIENCES`, `submitLead` |
+| [src/modules/comms/notification-delivery.ts](<../../src/modules/comms/notification-delivery.ts>) | implementation | `QUEUED_DELIVERY`, `dispatchNotificationDelivery`, `flushPendingNotificationDeliveries` |
 | [src/modules/comms/notification.bus.ts](<../../src/modules/comms/notification.bus.ts>) | implementation | `subscribe`, `publishNotification`, `hasSubscribers` |
 | [src/modules/comms/standalone-ticket-access.ts](<../../src/modules/comms/standalone-ticket-access.ts>) | implementation | `orderResponsibleOrganization`, `hasResponsibleOrganizationSupportAccess`, `standaloneTicketAuthority` |
 | [src/modules/comms/statement-thread-access.ts](<../../src/modules/comms/statement-thread-access.ts>) | implementation | `getStatementThreadParticipants`, `hasLiveThreadAuthority`, `getAuthorizedThreadParticipants`, `canAccessThread`, `requireThreadAccess` |
@@ -6115,7 +6116,7 @@ model RateLimitBucket {
 | `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
-| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
@@ -6512,11 +6513,13 @@ model RateLimitBucket {
 - [src/modules/comms/announcement.service.integration.test.ts](<../../src/modules/comms/announcement.service.integration.test.ts>)
 - [src/modules/comms/delivery-truth.integration.test.ts](<../../src/modules/comms/delivery-truth.integration.test.ts>)
 - [src/modules/comms/dispute.service.integration.test.ts](<../../src/modules/comms/dispute.service.integration.test.ts>)
+- [src/modules/comms/email.seam.test.ts](<../../src/modules/comms/email.seam.test.ts>)
 - [src/modules/comms/inquiry-nonactive-participant.integration.test.ts](<../../src/modules/comms/inquiry-nonactive-participant.integration.test.ts>)
 - [src/modules/comms/inquiry-thread-access.integration.test.ts](<../../src/modules/comms/inquiry-thread-access.integration.test.ts>)
 - [src/modules/comms/inquiry-thread-access.test.ts](<../../src/modules/comms/inquiry-thread-access.test.ts>)
 - [src/modules/comms/lead.service.integration.test.ts](<../../src/modules/comms/lead.service.integration.test.ts>)
 - [src/modules/comms/messenger-delivery.integration.test.ts](<../../src/modules/comms/messenger-delivery.integration.test.ts>)
+- [src/modules/comms/notification-delivery.integration.test.ts](<../../src/modules/comms/notification-delivery.integration.test.ts>)
 - [src/modules/comms/statement-thread-access.test.ts](<../../src/modules/comms/statement-thread-access.test.ts>)
 - [src/modules/comms/thread.service.integration.test.ts](<../../src/modules/comms/thread.service.integration.test.ts>)
 - [src/modules/comms/ticket.service.integration.test.ts](<../../src/modules/comms/ticket.service.integration.test.ts>)

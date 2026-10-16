@@ -60,8 +60,20 @@
 ## Evidence пакета исправлений
 
 - Production read-only: translation needs_review=4213, ok=8716. Проверка review не обходится; статусы автоматически не менялись.
-- Main CI run38897708543 успешен. Production migration run38899390156 уже выполняется другим release flow; повторный запуск не создан.
+- Main CI run38897708543 успешен. Production migration run38899390156: backup/restore успешны, migrate завершился ошибкой до вывода списка pending. Read-only ledger подтверждает две ожидаемые pending и только известное comment-only отличие; причина ошибки connection/config без безопасного stage/code не установлена. В script добавлены stage/code diagnostics без driver message/credentials. Повторный запуск не создан.
 - Локально: целевые readiness/storage/statement/component/policy tests; production TypeScript проверяется после Prisma generate. DB race и route authorization tests добавлены для disposable CI PostgreSQL; до успешного CI они не отмечаются пройденными.
 - Config key `service.fulfilment_confirm_window_hours` добавлен в seed registry, default48h. Для существующей БД без seeded key применяется тот же48h default; schema migration не требуется. Правки override проходят positive whole-hour validation.
 - Закрытие не меняет fulfilled_at, recognized commission, payments и payouts. Legacy fulfilled без fulfilled_at остаётся для operator review, время не восстанавливается из updated_at.
 - Production9/10 пока **не подтверждено**: текущий PR ещё не live; R09/R10 и runtime acceptance остаются открытыми, контент требует review.
+
+### Production automation и content, read-only 2026-10-16
+
+- Последние booking_lifecycle/tm30_escalations/ical_sync: 10:50:41–10:50:43 UTC. На момент проверки это больше часа назад. Успешный Scheduler38889878798 был workflow_dispatch; фактическая регулярность external cadence не подтверждена. Default branch main; причина отсутствия новых schedule runs не установлена. Нужна проверка enabled-state workflow и успешной серии scheduled ticks, один ручной запуск не закрывает acceptance.
+- Needs_review по основным namespaces: landing829, admin741, staff603, homes230, ops225, home138, nav132, mc131, help126, passport105. Это приоритетный реестр review, а не основание массово ставить ok.
+- Новый isolated Chromium runner проверяет реальный cash→accept→fulfil→customer confirm, повтор подтверждения без нового commission/payment, и dispute→confirmation denied. Browser workflow сохраняет service-fulfilment-result.json; до успешного run это authored coverage.
+
+### R16 — подтверждённый transaction/email defect
+
+В полном CI run38900018681 обнаружены исходные ошибки Transaction already closed в fire-and-forget email после accept/fulfil. Добавлена durable post-commit queue на существующем NotificationDelivery: TransactionClient только сохраняет pending; frequent sweep обрабатывает после commit; advisory lock, provider Idempotency-Key, bounded network timeout и retry window, no legacy replay. Unit/DB tests покрывают rollback/no-send, competing workers, transient retry, mute и expiry. Scope не включает реализацию WhatsApp/Telegram adapters; они продолжают честно fail-closed. [Контракт Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
+
+Первый полный CI:5975 passed/2 failed, оба сбоя — static seeded key discovery (двойные кавычки в новых entries); формат исправлен, локальные coverage tests проходят. PostgreSQL confirm/dispute/close7/7 и route authorization в этом run прошли. Первый isolated browser run38900018460 успешен; новый service-fulfilment runner требует отдельного execution evidence.

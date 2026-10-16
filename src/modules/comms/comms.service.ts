@@ -1,7 +1,6 @@
 import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/client';
-import { sendEmail, buildNotificationEmail } from './email.seam';
+import { dispatchNotificationDelivery, QUEUED_DELIVERY } from './notification-delivery';
 import { track } from '@/modules/analytics';
-import { sendMessengerMessage, MessengerChannel } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
 
 export interface CreateNotificationInput {
@@ -16,7 +15,8 @@ export interface CreateNotificationInput {
 /**
  * Create a notification and fan out delivery per enabled channel.
  * Best-effort: failures don't block the primary action.
- * For email channel: asynchronously sends via the email seam.
+ * External channels are persisted before dispatch and never sent through a
+ * TransactionClient. The frequent sweep recovers committed pending deliveries.
  * For in_app channel: creates delivery row for SSE pickup.
  */
 export async function createNotification(
@@ -36,12 +36,6 @@ export async function createNotification(
       },
     });
 
-    // Fetch identity for email address
-    const identity = await db.identity.findUnique({
-      where: { id: identityId },
-      select: { email: true, preferredLocale: true },
-    });
-
     // Fan out deliveries per channel (best-effort)
     for (const channel of channels) {
       try {
@@ -59,6 +53,7 @@ export async function createNotification(
             notificationId: notification.id,
             channel,
             status: 'pending',
+            failureReason: channel === 'in_app' ? null : QUEUED_DELIVERY,
           },
         });
 
@@ -82,87 +77,22 @@ export async function createNotification(
           await settle(true);
           continue;
         }
-        if (!identity?.email) {
-          await settle(false, 'Delivery recipient is unavailable');
-          continue;
-        }
+        // TransactionClient intentionally omits $transaction. Never let an
+        // external send escape before its parent transaction has committed.
+        // Root-client calls may dispatch now; transaction writes are picked up
+        // by the frequent durable outbox sweep after commit.
+        if (typeof db.$transaction === 'function') await dispatchNotificationDelivery(db, delivery.id);
 
-        // Attempt to send via channel asynchronously (fire-and-forget)
-        if (channel === 'email' && identity?.email) {
-          (async () => {
-            try {
-              const { subject, body } = await buildNotificationEmail(db, {
-                titleKey,
-                bodyKey,
-                params,
-                locale: identity.preferredLocale,
-              });
-
-              const externalRef = await sendEmail({
-                to: identity.email!,
-                subject,
-                body,
-              });
-
-              await settle(Boolean(externalRef), 'Email send failed or provider unavailable', externalRef ?? undefined);
-            } catch (err) {
-              console.error(
-                `Failed to send email for delivery ${delivery.id}:`,
-                err
-              );
-              await settle(false, err instanceof Error ? err.message : 'Unknown error').catch(() => {
-                // Swallow update errors; don't fail the primary action
-              });
-            }
-          })();
-        }
-
-        // Attempt to send via WhatsApp or Telegram (feature-flagged per doc 04 §7)
-        if ((channel === 'whatsapp' || channel === 'telegram') && identity?.email) {
-          const email = identity.email;
-          (async () => {
-            try {
-              // These adapters fail closed. Provider enablement must also add
-              // verified recipient bindings and actual project/unit routing;
-              // an email address is not a messenger destination.
-              const messengerChannel = channel === 'whatsapp' ? MessengerChannel.WHATSAPP : MessengerChannel.TELEGRAM;
-
-              // A messenger carries the same rendered sentence the email does
-              // (T-040: "template rendering from the same content keys").
-              // Sending `bodyKey` raw would deliver "notify.stay_confirmed.body"
-              // to the guest.
-              const { body } = await buildNotificationEmail(db, {
-                titleKey,
-                bodyKey,
-                params,
-                locale: identity.preferredLocale,
-              });
-
-              const result = await sendMessengerMessage(db, messengerChannel, email, body, undefined, false);
-
-              await settle(result.success, result.error, result.messageId);
-            } catch (err) {
-              console.error(
-                `Failed to send ${channel} message for delivery ${delivery.id}:`,
-                err
-              );
-              await settle(false, err instanceof Error ? err.message : 'Unknown error').catch(() => {
-                // Swallow update errors; don't fail the primary action
-              });
-            }
-          })();
-        }
-      } catch (err) {
+      } catch {
         console.error(
-          `Failed to create delivery for notification ${notification.id} on channel ${channel}:`,
-          err
+          `Notification delivery could not be completed on channel ${channel}; durable pending rows will be retried.`
         );
       }
     }
 
     return notification.id;
-  } catch (error) {
-    console.error('Failed to create notification:', error);
+  } catch {
+    console.error('Notification could not be persisted; inspect database health.');
 
     // Track notification failure
     await track(db, 'notify_failed', {

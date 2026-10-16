@@ -18,6 +18,8 @@ export interface SendEmailInput {
   subject: string;
   body: string;
   htmlBody?: string;
+  idempotencyKey?: string;
+  retryTransient?: boolean;
 }
 
 /**
@@ -36,6 +38,10 @@ export function redactEmail(address: string): string {
  * Without: logs a redacted diagnostic and reports failure; no email was sent.
  * Returns externalRef (provider message ID) on success, null on failure.
  */
+export class EmailDeliveryRetryableError extends Error {
+  constructor() { super('Email provider temporarily unavailable; durable delivery remains pending'); }
+}
+
 export async function sendEmail(
   input: SendEmailInput
 ): Promise<string | null> {
@@ -65,7 +71,9 @@ export async function sendEmail(
       headers: {
         Authorization: `Bearer ${resendKey}`,
         'Content-Type': 'application/json',
+        ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}),
       },
+      signal: AbortSignal.timeout(5000),
       body: JSON.stringify({
         from: process.env.EMAIL_FROM || 'noreply@myuno.io',
         to,
@@ -76,15 +84,19 @@ export async function sendEmail(
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('[RESEND ERROR]', response.status, error);
+      const concurrent = response.status === 409 && input.retryTransient
+        ? await response.json().then((value: { name?: string }) => value.name === 'concurrent_idempotent_requests').catch(() => false) : false;
+      const transient = response.status === 429 || response.status >= 500 || concurrent;
+      if (transient && input.retryTransient) throw new EmailDeliveryRetryableError();
+      console.error('[RESEND ERROR]', response.status);
       return null;
     }
 
     const data = (await response.json()) as { id?: string };
     return data.id || null;
   } catch (err) {
-    console.error('[EMAIL SEND ERROR]', err);
+    if (input.retryTransient) throw new EmailDeliveryRetryableError();
+    console.error('[EMAIL SEND ERROR] Provider request did not complete');
     return null;
   }
 }

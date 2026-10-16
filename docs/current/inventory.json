@@ -7,7 +7,7 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 550,
+    "tests": 552,
     "prismaModels": 118,
     "migrations": 94,
     "routeCollisions": 0
@@ -2575,8 +2575,8 @@
     },
     {
       "name": "comms",
-      "files": 27,
-      "testFiles": 12
+      "files": 30,
+      "testFiles": 14
     },
     {
       "name": "compliance",
@@ -3306,11 +3306,13 @@
     "src/modules/comms/announcement.service.integration.test.ts",
     "src/modules/comms/delivery-truth.integration.test.ts",
     "src/modules/comms/dispute.service.integration.test.ts",
+    "src/modules/comms/email.seam.test.ts",
     "src/modules/comms/inquiry-nonactive-participant.integration.test.ts",
     "src/modules/comms/inquiry-thread-access.integration.test.ts",
     "src/modules/comms/inquiry-thread-access.test.ts",
     "src/modules/comms/lead.service.integration.test.ts",
     "src/modules/comms/messenger-delivery.integration.test.ts",
+    "src/modules/comms/notification-delivery.integration.test.ts",
     "src/modules/comms/statement-thread-access.test.ts",
     "src/modules/comms/thread.service.integration.test.ts",
     "src/modules/comms/ticket.service.integration.test.ts",

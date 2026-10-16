@@ -185,6 +185,13 @@ try {
     foreignProject = await db.project.create({ data: { ...projectData, slug: `${slug}-foreign`, name: 'Synthetic Unassigned Amenity Proposal Estate' } });
     unit = await db.unit.create({ data: { projectId: project.id, name: 'Synthetic Amenity Proposal Condo Q401', unitType: 'condo', bedrooms: 1, bathrooms: 1,
       maxGuests: 2, floor: '4', addressSupplement: 'Q401', amenityKeys: ['wifi'], baseNightlyThb: 123456, minNights: 2, instantBook: false, status: 'draft' } });
+    const photos = await db.unitMedia.findMany({ where: { unitId: fixture.unitId }, include: { media: true }, orderBy: { sort: 'asc' } });
+    assert.ok(photos.length >= 3);
+    assert.ok(photos.every(row => row.media.storageKey.startsWith('/browser-acceptance/') && !row.media.encrypted));
+    await db.projectMedia.createMany({ data: photos.map((row, sort) => ({ projectId: project.id, mediaId: row.mediaId, sort })) });
+    await db.unitMedia.createMany({ data: photos.map((row, sort) => ({ unitId: unit.id, mediaId: row.mediaId, sort })) });
+    project = await db.project.update({ where: { id: project.id }, data: { coverMediaId: photos[0].mediaId } });
+    unit = await db.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0].mediaId } });
     // Existing managed-import visibility seam; nothing in this journey is made live.
     const system = await db.externalSystem.create({ data: { system_key: 'layantara_os', environment: 'synthetic_amenity_content_proposal_browser', display_name: 'Synthetic content proposal browser only' } });
     await db.externalMapping.createMany({ data: [['project', project.id], ['unit', unit.id]].map(([entity_type, internal_id]) => ({ external_system_id: system.id, entity_type, internal_id, external_id: `synthetic-proposal-${internal_id}` })) });

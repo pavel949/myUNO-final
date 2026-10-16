@@ -89,6 +89,15 @@ try {
     ordinaryDraft = await db.project.create({ data: { ...data, slug: 'synthetic-unmanaged-amenities', name: 'Synthetic Unmanaged Draft' } });
     unit = await db.unit.create({ data: { projectId: project.id, name: 'Synthetic Amenities Condo', unitType: 'condo', bedrooms: 1,
       bathrooms: 1, maxGuests: 2, addressSupplement: 'A101', amenityKeys: ['wifi'], baseNightlyThb: 100000, minNights: 1, instantBook: false, status: 'draft' } });
+    // Reuse only the initial fixture's actual localhost PNGs. Missing covers
+    // otherwise select external editorial images, which isolation must block.
+    const photos = await db.unitMedia.findMany({ where: { unitId: fixture.unitId }, include: { media: true }, orderBy: { sort: 'asc' } });
+    assert.ok(photos.length >= 3);
+    assert.ok(photos.every(row => row.media.storageKey.startsWith('/browser-acceptance/') && !row.media.encrypted));
+    await db.projectMedia.createMany({ data: photos.map((row, sort) => ({ projectId: project.id, mediaId: row.mediaId, sort })) });
+    await db.unitMedia.createMany({ data: photos.map((row, sort) => ({ unitId: unit.id, mediaId: row.mediaId, sort })) });
+    project = await db.project.update({ where: { id: project.id }, data: { coverMediaId: photos[0].mediaId } });
+    unit = await db.unit.update({ where: { id: unit.id }, data: { coverMediaId: photos[0].mediaId } });
     const system = await db.externalSystem.create({ data: { system_key: 'layantara_os', environment: 'synthetic_amenity_browser', display_name: 'Synthetic browser only' } });
     await db.externalMapping.createMany({ data: [['project', project.id], ['unit', unit.id]].map(([entity_type, internal_id]) => ({ external_system_id: system.id, entity_type, internal_id, external_id: `synthetic-${internal_id}` })) });
     for (const [identityId, role] of [[fixture.staffId, 'staff_ops'], [fixture.serviceCustomerId, 'content_contributor']]) {

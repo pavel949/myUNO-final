@@ -326,6 +326,7 @@ try {
   });
   await step('Existing authorized conversation keeps work context through inbox, thread and Back; Personal clears it', contentPage, async () => {
     await nav(contentPage).getByRole('link', { name: 'Messages', exact: true }).click();
+    await contentPage.waitForURL(url => url.pathname === '/messages' && url.searchParams.get('workspace') === 'property');
     await contentPage.getByRole('heading', { name: 'Messages', exact: true }).waitFor();
     const work = { workspace: 'property', workspaceOption: 'property' };
     const thread = contentPage.locator(`a[href^="/messages/${supportThread.id}?"]`);
@@ -339,11 +340,13 @@ try {
     await contentPage.waitForURL(url => url.pathname === '/messages'); await assertTabs(contentPage, 'Property', 'Messages');
     await keyboardMode(contentPage, 'Personal', '/app', 'Everything connected to you.'); await assertTabs(contentPage, 'Personal', 'My');
     await nav(contentPage).getByRole('link', { name: 'Messages', exact: true }).click();
+    await contentPage.waitForURL(url => url.pathname === '/messages' && url.searchParams.get('workspace') === 'personal');
     await contentPage.getByRole('heading', { name: 'Messages', exact: true }).waitFor();
     assertScope(contentPage.url(), { workspace: 'personal' }, ['workspaceOption', 'projectId', 'spaceId', 'unitId', 'organizationId']);
     const personalThread = contentPage.locator(`a[href^="/messages/${supportThread.id}?"]`);
     assertScope(await personalThread.getAttribute('href'), { workspace: 'personal' }, ['workspaceOption', 'projectId', 'spaceId']);
-    await personalThread.click(); await contentPage.getByPlaceholder('Write a message…', { exact: true }).waitFor();
+    await personalThread.click(); await contentPage.waitForURL(url => url.pathname === `/messages/${supportThread.id}`);
+    await contentPage.getByPlaceholder('Write a message…', { exact: true }).waitFor();
     await assertTabs(contentPage, 'Personal', 'Messages');
     assertScope(await contentPage.getByRole('link', { name: '← Messages', exact: true }).getAttribute('href'), { workspace: 'personal' }, ['workspaceOption', 'projectId', 'spaceId']);
   });

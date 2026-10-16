@@ -24,8 +24,27 @@ test('migration validates input before rewriting and refuses a foreign resolver 
   ]) assert.throws(() => productionMigrationConnection(raw));
   const previous = process.env.DATABASE_POOLER_HOST;
   try {
-    process.env.DATABASE_POOLER_HOST = 'db.attacker.example';
-    assert.throws(() => productionMigrationConnection(`postgresql://postgres:test@db.${PROJECT_REF}.supabase.co:5432/postgres`));
+    for (const host of ['db.attacker.example', 'https://aws-0-ap-south-1.pooler.supabase.com', 'aws-0-ap-south-1.pooler.supabase.com:5432', ' ']) {
+      process.env.DATABASE_POOLER_HOST = host;
+      assert.throws(() => productionMigrationConnection(`postgresql://postgres:test@db.${PROJECT_REF}.supabase.co:5432/postgres`));
+    }
+  } finally {
+    if (previous === undefined) delete process.env.DATABASE_POOLER_HOST;
+    else process.env.DATABASE_POOLER_HOST = previous;
+  }
+});
+
+test('an explicit canonical session route also applies to an already-pooled URL without changing credentials', () => {
+  const previous = process.env.DATABASE_POOLER_HOST;
+  const raw = `postgresql://postgres.${PROJECT_REF}:synthetic@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require`;
+  try {
+    process.env.DATABASE_POOLER_HOST = 'aws-0-ap-south-1.pooler.supabase.com';
+    const resolved = new URL(productionMigrationConnection(raw));
+    assert.equal(resolved.hostname, process.env.DATABASE_POOLER_HOST);
+    assert.equal(resolved.username, new URL(raw).username);
+    assert.equal(resolved.password, new URL(raw).password);
+    assert.equal(resolved.port, '5432');
+    assert.equal(resolved.pathname, '/postgres');
   } finally {
     if (previous === undefined) delete process.env.DATABASE_POOLER_HOST;
     else process.env.DATABASE_POOLER_HOST = previous;

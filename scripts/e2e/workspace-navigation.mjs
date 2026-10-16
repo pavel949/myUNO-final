@@ -204,6 +204,12 @@ try {
     assert.equal(fixture.serviceCustomerEmail, 'service-customer@browser.example.test'); assert.ok(fixture.password);
     const guest = await prior('guest-ux-result');
     await prior('employee-workspaces-result');
+    const publicProjects = await db.project.findMany({ where: { status: 'live' },
+      select: { slug: true, coverMedia: { select: { storageKey: true } } } });
+    for (const project of publicProjects) {
+      assert.ok(project.coverMedia?.storageKey.startsWith('/browser-acceptance/'),
+        `Public fixture ${project.slug} must have a real local cover before homepage navigation`);
+    }
     creationFixture = (await prior('employee-creation-result')).fixture;
     contentFixture = (await prior('project-amenity-content-result')).fixture;
     founder = await existingPerson(fixture.founderEmail, creationFixture.founderId, true);

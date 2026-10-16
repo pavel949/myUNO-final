@@ -65,3 +65,8 @@ Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a2432762
 **После этого пакета оценка остаётся8.5/10 для кода и5/10 для production.** Исправление конкретного денежного дефекта уменьшает риск, но не закрывает оставшиеся сценарии и не обосновывает9/10. Переоценка применяется после успешных exact-head проверок; до них подтверждён предыдущий пакет.
 
 Новое эксплуатационное evidence: [release38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) прошёл backup/restore, затем остановился на ledger_read до migration SQL. [Scheduler38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) сработал по schedule в15:01UTC, но устойчивую частоту5min один запуск не доказывает. Live alias остаётся прежним deployment dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v. Контент и live acceptance по-прежнему блокируют повышение production score.
+
+
+### Live media evidence —22:53ICT
+
+[Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.

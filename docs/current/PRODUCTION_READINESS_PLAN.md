@@ -99,3 +99,8 @@ Requested/processing refunds для eligible current orders блокируют �
 - R19: повторный защищённый release [38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) на fc0508fe прошёл fresh backup/actual restore, но migrate остановился на ledger_read, до SQL, code=unclassified. В безопасной диагностике добавлено чтение errorCode настоящего PrismaClientInitializationError; credential или raw message не выводятся. Причина подключения ещё не установлена; history repair и подмена подключения на backup principal не выполнялись.
 - Scheduler active; [38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) — настоящий schedule, HTTP200, все frequent jobs ok в15:01UTC/22:01ICT. Один tick не доказывает регулярную5-minute cadence: при следующей сверке в15:34UTC новых JobRun не было. SCHEDULER_MODE=external ещё нельзя объявить подтверждённым.
 - Последний проверенный merged-main [CI38906673035](https://github.com/pavel949/myUNO-final/actions/runs/38906673035):5997 tests/554 files, lint/typecheck/build passed. Продолжение имеет отдельные exact-head Checks; до их success оно не заменяет этот baseline.
+
+
+### Live media evidence —22:53ICT
+
+[Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.

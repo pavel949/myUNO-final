@@ -1,0 +1,30 @@
+/** EN/RU copy; other locales use English fallback pending review. */
+export const PROPERTY_DELEGATION_KEYS = [
+  { key: 'property.delegation.title', en: "Delegate property rights", ru: "Делегирование прав на объекты" },
+  { key: 'property.delegation.intro', en: "You can delegate only the rights and properties shown below. Recipients cannot pass these rights on.", ru: "Можно передать только показанные ниже права и объекты. Получатель не сможет передать их дальше." },
+  { key: 'property.delegation.email', en: "Employee account email", ru: "Email аккаунта сотрудника" },
+  { key: 'property.delegation.parent', en: "Your delegable right", ru: "Ваше право для делегирования" },
+  { key: 'property.delegation.scope', en: "Properties to assign", ru: "Объекты для назначения" },
+  { key: 'property.delegation.unit', en: "One exact unit", ru: "Один конкретный юнит" },
+  { key: 'property.delegation.project', en: "All units in this project", ru: "Все юниты этого комплекса" },
+  { key: 'property.delegation.search', en: "Find an assigned unit", ru: "Найти назначенный юнит" },
+  { key: 'property.delegation.choose', en: "Choose a unit", ru: "Выберите юнит" },
+  { key: 'property.delegation.more', en: "More matches exist. Narrow your search.", ru: "Есть другие совпадения. Уточните поиск." },
+  { key: 'property.delegation.expiry', en: "Expires at (optional, your local time)", ru: "Срок действия (необязательно, ваше местное время)" },
+  { key: 'property.delegation.expiry_note', en: "Leave blank to inherit your own expiry. You cannot grant a longer term.", ru: "Оставьте пустым, чтобы использовать ваш срок действия. Более длительный срок недоступен." },
+  { key: 'property.delegation.confirm', en: "I reviewed the employee, right and exact properties.", ru: "Я проверил сотрудника, право и конкретные объекты." },
+  { key: 'property.delegation.grant', en: "Assign this right", ru: "Назначить это право" },
+  { key: 'property.delegation.saved', en: "Assignment saved.", ru: "Право назначено." },
+  { key: 'property.delegation.revoke', en: "Revoke", ru: "Отозвать" },
+  { key: 'property.delegation.revoked', en: "Assignment revoked.", ru: "Право отозвано." },
+  { key: 'property.delegation.current', en: "Assignments you have made", ru: "Выданные вами права" },
+  { key: 'property.delegation.none', en: "No delegated assignments yet.", ru: "Вы ещё не делегировали права." },
+  { key: 'property.delegation.loading', en: "Loading current rights…", ru: "Загружаем актуальные права…" },
+  { key: 'property.delegation.busy', en: "Saving…", ru: "Сохраняем…" },
+  { key: 'property.delegation.error', en: "Could not load or save property access. Refresh and review your current rights.", ru: "Не удалось загрузить или сохранить права. Обновите страницу и проверьте текущий доступ." },
+  { key: 'property.delegation.unbounded', en: "No expiry", ru: "Без срока окончания" },
+  { key: 'property.delegation.active', en: "Active", ru: "Действует" },
+  { key: 'property.delegation.inactive', en: "Revoked or unavailable", ru: "Отозвано или недоступно" },
+].map(row => ({ ...row, th: row.en, zh: row.en, namespace: 'property', description: 'Scoped manager delegation', status: 'needs_review' as const }));
+export const PROPERTY_DELEGATION_LABELS = Object.fromEntries(PROPERTY_DELEGATION_KEYS.map(row => [row.key, row.en]));
+export const PROPERTY_DELEGATION_DRAFTS = Object.fromEntries(PROPERTY_DELEGATION_KEYS.map(row => [row.key, { en: row.en, ru: row.ru, th: row.th, zh: row.zh }]));

@@ -30,7 +30,7 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
 
   return (
     <>
-      <Breadcrumb items={breadcrumbs} />
+      <Breadcrumb items={breadcrumbs} preserveWorkspace />
       <ThreadClient threadId={params.threadId} labels={labels} />
     </>
   );

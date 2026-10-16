@@ -34,6 +34,15 @@ export function validateRoleAssignmentScope(input: RoleAssignmentScope): void {
     throw new Error('Unit-scoped roles require projectId and unitId');
   }
 
+  if (input.role === 'pricing_editor' || input.role === 'booking_mode_editor') {
+    if (input.scopeType !== 'project' && input.scopeType !== 'unit') {
+      throw new Error('Property capability editors require one project or one exact unit');
+    }
+    if (input.organizationId != null || input.providerId != null) {
+      throw new Error('Property capability editors cannot receive organization or provider scope');
+    }
+  }
+
   if (input.role === 'content_contributor') {
     if (input.scopeType !== 'project' && input.scopeType !== 'unit') {
       throw new Error('Content contributors require one project or one exact unit');

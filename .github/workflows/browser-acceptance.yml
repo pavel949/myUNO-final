@@ -50,7 +50,7 @@ jobs:
           cache: npm
       - name: Validate strict isolation guard
         run: |
-          node --test scripts/e2e/isolation.test.cjs scripts/e2e/block-egress.test.cjs
+          node --test scripts/e2e/isolation.test.cjs scripts/e2e/block-egress.test.cjs scripts/e2e/workspace-navigation.test.cjs
           node scripts/e2e/isolation.cjs
           for file in .env .env.local .env.production .env.production.local; do
             test ! -f "$file" || { echo "Refusing checkout with runtime env file: $file"; exit 1; }
@@ -92,6 +92,10 @@ jobs:
           node scripts/e2e/property-submission-description.mjs
           node scripts/e2e/content-contributor.mjs
           node scripts/e2e/complex-amenities.mjs
+          node scripts/e2e/project-amenity-content.mjs
+          node scripts/e2e/employee-workspaces.mjs
+          node scripts/e2e/employee-creation.mjs
+          node scripts/e2e/workspace-navigation.mjs
           test ! -s browser-results/blocked-server-egress.log
       - name: Upload synthetic screenshots and step evidence
         if: always()
@@ -104,6 +108,10 @@ jobs:
             browser-results/property-submission-result.json
             browser-results/content-contributor-result.json
             browser-results/complex-amenities-result.json
+            browser-results/project-amenity-content-result.json
+            browser-results/employee-workspaces-result.json
+            browser-results/employee-creation-result.json
+            browser-results/workspace-navigation-result.json
             browser-results/*.png
             browser-results/server.log
             browser-results/blocked-server-egress.log
@@ -117,4 +125,3 @@ jobs:
           path: browser-results/trace-*.zip
           retention-days: 7
           if-no-files-found: warn
-

@@ -26,3 +26,13 @@
 - Frontline is mobile-first with large controls and minimal mandatory text.
 - Offline completion remains draft until server acknowledgment.
 - Switching Personal/Work/Partner changes context, not authorization.
+
+## Property capability roles (2026-10-16)
+
+`pricing_editor` permits the canonical tariff editor for the exact assigned project or unit. `booking_mode_editor` permits changing the booking mode for that scope. Neither role grants publishing, finance, team administration or general operational access. Active identity, effective authority and resource-state checks still apply.
+
+Platform administrators may create root grants. A root holder may delegate the same capability only when `can_delegate` is explicitly enabled, within the root scope and expiry. Child grants cannot delegate further. Revoked or expired parents invalidate their children; root revocation revokes active children atomically. Grant provenance is immutable. An owner role alone does not grant either capability.
+
+Employee draft creation is separate from these roles: creating a submission does not publish inventory or assign pricing/booking authority. Workspace switching and navigation never grant permissions.
+
+The additive migrations `20261015080331_pricing_editor_role` and `20261015120347_property_capability_delegation` register roles and delegation metadata only; they create no user assignments. Apply through Prisma's migration ledger before deploying these readers/writers. Production migration and employee handoff require separate runtime evidence.

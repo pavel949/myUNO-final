@@ -23,6 +23,10 @@
 
 ## 2. Event catalog
 
+### Property capability audit events (2026-10-16)
+
+These are transactional `AuditLog` actions, not public analytics or new `BusinessEvent` types. `property_capability.granted`, `property_capability.updated` and `property_capability.revoked` identify the actor and `RoleAssignment` entity. Payloads record role, holder/scope IDs, delegation parent, delegation permission and expiry; updates/revocations include before/after and the number of revoked children. Exact retries do not duplicate the mutation or audit. Audit failure rolls back the grant change. No contact details or credentials belong in these payloads.
+
 Naming `domain.action`; every event carries `occurred_at`, actor (identity or anonymous id), and the entity dimensions shown. Builders emit **exactly these** (new events = PR to this table).
 
 | Event | When | Dimensions/payload |

@@ -2,8 +2,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isOperatingCreationCapability } from '@/modules/ops/operating-creation-capabilities';
 import { GOVERNED_DAILY_CAPABILITIES } from '@/modules/ops/operating-space-capabilities';
-import { OPERATING_SPACE_CAPABILITIES } from '@/modules/ops/operating-space.service';
+import { OPERATING_SPACE_CAPABILITIES } from '@/modules/ops/operating-space-capability-policy';
 
 type Unit = { id: string; name: string; project: { name: string } };
 type Person = { id: string; firstName: string; lastName: string; email: string | null; status: string };
@@ -22,14 +23,16 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
   const [busy, setBusy] = useState(false); const [searching, setSearching] = useState(false);
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const searchVersion = useRef(0);
+  const writeLock = useRef(false);
+  const grantable = (cap: string) => GOVERNED_DAILY_CAPABILITIES.includes(cap) || isOperatingCreationCapability(cap);
   const space = spaces.find(s => s.id === spaceId);
   useEffect(() => { setScopeUnits(space?.unitIds || []); }, [space]);
   const l = (key: string) => labels['admin.access.' + key];
   const toggle = (ids: string[], id: string) => ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
   const chooseSpace = (id: string) => { setSpaceId(id); setPerson(null); setPeople([]); setCapabilities([]); setError(''); setNotice(''); setSearching(false); searchVersion.current++; };
   async function save(url: string, method: string, body: object) {
-    if (busy) return;
-    setBusy(true); setError(''); setNotice('');
+    if (writeLock.current) return;
+    writeLock.current = true; setBusy(true); setError(''); setNotice('');
     try {
       const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await response.json();
@@ -37,7 +40,7 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
       if (data.space?.id) setSpaceId(data.space.id);
       setNotice(l('saved')); router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : l('failed')); }
-    finally { setBusy(false); }
+    finally { writeLock.current = false; setBusy(false); }
   }
   async function search() {
     const version = ++searchVersion.current;
@@ -61,7 +64,7 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
     </label>)}</div>
     <p className="text-small">{l('selected')}: {selected.length}</p>
   </fieldset>;
-  return <div className="space-y-24">
+  return <fieldset disabled={busy} aria-busy={busy} className="m-0 min-w-0 space-y-24 border-0 p-0">
     <header><h1 className="font-display text-display-xl font-semibold">{l('title')}</h1><p className="mt-8 text-text-secondary">{l('intro')}</p><p className="mt-8 text-small text-text-secondary">{l('daily_scope')}</p>
       <Link href="/app/admin/people" className="mt-12 inline-block text-brand-andaman underline">{l('people')}</Link></header>
     {error && <p role="alert" className="rounded-md bg-state-error-soft p-12 text-state-error">{error}</p>}
@@ -84,21 +87,21 @@ export default function WorkspaceAccessClient({ organizations, spaces, labels }:
         {unitChoices(Array.from(new Map([...(organizations.find(o => o.id === space.organizationId)?.units || []), ...space.currentUnits].map(u => [u.id, u])).values()), scopeUnits, setScopeUnits)}
         <button type="button" disabled={busy} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/scope`, 'PUT', { unitIds: scopeUnits, expectedUpdatedAt: space.updatedAt })}
           className="mt-16 min-h-48 rounded-md bg-brand-deep px-16 text-white disabled:opacity-50">{busy ? l('saving') : l('save_scope')}</button>
-        <h2 className="mt-24 font-display text-heading-2 font-semibold">{l('delegation')}</h2><p className="mt-8 text-small text-text-secondary">{l('prerequisite')}</p>
+        <h2 className="mt-24 font-display text-heading-2 font-semibold">{l('delegation')}</h2><p className="mt-8 text-small text-text-secondary">{l('prerequisite')}</p><p className="mt-8 text-small text-text-secondary">{l('creation_note')}</p>
         <div className="mt-12 flex flex-wrap gap-8"><input aria-label={l('search')} value={query} onChange={e => setQuery(e.target.value)} className="h-48 min-w-0 flex-1 rounded-md border border-border-line px-12" />
           <button type="button" disabled={searching || busy || !query.trim()} onClick={() => void search()} className="min-h-48 rounded-md border border-border-line px-16">{searching ? l('loading') : l('search')}</button></div>
         <ul className="mt-8 space-y-8">{people.map(p => <li key={p.id}><button type="button" onClick={() => choosePerson(p)} className="min-h-48 rounded-md border border-border-line px-12 text-left">{p.firstName} {p.lastName} · {p.email}</button></li>)}</ul>
         {person && <fieldset className="mt-16"><legend className="font-semibold">{person.firstName} {person.lastName} · {l('capabilities')}</legend>
-          <div className="mt-8 grid gap-8 md:grid-cols-2">{OPERATING_SPACE_CAPABILITIES.map(cap => <label key={cap} className="flex items-center gap-8 text-small"><input type="checkbox" disabled={busy || (!GOVERNED_DAILY_CAPABILITIES.includes(cap) && !capabilities.includes(cap))} checked={capabilities.includes(cap)} onChange={() => setCapabilities(toggle(capabilities, cap))} />{cap.replace(/_/g, ' ')}{!GOVERNED_DAILY_CAPABILITIES.includes(cap) && <span className="text-text-secondary"> · {l('unavailable')}</span>}</label>)}</div>
+          <div className="mt-8 grid gap-8 md:grid-cols-2">{OPERATING_SPACE_CAPABILITIES.map(cap => <label key={cap} className="flex items-center gap-8 text-small"><input type="checkbox" disabled={busy || (!grantable(cap) && !capabilities.includes(cap))} checked={capabilities.includes(cap)} onChange={() => setCapabilities(toggle(capabilities, cap))} />{isOperatingCreationCapability(cap) ? l(cap) : cap.replace(/_/g, ' ')}{!grantable(cap) && <span className="text-text-secondary"> · {l('unavailable')}</span>}</label>)}</div>
           <button type="button" disabled={busy || !capabilities.length} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/members`, 'PUT', memberBody(person.id, true, capabilities))}
             className="mt-16 min-h-48 rounded-md bg-brand-deep px-16 text-white disabled:opacity-50">{busy ? l('saving') : l('save_member')}</button>
         </fieldset>}
         <ul className="mt-24 divide-y divide-border-line">{space.members.map(m => <li key={m.identityId} className="py-12">
           <button type="button" disabled={busy || m.identity.status !== 'active'} onClick={() => choosePerson({ ...m.identity, id: m.identityId })} className="text-left font-semibold">{m.identity.firstName} {m.identity.lastName} · {m.active ? l('active') : l('inactive')}</button>
-          <p className="mt-4 text-small text-text-secondary">{m.capabilities.map(c => c.replace(/_/g, ' ')).join(', ')}</p>
+          <p className="mt-4 text-small text-text-secondary">{m.capabilities.map(c => isOperatingCreationCapability(c) ? l(c) : c.replace(/_/g, ' ')).join(', ')}</p>
           {m.active && <button type="button" disabled={busy} onClick={() => void save(`/api/admin/operating-spaces/${encodeURIComponent(space.id)}/members`, 'PUT', memberBody(m.identityId, false, m.capabilities))} className="mt-8 min-h-48 rounded-md border border-border-line px-12">{l('deactivate')}</button>}
         </li>)}</ul>
       </>}
     </section>
-  </div>;
+  </fieldset>;
 }

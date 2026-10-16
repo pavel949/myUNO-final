@@ -3,29 +3,29 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   parseContentProposal, parseScope, parseTargetId,
-  type ContentLocale, type ContentProposal, type ContentScope,
+  type ContentAmenitySnapshot, type ContentLocale, type ContentProposal, type ContentScope,
 } from '@/modules/onboarding/content-proposal.schema';
 import { CONTENT_UI_LABELS } from './UI-labels';
+import { finalizePhoto, uploadPhoto, validPhoto, PHOTO_MIME_TYPES, PhotoUploadError, type PendingPhotoUpload, type UploadedPhoto, type UploadStage } from '@/modules/media/client-upload';
+import { AmenityEditor, amenityDraft, amenityPayload, readAmenitySnapshots, type AmenityDraft } from './amenity-ui';
 
 const API = '/api/property-content-proposals';
 const TARGET_API = '/api/property-content-proposals/target';
 const LOCALES: ContentLocale[] = ['en', 'ru', 'th', 'zh'];
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const INPUT_CLASS = 'mt-4 min-h-[44px] w-full rounded-md border border-border-line bg-surface-paper px-12 py-8 text-body text-text-ink disabled:opacity-60';
 const BUTTON_CLASS = 'min-h-[44px] rounded-md border border-border-line px-16 py-8 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50';
 
 type Target = { scope: ContentScope; id: string; projectId: string; name: string; projectName?: string };
 type Summary = { id: string; scope: ContentScope; targetId: string; targetName: string; status: string; revision: number; reviewNote?: string | null };
 type Media = { id: string; url: string };
-type Snapshot = { facts: ContentProposal['facts']; descriptions: Partial<Record<ContentLocale, string>>; gallery: ContentProposal['gallery'] & { media: Media[] } };
+type Snapshot = { amenities?: ContentAmenitySnapshot[]; facts: ContentProposal['facts']; descriptions: Partial<Record<ContentLocale, string>>; gallery: ContentProposal['gallery'] & { media: Media[] } };
 type Detail = { id: string; scope: ContentScope; targetId: string; status: string; revision: number; baselineVersion: string; baseline: Snapshot; proposal: ContentProposal; reviewNote: string | null; proposalMedia: Media[] };
 type Editor = {
   scope: ContentScope; targetId: string; targetName: string; id: string | null;
   revision: number | null; baselineVersion: string; status: string; reviewNote: string | null;
   fields: Record<string, string>; descriptionEnabled: boolean; descriptionLocale: ContentLocale;
   descriptionTexts: Record<ContentLocale, string>; mediaIds: string[]; coverMediaId: string | null;
-  mediaUrls: Record<string, string>; dirty: boolean;
+  mediaUrls: Record<string, string>; amenityBaseline?: ContentAmenitySnapshot[]; amenities: AmenityDraft[]; amenitiesPresent: boolean; dirty: boolean;
 };
 type Field = { key: string; max?: number; step?: number; number?: boolean; nullable?: boolean; required?: boolean; list?: boolean };
 const UNIT_FIELDS: Field[] = [
@@ -47,7 +47,7 @@ class RequestError extends Error {
 }
 
 function errorKey(error: unknown): string {
-  return error instanceof RequestError ? error.key : 'request_error';
+  return error instanceof RequestError || error instanceof PhotoUploadError ? error.key : 'request_error';
 }
 
 async function request(url: string, signal: AbortSignal, init: RequestInit = {}): Promise<unknown> {
@@ -101,7 +101,9 @@ function readSnapshot(scope: ContentScope, value: unknown): Snapshot {
   const descriptions = object(row.descriptions);
   const strings: Partial<Record<ContentLocale, string>> = {};
   for (const locale of LOCALES) if (typeof descriptions[locale] === 'string') strings[locale] = descriptions[locale] as string;
-  return { facts: payload.facts, descriptions: strings, gallery: { ...payload.gallery, media: readMedia(gallery.media) } };
+  let amenities: ContentAmenitySnapshot[] | undefined;
+  try { amenities = scope === 'project' ? readAmenitySnapshots(row.amenities) : undefined; } catch { throw new RequestError('invalid_response'); }
+  return { facts: payload.facts, descriptions: strings, gallery: { ...payload.gallery, media: readMedia(gallery.media) }, ...(amenities !== undefined ? { amenities } : {}) };
 }
 
 function readDetail(value: unknown): Detail {
@@ -142,6 +144,7 @@ function editorFrom(
     fields: Object.fromEntries(Object.entries(payload.facts).map(([key, value]) => [key, Array.isArray(value) ? value.join('\n') : value === null ? '' : String(value)])),
     descriptionEnabled: payload.description !== null, descriptionLocale: payload.description?.locale ?? locale,
     descriptionTexts, mediaIds: [...payload.gallery.mediaIds], coverMediaId: payload.gallery.coverMediaId,
+    amenityBaseline: snapshot.amenities, amenities: (payload.amenities ?? []).map(amenityDraft), amenitiesPresent: payload.amenities !== undefined,
     mediaUrls: Object.fromEntries([...snapshot.gallery.media, ...(detail?.proposalMedia ?? [])].map(media => [media.id, media.url])), dirty: false,
   };
 }
@@ -157,11 +160,12 @@ function payloadFrom(editor: Editor): ContentProposal {
   return parseContentProposal(editor.scope, {
     facts, description: editor.descriptionEnabled ? { locale: editor.descriptionLocale, value: editor.descriptionTexts[editor.descriptionLocale] } : null,
     gallery: { mediaIds: editor.mediaIds, coverMediaId: editor.coverMediaId },
+    ...(editor.scope === 'project' && (editor.amenitiesPresent || editor.amenities.length > 0) ? { amenities: editor.amenities.map(amenityPayload) } : {}),
   });
 }
 
-export default function ContentClient({ labels, initialLocale = 'en', initialProposalId }: {
-  labels: Record<string, string>; initialLocale?: ContentLocale; initialProposalId?: string;
+export default function ContentClient({ labels, initialLocale = 'en', initialProposalId, initialTarget }: {
+  labels: Record<string, string>; initialLocale?: ContentLocale; initialProposalId?: string; initialTarget?: { scope: ContentScope; id: string };
 }) {
   const l = (key: string) => labels[`property.content.${key}`] || CONTENT_UI_LABELS[`property.content.${key}`] || CONTENT_UI_LABELS['property.content.status.unknown'];
   const [targets, setTargets] = useState<Target[]>([]);
@@ -174,13 +178,16 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
   const [notice, setNotice] = useState<string | null>(null);
   const [accessBlocked, setAccessBlocked] = useState(false);
   const [writeUncertain, setWriteUncertain] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState<PendingPhotoUpload | null>(null);
+  const [pendingRemaining, setPendingRemaining] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState<{ stage: UploadStage; index: number; total: number } | null>(null);
   const mounted = useRef(false);
   const lock = useRef(false);
   const sequence = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const readOnly = !!editor && !['draft', 'returned'].includes(editor.status);
-  const disabled = !!busy || readOnly || accessBlocked || writeUncertain;
+  const disabled = !!busy || readOnly || accessBlocked || writeUncertain || !!pendingPhoto;
 
   const run = useCallback(async (kind: string, action: (signal: AbortSignal, active: () => boolean) => Promise<void>) => {
     if (lock.current) return;
@@ -198,11 +205,11 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
         if (key === 'forbidden') setAccessBlocked(true);
       }
     } finally {
-      if (active()) { lock.current = false; setBusy(null); controller.current = null; }
+      if (active()) { lock.current = false; setBusy(null); setUploadProgress(null); controller.current = null; }
     }
   }, []);
 
-  const loadIndex = useCallback((openId?: string) => run('loading', async (signal, active) => {
+  const loadIndex = useCallback((openId?: string, openInitialTarget = true) => run('loading', async (signal, active) => {
     const index = readIndex(await request(API, signal));
     if (!active()) return;
     setTargets(index.targets); setItems(index.items); setLoaded(true);
@@ -211,9 +218,23 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
       if (!active()) return;
       const target = index.targets.find(item => item.scope === detail.scope && item.id === detail.targetId);
       setEditor(editorFrom(detail.scope, detail.targetId, target?.name ?? detail.proposal.facts.name, detail.baselineVersion, detail.baseline, detail.proposal, initialLocale, detail));
-      setAccessBlocked(false); setWriteUncertain(false);
+      setAccessBlocked(false); setWriteUncertain(false); setPendingPhoto(null);
+    } else if (initialTarget && openInitialTarget) {
+      // The link never grants access: resolve against the server-authorized list first.
+      const target = index.targets.find(item => item.scope === initialTarget.scope && item.id === initialTarget.id);
+      if (!target) throw new RequestError('forbidden');
+      const result = object(await requestTarget(`${TARGET_API}?scope=${target.scope}&id=${encodeURIComponent(target.id)}`, signal));
+      const actual = readTarget(result.target);
+      if (actual.scope !== target.scope || actual.id !== target.id) throw new RequestError('invalid_response');
+      const snapshot = readSnapshot(actual.scope, result.snapshot);
+      const baselineVersion = text(result.baselineVersion);
+      if (!baselineVersion) throw new RequestError('invalid_response');
+      if (!active()) return;
+      setChoice(`${target.scope}:${target.id}`);
+      setEditor(editorFrom(actual.scope, actual.id, actual.name, baselineVersion, snapshot, { facts: snapshot.facts, description: null, gallery: { mediaIds: snapshot.gallery.mediaIds, coverMediaId: snapshot.gallery.coverMediaId } }, initialLocale));
+      setAccessBlocked(false); setWriteUncertain(false); setPendingPhoto(null);
     }
-  }), [run, initialLocale]);
+  }), [run, initialLocale, initialTarget]);
 
   useEffect(() => {
     mounted.current = true;
@@ -222,15 +243,18 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
   }, [loadIndex, initialProposalId]);
 
   useEffect(() => {
-    if (!editor?.dirty) return;
+    if (!editor?.dirty && !pendingPhoto && busy !== 'uploading') return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [editor?.dirty]);
+  }, [editor?.dirty, pendingPhoto, busy]);
 
-  const confirmDiscard = () => !editor?.dirty || window.confirm(l('discard_confirm'));
+  const confirmDiscard = () => (!editor?.dirty && !pendingPhoto) || window.confirm(l(pendingPhoto ? 'upload_leave_confirm' : 'discard_confirm'));
   const statusLabel = (status: string) => l(`status.${status}`);
-  const update = (change: Partial<Editor>) => setEditor(current => current ? { ...current, ...change, dirty: true } : current);
+  const update = (change: Partial<Editor>) => {
+    if (disabled || lock.current) return;
+    setEditor(current => current ? { ...current, ...change, dirty: true } : current);
+  };
 
   const openTarget = () => {
     const target = targets.find(item => `${item.scope}:${item.id}` === choice);
@@ -244,7 +268,7 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
       if (!baselineVersion) throw new RequestError('invalid_response');
       if (!active()) return;
       setEditor(editorFrom(actual.scope, actual.id, actual.name, baselineVersion, snapshot, { facts: snapshot.facts, description: null, gallery: { mediaIds: snapshot.gallery.mediaIds, coverMediaId: snapshot.gallery.coverMediaId } }, initialLocale));
-      setAccessBlocked(false); setWriteUncertain(false);
+      setAccessBlocked(false); setWriteUncertain(false); setPendingPhoto(null);
     });
   };
 
@@ -256,14 +280,14 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
       if (!active()) return;
       const target = targets.find(item => item.scope === detail.scope && item.id === detail.targetId);
       setEditor(editorFrom(detail.scope, detail.targetId, target?.name ?? detail.proposal.facts.name, detail.baselineVersion, detail.baseline, detail.proposal, initialLocale, detail));
-      setAccessBlocked(false); setWriteUncertain(false);
+      setAccessBlocked(false); setWriteUncertain(false); setPendingPhoto(null);
     });
   };
 
   const acceptDetail = (detail: Detail, previous: Editor) => {
     const next = editorFrom(detail.scope, detail.targetId, previous.targetName, detail.baselineVersion, detail.baseline, detail.proposal, previous.descriptionLocale, detail);
     next.mediaUrls = { ...previous.mediaUrls, ...next.mediaUrls };
-    setEditor(next); setAccessBlocked(false); setWriteUncertain(false);
+    setEditor(next); setAccessBlocked(false); setWriteUncertain(false); setPendingPhoto(null);
     const summary: Summary = { id: detail.id, scope: detail.scope, targetId: detail.targetId, targetName: previous.targetName, status: detail.status, revision: detail.revision, reviewNote: detail.reviewNote };
     setItems(current => [summary, ...current.filter(item => item.id !== detail.id)]);
   };
@@ -321,24 +345,55 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
     });
   };
 
+  const appendPhoto = (photo: UploadedPhoto, target: { scope: ContentScope; targetId: string }) => {
+    setEditor(current => current && current.scope === target.scope && current.targetId === target.targetId ? {
+      ...current, mediaIds: current.mediaIds.includes(photo.mediaAssetId) ? current.mediaIds : [...current.mediaIds, photo.mediaAssetId],
+      mediaUrls: { ...current.mediaUrls, [photo.mediaAssetId]: photo.url }, dirty: true,
+    } : current);
+    setPendingPhoto(null);
+  };
+
+  const retryPhoto = () => {
+    if (!editor || !pendingPhoto || busy || accessBlocked || readOnly || pendingPhoto.scope !== editor.scope || pendingPhoto.targetId !== editor.targetId) return;
+    void run('uploading', async (signal, active) => {
+      const photo = await finalizePhoto(pendingPhoto, { signal, onStage: stage => {
+        if (active()) setUploadProgress({ stage, index: 1, total: 1 });
+      } });
+      if (!active()) return;
+      appendPhoto(photo, pendingPhoto); setNotice(pendingRemaining ? 'upload_partial' : 'upload_complete'); setPendingRemaining(0);
+    });
+  };
+
+  const discardPhoto = () => {
+    if (busy || !pendingPhoto || !window.confirm(l('upload_discard_confirm'))) return;
+    setPendingPhoto(null); setPendingRemaining(0); setError(null); setNotice('upload_discarded');
+  };
+
+  const stopUploadWaiting = () => {
+    if (busy !== 'uploading') return;
+    sequence.current += 1; controller.current?.abort(); controller.current = null; lock.current = false;
+    setBusy(null); setUploadProgress(null);
+    setError(pendingPhoto ? uploadProgress?.stage === 'upload_finalizing' ? 'upload_finalize_uncertain' : 'upload_transfer_uncertain' : 'upload_stopped');
+  };
+
   const upload = (files: File[]) => {
-    if (!editor || disabled || !files.length) return;
-    if (files.length + editor.mediaIds.length > 200 || files.some(file => !PHOTO_MIME_TYPES.includes(file.type) || file.size > 8 * 1024 * 1024 || file.size === 0)) { setError('upload_invalid'); return; }
+    if (!editor || disabled || lock.current || !files.length) return;
+    if (files.length + editor.mediaIds.length > 200 || files.some(file => !validPhoto(file))) { setError('upload_invalid'); return; }
+    const target = { scope: editor.scope, targetId: editor.targetId };
     void run('uploading', async (signal, active) => {
       let uploaded = 0;
       try {
-        for (const file of files) {
-          const body = new FormData(); body.set('file', file); body.set('kind', 'photo');
-          const result = object(await request('/api/media/upload', signal, { method: 'POST', body }));
-          const id = text(result.mediaAssetId); const url = imageUrl(result.url);
-          if (!UUID.test(id) || !url) throw new RequestError('invalid_response');
+        for (const [index, file] of files.entries()) {
           if (!active()) return;
-          setEditor(current => current && current.scope === editor.scope && current.targetId === editor.targetId ? {
-            ...current, mediaIds: current.mediaIds.includes(id) ? current.mediaIds : [...current.mediaIds, id],
-            mediaUrls: { ...current.mediaUrls, [id]: url }, dirty: true,
-          } : current);
-          uploaded += 1;
+          const photo = await uploadPhoto(file, target, {
+            signal,
+            onPending: pending => { if (active()) { setPendingPhoto(pending); setPendingRemaining(files.length - index - 1); } },
+            onStage: stage => { if (active()) setUploadProgress({ stage, index: index + 1, total: files.length }); },
+          });
+          if (!active()) return;
+          appendPhoto(photo, target); uploaded += 1;
         }
+        if (active()) setNotice('upload_complete');
       } catch (reason) { if (uploaded && active()) setNotice('upload_partial'); throw reason; }
     });
   };
@@ -353,8 +408,10 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
 
   return <main className="mx-auto max-w-6xl space-y-24 px-16 py-24 md:px-32" aria-busy={!!busy}>
     <header><h1 className="font-display text-display font-semibold text-text-ink">{l('title')}</h1><p className="mt-8 max-w-3xl text-body text-text-secondary">{l('intro')}</p></header>
-    {busy ? <p role="status">{l(busy)}</p> : null}
-    {error ? <div role="alert" className="rounded-md border border-state-error p-16 text-state-error"><p>{l(error)}</p><button type="button" disabled={!!busy} onClick={() => void loadIndex()} className={`${BUTTON_CLASS} mt-8`}>{l('retry')}</button>{editor?.id ? <button type="button" disabled={!!busy} onClick={() => openProposal(editor.id!)} className={`${BUTTON_CLASS} ml-8 mt-8`}>{l('open')}</button> : null}</div> : null}
+    {busy ? <p role="status">{uploadProgress ? `${l(uploadProgress.stage)} ${uploadProgress.index}/${uploadProgress.total}` : l(busy)}</p> : null}
+    {busy === 'uploading' ? <button type="button" className={BUTTON_CLASS} onClick={stopUploadWaiting}>{l('upload_stop_waiting')}</button> : null}
+    {pendingPhoto && !busy ? <div className="rounded-md border border-border-line p-16"><p>{l('upload_pending')}</p><button type="button" className={`${BUTTON_CLASS} mt-8`} disabled={accessBlocked || readOnly} onClick={retryPhoto}>{l('upload_retry_finalize')}</button><button type="button" className={`${BUTTON_CLASS} ml-8 mt-8`} onClick={discardPhoto}>{l('upload_discard')}</button></div> : null}
+    {error ? <div role="alert" className="rounded-md border border-state-error p-16 text-state-error"><p>{l(error)}</p><button type="button" disabled={!!busy || !!pendingPhoto} onClick={() => void loadIndex(undefined, !editor)} className={`${BUTTON_CLASS} mt-8`}>{l('retry')}</button>{editor?.id ? <button type="button" disabled={!!busy} onClick={() => openProposal(editor.id!)} className={`${BUTTON_CLASS} ml-8 mt-8`}>{l('open')}</button> : null}</div> : null}
     {notice ? <p role="status" className="rounded-md bg-surface-ivory p-16">{l(notice)}</p> : null}
     {writeUncertain && error !== 'save_uncertain' ? <p role="alert">{l('save_uncertain')}</p> : null}
     {accessBlocked && error !== 'forbidden' ? <p role="alert">{l('forbidden')}</p> : null}
@@ -370,6 +427,7 @@ export default function ContentClient({ labels, initialLocale = 'en', initialPro
         {editor.reviewNote ? <aside className="mt-16 rounded-md bg-surface-ivory p-16"><h3 className="font-semibold">{l('review_note')}</h3><p className="mt-8 whitespace-pre-wrap break-words">{editor.reviewNote}</p></aside> : null}
       </section>
       <fieldset disabled={disabled} className="stitch-panel rounded-lg border border-border-line bg-surface-paper p-20"><legend className="px-4 font-display text-heading-3">{l('facts')}</legend><p className="mb-16 text-small text-text-secondary">{l('facts_hint')}</p>{editor.scope === 'unit' ? <p className="mb-16 text-small text-text-secondary">{l('unit_name_hint')}</p> : null}<div className="grid gap-16 sm:grid-cols-2">{(editor.scope === 'unit' ? UNIT_FIELDS : PROJECT_FIELDS).map(field => <div key={field.key} className={field.list ? 'sm:col-span-2' : ''}><label htmlFor={`content-${field.key}`} className="font-semibold">{l(`field.${field.key === 'name' && editor.scope === 'unit' ? 'unitName' : field.key}`)}</label>{field.key === 'projectType' ? <select id={`content-${field.key}`} className={INPUT_CLASS} value={editor.fields[field.key]} onChange={event => update({ fields: { ...editor.fields, [field.key]: event.target.value } })}><option value="">{l('optional')}</option>{['resort', 'condominium', 'villa_estate', 'standalone'].map(type => <option key={type} value={type}>{l(`type.${type}`)}</option>)}</select> : field.list ? <><textarea id={`content-${field.key}`} rows={4} className={INPUT_CLASS} value={editor.fields[field.key]} aria-describedby={`content-${field.key}-hint`} onChange={event => update({ fields: { ...editor.fields, [field.key]: event.target.value } })}/><p id={`content-${field.key}-hint`} className="mt-4 text-small">{l('list_hint')}</p></> : <input id={`content-${field.key}`} className={INPUT_CLASS} type={field.number ? 'number' : 'text'} min={field.number ? 0 : undefined} max={field.number ? field.max : undefined} step={field.number ? field.step ?? 1 : undefined} maxLength={field.number ? undefined : field.max} required={field.required} value={editor.fields[field.key]} onChange={event => update({ fields: { ...editor.fields, [field.key]: event.target.value } })}/>}</div>)}</div></fieldset>
+      {editor.scope === 'project' ? <AmenityEditor baseline={editor.amenityBaseline} entries={editor.amenities} locale={initialLocale} disabled={disabled} labels={labels} onChange={amenities => update({ amenities, amenitiesPresent: true })}/> : null}
       <fieldset disabled={disabled} className="stitch-panel rounded-lg border border-border-line bg-surface-paper p-20"><legend className="px-4 font-display text-heading-3">{l('description')}</legend><div className="flex items-center gap-8"><input id="content-description-enabled" type="checkbox" checked={editor.descriptionEnabled} onChange={event => update({ descriptionEnabled: event.target.checked })}/><label htmlFor="content-description-enabled">{l('description_enabled')}</label></div><p className="mt-8 text-small text-text-secondary">{l('description_hint')}</p>{editor.descriptionEnabled ? <div className="mt-16 space-y-16"><div><label htmlFor="content-description-locale">{l('description_locale')}</label><select id="content-description-locale" className={INPUT_CLASS} value={editor.descriptionLocale} onChange={event => update({ descriptionLocale: event.target.value as ContentLocale })}>{LOCALES.map(locale => <option key={locale} value={locale}>{l(`locale.${locale}`)}</option>)}</select></div><div><label htmlFor="content-description-value">{l('description_value')}</label><textarea id="content-description-value" className={INPUT_CLASS} rows={7} required maxLength={3000} aria-describedby="content-description-hint" value={editor.descriptionTexts[editor.descriptionLocale]} onChange={event => update({ descriptionTexts: { ...editor.descriptionTexts, [editor.descriptionLocale]: event.target.value } })}/><p id="content-description-hint" className="mt-4 text-small">{l('description_limit')} {editor.descriptionTexts[editor.descriptionLocale].length}/3000</p></div></div> : null}</fieldset>
       <fieldset disabled={disabled} className="stitch-panel rounded-lg border border-border-line bg-surface-paper p-20"><legend className="px-4 font-display text-heading-3">{l('gallery')}</legend><p className="text-small text-text-secondary">{l('gallery_hint')}</p><div className="mt-16"><label htmlFor="content-upload" className="font-semibold">{l('upload')}</label><input id="content-upload" type="file" accept={PHOTO_MIME_TYPES.join(',')} multiple className={INPUT_CLASS} aria-describedby="content-upload-hint" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ''; upload(files); }}/><p id="content-upload-hint" className="mt-4 text-small">{l('upload_hint')}</p></div>{!editor.mediaIds.length ? <p className="mt-16">{l('gallery_empty')}</p> : <ol className="mt-16 grid gap-16 sm:grid-cols-2 lg:grid-cols-3">{editor.mediaIds.map((id, index) => <li key={id} className="overflow-hidden rounded-md border border-border-line">{editor.mediaUrls[id] ? (
         // Public photo URLs use the existing media storage service; do not proxy them through an image optimizer.

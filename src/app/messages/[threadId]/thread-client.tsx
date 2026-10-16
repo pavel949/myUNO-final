@@ -3,7 +3,7 @@
 
 import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { WorkspaceContextLink as Link } from '@/components/WorkspaceNavigation';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 

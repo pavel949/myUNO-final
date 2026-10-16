@@ -244,4 +244,129 @@ describe('content proposal PostgreSQL transactions and concurrent writers', () =
     await service.update(author, proposal.id, { expectedRevision: 3, proposal: rebased.proposal, status: 'submitted' });
     expect((await service.review(reviewer, proposal.id, { action: 'approve', expectedRevision: 4 })).status).toBe('approved');
   });
+  const facility = (id: string | null) => ({ id, locale: 'en', name: 'Pool', shortDescription: null,
+    description: 'Reviewed visitor information.', locationLabel: 'Floor 2', accessInstructions: 'Ask reception.',
+    openingHours: { mode: 'keep' }, rules: { mode: 'keep' } });
+  async function facilityDraft(id: string | null) {
+    await db.roleAssignment.create({ data: { identityId: author, role: 'content_contributor', scopeType: 'project', projectId } });
+    const current = await service.target(author, 'project', projectId);
+    return service.create(author, { scope: 'project', targetId: projectId, status: 'submitted', baselineVersion: current.baselineVersion,
+      proposal: { facts: current.snapshot.facts, description: null, gallery: { mediaIds: [], coverMediaId: null }, amenities: [facility(id)] } });
+  }
+  it('creates a descriptive draft facility exactly once under concurrent approval without enabling publication or native booking', async () => {
+    const proposal = await facilityDraft(null);
+    const results = await Promise.all([
+      service.review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 }),
+      service.review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 }),
+    ]);
+    expect(results.every(result => result.status === 'approved')).toBe(true);
+    const rows = await db.projectAmenity.findMany({ where: { projectId } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ published: false, accessType: 'not_specified', pricingType: 'not_specified', priceThb: null,
+      bookingRequired: false, bookingMode: 'none', bookingUrl: null, reservationConfig: null, capacity: null, minAge: null });
+    expect(await db.auditLog.count({ where: { entityId: proposal.id, action: 'property_content_proposal.approved' } })).toBe(1);
+    const key = await db.contentKey.findUniqueOrThrow({ where: { key: `project_amenity.${rows[0].id}.description` }, include: { translations: true } });
+    expect(key.translations[0]).toMatchObject({ locale: 'en', value: 'Reviewed visitor information.', status: 'needs_review' });
+  });
+  it('preserves custom facility schedules, other locales and all commercial configuration under a reviewed content edit', async () => {
+    const pool = await db.projectAmenity.create({ data: { projectId, slug: 'pool', name: 'Pool', description: 'Old description',
+      published: true, bookingRequired: true, bookingMode: 'time_slot', pricingType: 'paid', priceThb: 15000,
+      reservationConfig: { capacity: 5, autoConfirm: false }, openingHours: { monday: [['08:00', '20:00']], timezone: 'Asia/Bangkok' }, rules: { visitors: ['No glass'] } } });
+    const key = await db.contentKey.create({ data: { key: `project_amenity.${pool.id}.description`, namespace: 'project_amenity', description: 'Fixture',
+      translations: { create: [{ locale: 'en', value: 'Old English description', status: 'ok', updatedByIdentityId: author }, { locale: 'th', value: 'Original Thai description', status: 'needs_review', updatedByIdentityId: author }] } } });
+    const originalThai = await db.translation.findUniqueOrThrow({ where: { contentKeyId_locale: { contentKeyId: key.id, locale: 'th' } } });
+    const proposal = await facilityDraft(pool.id);
+    await service.review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 });
+    expect(await db.projectAmenity.findUniqueOrThrow({ where: { id: pool.id } })).toMatchObject({ description: 'Reviewed visitor information.',
+      published: true, bookingRequired: true, bookingMode: 'time_slot', pricingType: 'paid', priceThb: 15000,
+      reservationConfig: pool.reservationConfig, openingHours: pool.openingHours, rules: pool.rules });
+    expect(await db.translation.findUniqueOrThrow({ where: { id: originalThai.id } })).toEqual(originalThai);
+    expect(await db.translation.findUniqueOrThrow({ where: { contentKeyId_locale: { contentKeyId: key.id, locale: 'en' } } })).toMatchObject({ value: 'Reviewed visitor information.', status: 'needs_review' });
+  });
+  it.each(['insert', 'delete', 'edit'] as const)('locks the canonical facility collection against concurrent %s', async action => {
+    const pool = await db.projectAmenity.create({ data: { projectId, slug: 'pool', name: 'Pool' } });
+    const proposal = await facilityDraft(pool.id);
+    let signalLocked!: () => void, release!: () => void;
+    const locked = new Promise<void>(resolve => { signalLocked = resolve; });
+    const released = new Promise<void>(resolve => { release = resolve; });
+    let paused = false;
+    const pausingDb = new Proxy(db, { get(target, property) {
+      if (property === '$transaction') return (run: (tx: Prisma.TransactionClient) => Promise<unknown>, options: object) =>
+        target.$transaction(async tx => run(new Proxy(tx, { get(inner, name) {
+          if (name === '$queryRaw') return async (parts: TemplateStringsArray, ...values: unknown[]) => {
+            const result = await inner.$queryRaw(parts, ...values);
+            if (!paused && parts.join('?').includes('FROM project_amenity') && parts.join('?').includes('FOR UPDATE')) {
+              paused = true; signalLocked(); await released;
+            }
+            return result;
+          };
+          return Reflect.get(inner, name);
+        } })), options);
+      return Reflect.get(target, property);
+    } });
+    const approval = createContentProposalService(pausingDb).review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 });
+    await Promise.race([locked, approval.then(() => { throw new Error('Approval bypassed facility lock checkpoint'); })]);
+    let signalWriter!: (pid: number) => void;
+    const writerPid = new Promise<number>(resolve => { signalWriter = resolve; });
+    const writer = db.$transaction(async tx => {
+      const [row] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`;
+      signalWriter(row.pid);
+      if (action === 'insert') return tx.projectAmenity.create({ data: { projectId, slug: 'gym', name: 'Gym' } });
+      if (action === 'delete') return tx.projectAmenity.delete({ where: { id: pool.id } });
+      return tx.projectAmenity.update({ where: { id: pool.id }, data: { name: 'Later canonical edit' } });
+    });
+    const outcomes = Promise.allSettled([approval, writer]);
+    let observedLock = false;
+    try {
+      const pid = await writerPid;
+      const deadline = Date.now() + 3000;
+      while (Date.now() < deadline) {
+        const rows = await db.$queryRaw<{ wait_event_type: string | null }[]>`SELECT wait_event_type FROM pg_stat_activity WHERE pid = ${pid}`;
+        if (rows[0]?.wait_event_type === 'Lock') { observedLock = true; break; }
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+    } finally { release(); await outcomes; }
+    expect(observedLock).toBe(true); expect((await approval).status).toBe('approved'); await writer;
+  });
+  it('rejects an unrelated unit pointer alias before changing amenity translations', async () => {
+    const pool = await db.projectAmenity.create({ data: { projectId, slug: 'pool', name: 'Pool', description: 'Original pool description' } });
+    const key = await db.contentKey.create({ data: { key: `project_amenity.${pool.id}.description`, namespace: 'project_amenity', description: 'Fixture',
+      translations: { create: { locale: 'en', value: 'Original shared text', status: 'ok', updatedByIdentityId: author } } } });
+    await db.unit.update({ where: { id: unitId }, data: { marketingTitleKey: key.key } });
+    const proposal = await facilityDraft(pool.id);
+    await expect(service.review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 })).rejects.toMatchObject({ status: 409 });
+    expect((await db.projectAmenity.findUniqueOrThrow({ where: { id: pool.id } })).description).toBe('Original pool description');
+    expect((await db.translation.findUniqueOrThrow({ where: { contentKeyId_locale: { contentKeyId: key.id, locale: 'en' } } })).value).toBe('Original shared text');
+  });
+  it('conflicts rather than clobbering a newly inserted amenity content key and rolls canonical edits back', async () => {
+    const pool = await db.projectAmenity.create({ data: { projectId, slug: 'pool', name: 'Pool', description: 'Old description' } });
+    const proposal = await facilityDraft(pool.id);
+    let signalRead!: () => void, release!: () => void;
+    const read = new Promise<void>(resolve => { signalRead = resolve; });
+    const released = new Promise<void>(resolve => { release = resolve; });
+    const pausingDb = new Proxy(db, { get(target, property) {
+      if (property === '$transaction') return (run: (tx: Prisma.TransactionClient) => Promise<unknown>, options: object) =>
+        target.$transaction(async tx => run(new Proxy(tx, { get(inner, name) {
+          if (name === 'contentKey') return new Proxy(inner.contentKey, { get(delegate, method) {
+            if (method === 'create') return async (args: Prisma.ContentKeyCreateArgs) => {
+              signalRead(); await released; return delegate.create(args);
+            };
+            return Reflect.get(delegate, method);
+          } });
+          return Reflect.get(inner, name);
+        } })), options);
+      return Reflect.get(target, property);
+    } });
+    const approval = createContentProposalService(pausingDb).review(reviewer, proposal.id, { action: 'approve', expectedRevision: 1 });
+    await Promise.race([read, approval.then(() => { throw new Error('Approval bypassed amenity key checkpoint'); })]);
+    try {
+      await db.contentKey.create({ data: { key: `project_amenity.${pool.id}.description`, namespace: 'project_amenity', description: 'Concurrent key',
+        translations: { create: { locale: 'en', value: 'Concurrent content', status: 'ok', updatedByIdentityId: reviewer } } } });
+    } finally { release(); }
+    await expect(approval).rejects.toMatchObject({ code: 'P2002' });
+    expect((await db.projectAmenity.findUniqueOrThrow({ where: { id: pool.id } })).description).toBe('Old description');
+    expect((await db.crmOpportunity.findUniqueOrThrow({ where: { id: proposal.id } })).requirements).toMatchObject({ status: 'submitted', revision: 1 });
+    const key = await db.contentKey.findUniqueOrThrow({ where: { key: `project_amenity.${pool.id}.description` }, include: { translations: true } });
+    expect(key.translations[0].value).toBe('Concurrent content');
+  });
 });

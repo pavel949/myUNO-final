@@ -1,3 +1,4 @@
+import { assertNoEmployeeCreationInput } from '@/modules/onboarding/employee-creation.schema';
 import {
   CrmActivityStatus,
   CrmActivityType,
@@ -114,6 +115,9 @@ export async function ensureCrmProfile(
 }
 
 export async function createOpportunity(db: PrismaClient, input: OpportunityInput) {
+  // Only the dedicated employee intake service may create governed provenance.
+  // Guard here so all current and future generic CRM callers are covered.
+  assertNoEmployeeCreationInput(input.requirements);
   const title = cleanRequired(input.title, 'title', 240);
   const source = cleanRequired(input.source, 'source', 120);
   const probability = validateProbability(input.probability ?? 10);

@@ -3,6 +3,7 @@ import { db, resetDb, createProject, createUnit } from '@/test/util';
 import { computePriceBreakdown } from './index';
 import { remainingAnnualWindows } from './tariff-calendar';
 import { readTariffDraft, saveTariffDraft, validateTariffDraft, usesTariffGrid, type TariffDraft } from './tariff-editor';
+import { readTariffRevision } from './tariff-editor';
 
 /**
  * The admin rates editor writes the same grid the engine quotes from: a
@@ -27,7 +28,7 @@ describe('admin rates editor', () => {
     await resetDb();
     const project = await createProject({ status: 'live' });
     unitId = (await createUnit({ projectId: project.id, status: 'live', baseNightlyThb: 100_000, maxGuests: 4 })).id;
-    admin = (await db.identity.create({ data: { firstName: 'Ops', lastName: 'Admin' } })).id;
+    admin = (await db.identity.create({ data: { firstName: 'Ops', lastName: 'Admin', status: 'active', isAdmin: true } })).id;
   });
 
   it('rejects overlapping seasons, bad dates and short monthly minimums before anything is saved', () => {
@@ -50,7 +51,7 @@ describe('admin rates editor', () => {
 
   it('saves seasons that the pricing engine then quotes, daily and monthly', async () => {
     expect(await usesTariffGrid(db, unitId)).toBe(false);
-    await saveTariffDraft(db, { unitIds: [unitId], draft: draft(), actorIdentityId: admin });
+    await saveTariffDraft(db, { unitIds: [unitId], expectedRevision: await readTariffRevision(db, [unitId]), draft: draft(), actorIdentityId: admin });
     // Dated nightly overrides are not read for grid-priced villas; the API refuses them.
     expect(await usesTariffGrid(db, unitId)).toBe(true);
     const june = await computePriceBreakdown(db, unitId, day('2027-06-01'), day('2027-06-04'), 2);
@@ -84,7 +85,7 @@ describe('admin rates editor', () => {
           cancellation_summary: 'Low', balance_timing: 'at check-in', stay_terms: '', amendments_allowed: false, included: [], excluded: [] },
       ] },
     } });
-    await saveTariffDraft(db, { unitIds: [unitId], draft: draft(), actorIdentityId: admin });
+    await saveTariffDraft(db, { unitIds: [unitId], expectedRevision: await readTariffRevision(db, [unitId]), draft: draft(), actorIdentityId: admin });
     const offer = await db.commercialOffering.findFirstOrThrow({ where: { unitId, offeringType: 'short_term_stay' } });
     const terms = offer.pricingTerms as { sourceSystem: string; tariffGrid: Array<{ sourceRateId: string; seasonCode: string }> };
     expect(terms.sourceSystem).toBe('layantara_os');
@@ -102,7 +103,7 @@ describe('admin rates editor', () => {
       { seasonCode: 'HOLIDAY', windows: [{ start: '12-20', end: '01-10' }], amountSatang: 234_500, minimumNights: 1 },
     ] });
     value.daily[0].windows = remainingAnnualWindows(value.daily, 0);
-    await saveTariffDraft(db, { unitIds: [unitId], draft: value, actorIdentityId: admin });
+    await saveTariffDraft(db, { unitIds: [unitId], expectedRevision: await readTariffRevision(db, [unitId]), draft: value, actorIdentityId: admin });
     const reloaded = await readTariffDraft(db, unitId);
     expect(reloaded.daily[0].windows).toEqual([{ start: '01-11', end: '12-19' }]);
     expect(reloaded.daily.map(s => s.amountSatang)).toEqual([123_400, 234_500]);
@@ -112,8 +113,8 @@ describe('admin rates editor', () => {
   });
 
   it('refuses an invalid draft without touching the saved grid', async () => {
-    await saveTariffDraft(db, { unitIds: [unitId], draft: draft(), actorIdentityId: admin });
-    await expect(saveTariffDraft(db, { unitIds: [unitId], draft: draft({ daily: [] }), actorIdentityId: admin }))
+    await saveTariffDraft(db, { unitIds: [unitId], expectedRevision: await readTariffRevision(db, [unitId]), draft: draft(), actorIdentityId: admin });
+    await expect(saveTariffDraft(db, { unitIds: [unitId], expectedRevision: await readTariffRevision(db, [unitId]), draft: draft({ daily: [] }), actorIdentityId: admin }))
       .rejects.toThrow('TARIFF_INVALID');
     expect((await readTariffDraft(db, unitId)).daily).toHaveLength(2);
   });

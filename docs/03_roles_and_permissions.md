@@ -96,4 +96,6 @@ Legend: ✅ allowed within scope · 👁 read-only within scope · — no access
 
 ## 5. Implementation contract
 
+Scoped property capability additions are defined in [Canonical Workspaces](canonical/ROLE_WORKSPACES.md#property-capability-roles-2026-10-16): `pricing_editor` and `booking_mode_editor`. These narrowly scoped grants supplement the matrix; they do not broaden the owner role or confer administrative/financial authority.
+
 One helper, used by every action and route: `can(identity, action, resource) → boolean`, backed by a static `PERMISSIONS` table (action → roles → scope rule) mirroring §3 exactly, plus the special rules of §4 as named predicates. The matrix above is the test fixture: doc 16 includes a task that encodes §3 as a table-driven test suite so the matrix in code and the matrix in this document cannot drift.

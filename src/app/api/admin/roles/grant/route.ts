@@ -2,6 +2,9 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { people } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
+import { isPropertyCapabilityRole } from '@/modules/core/property-capability-policy';
+import { grantPropertyCapability } from '@/modules/core/property-capability-grants';
+import { PropertyCapabilityError } from '@/modules/core/property-capability-access';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -35,6 +38,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (isPropertyCapabilityRole(role)) {
+      const result = await grantPropertyCapability(prisma, user.identityId, body);
+      return NextResponse.json({ success: true, roleAssignment: result.grant, alreadyGranted: result.alreadyGranted });
+    }
+
     const roleAssignment = await people.grantRole(prisma, {
       identityId,
       role,
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to grant role' },
-      { status: 400 }
+      { status: error instanceof PropertyCapabilityError ? error.status : 400 }
     );
   }
 }

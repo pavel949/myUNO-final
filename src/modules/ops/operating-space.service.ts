@@ -1,22 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
-export const OPERATING_SPACE_CAPABILITIES = [
-  'view_calendar',
-  'manage_reservations',
-  'manage_tasks',
-  'assign_tasks',
-  'manage_housekeeping',
-  'manage_maintenance',
-  'manage_pricing',
-  'manage_availability',
-  'view_finance',
-  'record_expense',
-  'generate_owner_report',
-  'manage_team',
-  'manage_channels',
-] as const;
-
-export type OperatingSpaceCapability = typeof OPERATING_SPACE_CAPABILITIES[number];
+export { OPERATING_SPACE_CAPABILITIES, type OperatingSpaceCapability } from './operating-space-capability-policy';
+import type { OperatingSpaceCapability } from './operating-space-capability-policy';
 
 export async function listOperatingSpacesForIdentity(
   db: PrismaClient,

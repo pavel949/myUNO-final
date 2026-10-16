@@ -3,20 +3,27 @@
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { isStitchWorkspace } from '@/lib/stitch-surface';
+import { useOptionalWorkspaceNavigation } from '@/components/WorkspaceNavigation';
 
 /** Domain layouts own their rails; public footer/tabs belong to guest journeys. */
-export function ApplicationFrame({ navigation, mobileNavigation, footer, children }: {
+export function ApplicationFrame({ navigation, workspaceSwitcher, mobileNavigation, footer, children }: {
   navigation: ReactNode;
+  workspaceSwitcher?: ReactNode;
   mobileNavigation: ReactNode;
   footer: ReactNode;
   children: ReactNode;
 }) {
-  const workspace = isStitchWorkspace(usePathname() || '/');
+  const pathWorkspace = isStitchWorkspace(usePathname() || '/');
+  const resolved = useOptionalWorkspaceNavigation();
+  const workspace = pathWorkspace || !!resolved && (resolved.mode !== 'personal' || resolved.controlPlane);
+  const hasTabs = !resolved?.controlPlane;
   return (
-    <div className={`flex min-h-screen flex-1 flex-col ${workspace ? 'stitch-console' : 'stitch-public'}`}>
+    <div className={`flex min-h-screen flex-1 flex-col workspace-navigation-frame ${workspace ? 'stitch-console' : 'stitch-public'} ${hasTabs ? 'workspace-has-tabs' : ''}`}>
       {navigation}
-      <div className={`min-w-0 flex-1 ${workspace ? '' : 'pb-56 md:pb-0'}`}>{children}</div>
-      {!workspace && <>{mobileNavigation}{footer}</>}
+      {workspaceSwitcher}
+      <div className={`min-w-0 flex-1 ${hasTabs ? 'workspace-content-clearance' : ''}`}>{children}</div>
+      {mobileNavigation}
+      {!workspace && footer}
     </div>
   );
 }

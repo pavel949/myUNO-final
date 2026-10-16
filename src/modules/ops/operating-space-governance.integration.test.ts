@@ -461,3 +461,38 @@ describe('Daily-task setup does not promise unsupported delegation', () => {
     expect(await governanceState()).toEqual(before);
   });
 });
+
+// Creation flags are reviewed-intake authority, not a legacy operating role.
+describe('Founder-only independent employee creation capabilities', () => {
+  beforeEach(resetDb);
+  it.each(['create_unit', 'create_complex'])('grants only %s without operational roles or inventory changes', async capability => {
+    const f = await fixture();
+    const units = await db.unit.findMany({ orderBy: { id: 'asc' } });
+    const result = await updateGovernedOperatingMember(db, f.founder.id, f.space.id, memberInput(f, { capabilities: [capability] }));
+    expect(result.capabilities).toEqual([capability]);
+    expect(await db.roleAssignment.count()).toBe(0);
+    expect(await db.unit.findMany({ orderBy: { id: 'asc' } })).toEqual(units);
+    await expect(getScopedOperationalAccess(db, f.staff.id, f.space.id, capability as 'create_unit' | 'create_complex', [])).rejects.toMatchObject({ status: 403 });
+  });
+  it('does not grant creation in an empty workspace and rolls back its CAS revision', async () => {
+    const f = await fixture();
+    await db.operatingSpaceUnit.deleteMany({ where: { operatingSpaceId: f.space.id } });
+    const before = await governanceState();
+    await expect(updateGovernedOperatingMember(db, f.founder.id, f.space.id, memberInput(f, { capabilities: ['create_complex'] }))).rejects.toMatchObject({ status: 409 });
+    expect(await governanceState()).toEqual(before);
+  });
+  it('requires current verified eligibility and cannot manufacture it from an attachment', async () => {
+    const f = await fixture();
+    await db.projectOrganizationRole.update({ where: { id: f.relation.id }, data: { provenance: 'unverified' } });
+    const before = await governanceState();
+    await expect(updateGovernedOperatingMember(db, f.founder.id, f.space.id, memberInput(f, { capabilities: ['create_unit'] }))).rejects.toMatchObject({ status: 409 });
+    expect(await governanceState()).toEqual(before);
+  });
+  it('cannot delegate creation from a creation-only member', async () => {
+    const f = await fixture();
+    await db.operatingSpaceMember.create({ data: { operatingSpaceId: f.space.id, identityId: f.staff.id, capabilities: ['create_unit', 'create_complex'] } });
+    const before = await governanceState();
+    await expect(updateGovernedOperatingMember(db, f.staff.id, f.space.id, memberInput(f, { capabilities: ['create_unit'] }))).rejects.toMatchObject({ status: 403 });
+    expect(await governanceState()).toEqual(before);
+  });
+});

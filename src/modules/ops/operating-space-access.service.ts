@@ -4,6 +4,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import { CAPABILITY_DEPARTMENTS } from './operating-space-capabilities';
 import { currentEngagementWhere } from '@/modules/projects/engagement-scope';
 import { OPERATING_SPACE_CAPABILITIES, type OperatingSpaceCapability } from './operating-space.service';
+import { isOperatingCreationCapability } from './operating-creation-capabilities';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 export const TASK_DEPARTMENTS = ['housekeeping', 'front_desk', 'maintenance', 'guest_care', 'reservations'] as const;
@@ -55,6 +56,9 @@ export async function getScopedOperationalAccess(
   db: Db, identityId: string, spaceId: string, capability: OperatingSpaceCapability,
   departments: readonly string[],
 ) {
+  if (isOperatingCreationCapability(capability)) {
+    throw new OperatingAccessError('Creation requires the reviewed property-intake workflow');
+  }
   const actor = await getOperationalActor(db, identityId);
   const space = await db.operatingSpace.findUnique({ where: { id: spaceId }, select: {
     id: true, key: true, name: true, status: true, organizationId: true, timezone: true,
@@ -144,8 +148,9 @@ export async function getOperatingSpaceOverviewAccess(db: Db, identityId: string
     select: { active: true, capabilities: true },
   });
   if (!actor.isAdmin && !membership?.active) throw new OperatingAccessError('Operating space membership required');
-  const capabilities = actor.isAdmin ? [...OPERATING_SPACE_CAPABILITIES] :
-    OPERATING_SPACE_CAPABILITIES.filter(cap => membership!.capabilities.includes(cap));
+  const dailyCapabilities = OPERATING_SPACE_CAPABILITIES.filter(cap => !isOperatingCreationCapability(cap));
+  const capabilities = actor.isAdmin ? dailyCapabilities :
+    dailyCapabilities.filter(cap => membership!.capabilities.includes(cap));
   const byCapability: Partial<Record<OperatingSpaceCapability, string[]>> = {};
   let space: Awaited<ReturnType<typeof getScopedOperationalAccess>>['space'] | undefined;
   for (const capability of capabilities) {

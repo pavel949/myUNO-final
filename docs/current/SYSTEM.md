@@ -40,7 +40,7 @@ Availability учитывает canonical blocking booking statuses/active payme
 
 ## Финансы
 
-Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint (включая start/end dates брони), lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period.
+Cash/transfer — запись подтверждённого сотрудником факта, не автоматическая проверка банка. Opn реализован как adapter с проверкой фактов через provider API; production merchant account и успешный charge/refund этим обзором не подтверждены. `PAYMENT_PROVIDER=opn`; mock запрещён в production. Ledger append-only, corrections через reversal. Расходы имеют business date, source/idempotency и защищённые receipts. Owner statements имеют source snapshots, fingerprint (включая start/end dates брони), lines и sign-off; payout запись не означает автоматический банковский перевод. Provider remittance учитывает accepted economics и fulfillment period. Writer payout повторно проверяет сумму и unresolved refunds под provider/order locks, запрещает пересекающиеся/открытые периоды; неоднозначная late pre-payout refund adjustment блокируется для reconciliation, а не исчезает из расчёта.
 
 ## Коммуникации, фоновые работы и федерация
 

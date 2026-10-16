@@ -155,6 +155,15 @@ jobs:
           src/app/api/property-submissions/property-submissions.integration.test.ts
           src/app/api/property-submissions/submission-description-route.test.ts
 
+      - name: Critical production-readiness regressions
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: npx vitest run src/modules/finance/provider-payout-safety.integration.test.ts src/modules/comms/notification-delivery.integration.test.ts src/modules/services/service-order-closure.integration.test.ts src/modules/finance/statement-snapshot.integration.test.ts
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test

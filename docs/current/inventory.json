@@ -7,7 +7,7 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 552,
+    "tests": 553,
     "prismaModels": 118,
     "migrations": 94,
     "routeCollisions": 0
@@ -2610,8 +2610,8 @@
     },
     {
       "name": "finance",
-      "files": 44,
-      "testFiles": 21
+      "files": 45,
+      "testFiles": 22
     },
     {
       "name": "home",
@@ -3399,6 +3399,7 @@
     "src/modules/finance/manual-cost-input.test.ts",
     "src/modules/finance/manual-cost-statement.integration.test.ts",
     "src/modules/finance/payout.integration.test.ts",
+    "src/modules/finance/provider-payout-safety.integration.test.ts",
     "src/modules/finance/provider-webhook.integration.test.ts",
     "src/modules/finance/providers/opn.test.ts",
     "src/modules/finance/providers/provider-seam.test.ts",

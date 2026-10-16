@@ -85,3 +85,9 @@ Vercel project подтверждает Node24.x. Финальные CI и isola
 ### Повторная полная приёмка
 
 Node20 CI38901926718 на e54c5497:5990/5990 tests в553 files, lint/typecheck/build passed. Browser38901927006 passed, в том числе новыйservice-fulfilment runner. Финальная проверка Node24 и актуальная оценка1–10: [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md), exact-head status — PR294 Checks.
+
+### R17 — atomic provider payout validation
+
+Дополнительная сверка показала TOCTOU: route считал remittance до transaction записи payout. В writer добавлены provider mutex, общие order advisory/row locks, повторный расчёт под locks, запрет пересекающихся/неопределённых payout periods и требование завершённого периода. Route возвращает тот report, который прошёл проверку внутри transaction.
+
+Requested/processing refunds для eligible current orders блокируют выплату независимо от даты создания refund. Succeeded refund после конца периода, но до первой выплаты, не покрывается существующей моделью captured-period/late-clawback: writer возвращает409 для явной financial reconciliation вместо завышенной выплаты. Полноценная allocation/snapshot-модель таких поздних корректировок остаётся отдельной работой; существующие financial records не переписываются. Добавлены PostgreSQL tests для source-lock race, overlapping concurrent periods, exact ledger consequence, open period, amount tampering и post-period refunds.

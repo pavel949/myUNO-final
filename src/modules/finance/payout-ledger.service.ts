@@ -1,3 +1,4 @@
+import { computeProviderRemittance } from './remittance.service';
 import { assertStatementReceivablesResolved } from './statement-snapshot';
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
@@ -68,8 +69,51 @@ export async function recordOwnerPayoutAtomic(db: PrismaClient, input: OwnerPayo
   });
 }
 
+export class ProviderPayoutConflict extends Error {
+  constructor(message: string, public readonly status: 400 | 409 = 409) { super(message); }
+}
+
 export async function recordProviderPayoutAtomic(db: PrismaClient, input: ProviderPayoutInput) {
+  if (!Number.isSafeInteger(input.amountThb) || input.amountThb <= 0 ||
+      !Number.isFinite(input.periodStart.getTime()) || !Number.isFinite(input.periodEnd.getTime()) ||
+      input.periodEnd <= input.periodStart || !Number.isFinite(input.executedOn.getTime()) ||
+      typeof input.reference !== 'string' || !input.reference.trim() || input.reference.length > 200) {
+    throw new ProviderPayoutConflict('Invalid provider payout amount, period or reference', 400);
+  }
+  if (input.periodEnd.getTime() > Date.now()) throw new ProviderPayoutConflict('Provider payout requires a completed period');
   return db.$transaction(async (tx) => {
+    const providerKey = `provider-payout:${input.providerId}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${providerKey}))`;
+    const existing = await tx.payout.findFirst({ where: {
+      payeeType: 'provider', providerId: input.providerId,
+      OR: [{ periodStart: null }, { periodEnd: null }, { periodStart: { lt: input.periodEnd }, periodEnd: { gt: input.periodStart } }],
+    }, select: { id: true } });
+    if (existing) throw new ProviderPayoutConflict('Payout already recorded for an overlapping or unbounded provider period');
+
+    // Closed periods cannot gain a newly fulfilled order through the runtime
+    // writer. Lock all recognized source orders (including earlier orders that
+    // may supply carried refunds), in deterministic order, before recomputing.
+    const orders = await tx.serviceOrder.findMany({ where: { provider_id: input.providerId, fulfilled_at: { lt: input.periodEnd } }, select: { id: true }, orderBy: { id: 'asc' } });
+    for (const order of orders) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${order.id}))`;
+      await tx.$queryRaw`SELECT id FROM service_order WHERE id = ${order.id} FOR UPDATE`;
+    }
+    const currentOrders = await tx.serviceOrder.findMany({ where: { provider_id: input.providerId, status: { in: ['fulfilled', 'closed'] }, fulfilled_at: { gte: input.periodStart, lt: input.periodEnd } }, select: { id: true } });
+    const currentIds = currentOrders.map(order => order.id);
+    if (currentIds.length && await tx.refund.count({ where: { payment: { serviceOrderId: { in: currentIds } }, status: { in: ['requested', 'processing'] } } })) {
+      throw new ProviderPayoutConflict('Provider payout is blocked while service-order refunds are unresolved');
+    }
+    // Existing reporting attributes these orders to the fulfilment period and
+    // carries only refunds arising after a recorded payout. A refund after this
+    // period but BEFORE its first payout is not represented by either branch.
+    // Refuse an overpayment rather than silently dropping that adjustment.
+    if (currentIds.length && await tx.refund.count({ where: { payment: { serviceOrderId: { in: currentIds } }, status: 'succeeded', createdAt: { gte: input.periodEnd } } })) {
+      throw new ProviderPayoutConflict('Late pre-payout refund requires financial reconciliation before provider payout');
+    }
+    const remittance = await computeProviderRemittance(tx as unknown as PrismaClient, input.providerId, input.periodStart, input.periodEnd);
+    if (remittance.pendingRefundCount > 0) throw new ProviderPayoutConflict('Provider payout is blocked while service-order refunds are unresolved');
+    if (remittance.netThb <= 0) throw new ProviderPayoutConflict('No positive provider payout is due for this period');
+    if (input.amountThb !== remittance.netThb) throw new ProviderPayoutConflict('Payout amount does not match computed remittance', 400);
     const payout = await tx.payout.create({
       data: {
         payeeType: 'provider',
@@ -96,7 +140,7 @@ export async function recordProviderPayoutAtomic(db: PrismaClient, input: Provid
       )
     `;
 
-    return payout;
-  });
+    return { payout, remittance };
+  }, { maxWait: 10000, timeout: 20000 });
 }
 

@@ -3,14 +3,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/app/libs/onboardingGuard'
 import { handleError } from '@/app/libs/errorHandler'
-import { computeProviderRemittance } from '@/modules/finance'
 // Deliberately deep, not the module's index.ts: @/modules/finance's barrel
 // also re-exports code that imports `node:crypto` transitively, which a
 // 'use client' consumer of that same barrel elsewhere (owner statement detail)
 // cannot bundle. Re-exporting this from the index would make the whole
 // barrel unsafe for that unrelated client component. This route is
 // server-only, so importing the file directly costs nothing.
-import { recordProviderPayoutAtomic } from '@/modules/finance/payout-ledger.service'
+import { recordProviderPayoutAtomic, ProviderPayoutConflict } from '@/modules/finance/payout-ledger.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,46 +56,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payout dates must be valid and periodStart must be before periodEnd' }, { status: 400 })
     }
 
-    const remittance = await computeProviderRemittance(prisma, body.providerId, periodStart, periodEnd)
-
-    if (remittance.pendingRefundCount > 0) {
-      return NextResponse.json(
-        {
-          error: 'Provider payout is blocked while service-order refunds are unresolved',
-          pendingRefundCount: remittance.pendingRefundCount,
-          computed: remittance,
-        },
-        { status: 409 }
-      )
-    }
-
-    if (remittance.netThb <= 0) {
-      return NextResponse.json(
-        { error: 'No positive provider payout is due for this period', computed: remittance },
-        { status: 409 }
-      )
-    }
-
-    if (body.amountThb !== remittance.netThb) {
-      return NextResponse.json(
-        { error: 'Payout amount does not match computed remittance', computed: remittance },
-        { status: 400 }
-      )
-    }
-
-    const existingPayout = await prisma.payout.findFirst({
-      where: {
-        providerId: body.providerId,
-        payeeType: 'provider',
-        periodStart,
-        periodEnd,
-      },
-    })
-    if (existingPayout) {
-      return NextResponse.json({ error: 'Payout already recorded for this provider and period' }, { status: 409 })
-    }
-
-    const payout = await recordProviderPayoutAtomic(prisma, {
+    const { payout, remittance } = await recordProviderPayoutAtomic(prisma, {
       providerId: body.providerId,
       periodStart,
       periodEnd,
@@ -125,6 +85,7 @@ export async function POST(req: NextRequest) {
       message: `Provider payout recorded for ${provider.name}: ฿${(payout.amountThb / 100).toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
+    if (error instanceof ProviderPayoutConflict) return NextResponse.json({ error: error.message }, { status: error.status })
     return handleError(error)
   }
 }

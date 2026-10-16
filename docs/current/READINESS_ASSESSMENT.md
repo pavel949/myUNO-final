@@ -6,7 +6,7 @@
 
 | Контур | Предыдущая оценка | Новая оценка после проверенного пакета | Почему |
 |---|---:|---:|---|
-| Техническая готовность кода | 7/10 | 8/10 после успешной полной приёмки code SHA | Закрыты конкретные дефекты launch gates, unsigned statements, service closure, stale private reads и transaction/email delivery |
+| Техническая готовность кода | 7/10 | 8/10 для первого проверенного пакета; 8.5/10 после успешной финальной приёмки payout hardening | Закрыты конкретные дефекты launch gates, unsigned statements, service closure, stale private reads и transaction/email delivery |
 | Реальная готовность production | 5/10 | 5/10 | Alias пока обслуживает старый SHA; текущие исправления не применены/не приняты на live. Нового основания повысить runtime score нет |
 
 Это экспертная инженерная оценка по прежней шкале, а не процент реализованных функций, тестового покрытия или вероятность отсутствия инцидента. Уровень 9/10 остаётся отдельным release acceptance: >=90 подтверждённых weighted points по [плану](PRODUCTION_READINESS_PLAN.md) и ни одного критического провала денег, приватности, инвентаря, восстановления или обязательного рабочего процесса. Наличие кода и synthetic green не равны live acceptance.
@@ -21,6 +21,8 @@
 6. **Notification email отделён от незавершённой бизнес-транзакции.** Durable post-commit queue, конкурирующие workers, provider idempotency и bounded retries заменяют fire-and-forget через закрытый TransactionClient. Rollback не отправляет письмо; legacy ambiguous pending не replay-ятся автоматически.
 7. **Релиз диагностируется безопаснее.** Ошибка migration содержит stage/allowlisted code, без driver message, connection string или provider body; автоматический history repair не добавлен.
 
+8. **Проверка provider payout перенесена внутрь transaction.** Provider mutex и общие source-order locks закрывают гонку с dispute/refund; amount пересчитывается перед INSERT payout+ledger. Пересекающиеся периоды и незавершённый период запрещены. Unresolved refunds после конца периода тоже блокируют выплату; неоднозначная поздняя refund adjustment требует reconciliation, вместо молчаливой переплаты.
+
 ## Что продолжает снижать production score
 
 | Приоритет | Подтверждённый факт / отсутствие доказательства | Что закрывает риск |
@@ -30,7 +32,7 @@
 | P1: автоматизация | Последние frequent JobRun10:50 UTC; проверка спустя >час. Успешный Scheduler38889878798 был manual dispatch | Подтверждённая серия именно scheduled ticks, current JobRun для каждого frequent job, правильный scheduler mode и рабочие alerts |
 | P1: контент | В production4213 needs_review и 8716 ok translations | Содержательное review, локали и required keys; founder/legal facts отдельно. Никакого blanket approval ради прохождения build |
 | P1: внешние последствия | Live Opn charge/refund, actual Blob upload/finalize и email provider ack этим пакетом не доказаны. В production нет canonical bookings/payments/service orders/notification deliveries | Dedicated разрешённые test/draft fixtures с реальным provider, безопасной auth session и сверкой результата; synthetic данные не создавать в canonical production бизнес-учёте |
-| P1: полнота текущих протоколов | BookingReschedule replacement hold/funding/commit и ServiceQuoteVersion acceptance в runtime остаются открытыми | Отдельные законченные vertical slices с race/expiry/late-payment/revision/UI acceptance. Текущий manual quote fallback сохраняется честным |
+| P1: полнота текущих протоколов | BookingReschedule replacement hold/funding/commit, ServiceQuoteVersion acceptance и полная allocation/snapshot-модель поздних provider refund adjustments остаются открытыми | Отдельные законченные vertical slices с race/expiry/late-payment/revision/UI acceptance. Текущий manual quote fallback сохраняется честным |
 | P1: эксплуатационная приёмка | Полная live цепочка PMS→расход/receipt→owner statement→sign-off/payout и cross-scope/revoke/private-media не подтверждена этим пакетом | Доказательства на deployed SHA с реальными полномочиями, без вымышленных оплат/документов |
 
 Backup перестал быть неподтверждённой декларацией: consistent snapshot и actual restore parity всех 120 application tables проверены run 38896564642 и повторно backup stage38899390156. Но backup не заменяет migration, release, keys/recovery и сверку внешних платежей после точки восстановления.
@@ -39,8 +41,18 @@ Backup перестал быть неподтверждённой деклара
 
 Проверенный Node20 code head e54c5497a719161b854605ce143ebeb34da29fa0: [CI38901926718](https://github.com/pavel949/myUNO-final/actions/runs/38901926718) — **5990/5990 tests,553 files, lint, production TypeScript и build passed**. [Chromium38901927006](https://github.com/pavel949/myUNO-final/actions/runs/38901927006) — passed, включая actual cash→accept→fulfil→customer confirm и dispute→confirmation denied.
 
-Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a24327623137b4f60e9afbd6e590a7f600b49e1a): [CI38903204352](https://github.com/pavel949/myUNO-final/actions/runs/38903204352), [Chromium38903204454](https://github.com/pavel949/myUNO-final/actions/runs/38903204454). **Эти и последующие exact-head checks должны иметь success для окончательного технического8/10.** Их актуальное состояние берётся из linked runs/PR Checks, не из наличия тестового файла. Следующие commits документации не меняют codeRevision.
+Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a24327623137b4f60e9afbd6e590a7f600b49e1a): [CI38903204352](https://github.com/pavel949/myUNO-final/actions/runs/38903204352), [Chromium38903730549](https://github.com/pavel949/myUNO-final/actions/runs/38903730549). **CI38903204352 прошёл:5991/5991 tests,553 files, lint/typecheck/build. Node24 Chromium38903730549 на последующем documentation head30715d01 также passed.** Browser38903204454 был отменён concurrency при обновлении документации и не считается passed. Последующий payout hardening проходит отдельный exact-head CI/browser в PR294 Checks; только его success подтверждает итоговые8.5/10 кода. Следующие commits только документации не меняют codeRevision.
 
 Локально пройдены103 targeted tests,24 policy/isolation checks, production TypeScript, repository lint с max-warnings0 и docs/reference consistency. Первый полный CI:5975 passed/2 static seeded-key formatting failures; формат исправлен, обе coverage suites и последующий полный CI green. Семь PostgreSQL closure/concurrency tests,14 statement snapshot tests и6 post-commit delivery tests прошли в полном Node20 run. Node24 добавляет ещё один regression на redaction произвольного provider error.
 
 Главное условие повышения production с5 к9: изменения действительно развёрнуты, обязательные gates и cadence работают, а денежные/операционные пути доказаны на deployed SHA. Следующий набор исправлений должен сопровождаться новой датированной оценкой по той же шкале.
+
+### История оценок текущей работы
+
+| Набор | Код | Production | Доказательство / условие |
+|---|---:|---:|---|
+| Исходная оценка |7/10|5/10| Статическая инвентаризация, старый deployed SHA, отсутствие полной live acceptance |
+| Gates/statements/service closure/polling/post-commit delivery |8/10|5/10| Node24 CI5991 tests и actual Chromium passed; production alias не обновлён |
+| Дополнительный provider payout source/overlap hardening |8.5/10 после exact-head success|5/10| PostgreSQL race/overlap/refund tests, полный CI и browser на final PR294 head; до их success остаётся8/10 |
+
+Половина балла — экспертная оценка снижения конкретного денежного риска, не математический процент. Production повышается только после соответствующего live evidence; merge не равен deploy.

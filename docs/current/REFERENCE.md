@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 552 |
+| tests | 553 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -745,7 +745,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### finance
 
-Файлов: 44; тестовых файлов: 21. [Описание](../../src/modules/finance/README.md).
+Файлов: 45; тестовых файлов: 22. [Описание](../../src/modules/finance/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -760,7 +760,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/finance/ledger.service.ts](<../../src/modules/finance/ledger.service.ts>) | implementation | `recordCost`, `recordBookingRevenue`, `recordRefundOut`, `recordServiceCommission`, `reverseLedgerEntry`, `getUnitLedgerEntries`, `getProjectLedgerEntries`, `getLedgerEntry`, `computeUnitLedgerTotals`, `lockUnitLedgerShared`, `lockUnitLedgerExclusive`, `LedgerCorrectionError`, `REVERSAL_REASON_MIN`, `REVERSAL_REASON_MAX`, `reverseManualCost` |
 | [src/modules/finance/manual-cost-input.ts](<../../src/modules/finance/manual-cost-input.ts>) | implementation | `MANUAL_COST_TYPES`, `MANUAL_COST_SIGN`, `MAX_COST_SATANG`, `DESCRIPTION_MIN`, `DESCRIPTION_MAX`, `EARLIEST_COST_DAY`, `ManualCostInputError`, `isIdempotencyKey`, `isManualCostType`, `isCalendarDayString`, `normalizeDescription`, `assertBusinessDay`, `businessDayToStoredDate`, `parseManualCostRequest`, `manualCostFingerprint` |
 | [src/modules/finance/manual-cost.service.ts](<../../src/modules/finance/manual-cost.service.ts>) | implementation | `ManualCostError`, `reportImpactFor`, `recordManualCost` |
-| [src/modules/finance/payout-ledger.service.ts](<../../src/modules/finance/payout-ledger.service.ts>) | implementation | `recordOwnerPayoutAtomic`, `recordProviderPayoutAtomic` |
+| [src/modules/finance/payout-ledger.service.ts](<../../src/modules/finance/payout-ledger.service.ts>) | implementation | `recordOwnerPayoutAtomic`, `ProviderPayoutConflict`, `recordProviderPayoutAtomic` |
 | [src/modules/finance/payout.service.ts](<../../src/modules/finance/payout.service.ts>) | implementation | `resolveProviderPayoutPeriod`, `getProviderRemittancesView`, `computeProviderRemittance`, `getReconciliationData`, `reconcilePayout`, `resolveFailedRefund` |
 | [src/modules/finance/provider-webhook.service.ts](<../../src/modules/finance/provider-webhook.service.ts>) | implementation | `processOpnEvent` |
 | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>) | barrel | `PaymentProviderUnavailableError`, `getPaymentProvider`, `getProviderConfig` |
@@ -6606,6 +6606,7 @@ model RateLimitBucket {
 - [src/modules/finance/manual-cost-input.test.ts](<../../src/modules/finance/manual-cost-input.test.ts>)
 - [src/modules/finance/manual-cost-statement.integration.test.ts](<../../src/modules/finance/manual-cost-statement.integration.test.ts>)
 - [src/modules/finance/payout.integration.test.ts](<../../src/modules/finance/payout.integration.test.ts>)
+- [src/modules/finance/provider-payout-safety.integration.test.ts](<../../src/modules/finance/provider-payout-safety.integration.test.ts>)
 - [src/modules/finance/provider-webhook.integration.test.ts](<../../src/modules/finance/provider-webhook.integration.test.ts>)
 - [src/modules/finance/providers/opn.test.ts](<../../src/modules/finance/providers/opn.test.ts>)
 - [src/modules/finance/providers/provider-seam.test.ts](<../../src/modules/finance/providers/provider-seam.test.ts>)

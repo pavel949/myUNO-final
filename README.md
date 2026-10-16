@@ -105,7 +105,7 @@ DB-backed тесты очищают тестовые таблицы. Запус�
 
 ## Что ещё остаётся
 
-Подтверждённые разрывы: внешняя отправка WhatsApp/Telegram; полный OTA ARI; рабочий quote lifecycle услуг и replacement-hold reschedule; общий транспорт realtime для нескольких экземпляров; согласование launch-readiness с фактическими Opn/Blob adapters. Production schema/config/data, live платежи/письма/media, права и recovery требуют отдельной проверки. Открытые PR не включены в описание main. Все пункты с доказательствами и приёмкой — в [backlog](docs/current/IMPLEMENTATION_STATUS.md).
+Подтверждённые разрывы: внешняя отправка WhatsApp/Telegram; полный OTA ARI; рабочий quote lifecycle услуг и replacement-hold reschedule; provider-backed realtime transport (текущий DB polling работает между экземплярами). Launch-readiness уже согласован с Opn/Blob adapters; реальная provider acceptance остаётся отдельной проверкой. Production schema/config/data, live платежи/письма, private/cross-scope media и права требуют отдельной проверки. Реальный admin Blob upload в QA draft и restore120 tables подтверждены; evidence и текущая оценка — в [assessment](docs/current/READINESS_ASSESSMENT.md). Открытые PR не включены в описание main. Все пункты с доказательствами и приёмкой — в [backlog](docs/current/IMPLEMENTATION_STATUS.md).
 
 ## Права
 

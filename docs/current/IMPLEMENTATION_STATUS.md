@@ -1,6 +1,6 @@
 # Реализованное, незавершённое и проверки
 
-Дата 2026-10-16; база main `1d600e95`, дополненная пакетом production-readiness. Exact codeRevision указан в REFERENCE; production acceptance оценивается отдельно. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
+Дата 2026-10-16; application codeRevision `c61412e71801e345fb7d3cde0168a6631b0b4932`, ops main53634204 после PR294–297. Exact codeRevision указан в REFERENCE; production acceptance оценивается отдельно. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
 
 ## Как читать статус
 
@@ -56,7 +56,7 @@
 | D11 / P2 | Goods/SKU/stock/delivery/recurring/package runtime не найден | Реализовывать только при подтверждённой supply/бизнес-модели | Реальные товары/capacity, принятые terms, fulfillment, refund и settlement |
 | D12 / P2 | Locale zh есть, языковой coverage не установлен; SEO origin=NEXTAUTH_URL | Сверить переводы/fallback и canonical origin после выбора домена | RU/EN/TH/ZH критические пути, lang/hreflang/canonical/sitemap без вымышленных URL |
 | D13 / P1 | Scope guards, RLS migrations и tests есть; coverage runtime не доказан | AT28: проверить owner/MC/provider/employee cross-scope reads/writes/export/media | Foreign IDs запрещены, revoke немедленно закрывает действие, audit не раскрывает PII |
-| D14 / P1 | Исправлено в коде: start/end calendar dates входят в statement source fingerprint | DB period-boundary/signed-history acceptance; сверка PR274 | Same total + moved dates инвалидирует unsigned draft; issued/signed history не переписывается |
+| D14 / P1 | Исправлено в коде: start/end calendar dates входят в statement source fingerprint | DB period-boundary/signed-history regressions passed в PR295; live acceptance остаётся открытой, PR274 требует reconciliation | Same total + moved dates инвалидирует unsigned draft; issued/signed history не переписывается |
 | D15 / P1 | Production content gate fail-closed, safe diagnostics, explicit isolated loopback test exception | В production обнаружено4213 needs_review; требуется содержательное review | Missing/unreachable/pending/valid и CI bypass policy tests; никакого blanket approval |
 
 Приоритет P1 означает важность для надёжного запуска соответствующей функции, а не доказанный production-инцидент. P0 назначается только при подтверждённом нарушении безопасности/денег/инвентаря.
@@ -71,13 +71,13 @@
 | PMS | Arrival/check-in gate→guest register→TM30→extension→checkout→cleaning→inspection→ready; maintenance blocker; no-show; night audit |
 | Услуги | Project и standalone order, paid-before-accept, fulfill, no-show/cancel/refund, rating, provider settlement |
 | Доступ | Platform/project/unit/org/provider/space/team scopes, истечение и отзыв делегирования; private receipts/passports/deal files |
-| Контент/медиа | Actual Blob upload/direct upload/finalize/retry, cover/reorder/delete, complex amenities на связанных units, fallback без фото |
+| Контент/медиа | Admin QA upload→Blob→MediaAsset→reload подтверждён на старом deployedSHA; direct upload/finalize/retry/foreign scope, cover/reorder/delete, amenities/fallback ещё требуют acceptance |
 | UX | 320/360/390/430 px, desktop, keyboard, loading/error/empty/stale, RU/EN/TH/ZH |
 | Эксплуатация | Exact deployed SHA, migrate status, content gate, scheduler recent success, restore и reconciliation после восстановления |
 
 ## Открытые PR на момент сверки
 
-Проверено через GitHub; содержимое PR не засчитывается как main и не объединяется в рамках документационной задачи.
+Повторно проверено через GitHub16 октября после merge PR297. Содержимое этих открытых PR не засчитывается автоматически как main; PR294–297 с исправлениями readiness уже merged.
 
 | PR | Тема | Что сделать перед зачётом |
 |---|---|---|

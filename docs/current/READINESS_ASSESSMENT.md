@@ -1,78 +1,54 @@
-# Оценка production readiness после пакета исправлений
+# Production readiness — проверенная оценка
 
-Дата: 16 октября 2026, Asia/Bangkok. Основа: [PR294](https://github.com/pavel949/myUNO-final/pull/294), exact codeRevision в [REFERENCE](REFERENCE.md), read-only production SQL, Vercel deployment/alias metadata, CI и изолированный Chromium. Для каждого утверждения о тестах указан проверенный code SHA; актуальный exact-head result доступен в PR294 Checks.
+Дата сверки: 16 октября 2026. Оценка основана на исходниках, изолированных PostgreSQL/Chromium проверках, read-only production SQL, Vercel metadata и фактической проверке media upload. [План достижения9/10](PRODUCTION_READINESS_PLAN.md) содержит критерии, задачи и acceptance; [реализовано/остаток](IMPLEMENTATION_STATUS.md) описывает функциональность. Canonical specification — целевые требования, а не доказательство реализации.
 
-## Та же шкала 1–10
+## Оценка по прежней шкале
 
-| Контур | Предыдущая оценка | Новая оценка после проверенного пакета | Почему |
+| Контур | До исправлений | После проверенных пакетов | Основание |
 |---|---:|---:|---|
-| Техническая готовность кода | 7/10 | 8/10 для первого проверенного пакета; 8.5/10 после успешной финальной приёмки payout hardening | Закрыты конкретные дефекты launch gates, unsigned statements, service closure, stale private reads и transaction/email delivery |
-| Реальная готовность production | 5/10 | 5/10 | Alias пока обслуживает старый SHA; текущие исправления не применены/не приняты на live. Нового основания повысить runtime score нет |
+| Техническая готовность кода |7/10|**8.5/10**| Исправлены финансовые границы/гонки, launch/content gates, lifecycle услуг, private polling и durable notification delivery; полный CI и Chromium passed |
+| Фактическая готовность production |5/10|**5/10**| Live всё ещё обслуживает старую ревизию; миграция и полный release acceptance не завершены |
 
-Это экспертная инженерная оценка по прежней шкале, а не процент реализованных функций, тестового покрытия или вероятность отсутствия инцидента. Уровень 9/10 остаётся отдельным release acceptance: >=90 подтверждённых weighted points по [плану](PRODUCTION_READINESS_PLAN.md) и ни одного критического провала денег, приватности, инвентаря, восстановления или обязательного рабочего процесса. Наличие кода и synthetic green не равны live acceptance.
+Это инженерная оценка, а не процент покрытия, реализованных функций или вероятность отсутствия дефектов. Цель9/10 требует >=90 подтверждённых weighted points по плану и отсутствия критических провалов денег, приватности, инвентаря, восстановления и обязательного рабочего процесса. Merge и green CI не заменяют deployed acceptance.
 
-## Что повышает оценку кода
+## Что исправлено и проверено
 
-1. **Launch readiness соответствует runtime.** Opn provider key/public+secret configuration, Blob token/OIDC+store и freshness каждого frequent job проверяются согласованно; env presence не объявляется provider health.
-2. **Content review fail-closed.** Отсутствующая/недоступная production БД, pending review и запрещённый production bypass не дают успешный gate. Исключение — explicit isolated loopback CI с совпадающей test/app DB.
-3. **Owner statement freshness.** Start/end calendar dates входят в source fingerprint. Same-total перенос дат должен инвалидировать unsigned statement; issued/signed история проверяется на integrity и не переписывается.
-4. **Услуги имеют полный путь закрытия текущего заказа.** Customer confirm, положительный whole-hour window (default 48h), UI deadline, dispute и auto-close сериализуются по одной order row. Undecided dispute блокирует closure. Closure не признаёт commission и не создаёт payment/payout повторно; closed order остаётся доступным для оценки.
-5. **Приватные данные не возвращаются запоздалым ответом.** Durable polling сохраняется, focus/visibility инициируют refresh; поздний успешный response не восстанавливает thread/notifications после актуального отказа доступа.
-6. **Notification email отделён от незавершённой бизнес-транзакции.** Durable post-commit queue, конкурирующие workers, provider idempotency и bounded retries заменяют fire-and-forget через закрытый TransactionClient. Rollback не отправляет письмо; legacy ambiguous pending не replay-ятся автоматически.
-7. **Релиз диагностируется безопаснее.** Ошибка migration содержит stage/allowlisted code, без driver message, connection string или provider body; автоматический history repair не добавлен.
-
-8. **Проверка provider payout перенесена внутрь transaction.** Provider mutex и общие source-order locks закрывают гонку с dispute/refund; amount пересчитывается перед INSERT payout+ledger. Пересекающиеся периоды и незавершённый период запрещены. Unresolved refunds после конца периода тоже блокируют выплату; неоднозначная поздняя refund adjustment требует reconciliation, вместо молчаливой переплаты.
-
-## Что продолжает снижать production score
-
-| Приоритет | Подтверждённый факт / отсутствие доказательства | Что закрывает риск |
+| Пакет | Результат | Оценка после пакета |
 |---|---|---|
-| P1: релиз | Vercel READY deployment dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v с alias my-uno-final.vercel.app указывает на 408ad99abfae9e7e67b6f518a736b751d72a7283 | Exact-main CI → protected backup/migration → staged deployment → authenticated runtime acceptance → promotion и повторная сверка alias SHA |
-| P1: миграция | Run38899390156: backup/restore passed, migrate failed до применения SQL/вывода pending. Read-only ledger: две ожидаемые pending, только известное comment-only checksum отличие, незавершённых migrations нет | Установить причину connection/config по безопасным diagnostics; повторный protected workflow с exact-main backup и financial parity. Не переписывать history |
-| P1: автоматизация | Последние frequent JobRun10:50 UTC; проверка спустя >час. Успешный Scheduler38889878798 был manual dispatch | Подтверждённая серия именно scheduled ticks, current JobRun для каждого frequent job, правильный scheduler mode и рабочие alerts |
-| P1: контент | В production4213 needs_review и 8716 ok translations | Содержательное review, локали и required keys; founder/legal facts отдельно. Никакого blanket approval ради прохождения build |
-| P1: внешние последствия | Live Opn charge/refund, actual Blob upload/finalize и email provider ack этим пакетом не доказаны. В production нет canonical bookings/payments/service orders/notification deliveries | Dedicated разрешённые test/draft fixtures с реальным provider, безопасной auth session и сверкой результата; synthetic данные не создавать в canonical production бизнес-учёте |
-| P1: полнота текущих протоколов | BookingReschedule replacement hold/funding/commit, ServiceQuoteVersion acceptance и полная allocation/snapshot-модель поздних provider refund adjustments остаются открытыми | Отдельные законченные vertical slices с race/expiry/late-payment/revision/UI acceptance. Текущий manual quote fallback сохраняется честным |
-| P1: эксплуатационная приёмка | Полная live цепочка PMS→расход/receipt→owner statement→sign-off/payout и cross-scope/revoke/private-media не подтверждена этим пакетом | Доказательства на deployed SHA с реальными полномочиями, без вымышленных оплат/документов |
+| [PR294](https://github.com/pavel949/myUNO-final/pull/294) | Согласованные Opn/Blob/scheduler launch gates; content review fail-closed; даты в statement fingerprint; serialized confirm/dispute/auto-close услуг; отбрасывание stale private responses после revoke; durable post-commit delivery; payout locks/overlap/refund safety | Код7→8→8.5; production5 |
+| [PR295](https://github.com/pavel949/myUNO-final/pull/295) | Оплаченная отмена, пересекающая границу отчёта, блокирует generation/unsigned sign-off до allocation; unpaid/deposit-only/failed исключения не блокируют ошибочно; подписанная история неизменна. Восемь новых DB regressions. Реальная загрузка в существующий QA draft | Код8.5; production5 |
+| [PR296](https://github.com/pavel949/myUNO-final/pull/296) | Protected read-only preflight: READ ONLY до ledger query, exact-main push CI, безопасные фиксированные категории ошибок без driver text/URI/SQL; backup и migrate пропускаются при preflight_only | Код8.5; production5 |
+| [PR297](https://github.com/pavel949/myUNO-final/pull/297) | Безопасный выбор hostname из проверенного backup-подключения, сохранение migration credentials/TLS; public-schema guard. До successful CI и runner acceptance это подготовленное исправление, не доказательство успешной миграции | Код8.5; production5 |
 
-Backup перестал быть неподтверждённой декларацией: consistent snapshot и actual restore parity всех 120 application tables проверены run 38896564642 и повторно backup stage38899390156. Но backup не заменяет migration, release, keys/recovery и сверку внешних платежей после точки восстановления.
+Проверенный application codeRevision: `c61412e71801e345fb7d3cde0168a6631b0b4932`. Ops/docs commits не меняют application revision; exact checkout inventory — [REFERENCE](REFERENCE.md).
 
-## Результаты проверок
+## Проверки
 
-Проверенный Node20 code head e54c5497a719161b854605ce143ebeb34da29fa0: [CI38901926718](https://github.com/pavel949/myUNO-final/actions/runs/38901926718) — **5990/5990 tests,553 files, lint, production TypeScript и build passed**. [Chromium38901927006](https://github.com/pavel949/myUNO-final/actions/runs/38901927006) — passed, включая actual cash→accept→fulfil→customer confirm и dispute→confirmation denied.
+- Final PR295 head71f3589a: [CI38928840349](https://github.com/pavel949/myUNO-final/actions/runs/38928840349) — **6005 tests,554 test files**, lint, TypeScript, build passed. [Chromium38928840417](https://github.com/pavel949/myUNO-final/actions/runs/38928840417) passed. Main1ffa40f6: [push CI38930745531](https://github.com/pavel949/myUNO-final/actions/runs/38930745531) passed.
+- PR296 headc367d2d7: [CI38934565869](https://github.com/pavel949/myUNO-final/actions/runs/38934565869), [Chromium38934566002](https://github.com/pavel949/myUNO-final/actions/runs/38934566002) passed. Main0286152c: [push CI38934839721](https://github.com/pavel949/myUNO-final/actions/runs/38934839721) passed, включая6005 application tests и11 отдельных policy/preflight checks. Перекрывающиеся targeted suites не суммируются.
+- PR297 локально:12 policy/preflight checks, targeted ESLint, YAML parse, generated reference и repository docs consistency passed. [CI38938380150](https://github.com/pavel949/myUNO-final/actions/runs/38938380150) passed6005 tests/554 files, lint/typecheck/build; [Chromium38938380129](https://github.com/pavel949/myUNO-final/actions/runs/38938380129) passed. Main53634204: [push CI38938574085](https://github.com/pavel949/myUNO-final/actions/runs/38938574085) полностью passed.
+- Backup/restore: [release38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) и [release38932599598](https://github.com/pavel949/myUNO-final/actions/runs/38932599598) восстановили и сверили **120 application tables**. Последующий migrate в обоих случаях остановился на ledger_read до DDL. Backup не является successful migration.
+- [Read-only configured preflight38936441214](https://github.com/pavel949/myUNO-final/actions/runs/38936441214): aws-1 session endpoint, P1001/network_unreachable. [Alternate38936756732](https://github.com/pavel949/myUNO-final/actions/runs/38936756732): aws-0, initialization/unclassified. SQL миграций не исполнялся, backup/migrate skipped. Это диагностические результаты, не исправленная connectivity.
+- [Live media acceptance](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md): реальный admin upload9978bytes/960×640 → BlobHTTP200 → MediaAsset и связь с существующим draft → reload и совпадающийSHA256. Старое cover сохранено, draft не опубликован. Проверка относится к старому deployedSHA; oversized negative attempt не изменил gallery, но точный server limit этим не доказан.
 
-Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a24327623137b4f60e9afbd6e590a7f600b49e1a): [CI38903204352](https://github.com/pavel949/myUNO-final/actions/runs/38903204352), [Chromium38903730549](https://github.com/pavel949/myUNO-final/actions/runs/38903730549). **CI38903204352 прошёл:5991/5991 tests,553 files, lint/typecheck/build. Node24 Chromium38903730549 на последующем documentation head30715d01 также passed.** Browser38903204454 был отменён concurrency при обновлении документации и не считается passed. Последующий payout hardening проходит отдельный exact-head CI/browser в PR294 Checks; только его success подтверждает итоговые8.5/10 кода. Следующие commits только документации не меняют codeRevision.
+## Последняя production-проверка —17:32UTC
 
-Локально пройдены103 targeted tests,24 policy/isolation checks, production TypeScript, repository lint с max-warnings0 и docs/reference consistency. Первый полный CI:5975 passed/2 static seeded-key formatting failures; формат исправлен, обе coverage suites и последующий полный CI green. Семь PostgreSQL closure/concurrency tests,14 statement snapshot tests и6 post-commit delivery tests прошли в полном Node20 run. Node24 добавляет ещё один regression на redaction произвольного provider error.
+[Read-only preflight38940368573](https://github.com/pavel949/myUNO-final/actions/runs/38940368573), exact main53634204: reviewed-main и protected route metadata passed; backup endpoint оказался тем же aws-1-ap-south-1.pooler.supabase.com:5432. С сохранённым DATABASE_URL credential preflight получил **P1001 / PrismaClientInitializationError / network_unreachable** на ledger_read. Backup и migrate **skipped**, DDL не запускался. Изменения target/schema/host policy проверены, но успешность migration connectivity не подтверждена. Это не доказательство неверного пароля: точная причина всё ещё не установлена. Требуется проверить доступность/auth/TLS действующего migration connection в защищённом контуре; секреты из Vercel не извлекались, пароль не сбрасывался. Повторный запуск без изменения подтверждённой причины не является исправлением.
 
-Главное условие повышения production с5 к9: изменения действительно развёрнуты, обязательные gates и cadence работают, а денежные/операционные пути доказаны на deployed SHA. Следующий набор исправлений должен сопровождаться новой датированной оценкой по той же шкале.
+После этого набора и всех перечисленных проверок оценка остаётся **код8.5/10, production5/10**. Реальный restore и admin upload уменьшают неопределённость, но отсутствие нового deployedSHA и незавершённые обязательные acceptance не позволяют повысить runtime score.
 
-### История оценок текущей работы
+## Что забирает основные баллы
 
-| Набор | Код | Production | Доказательство / условие |
-|---|---:|---:|---|
-| Исходная оценка |7/10|5/10| Статическая инвентаризация, старый deployed SHA, отсутствие полной live acceptance |
-| Gates/statements/service closure/polling/post-commit delivery |8/10|5/10| Node24 CI5991 tests и actual Chromium passed; production alias не обновлён |
-| Дополнительный provider payout source/overlap hardening |8.5/10 после exact-head success|5/10| PostgreSQL race/overlap/refund tests, полный CI и browser на final PR294 head; до их success остаётся8/10 |
+| Приоритет | Факт / недостающее доказательство | Необходимое завершение |
+|---|---|---|
+| P1: release | Alias my-uno-final.vercel.app → deployment dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v → source408ad99abfae9e7e67b6f518a736b751d72a7283; новые исправления не обслуживаются | Successful protected migration, затем проверенный Vercel deploy, authenticated runtime acceptance и сверка alias SHA |
+| P1: database | Production ledger100 finished/0unfinished; две ожидаемые pending:20261015080331_pricing_editor_role и20261015120347_property_capability_delegation | Working runner connection, exact-SHA backup/restore, checksum policy, migration, financial parity. Без repair истории или прямого обхода workflow |
+| P1: content |4213 needs_review,8716 ok translations | Содержательное review локалей/required keys. Не blanket approval и не bypass buildgate |
+| P1: automation | [Scheduled38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) в15:01UTC успешно вызвал3 frequent jobs | Устойчивая серия именно scheduled ticks, свежесть каждого JobRun и подтверждённые alerts; один запуск не доказывает cadence5min |
+| P1: внешние системы | Blob upload доказан для adminQA/старого build. Реальные email acknowledgements, card charge/refund, private/cross-scope media acceptance не доказаны; отсутствие ключей не равно working provider | Приёмка на новом deployedSHA и разрешённых test fixtures, без реальных списаний/рассылок или фальшивого business ledger |
+| P1: операции | Полная live цепочка PMS→расход/receipt→statement→sign-off/payout, cross-scope/revoke не подтверждена | Сквозная приёмка с действительными полномочиями и данными; не вымышленные оплаты/ownership/документы |
+| P1: незавершённые протоколы | BookingReschedule replacement hold/funding/atomic commit/expiry; ServiceQuoteVersion acceptance→order; полная allocation-модель поздних provider refunds | Законченные vertical slices с race/expiry/late-payment/revision/UI acceptance. Manual quote fallback и fail-closed ambiguous payouts описываются честно |
 
-Половина балла — экспертная оценка снижения конкретного денежного риска, не математический процент. Production повышается только после соответствующего live evidence; merge не равен deploy.
+Юридические основания, authority, licences и12 draft objects не подтверждаются автоматически кодом и не публикуются ради score. HealthHTTP200/dbok подтверждает reachability приложения, но не release completeness или работоспособность providers. Vercel — единственная платформа deployment; Git auto-deploy отключён.
 
-
-### Следующий пакет: границы финансовых периодов и release diagnostics
-
-16 октября2026, после main fc0508fe. Исправлено исчезновение оплаченных отмен при пересечении отчётного периода и добавлена повторная проверка allocation перед unsigned signature. Восемь дополнительных DB regressions проверяют обе границы, non-rental/unpaid исключения и неизменность подписанного снимка. Диагностика migration теперь читает errorCode настоящего Prisma initialization error, не раскрывая credentials. Exact-head выполнение смотрится в текущем PR/CI; прежние5997 tests относятся к fc0508fe.
-
-**После этого пакета оценка остаётся8.5/10 для кода и5/10 для production.** Исправление конкретного денежного дефекта уменьшает риск, но не закрывает оставшиеся сценарии и не обосновывает9/10. Переоценка применяется после успешных exact-head проверок; до них подтверждён предыдущий пакет.
-
-Новое эксплуатационное evidence: [release38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) прошёл backup/restore, затем остановился на ledger_read до migration SQL. [Scheduler38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) сработал по schedule в15:01UTC, но устойчивую частоту5min один запуск не доказывает. Live alias остаётся прежним deployment dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v. Контент и live acceptance по-прежнему блокируют повышение production score.
-
-
-### Live media evidence —22:53ICT
-
-[Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.
-
-
-Продолжение release hardening: migration read и Prisma CLI используют тот же canonical session resolver, что приложение, с проверкой target до и после преобразования. Это устраняет различие raw direct URL/IPv4 session path; фактическая причина последнего ledger_read failure и успешность миграции до повторного protected run остаются not confirmed. Две новые transport policy regressions входят в7 passed локальных policy tests. Общая оценка8.5/5 сохраняется.
-
-
-Повторный release38932599598 на main1ffa40f6 снова остановился на ledger_read/unclassified до SQL после успешного backup/restore. Значит, общий session resolver сам по себе не подтвердил устранение actual failure. Следующий пакет добавляет только read-only preflight и безопасные фиксированные категории неизвестных Prisma errors; до фактического successful migration повышение production score не обосновано. Оценка остаётся8.5/5.
+Повысить production до9/10 сейчас оснований нет. Следующая оценка меняется только вместе с проверяемым результатом соответствующего release/операционного acceptance.

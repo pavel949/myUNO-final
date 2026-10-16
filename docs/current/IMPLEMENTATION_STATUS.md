@@ -11,6 +11,8 @@
 
 Для всех модулей migration applied, production data/config, deployed SHA и runtime checked в этой сверке **не проверены**. Permissions/тесты присутствуют в исходниках, но не имеют общей отметки «пройдено». Не используется выдуманный процент готовности.
 
+Полное сопоставление всех целевых бизнес-процессов CO01–CO30 и функций без отдельного runtime-модуля (AI concierge, itinerary/wallet, procurement/capex, standards/offboarding): [PROCESS_COVERAGE](PROCESS_COVERAGE.md).
+
 ## По каждому модулю
 
 | Модуль | Что уже есть | Что остаётся реализовать / подтвердить |

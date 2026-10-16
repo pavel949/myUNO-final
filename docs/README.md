@@ -8,6 +8,7 @@
 |---|---|
 | [README](../README.md) | Вход в репозиторий, стек, процессы, запуск и важные ограничения |
 | [SYSTEM](current/SYSTEM.md) | Все модули, связи, роли, данные, money и интеграции |
+| [PROCESS_COVERAGE](current/PROCESS_COVERAGE.md) | Все 30 целевых бизнес-процессов и функции, у которых ещё нет runtime-модуля |
 | [IMPLEMENTATION_STATUS](current/IMPLEMENTATION_STATUS.md) | Что реализовано, что осталось, confirmed gaps, runtime unknowns, open PRs |
 | [REFERENCE](current/REFERENCE.md) | Все pages/handlers/methods, module files/exports, модели/поля/enums, migrations/tests/env consumers |
 | [OPERATIONS](current/OPERATIONS.md) | Vercel-only deploy, БД, секреты, CI, scheduler, backup/recovery |
@@ -25,6 +26,7 @@
 
 | Документ | Тип |
 |---|---|
+| [current/PROCESS_COVERAGE.md](current/PROCESS_COVERAGE.md) | current |
 | [current/AUDIT_EVIDENCE.md](current/AUDIT_EVIDENCE.md) | current |
 | [00_legacy_audit.md](<00_legacy_audit.md>) | current |
 | [01_architecture_decisions.md](<01_architecture_decisions.md>) | current |

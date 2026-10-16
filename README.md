@@ -10,6 +10,7 @@ myUNO объединяет поиск жилья, прямое брониров�
 |---|---|
 | Понять всю систему и каждый модуль | [Описание системы](docs/current/SYSTEM.md) |
 | Увидеть реализованное и оставшиеся работы | [Матрица реализации и backlog](docs/current/IMPLEMENTATION_STATUS.md) |
+| Сверить все 30 целевых бизнес-процессов | [CO01–CO30 и функции без реализации](docs/current/PROCESS_COVERAGE.md) |
 | Найти любой экран, API, модель, enum или тест | [Полный справочник кода](docs/current/REFERENCE.md) |
 | Установить и запустить проект | [Разработка](CONTRIBUTING.md) |
 | Деплой, БД, секреты, scheduler, backup, восстановление | [Эксплуатация и Vercel](docs/current/OPERATIONS.md) |

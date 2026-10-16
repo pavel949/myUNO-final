@@ -87,16 +87,16 @@ jobs:
             sleep 2
           done
           test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
-          node scripts/e2e/founder-publication-booking.mjs
-          node scripts/e2e/guest-ux-completion.mjs
-          node scripts/e2e/property-submission-description.mjs
-          node scripts/e2e/content-contributor.mjs
-          node scripts/e2e/complex-amenities.mjs
-          node scripts/e2e/project-amenity-content.mjs
-          node scripts/e2e/employee-workspaces.mjs
-          node scripts/e2e/employee-creation.mjs
-          node scripts/e2e/workspace-navigation.mjs
+          journey_failed=0
+          for journey in founder-publication-booking guest-ux-completion property-submission-description \
+            content-contributor complex-amenities project-amenity-content employee-workspaces \
+            employee-creation workspace-navigation; do
+            # Preserve every assertion and collect all failures in one run.
+            # Each runner retains its own isolation and prerequisite guards.
+            node "scripts/e2e/$journey.mjs" || journey_failed=1
+          done
           test ! -s browser-results/blocked-server-egress.log
+          exit "$journey_failed"
       - name: Upload synthetic screenshots and step evidence
         if: always()
         uses: actions/upload-artifact@v4

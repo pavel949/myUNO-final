@@ -203,7 +203,7 @@ try {
     await founder.goto('/app/admin/property-content-proposals');
     await founder.getByRole('button').filter({ has: founder.getByText(originalName, { exact: true }) }).click();
     const card = founder.locator('article').filter({ has: founder.getByRole('heading', { name: proposedName, exact: true }) });
-    await card.getByRole('checkbox', { name: 'I checked the facts, description and each photo for this exact property and approve applying these changes.', exact: true }).check();
+    await card.getByRole('checkbox', { name: 'I checked the facts, description, each photo and any proposed complex facilities for this exact property and approve applying these changes.', exact: true }).check();
     const pending = response(founder, `/api/admin/property-content-proposals/${proposalId}/review`, 'POST');
     await card.getByRole('button', { name: 'Approve and apply content', exact: true }).click();
     assert.equal((await json(await pending)).status, 'approved');

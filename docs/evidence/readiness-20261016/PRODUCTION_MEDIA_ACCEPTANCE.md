@@ -18,6 +18,10 @@
 
 Passed: реальная browser→Blob→finalize→DB gallery→reload→image render цепочка для разрешённого admin и существующего draft. Это не isolated mock. Test image оставлен только в QA gallery как evidence.
 
-Не проверены этим сценарием: foreign-identity denial live, oversized/MIME отказ, interrupted-upload retry live, private receipts/passports, публичная галерея коммерческого объекта, OIDC-only path на новом build. Наличие2 фото не делает unit media-ready (минимум3), а media-ready не даёт права на публикацию или бронирование.
+Дополнительный negative check около22:58ICT: PNG с padding до9MiB отклонён с сообщением Upload failed; gallery остаётся из2 фото, controls снова доступны. Это подтверждает отказ, но generic UI не различает platform body limit и собственный8MiB guard.
+
+Read-only smoke: /ops/calendar/board и /ops открылись в текущей admin session; календарь содержит56 units, Today показывает текущие empty arrivals/departures/requests. Это не E2E check-in/checkout и не доказательство синхронизации внешнего PMS.
+
+Не проверены этим сценарием: foreign-identity denial live, MIME отказ, interrupted-upload retry live, private receipts/passports, публичная галерея коммерческого объекта, OIDC-only path на новом build. Наличие2 фото не делает unit media-ready (минимум3), а media-ready не даёт права на публикацию или бронирование.
 
 Оценка после этой проверки: код8.5/10, production5/10. Один доказанный capability не снимает критические release/migration/content/operational blockers и не подтверждает9/10.

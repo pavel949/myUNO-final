@@ -70,3 +70,6 @@ Node24 code head b1ca19b10b17e777cd7c5c76ae2c967c4933aac7 (codeRevision a2432762
 ### Live media evidence —22:53ICT
 
 [Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.
+
+
+Продолжение release hardening: migration read и Prisma CLI используют тот же canonical session resolver, что приложение, с проверкой target до и после преобразования. Это устраняет различие raw direct URL/IPv4 session path; фактическая причина последнего ledger_read failure и успешность миграции до повторного protected run остаются not confirmed. Две новые transport policy regressions входят в7 passed локальных policy tests. Общая оценка8.5/5 сохраняется.

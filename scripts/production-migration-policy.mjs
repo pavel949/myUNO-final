@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.ts';
 
 export const PROJECT_REF = 'burcnghheyzbzffzgmjz';
 export const APPROVED_PENDING = new Set([
@@ -34,6 +35,17 @@ export function assertProductionTarget(value) {
     || url.searchParams.get('pgbouncer') === 'true') {
     throw new Error('Refusing a foreign database or transaction pooler');
   }
+}
+
+/** Keep Prisma queries and its migration subprocess on the same IPv4 session route. */
+export function productionMigrationConnection(value) {
+  // Validate before normalization: runtime compatibility must never turn a
+  // foreign project, transaction pooler or malformed input into a release target.
+  assertProductionTarget(value);
+  const resolved = resolveDatabaseUrl(value);
+  // The runtime host override is configuration, not authority to change targets.
+  assertProductionTarget(resolved);
+  return resolved;
 }
 
 export function checkMigrationLedger(files, rows, requireComplete = false) {

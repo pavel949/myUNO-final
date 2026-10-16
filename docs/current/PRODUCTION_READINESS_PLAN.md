@@ -104,3 +104,10 @@ Requested/processing refunds для eligible current orders блокируют �
 ### Live media evidence —22:53ICT
 
 [Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.
+
+
+### R20 — одинаковый проверенный connection path для migration read и DDL
+
+Application Prisma использует resolveDatabaseUrl, а release script использовал raw DATABASE_URL. Для canonical direct Supabase URL это оставляло IPv6-only endpoint в migration runner, хотя приложение работает через IPv4 session pooler. Runner теперь применяет тот же существующий resolver; raw и resolved URL оба проходят canonical project/port/username validation. Transaction-pooler/foreign input не нормализуется в допустимый target. PrismaClient и subprocess migrate deploy получают одну и ту же resolved URL; пароль не извлекается, не заменяется и не выводится. Node24 требуется для общего TypeScript resolver, как уже настроено в workflow.
+
+Добавлены два policy regression: encoded credentials/transport preservation и отказ для foreign/transaction/host override. Семь policy tests локально passed. Это исправляет подтверждённое различие в коде, но пока не доказывает, что фактическая ошибка ledger_read вызвана именно IPv6: нужен новый protected release на проверенном main. [Официальный контракт Supabase/Prisma](https://supabase.com/docs/guides/database/prisma). Backup/unchanged-main/ledger/checksum/financial parity gates сохранены.

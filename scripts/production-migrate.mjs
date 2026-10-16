@@ -1,15 +1,15 @@
 // Explicit operator stage. Never imported by build/install or test runners.
 import { readdir, readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { assertProductionTarget, checkMigrationLedger, migrationFailureSummary } from './production-migration-policy.mjs';
+import { productionMigrationConnection, checkMigrationLedger, migrationFailureSummary } from './production-migration-policy.mjs';
 
-assertProductionTarget(process.env.DATABASE_URL);
+const databaseUrl = productionMigrationConnection(process.env.DATABASE_URL);
 if (process.env.GITHUB_REF !== 'refs/heads/main' || !/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA ?? '')
   || process.env.BACKUP_VERIFIED_SHA !== process.env.GITHUB_SHA) {
   throw new Error('Requires reviewed main and the successful backup/restore stage for this exact SHA');
 }
 const { PrismaClient } = await import('@prisma/client');
-const db = new PrismaClient();
+const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 const root = new URL('../prisma/migrations/', import.meta.url);
 const files = [];
 for (const dir of await readdir(root, { withFileTypes: true })) {
@@ -33,7 +33,7 @@ try {
   stage = 'snapshot_before';
   const before = await financialSnapshot();
   stage = 'migrate';
-  const command = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { stdio: 'pipe', encoding: 'utf8', env: process.env });
+  const command = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { stdio: 'pipe', encoding: 'utf8', env: { ...process.env, DATABASE_URL: databaseUrl } });
   if (command.error || command.status !== 0) {
     const code = `${command.stdout ?? ''} ${command.stderr ?? ''}`.match(/\bP[0-9]{4}\b/)?.[0];
     throw Object.assign(new Error('Prisma migrate deploy failed'), { code });

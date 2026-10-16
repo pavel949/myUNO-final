@@ -1,6 +1,6 @@
 # Покрытие целевых процессов: CO01–CO30
 
-Срез исходников2026-10-16; exact codeRevision в [REFERENCE](REFERENCE.md). Это сверка наличия и границ реализации, **не отметка прохождения E2E**. Целевые определения: [PROCESS_MAP](../canonical/PROCESS_MAP.md), [паспорта](../canonical/PROCESS_PASSPORTS.md), [AT01–AT30](../canonical/READINESS_ACCEPTANCE.md). Конкретные источники/методы API/модели/тесты: [REFERENCE](REFERENCE.md); известные технические разрывы D01–D15: [матрица](IMPLEMENTATION_STATUS.md).
+Срез исходников 2026-10-16; exact codeRevision в [REFERENCE](REFERENCE.md). Это сверка наличия и границ реализации, **не отметка прохождения E2E**. Целевые определения: [PROCESS_MAP](../canonical/PROCESS_MAP.md), [паспорта](../canonical/PROCESS_PASSPORTS.md), [AT01–AT30](../canonical/READINESS_ACCEPTANCE.md). Конкретные источники/методы API/модели/тесты: [REFERENCE](REFERENCE.md); известные технические разрывы D01–D15: [матрица](IMPLEMENTATION_STATUS.md).
 
 «Код пути есть» означает, что найдены связанные services/UI; полнота всех требований паспорта и production acceptance требует отдельного доказательства. «Частично» не означает, что отсутствующая часть может быть заменена ручным изменением БД.
 

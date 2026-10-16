@@ -60,9 +60,9 @@
 ## Evidence пакета исправлений
 
 - Production read-only: translation needs_review=4213, ok=8716. Проверка review не обходится; статусы автоматически не менялись.
-- Main CI run38897708543 успешен. Production migration run38899390156: backup/restore успешны, migrate завершился ошибкой до вывода списка pending. Read-only ledger подтверждает две ожидаемые pending и только известное comment-only отличие; причина ошибки connection/config без безопасного stage/code не установлена. В script добавлены stage/code diagnostics без driver message/credentials. Повторный запуск не создан.
+- Main CI run 38897708543 успешен. Production migration run 38899390156: backup/restore успешны, migrate завершился ошибкой до вывода списка pending. Read-only ledger подтверждает две ожидаемые pending и только известное comment-only отличие; причина ошибки connection/config без безопасного stage/code не установлена. В script добавлены stage/code diagnostics без driver message/credentials. Повторный запуск не создан.
 - Локально: целевые readiness/storage/statement/component/policy tests; production TypeScript проверяется после Prisma generate. DB race и route authorization tests добавлены для disposable CI PostgreSQL; до успешного CI они не отмечаются пройденными.
-- Config key `service.fulfilment_confirm_window_hours` добавлен в seed registry, default48h. Для существующей БД без seeded key применяется тот же48h default; schema migration не требуется. Правки override проходят positive whole-hour validation.
+- Config key `service.fulfilment_confirm_window_hours` добавлен в seed registry, default 48h. Для существующей БД без seeded key применяется тот же 48h default; schema migration не требуется. Правки override проходят positive whole-hour validation.
 - Закрытие не меняет fulfilled_at, recognized commission, payments и payouts. Legacy fulfilled без fulfilled_at остаётся для operator review, время не восстанавливается из updated_at.
 - Production9/10 пока **не подтверждено**: текущий PR ещё не live; R09/R10 и runtime acceptance остаются открытыми, контент требует review.
 
@@ -74,10 +74,14 @@
 
 ### R16 — подтверждённый transaction/email defect
 
-В полном CI run38900018681 обнаружены исходные ошибки Transaction already closed в fire-and-forget email после accept/fulfil. Добавлена durable post-commit queue на существующем NotificationDelivery: TransactionClient только сохраняет pending; frequent sweep обрабатывает после commit; advisory lock, provider Idempotency-Key, bounded network timeout и retry window, no legacy replay. Unit/DB tests покрывают rollback/no-send, competing workers, transient retry, mute и expiry. Scope не включает реализацию WhatsApp/Telegram adapters; они продолжают честно fail-closed. [Контракт Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
+В полном CI run 38900018681 обнаружены исходные ошибки Transaction already closed в fire-and-forget email после accept/fulfil. Добавлена durable post-commit queue на существующем NotificationDelivery: TransactionClient только сохраняет pending; frequent sweep обрабатывает после commit; advisory lock, provider Idempotency-Key, bounded network timeout и retry window, no legacy replay. Unit/DB tests покрывают rollback/no-send, competing workers, transient retry, mute и expiry. Scope не включает реализацию WhatsApp/Telegram adapters; они продолжают честно fail-closed. [Контракт Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
 
-Первый полный CI:5975 passed/2 failed, оба сбоя — static seeded key discovery (двойные кавычки в новых entries); формат исправлен, локальные coverage tests проходят. PostgreSQL confirm/dispute/close7/7 и route authorization в этом run прошли. Первый isolated browser run38900018460 успешен; новый service-fulfilment runner требует отдельного execution evidence.
+Первый полный CI:5975 passed/2 failed, оба сбоя — static seeded key discovery (двойные кавычки в новых entries); формат исправлен, локальные coverage tests проходят. PostgreSQL confirm/dispute/close7/7 и route authorization в этом run прошли. Первый isolated browser run 38900018460 успешен; новый service-fulfilment runner требует отдельного execution evidence.
 
 ### Совпадение runtime для финальной приёмки
 
 Vercel project подтверждает Node24.x. Финальные CI и isolated Chromium переведены на Node24, чтобы проверять тот же major runtime. Предыдущие Node20 результаты сохраняются как regression evidence, но не подменяют финальный build/test на production runtime.
+
+### Повторная полная приёмка
+
+Node20 CI38901926718 на e54c5497:5990/5990 tests в553 files, lint/typecheck/build passed. Browser38901927006 passed, в том числе новыйservice-fulfilment runner. Финальная проверка Node24 и актуальная оценка1–10: [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md), exact-head status — PR294 Checks.

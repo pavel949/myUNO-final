@@ -237,7 +237,8 @@ try {
   await step('Staff starts Personal, switches by keyboard to real Operations, and retains five stable tabs', staffPage, async () => {
     await login(staffPage, staff); await assertTabs(staffPage, 'Personal', 'My');
     await noOverflow(staffPage, 'personal-home', 'Personal', 'My');
-    await keyboardMode(staffPage, 'Property', '/ops', 'Today'); await assertTabs(staffPage, 'Property', 'Today');
+    // The page uses the seeded CMS title; "Today" is the navigation tab label.
+    await keyboardMode(staffPage, 'Property', '/ops', 'Ops board'); await assertTabs(staffPage, 'Property', 'Today');
     const choose = switcher(staffPage).getByRole('combobox', { name: 'Property workspace', exact: true });
     const values = await choose.locator('option').evaluateAll(options => options.map(option => option.value));
     assert.ok(values.includes(`space:${staffSpace.id}`));

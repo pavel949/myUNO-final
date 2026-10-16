@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  if (!body || typeof body !== 'object' || Array.isArray(body) ||
+    Object.keys(body).some(key => !['email', 'firstName', 'lastName', 'phone', 'preferredLocale', 'destination'].includes(key)) ||
+    (body.destination !== undefined && !['account', 'property'].includes(body.destination)))
+    return NextResponse.json({ error: 'Invalid request body or invitation destination' }, { status: 400 });
 
   let invited;
   try {
@@ -73,21 +76,26 @@ export async function POST(req: NextRequest) {
   });
 
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const claimUrl = `${baseUrl}/auth/claim?token=${token}`;
+  const claimUrl = `${baseUrl}/auth/claim?token=${token}${body.destination === 'property' ? '&next=%2Fproperty' : ''}`;
+
+  const escapedName = invited.identity.firstName.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
   // Best-effort: an operator who has the link in front of them can still pass
   // it on, so a bounced email must not fail the invitation.
-  let emailed = true;
+  let emailed = false;
   try {
-    await sendEmail({
+    if (process.env.RESEND_API_KEY) {
+      await sendEmail({
       to: invited.identity.email!,
       subject: 'Your myUNO account',
       html: `
-        <p>Hello ${invited.identity.firstName},</p>
+        <p>Hello ${escapedName},</p>
         <p><a href="${claimUrl}">Set your password and open your account</a></p>
         <p>Or copy this link: ${claimUrl}</p>
       `,
-    });
+      });
+      emailed = true;
+    }
   } catch {
     emailed = false;
   }
@@ -108,6 +116,7 @@ export async function POST(req: NextRequest) {
       created: invited.created,
       alreadyActive: false,
       emailed,
+      emailStatus: emailed ? 'accepted' : 'unavailable',
       claimUrl,
     },
     { status: invited.created ? 201 : 200 }

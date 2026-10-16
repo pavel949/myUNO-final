@@ -33,8 +33,17 @@ describe('scoped canonical inventory API', () => {
     session.identityId = staffId;
   });
 
-  it('allows only assigned project and always creates draft', async () => {
-    expect((await POST(createRequest(draft(otherProjectId)))).status).toBe(403);
+  it('routes legacy staff creation to explicitly scoped reviewed intake', async () => {
+    for (const id of [projectId, otherProjectId]) {
+      const response = await POST(createRequest(draft(id)));
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ code: 'employee_creation_review_required', next: '/property/create?kind=unit&from=operations' });
+    }
+    expect(await db.unit.count()).toBe(0);
+  });
+
+  it('preserves administrator direct creation as draft', async () => {
+    session.identityId = (await createIdentity({ isAdmin: true })).id;
     const response = await POST(createRequest(draft(projectId)));
     expect(response.status).toBe(201);
     const unit = await response.json();

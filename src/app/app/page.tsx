@@ -1,3 +1,7 @@
+import { getPropertyWorkspaces } from '@/modules/core/property-workspaces';
+import { createEmployeeCreationService } from '@/modules/onboarding/employee-creation.service';
+import { EmployeeCreationError } from '@/modules/onboarding/employee-creation.schema';
+import { PROPERTY_WORKSPACE_LABELS, PROPERTY_WORKSPACE_DRAFTS } from '@/modules/content/property-workspace.seed';
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { redirect } from 'next/navigation';
@@ -30,6 +34,15 @@ export default async function MyUnoPage() {
   if (!user) redirect('/login?next=/app');
 
   const activeBookingId = await getActiveStayId();
+  let hasPropertyWork = (await getPropertyWorkspaces(prisma, user.identityId)).length > 0;
+  if (!hasPropertyWork) {
+    const creation = await createEmployeeCreationService(prisma).list(user.identityId).catch(error => {
+      if (error instanceof EmployeeCreationError && error.status === 403) return null;
+      throw error;
+    });
+    // Retained creator-authored intake is not a current creation grant.
+    hasPropertyWork = !!creation?.spaces.length;
+  }
   const isOwner = user.roles.some((role) => role.role === 'owner');
   let ownerUnitId: string | null = null;
 
@@ -54,6 +67,7 @@ export default async function MyUnoPage() {
   });
 
   const labels = await getLabels({
+    ...PROPERTY_WORKSPACE_LABELS,
     'myuno.kicker': 'MY UNO',
     'myuno.title': 'Everything connected to you.',
     'myuno.subtitle': 'Trips, homes, orders, ownership and work in one relationship hub. Only the parts relevant to you are shown.',
@@ -89,7 +103,7 @@ export default async function MyUnoPage() {
     'myuno.discover.buy': 'Buy a home',
     'myuno.discover.own': 'Own a property',
     'myuno.discover.services': 'Book a service',
-  });
+  }, undefined, PROPERTY_WORKSPACE_DRAFTS);
 
   const personal = [
     { href: '/trips', title: labels['myuno.personal.trips'], body: labels['myuno.personal.trips_body'] },
@@ -110,12 +124,16 @@ export default async function MyUnoPage() {
       </section>
 
       <div className="mx-auto max-w-7xl space-y-56 px-20 py-48 md:px-32 md:py-64">
-        {surfaces.length ? (
+        {surfaces.length || hasPropertyWork ? (
           <section>
             <h2 className="font-display text-heading-2 font-semibold text-text-ink">
               {labels['myuno.context.title']}
             </h2>
             <div className="mt-20 grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              {hasPropertyWork && <Link href="/property" className="stitch-panel group p-20 transition hover:border-brand-andaman/40 hover:shadow-card">
+                <p className="font-display text-title font-semibold text-text-ink">{labels['property.workspace.title']}</p>
+                <p className="mt-12 text-small font-semibold text-brand-andaman">{labels['myuno.continue']} →</p>
+              </Link>}
               {surfaces.map((surface) => (
                 <Link
                   key={surface.path}

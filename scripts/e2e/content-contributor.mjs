@@ -300,7 +300,7 @@ try {
     await card.getByText(originalRussian, { exact: true }).waitFor();
     await compareReview(card, '5');
     assert.equal(await card.getByRole('button', { name: 'Approve and apply content', exact: true }).isDisabled(), true);
-    await card.getByRole('checkbox', { name: 'I checked the facts, description and each photo for this exact property and approve applying these changes.', exact: true }).check();
+    await card.getByRole('checkbox', { name: 'I checked the facts, description, each photo and any proposed complex facilities for this exact property and approve applying these changes.', exact: true }).check();
     approved = await review(rp, 'approve'); assert.equal(approved.status, 'approved');
     const after = await canonical();
     assert.deepEqual(Object.fromEntries(Object.keys(submitted.proposal.facts).map(key => [key, key === 'grossAreaSqm' && after.unit[key] !== null ? Number(after.unit[key]) : after.unit[key]])), submitted.proposal.facts);

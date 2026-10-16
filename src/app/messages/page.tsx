@@ -1,7 +1,7 @@
 
 import { redirect } from 'next/navigation';
 import { PageHeading } from '@/components/premium/StitchPage';
-import Link from 'next/link';
+import { WorkspaceContextLink as Link } from '@/components/WorkspaceNavigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';

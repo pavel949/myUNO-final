@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/app/libs/onboardingGuard';
+import { requireUnitPricing } from '@/app/libs/pricingGuard';
 import { quoteSeasonalTariffGrid, previewAnnualLeaseTariff, annualLeaseMinimumNights, type TariffMode } from '@/modules/core/seasonal-tariff';
 import { computeCanonicalPriceBreakdown } from '@/modules/core/canonical-pricing.service';
 import { resolveSourceBookingTerms } from '@/modules/core/commercial-booking-terms';
@@ -17,7 +17,7 @@ const calendarDate = (value: unknown): Date | null => {
  * fees and policy checks. Draft grids expose only an explicitly partial tariff
  * subtotal. Neither path checks availability, holds dates or authorizes booking. */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const guard = await requireAdmin();
+  const guard = await requireUnitPricing(params.id);
   if (!guard.ok) return guard.error;
   const body = await req.json().catch(() => null);
   if (!body || !['stay', 'daily', 'monthly', 'yearly'].includes(body.mode))

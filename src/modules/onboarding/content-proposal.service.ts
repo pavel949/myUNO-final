@@ -1,9 +1,12 @@
-import { createHash } from 'node:crypto';
-import type { Prisma, PrismaClient } from '@prisma/client';
+import { createHash, randomUUID } from 'node:crypto';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import {
-  ContentProposalValidationError, parseContentProposal, parseScope, parseTargetId,
-  type ContentFacts, type ContentLocale, type ContentProposal, type ContentScope,
+  ContentProposalValidationError, parseContentProposal, parseScope, parseTargetId, contentAmenityHoursValue, contentAmenityTextChanged, CONTENT_AMENITY_TEXT_FIELDS,
+  type ContentFacts, type ContentLocale, type ContentProposal, type ContentScope, type ContentAmenitySnapshot,
 } from './content-proposal.schema';
+
+import { hasEmployeeCreatedTargetAccessTx, listEmployeeCreatedTargetsTx } from './employee-creation.service';
+import { EmployeeCreationError } from './employee-creation.schema';
 
 export const CONTENT_PROPOSAL_SOURCE = 'myuno_property_content_proposal_v1';
 const MAX_ITEMS = 100;
@@ -16,10 +19,11 @@ export type ContentSnapshot = {
   facts: ContentFacts;
   descriptionKey: string | null;
   descriptions: Partial<Record<ContentLocale, string>>;
+  amenities?: ContentAmenitySnapshot[];
   gallery: { mediaIds: string[]; coverMediaId: string | null; media: { id: string; url: string }[] };
 };
 type StoredProposal = {
-  version: 1; scope: ContentScope; targetId: string; projectId: string;
+  version: 1 | 2; scope: ContentScope; targetId: string; projectId: string;
   status: ProposalStatus; revision: number; baselineVersion: string;
   baseline: ContentSnapshot; proposal: ContentProposal; reviewNote: string | null;
   approvedFromRevision: number | null;
@@ -101,14 +105,26 @@ async function contributor(tx: Tx, authorId: string, target: ContentTarget): Pro
       AND status::text = 'active' AND scope_type::text = ${target.scope}
       AND project_id = ${target.projectId} AND unit_id IS NOT DISTINCT FROM ${unitId}
       AND organization_id IS NULL AND provider_id IS NULL FOR SHARE`;
-  if (locked.length === 0) return fail(403, 'This content target is not assigned to you.');
+  if (locked.length !== 0) return;
+  try { if (await hasEmployeeCreatedTargetAccessTx(tx, authorId, target)) return; }
+  catch (error) { if (!(error instanceof EmployeeCreationError)) throw error; }
+  return fail(403, 'This content target is not assigned to you.');
 }
 
-async function assignedTarget(tx: Tx, authorId: string, scope: ContentScope, id: string) {
+/** Shared exact-target authorization for content commands, including upload intents.
+ * Upload callers request a share lock to pin a unit's parent for the transaction.
+ * Existing proposal commands retain their canonical FOR UPDATE lock ordering.
+ * This deliberately retains the same contributor/employee-created-target policy.
+ */
+export async function authorizeContentTargetTx(tx: Tx, authorId: string, scope: ContentScope, id: string, lockTarget = false) {
+  if (lockTarget && scope === 'unit') await tx.$queryRaw`SELECT id FROM unit WHERE id = ${id} FOR SHARE`;
+  else if (lockTarget) await tx.$queryRaw`SELECT id FROM project WHERE id = ${id} FOR SHARE`;
   const unit = scope === 'unit' ? await tx.unit.findUnique({ where: { id }, select: { id: true, projectId: true } }) : null;
   const project = scope === 'project' ? await tx.project.findUnique({ where: { id }, select: { id: true } }) : null;
   if (!unit && !project) return fail(404, 'Content target not found.');
-  await contributor(tx, authorId, { scope, id, projectId: unit?.projectId ?? id, name: '' });
+  const target: ContentTarget = { scope, id, projectId: unit?.projectId ?? id, name: '' };
+  await contributor(tx, authorId, target);
+  return target;
 }
 
 const UNIT_SELECT = {
@@ -134,7 +150,157 @@ const CONTENT_SELECT = {
     createdAt: true, updatedAt: true, updatedByIdentityId: true } },
 } as const;
 
-async function canonical(tx: Tx, scope: ContentScope, id: string) {
+// Include every scalar revision, not just the contributor-editable projection:
+// commercial changes also make an in-flight descriptive review stale.
+const AMENITY_SELECT = {
+  id: true, projectId: true, createdAt: true, updatedAt: true, slug: true, name: true,
+  categoryKey: true, shortDescription: true, description: true, iconKey: true,
+  locationLabel: true, coverMediaId: true, accessType: true, accessInstructions: true,
+  bookingRequired: true, bookingMode: true, bookingUrl: true, reservationConfig: true,
+  pricingType: true, priceThb: true, capacity: true, minAge: true, openingHours: true,
+  rules: true, terms: true, isFeatured: true, published: true, sort: true,
+} as const;
+const amenityKey = (id: string, field: string) => `project_amenity.${id}.${field}`;
+async function canonicalAmenities(tx: Tx, projectId: string) {
+  // The already-held project lock blocks new FK rows; deterministic child/key
+  // locks plus Serializable catch updates/deletes and newly inserted locale keys.
+  await tx.$queryRaw`SELECT id FROM project_amenity WHERE project_id = ${projectId} ORDER BY id FOR UPDATE`;
+  const rows = await tx.projectAmenity.findMany({ where: { projectId }, select: AMENITY_SELECT,
+    orderBy: { id: 'asc' }, take: 501 });
+  if (rows.length > 500) return fail(409, 'This project has too many facilities for one content review.');
+  const names = rows.flatMap(row => CONTENT_AMENITY_TEXT_FIELDS.map(field => amenityKey(row.id, field))).sort();
+  if (names.length) {
+    await tx.$queryRaw`SELECT id FROM content_key WHERE key = ANY(${names}) ORDER BY key FOR UPDATE`;
+    await tx.$queryRaw`SELECT t.id FROM translation t JOIN content_key k ON k.id = t.content_key_id
+      WHERE k.key = ANY(${names}) ORDER BY k.key, t.id FOR UPDATE OF t`;
+  }
+  const keys = names.length ? await tx.contentKey.findMany({ where: { key: { in: names } },
+    select: CONTENT_SELECT, orderBy: { key: 'asc' } }) : [];
+  const byKey = new Map(keys.map(key => [key.key, key]));
+  const snapshot: ContentAmenitySnapshot[] = rows.map(row => {
+    const translations: NonNullable<ContentAmenitySnapshot['translations']> = {};
+    for (const field of CONTENT_AMENITY_TEXT_FIELDS) {
+      for (const entry of byKey.get(amenityKey(row.id, field))?.translations ?? []) {
+        if (['ru', 'en', 'th', 'zh'].includes(entry.locale)) {
+          const locale = entry.locale as ContentLocale;
+          translations[locale] = { ...translations[locale], [field]: entry.value };
+        }
+      }
+    }
+    return { id: row.id, name: row.name, shortDescription: row.shortDescription, description: row.description,
+      locationLabel: row.locationLabel, accessInstructions: row.accessInstructions,
+      openingHours: row.openingHours, rules: row.rules, translations };
+  });
+  return { rows, keys, snapshot };
+}
+function validateAmenities(proposal: ContentProposal, snapshot: ContentSnapshot) {
+  if (!Object.prototype.hasOwnProperty.call(proposal, 'amenities')) return;
+  // Old proposals cannot acquire this mutation capability without an explicit
+  // rebase that captures the complete canonical facility/content baseline.
+  if (!snapshot.amenities) return conflict();
+  if (snapshot.amenities.length + (proposal.amenities ?? []).filter(item => item.id === null).length > 500) {
+    return fail(409, 'This project has too many facilities for one content review.');
+  }
+  const ids = new Set(snapshot.amenities.map(item => item.id));
+  if ((proposal.amenities ?? []).some(item => item.id !== null && !ids.has(item.id))) {
+    return fail(403, 'Use only facilities belonging to the assigned project.');
+  }
+  for (const item of proposal.amenities ?? []) {
+    const before = snapshot.amenities.find(row => row.id === item.id);
+    try { contentAmenityHoursValue(before?.openingHours ?? null, item.openingHours, item.staffHours); }
+    catch { return fail(409, 'This custom facility schedule must be kept or explicitly cleared before daily editing.'); }
+  }
+}
+/** Amenity keys have a fixed public reader. Fail closed on known persisted key
+ * aliases rather than letting scoped text approval modify another surface.
+ * Predicate reads participate in Serializable conflict detection, but do not
+ * exclusively lock every alias writer. This is not a global schema guarantee
+ * for future, static, JSON or arbitrary concurrent aliases.
+ */
+async function assertAmenityKeyOwnership(tx: Tx, names: string[]) {
+  if (!names.length) return;
+  const rows = await tx.$queryRaw<{ content_key_alias: boolean }[]>`SELECT EXISTS (
+    SELECT 1 FROM area WHERE ARRAY[name_key, description_key] && ${names}::text[]
+    UNION ALL SELECT 1 FROM project WHERE ARRAY[area_label_key, description_key, handbook_key] && ${names}::text[] OR amenity_keys && ${names}::text[]
+    UNION ALL SELECT 1 FROM unit WHERE ARRAY[marketing_title_key, category_key, description_key, cancellation_policy_key] && ${names}::text[] OR amenity_keys && ${names}::text[]
+    UNION ALL SELECT 1 FROM organization WHERE profile_key = ANY(${names})
+    UNION ALL SELECT 1 FROM provider WHERE category_keys && ${names}::text[]
+    UNION ALL SELECT 1 FROM service WHERE category_key = ANY(${names})
+    UNION ALL SELECT 1 FROM project_nearby_place WHERE category_key = ANY(${names})
+    UNION ALL SELECT 1 FROM project_amenity WHERE ARRAY[category_key, icon_key] && ${names}::text[]
+    UNION ALL SELECT 1 FROM notification WHERE ARRAY[title_key, body_key] && ${names}::text[]
+    UNION ALL SELECT 1 FROM inventory_category WHERE ARRAY[category_key, cancellation_policy_key] && ${names}::text[]
+    UNION ALL SELECT 1 FROM rate_plan WHERE cancellation_policy_key = ANY(${names})
+    UNION ALL SELECT 1 FROM ticket WHERE category_key = ANY(${names})
+  ) AS content_key_alias`;
+  if (rows.length !== 1 || rows[0].content_key_alias) {
+    return fail(409, 'A facility content key is shared with another surface. An administrator must repair it before this text can be changed.');
+  }
+}
+async function applyAmenities(tx: Tx, projectId: string, proposal: ContentProposal,
+  current: Awaited<ReturnType<typeof canonicalAmenities>>, actorId: string) {
+  const changedNames = (proposal.amenities ?? []).flatMap(item => {
+    const before = current.snapshot.find(row => row.id === item.id);
+    return before ? CONTENT_AMENITY_TEXT_FIELDS.filter(field => contentAmenityTextChanged(before, item, field))
+      .map(field => amenityKey(before.id, field)) : [];
+  }).sort();
+  await assertAmenityKeyOwnership(tx, changedNames);
+  const changes: { id: string; locale: ContentLocale; createsDraft: boolean }[] = [];
+  for (const item of proposal.amenities ?? []) {
+    const before = item.id === null ? null : current.snapshot.find(row => row.id === item.id);
+    if (item.id !== null && !before) return conflict();
+    const id = item.id ?? randomUUID();
+    changes.push({ id, locale: item.locale, createsDraft: item.id === null });
+    // A localized fallback prefilled by the editor is not an authored change.
+    const changedFields = CONTENT_AMENITY_TEXT_FIELDS.filter(field => !before || contentAmenityTextChanged(before, item, field));
+    const copy: { name?: string; shortDescription?: string | null; description?: string | null; accessInstructions?: string | null } = {};
+    for (const field of changedFields) {
+      if (field === 'name') copy.name = item.name;
+      else copy[field] = item[field];
+    }
+    let openingHours: Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined;
+    if (item.openingHours.mode !== 'keep' || (item.staffHours && item.staffHours.mode !== 'keep')) {
+      let value: unknown;
+      try { value = contentAmenityHoursValue(before?.openingHours ?? null, item.openingHours, item.staffHours); }
+      catch { return fail(409, 'This custom facility schedule must be kept or explicitly cleared before daily editing.'); }
+      openingHours = value === null ? Prisma.JsonNull : json(value);
+    }
+    const descriptive = { ...copy, locationLabel: item.locationLabel,
+      ...(openingHours === undefined ? {} : { openingHours }),
+      ...(item.rules.mode === 'replace' ? { rules: item.rules.lines } : {}) };
+    if (before) {
+      await tx.projectAmenity.update({ where: { id, projectId }, data: { ...descriptive,
+        updatedAt: new Date(Math.max(Date.now(), current.rows.find(row => row.id === id)!.updatedAt.getTime() + 1)) } });
+    } else {
+      await tx.projectAmenity.create({ data: { id, projectId, slug: `facility-${id}`, name: item.name,
+        ...descriptive, published: false, isFeatured: false, accessType: 'not_specified',
+        pricingType: 'not_specified', priceThb: null, bookingRequired: false, bookingMode: 'none',
+        bookingUrl: null, capacity: null, minAge: null } });
+    }
+    for (const field of changedFields) {
+      // Null clears the selected locale. Other locale fallbacks stay available,
+      // exactly as the public content reader already handles empty translations.
+      const value = item[field] ?? '';
+      if (!before && !value) continue;
+      const name = amenityKey(id, field);
+      const previous = current.keys.find(key => key.key === name);
+      if (previous && (previous.namespace !== 'project_amenity' || previous.supportsRich)) return conflict();
+      // Never upsert a missing content key: a concurrent insertion must conflict.
+      const key = previous ?? await tx.contentKey.create({ data: { key: name, namespace: 'project_amenity',
+        description: 'Facility text from an approved content proposal', supportsRich: false }, select: { id: true } });
+      const translation = previous?.translations.find(row => row.locale === item.locale);
+      if (translation) {
+        await tx.translation.update({ where: { id: translation.id }, data: { value, status: 'needs_review', updatedByIdentityId: actorId } });
+      } else {
+        await tx.translation.create({ data: { contentKeyId: key.id, locale: item.locale,
+          value, status: 'needs_review', updatedByIdentityId: actorId } });
+      }
+    }
+  }
+  return changes;
+}
+
+async function canonical(tx: Tx, scope: ContentScope, id: string, includeAmenities = true) {
   // Parent FOR UPDATE blocks new child FK links. Existing child locks block
   // unlink/reorder, including writers that do not explicitly lock the parent.
   if (scope === 'unit') {
@@ -186,8 +352,10 @@ async function canonical(tx: Tx, scope: ContentScope, id: string) {
   for (const translation of key?.translations ?? []) {
     if (['ru', 'en', 'th', 'zh'].includes(translation.locale)) descriptions[translation.locale as ContentLocale] = translation.value;
   }
+  const amenityState = scope === 'project' && includeAmenities ? await canonicalAmenities(tx, id) : null;
   const snapshot: ContentSnapshot = {
     facts, descriptionKey, descriptions,
+    ...(amenityState ? { amenities: amenityState.snapshot } : {}),
     gallery: { mediaIds: links.map(link => link.mediaId), coverMediaId: row.coverMediaId,
       media: links.flatMap(link => { const asset = byId.get(link.mediaId); return asset && publicPhoto(asset) ? [{ id: asset.id, url: asset.storageKey }] : []; }) },
   };
@@ -202,8 +370,9 @@ async function canonical(tx: Tx, scope: ContentScope, id: string) {
   // Include all locale content/revisions, exact gallery sort values, and the
   // canonical row revision. Never hash client snapshots or only changed fields.
   const baselineVersion = fingerprint(json({ scope, id, projectId: target.projectId, snapshot,
-    updatedAt: row.updatedAt, content: key, marketingTitleKey, pairedTitleKey, titleContent: titleKey, gallery: links }));
-  return { target, snapshot, baselineVersion, key, marketingTitleKey, pairedTitleKey, updatedAt: row.updatedAt };
+    updatedAt: row.updatedAt, content: key, marketingTitleKey, pairedTitleKey, titleContent: titleKey, gallery: links,
+    ...(amenityState ? { amenities: { rows: amenityState.rows, content: amenityState.keys } } : {}) }));
+  return { target, snapshot, baselineVersion, key, marketingTitleKey, pairedTitleKey, updatedAt: row.updatedAt, amenityState };
 }
 
 async function validateMedia(tx: Tx, authorId: string, proposal: ContentProposal, current: ContentSnapshot) {
@@ -224,12 +393,28 @@ function stored(row: Row): StoredProposal {
   try {
     const value = exact(row.requirements, ['version', 'scope', 'targetId', 'projectId', 'status', 'revision',
       'baselineVersion', 'baseline', 'proposal', 'reviewNote', 'approvedFromRevision']);
-    if (value.version !== 1 || !['draft', 'submitted', 'returned', 'approved'].includes(String(value.status))) return conflict();
+    if ((value.version !== 1 && value.version !== 2) || !['draft', 'submitted', 'returned', 'approved'].includes(String(value.status))) return conflict();
     const scope = parseScope(value.scope), targetId = parseTargetId(value.targetId), projectId = parseTargetId(value.projectId);
     if (row.source !== CONTENT_PROPOSAL_SOURCE || row.projectId !== projectId ||
         (scope === 'unit' ? row.unitId !== targetId : row.unitId !== null || projectId !== targetId)) return conflict();
     const baseline = object(value.baseline);
-    exact(baseline, ['facts', 'descriptionKey', 'descriptions', 'gallery']);
+    exact(baseline, ['facts', 'descriptionKey', 'descriptions', 'gallery'], value.version === 2 && scope === 'project' ? ['amenities'] : []);
+    if (value.version === 2 && scope === 'project') {
+      if (!Array.isArray(baseline.amenities) || baseline.amenities.length > 500) return conflict();
+      const ids = new Set<string>();
+      for (const entry of baseline.amenities) {
+        const amenity = exact(entry, ['id', 'name', 'shortDescription', 'description', 'locationLabel', 'accessInstructions', 'openingHours', 'rules', 'translations']);
+        const id = parseTargetId(amenity.id);
+        if (ids.has(id)) return conflict();
+        ids.add(id);
+        if (typeof amenity.name !== 'string' || ['shortDescription', 'description', 'locationLabel', 'accessInstructions'].some(field => amenity[field] !== null && typeof amenity[field] !== 'string')) return conflict();
+        const translations = object(amenity.translations);
+        for (const [locale, values] of Object.entries(translations)) {
+          if (!['ru', 'en', 'th', 'zh'].includes(locale) || Object.entries(object(values)).some(([field, text]) => !CONTENT_AMENITY_TEXT_FIELDS.includes(field as typeof CONTENT_AMENITY_TEXT_FIELDS[number]) || typeof text !== 'string')) return conflict();
+        }
+      }
+    }
+    if (value.version === 1 && Object.prototype.hasOwnProperty.call(object(value.proposal), 'amenities')) return conflict();
     // Baseline is a server snapshot; it is never spread into canonical writes.
     if (baseline.descriptionKey !== null && typeof baseline.descriptionKey !== 'string') return conflict();
     const descriptions = object(baseline.descriptions);
@@ -241,7 +426,7 @@ function stored(row: Row): StoredProposal {
     // Validate facts and gallery bounds without accepting the snapshot as authority.
     parseContentProposal(scope, { facts: baseline.facts, description: null,
       gallery: { mediaIds: gallery.mediaIds, coverMediaId: gallery.coverMediaId } });
-    return { version: 1, scope, targetId, projectId, status: value.status as ProposalStatus,
+    return { version: value.version as 1 | 2, scope, targetId, projectId, status: value.status as ProposalStatus,
       revision: revision(value.revision), baselineVersion: version(value.baselineVersion),
       baseline: baseline as ContentSnapshot, proposal: parseContentProposal(scope, value.proposal),
       reviewNote: note(value.reviewNote), approvedFromRevision: value.approvedFromRevision === null ? null : revision(value.approvedFromRevision) };
@@ -265,7 +450,23 @@ function targetOf(data: StoredProposal): ContentTarget {
 
 /** Injectable DB keeps routes and real PostgreSQL integration tests on one implementation. */
 export function createContentProposalService(db: PrismaClient) {
-  const transaction = <T>(run: (tx: Tx) => Promise<T>) => db.$transaction(run, { maxWait: 5000, timeout: 15000 });
+  const transaction = async <T>(run: (tx: Tx) => Promise<T>): Promise<T> => {
+    // These DB errors guarantee rollback. Retry the whole pure DB command so a
+    // duplicate approval can re-read the committed idempotency result. Never
+    // retry timeout/unknown-commit errors or business baseline conflicts.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await db.$transaction(run, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 15000 });
+      } catch (error) {
+        const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
+        const meta = error && typeof error === 'object' && 'meta' in error ? error.meta : null;
+        const databaseCode = meta && typeof meta === 'object' && 'code' in meta ? meta.code : null;
+        if (code !== 'P2034' && !['40001', '40P01'].includes(String(databaseCode))) throw error;
+        if (attempt === 2) return conflict();
+      }
+    }
+    return conflict();
+  };
   return {
     async list(actorId: string) {
       return transaction(async tx => {
@@ -281,8 +482,10 @@ export function createContentProposalService(db: PrismaClient) {
           tx.project.findMany({ where: { id: { in: grants.filter(g => g.scopeType === 'project').map(g => g.projectId!) } },
             select: { id: true, name: true }, orderBy: { name: 'asc' }, take: MAX_TARGETS }),
         ]);
+        const createdTargets = actor.isAdmin ? [] : await listEmployeeCreatedTargetsTx(tx, actorId);
         const targets: ContentTarget[] = [...units.map(unit => ({ scope: 'unit' as const, id: unit.id, name: unit.name, projectId: unit.projectId, projectName: unit.project.name })),
-          ...projects.map(project => ({ scope: 'project' as const, id: project.id, name: project.name, projectId: project.id }))].slice(0, MAX_TARGETS);
+          ...projects.map(project => ({ scope: 'project' as const, id: project.id, name: project.name, projectId: project.id })),
+          ...createdTargets.filter(target => !units.some(unit => target.scope === 'unit' && unit.id === target.id) && !projects.some(project => target.scope === 'project' && project.id === target.id))].slice(0, MAX_TARGETS);
         const rows = await tx.crmOpportunity.findMany({ where: { source: CONTENT_PROPOSAL_SOURCE,
           ...(!actor.isAdmin ? { identityId: actorId, OR: targets.map(target => ({ projectId: target.projectId, unitId: target.scope === 'unit' ? target.id : null })) } : {}) },
           select: ROW_SELECT, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }], take: MAX_ITEMS });
@@ -300,7 +503,7 @@ export function createContentProposalService(db: PrismaClient) {
       const scope = parseScope(rawScope), id = parseTargetId(rawId);
       return transaction(async tx => {
         await activeIdentity(tx, actorId);
-        await assignedTarget(tx, actorId, scope, id);
+        await authorizeContentTargetTx(tx, actorId, scope, id);
         const current = await canonical(tx, scope, id);
         await contributor(tx, actorId, current.target);
         return { target: current.target, snapshot: current.snapshot, baselineVersion: current.baselineVersion };
@@ -341,12 +544,13 @@ export function createContentProposalService(db: PrismaClient) {
       const baselineVersion = version(input.baselineVersion);
       return transaction(async tx => {
         await activeIdentity(tx, actorId);
-        await assignedTarget(tx, actorId, scope, id);
+        await authorizeContentTargetTx(tx, actorId, scope, id);
         const current = await canonical(tx, scope, id);
         await contributor(tx, actorId, current.target);
         if (current.baselineVersion !== baselineVersion) return conflict();
+        validateAmenities(proposal, current.snapshot);
         await validateMedia(tx, actorId, proposal, current.snapshot);
-        const data: StoredProposal = { version: 1, scope, targetId: id, projectId: current.target.projectId,
+        const data: StoredProposal = { version: 2, scope, targetId: id, projectId: current.target.projectId,
           status, revision: 1, baselineVersion, baseline: current.snapshot, proposal, reviewNote: null, approvedFromRevision: null };
         const row = await tx.crmOpportunity.create({ data: {
           identityId: actorId, projectId: data.projectId, unitId: scope === 'unit' ? id : null,
@@ -367,19 +571,21 @@ export function createContentProposalService(db: PrismaClient) {
         const data = stored(row);
         if (data.revision !== expectedRevision) return conflict();
         if (!['draft', 'returned'].includes(data.status)) return fail(409, 'Only draft or returned proposals can be edited.');
-        await assignedTarget(tx, actorId, data.scope, data.targetId);
-        const current = await canonical(tx, data.scope, data.targetId);
+        await authorizeContentTargetTx(tx, actorId, data.scope, data.targetId);
+        const current = await canonical(tx, data.scope, data.targetId, data.version === 2 || rebase);
         if (current.target.projectId !== data.projectId) return conflict();
         await contributor(tx, actorId, current.target);
         let proposal: ContentProposal;
         if (rebase) {
           proposal = parseContentProposal(data.scope, { facts: current.snapshot.facts, description: null,
             gallery: { mediaIds: current.snapshot.gallery.mediaIds, coverMediaId: current.snapshot.gallery.coverMediaId } });
+          data.version = 2;
           data.baseline = current.snapshot; data.baselineVersion = current.baselineVersion; data.status = 'draft';
         } else {
           if (current.baselineVersion !== data.baselineVersion) return conflict();
           proposal = parseContentProposal(data.scope, input.proposal); data.status = draftStatus(input.status);
         }
+        validateAmenities(proposal, current.snapshot);
         await validateMedia(tx, actorId, proposal, current.snapshot);
         data.proposal = proposal; data.revision += 1;
         const updated = await tx.crmOpportunity.update({ where: { id }, data: { requirements: json(data) }, select: ROW_SELECT });
@@ -407,10 +613,11 @@ export function createContentProposalService(db: PrismaClient) {
             data: json({ scope: data.scope, targetId: data.targetId, revision: data.revision }) } });
           return detail(returned, data);
         }
-        const current = await canonical(tx, data.scope, data.targetId);
+        const current = await canonical(tx, data.scope, data.targetId, data.version === 2);
         if (current.target.projectId !== data.projectId || current.baselineVersion !== data.baselineVersion) return conflict();
         await contributor(tx, row.identityId, current.target);
         const proposal = parseContentProposal(data.scope, data.proposal);
+        validateAmenities(proposal, current.snapshot);
         await validateMedia(tx, row.identityId, proposal, current.snapshot);
         let descriptionKey = current.snapshot.descriptionKey;
         if (proposal.description) {
@@ -439,6 +646,7 @@ export function createContentProposalService(db: PrismaClient) {
             value: proposal.description.value, status: 'needs_review', updatedByIdentityId: actorId } });
 
         }
+        let amenityChanges: { id: string; locale: ContentLocale; createsDraft: boolean }[] = [];
         // Explicit fact projections only. No unparsed request or CRM JSON spread.
         if (data.scope === 'unit') {
           const facts = parseContentProposal('unit', proposal).facts;
@@ -458,6 +666,10 @@ export function createContentProposalService(db: PrismaClient) {
           });
         } else {
           const facts = parseContentProposal('project', proposal).facts;
+          if (proposal.amenities?.length) {
+            if (!current.amenityState) return conflict();
+            amenityChanges = await applyAmenities(tx, data.targetId, proposal, current.amenityState, actorId);
+          }
           await tx.project.update({ where: { id: data.targetId }, data: {
             name: facts.name, brand: facts.brand, address: facts.address, city: facts.city, district: facts.district,
             projectType: facts.projectType, totalUnits: facts.totalUnits,
@@ -473,7 +685,8 @@ export function createContentProposalService(db: PrismaClient) {
         const approved = await tx.crmOpportunity.update({ where: { id }, data: { requirements: json(data) }, select: ROW_SELECT });
         await tx.auditLog.create({ data: { actorIdentityId: actorId, action: 'property_content_proposal.approved', entityType: 'CrmOpportunity', entityId: id,
           data: json({ authorIdentityId: row.identityId, scope: data.scope, targetId: data.targetId,
-            baselineVersion: data.baselineVersion, revision: data.revision, descriptionLocale: proposal.description?.locale ?? null }) } });
+            baselineVersion: data.baselineVersion, revision: data.revision, descriptionLocale: proposal.description?.locale ?? null,
+            amenityChanges }) } });
         return { ...detail(approved, data), alreadyApproved: false };
       });
     },

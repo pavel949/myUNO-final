@@ -10,20 +10,18 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
-  if (!identity || identity.status === 'blocked') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!identity || identity.status !== 'active') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!identity.isAdmin) return NextResponse.json({
+    error: 'Employee property creation requires an explicit workspace capability and administrator review.',
+    code: 'employee_creation_review_required', next: '/property/create?kind=unit&from=operations',
+  }, { status: 403 });
 
   try {
     const body = await req.json();
     if (typeof body.projectId !== 'string' || !body.projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
     }
-    // Only directly assigned internal staff can create a new inventory record.
-    // An external MC member cannot attach an unmandated unit to their portfolio.
-    const staffGrant = await prisma.roleAssignment.findFirst({
-      where: { identityId: user.identityId, role: 'staff_ops', scopeType: 'project', projectId: body.projectId, status: 'active' },
-      select: { id: true },
-    });
-    if (!identity.isAdmin && !staffGrant) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // The existing administrator writer stays intact. Employees use reviewed intake.
     const allowed = await can({
       identity, action: 'units:create', requiredAccess: 'allow',
       resource: { projectId: body.projectId },

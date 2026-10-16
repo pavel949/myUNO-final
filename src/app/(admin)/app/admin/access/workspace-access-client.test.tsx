@@ -8,8 +8,8 @@ const organization = { id: 'org-a', name: 'Operations A', units: [{ id: 'unit-a'
 const space = { id: 'space-a', name: 'Workspace A', organizationId: 'org-a', updatedAt: '2026-10-14T00:00:00.000Z', unitIds: ['unit-a'], currentUnits: organization.units, members: [] };
 const person = { id: 'person-a', firstName: 'Alex', lastName: 'Operator', email: 'alex@example.test', status: 'active' };
 const response = (body: unknown, ok = true) => ({ ok, json: async () => body });
-beforeEach(() => vi.clearAllMocks());
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => { vi.clearAllMocks(); });
+afterEach(() => { vi.unstubAllGlobals(); });
 
 describe('explicit founder workspace setup', () => {
   it('starts with no organization, unit or space selected', () => {
@@ -69,4 +69,40 @@ describe('explicit founder workspace setup', () => {
     await act(async () => resolve(response({ identities: [person] })));
     expect(screen.queryByRole('button', { name: /Alex Operator/ })).not.toBeInTheDocument();
   });
+  it('offers independent creation grants without selecting operations or the other creation right', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(response({ identities: [person] })).mockResolvedValueOnce(response({ member: { id: 'member' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<WorkspaceAccessClient organizations={[organization]} spaces={[space]} labels={labels} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Existing workspace' }), { target: { value: space.id } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Find existing person' }), { target: { value: 'alex@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Find existing person' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Alex Operator/ }));
+    const unit = screen.getByRole('checkbox', { name: 'Create property drafts' });
+    const complex = screen.getByRole('checkbox', { name: 'Create complex drafts' });
+    expect(unit).toBeEnabled(); expect(complex).toBeEnabled();
+    expect(unit).not.toBeChecked(); expect(complex).not.toBeChecked();
+    fireEvent.click(unit);
+    expect(complex).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'manage tasks' })).not.toBeChecked();
+    expect(screen.getByText(labels['admin.access.creation_note'])).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Save member access' }));
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).capabilities).toEqual(['create_unit']);
+  });
+
+  it('freezes editable access controls while the save response is pending', async () => {
+    let finish!: (value: ReturnType<typeof response>) => void;
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(resolve => { finish = resolve; })));
+    render(<WorkspaceAccessClient organizations={[organization]} spaces={[space]} labels={labels} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Existing workspace' }), { target: { value: space.id } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save selected homes' }));
+    expect(screen.getByRole('combobox', { name: 'Existing workspace' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Find existing person' })).toBeDisabled();
+    expect(screen.getByLabelText('Workspace name')).toBeDisabled();
+    await act(async () => finish(response({ error: 'Changed' }, false)));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Changed');
+    expect(screen.getByRole('combobox', { name: 'Existing workspace' })).toBeEnabled();
+    expect(state.refresh).not.toHaveBeenCalled();
+  });
+
 });

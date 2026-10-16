@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import type { ContentProposal, ContentScope, ContentLocale } from '@/modules/onboarding/content-proposal.schema';
+import { AmenityComparison } from '@/app/property/content/amenity-ui';
+import type { ContentProposal, ContentScope, ContentLocale, ContentAmenitySnapshot } from '@/modules/onboarding/content-proposal.schema';
 
 type Status = 'draft' | 'submitted' | 'returned' | 'approved';
 type Summary = { id: string; scope: ContentScope; targetId: string; projectId: string; targetName: string; status: Status; revision: number; updatedAt: string; reviewNote: string | null };
 type Media = { id: string; url: string };
 type Detail = {
   id: string; scope: ContentScope; targetId: string; projectId: string; status: Status; revision: number;
-  baseline: { facts: ContentProposal['facts']; descriptions: Partial<Record<ContentLocale, string>>; gallery: ContentProposal['gallery'] & { media: Media[] } };
+  baseline: { facts: ContentProposal['facts']; descriptions: Partial<Record<ContentLocale, string>>; gallery: ContentProposal['gallery'] & { media: Media[] }; amenities?: ContentAmenitySnapshot[] };
   proposal: ContentProposal; reviewNote: string | null; media?: Media[]; author?: { id: string; name: string };
 };
 const button = 'rounded-lg border border-border-line px-16 py-12 text-small disabled:opacity-40';
@@ -94,6 +95,7 @@ export default function ContentProposalReview({ labels }: { labels: Record<strin
       })}</dl></section>
       <section><h3 className="font-semibold">{L('description')}</h3>{detail.proposal.description ? <div className="mt-12"><p>{detail.proposal.description.locale.toUpperCase()}</p><div className="mt-8 grid gap-12 md:grid-cols-2"><div><p className="text-small text-text-secondary">{L('before')}</p><p className="whitespace-pre-wrap break-words">{detail.baseline.descriptions[detail.proposal.description.locale] || L('empty')}</p></div><div><p className="text-small text-text-secondary">{L('after')}</p><p className="whitespace-pre-wrap break-words">{detail.proposal.description.value}</p></div></div></div> : <p className="mt-8">{L('description_unchanged')}</p>}</section>
       <section><h3 className="font-semibold">{L('gallery')}</h3><div className="mt-12 grid gap-16 md:grid-cols-2"><div><p>{L('before')}</p>{gallery(detail.baseline.gallery.mediaIds, detail.baseline.gallery.coverMediaId, detail.baseline.gallery.media)}</div><div><p>{L('after')}</p>{gallery(detail.proposal.gallery.mediaIds, detail.proposal.gallery.coverMediaId, [...detail.baseline.gallery.media, ...(detail.media || [])])}</div></div></section>
+      {detail.scope === 'project' && <section aria-labelledby="content-review-amenities"><h3 id="content-review-amenities" className="font-semibold">{L('amenities')}</h3><p className="mt-8 text-small text-text-secondary">{L('amenities_hint')}</p>{detail.proposal.amenities?.length ? <div className="mt-12 space-y-12">{detail.proposal.amenities.map((amenity, index) => <div key={amenity.id || `new-${index}`} className="rounded-lg border border-brand-andaman p-12"><AmenityComparison before={amenity.id ? detail.baseline.amenities?.find(value => value.id === amenity.id) : undefined} after={amenity} labels={labels} /></div>)}</div> : <p className="mt-8">{L('amenities_unchanged')}</p>}</section>}
       {detail.reviewNote && <p className="whitespace-pre-wrap rounded-lg border border-border-line p-12">{L('review_note')}: {detail.reviewNote}</p>}
       {detail.status === 'submitted' && <section className="space-y-12 border-t border-border-line pt-20"><p className="text-small text-text-secondary">{L('apply_hint')}</p><label className="flex items-start gap-12"><input type="checkbox" checked={checked} disabled={busy} onChange={e => setChecked(e.target.checked)} />{L('confirm')}</label><div><label htmlFor="content-review-note" className="block text-small">{L('note')}</label><textarea id="content-review-note" value={note} disabled={busy} maxLength={2000} rows={3} onChange={e => setNote(e.target.value)} className="mt-4 w-full rounded-lg border border-border-line p-12" /></div><div className="flex flex-wrap gap-12"><button type="button" disabled={busy || !checked} onClick={() => void review('approve')} className={`${button} bg-brand-andaman text-white`}>{L('approve')}</button><button type="button" disabled={busy || !note.trim()} onClick={() => void review('return')} className={button}>{L('return')}</button></div></section>}
     </article>}

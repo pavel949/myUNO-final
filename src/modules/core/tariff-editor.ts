@@ -1,5 +1,10 @@
+import { createHash } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { quoteSeasonalTariffGrid } from './seasonal-tariff';
+import { assertUnitPricingAccess, PricingAccessError } from './pricing-access';
+
+type TariffDb = PrismaClient | Prisma.TransactionClient;
+type SaveTariffInput = { unitIds: string[]; draft: TariffDraft; actorIdentityId: string; expectedRevision: string; categoryId?: string };
 
 /**
  * The admin rates editor's write path for CommercialOffering tariff grids.
@@ -157,7 +162,7 @@ function toRows(draft: TariffDraft, mode: 'daily' | 'monthly', previous: Row[]):
 }
 
 /** The editor's view of a unit's current grid. */
-export async function readTariffDraft(db: PrismaClient, unitId: string): Promise<TariffDraft & { sourceSystem: string | null }> {
+export async function readTariffDraft(db: TariffDb, unitId: string): Promise<TariffDraft & { sourceSystem: string | null }> {
   const offers = await db.commercialOffering.findMany({
     where: { unitId, offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
     select: { offeringType: true, pricingTerms: true, rulesAndPolicies: true },
@@ -197,6 +202,65 @@ export async function readTariffDraft(db: PrismaClient, unitId: string): Promise
   };
 }
 
+/** Stable, quote-relevant baseline. JSON object key order is immaterial; row and array order is explicit. */
+function stable(value: unknown): string {
+  if (value instanceof Date) return JSON.stringify(value.toISOString());
+  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
+  if (value && typeof value === 'object') return '{' + Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, item]) => JSON.stringify(key) + ':' + stable(item)).join(',') + '}';
+  return JSON.stringify(value) ?? 'null';
+}
+export async function readTariffRevision(db: TariffDb, unitIds: string[]): Promise<string> {
+  const ids = [...new Set(unitIds)].sort();
+  const units = await db.unit.findMany({ where: { id: { in: ids } }, orderBy: { id: 'asc' }, select: {
+    id: true, projectId: true, inventoryCategoryId: true, status: true, updatedAt: true,
+    baseNightlyThb: true, minNights: true, cancellationPolicyKey: true, maxGuests: true,
+  } });
+  if (!ids.length || units.length !== ids.length) throw new PricingAccessError('Inventory changed. Reload the tariff editor.', 409);
+  const offers = await db.commercialOffering.findMany({ where: { unitId: { in: ids }, offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
+    orderBy: { id: 'asc' }, select: { id: true, unitId: true, offeringType: true, status: true, updatedAt: true, pricingTerms: true, rulesAndPolicies: true } });
+  return createHash('sha256').update(stable({ units, offers })).digest('hex');
+}
+
+/** Draft, category target set and both baselines come from one PostgreSQL snapshot. */
+export async function readTariffEditorSnapshot(db: PrismaClient, unitId: string, includeCategory: boolean) {
+  return db.$transaction(async tx => {
+    const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true, inventoryCategoryId: true } });
+    if (!unit) throw new PricingAccessError('Unit not found', 404);
+    const unitIds = includeCategory && unit.inventoryCategoryId ? (await tx.unit.findMany({
+      where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } }, select: { id: true }, orderBy: { id: 'asc' },
+    })).map(row => row.id) : [unitId];
+    return { draft: await readTariffDraft(tx, unitId), unitRevision: await readTariffRevision(tx, [unitId]),
+      categoryRevision: includeCategory && unitIds.length > 1 ? await readTariffRevision(tx, unitIds) : null,
+      categoryUnits: unitIds.length, ...(!includeCategory ? { permissions: await employeeTariffPermissions(tx, unitId) } : {}) };
+  }, { isolationLevel: 'RepeatableRead' });
+}
+
+/** Shared lock order for admin/employee saves: category, sorted units, current authority, sorted offerings. */
+async function lockTariffSave(tx: Prisma.TransactionClient, input: SaveTariffInput, adminOnly: boolean) {
+  if (!/^[a-f0-9]{64}$/.test(input.expectedRevision ?? '')) throw new PricingAccessError('Reload the tariff editor before saving.', 409);
+  const ids = [...new Set(input.unitIds)].sort();
+  if (!ids.length || ids.length > 500 || ids.length !== input.unitIds.length)
+    throw new PricingAccessError('Choose at most 500 distinct units', 400);
+  if (input.categoryId) await tx.$queryRaw`SELECT id FROM inventory_category WHERE id = ${input.categoryId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM unit WHERE id = ANY(${ids}::text[]) ORDER BY id FOR UPDATE`;
+  for (const id of ids) {
+    const access = await assertUnitPricingAccess(tx, input.actorIdentityId, id, true);
+    if (adminOnly && !access.isAdmin) throw new PricingAccessError('Administrator tariff authority required');
+  }
+  if (input.categoryId) {
+    const actual = (await tx.unit.findMany({ where: { inventoryCategoryId: input.categoryId, status: { not: 'offboarded' } },
+      select: { id: true }, orderBy: { id: 'asc' } })).map(row => row.id);
+    if (JSON.stringify(actual) !== JSON.stringify(ids)) throw new PricingAccessError('Category membership changed. Reload the tariff editor.', 409);
+  }
+  // Existing approval/status writers also acquire these PostgreSQL row locks on UPDATE.
+  // Missing offerings cannot be inserted through their unit FK while its FOR UPDATE lock is held.
+  await tx.$queryRaw`SELECT id FROM commercial_offering WHERE unit_id = ANY(${ids}::text[])
+    AND offering_type IN ('short_term_stay', 'long_term_rental') ORDER BY id FOR UPDATE`;
+  if (await readTariffRevision(tx, ids) !== input.expectedRevision)
+    throw new PricingAccessError('Tariffs or commercial settings changed. Reload and review before saving.', 409);
+}
+
 /**
  * Writes the draft to every given unit in one transaction and audits each.
  * Other pricing keys (source provenance, policy approvals) are preserved; the
@@ -204,10 +268,7 @@ export async function readTariffDraft(db: PrismaClient, unitId: string): Promise
  * the same mode/season keep their terms but take the edited minimum stay and
  * refund ladder, so the quote and the guest's terms never disagree.
  */
-export async function saveTariffDraft(
-  db: PrismaClient,
-  input: { unitIds: string[]; draft: TariffDraft; actorIdentityId: string },
-): Promise<{ units: number }> {
+function validateForSave(input: SaveTariffInput) {
   const check = validateTariffDraft(input.draft);
   if (check.errors.length) throw Object.assign(new Error('TARIFF_INVALID'), { issues: check.errors });
   // The engine's own reader must accept every season we are about to save:
@@ -221,8 +282,11 @@ export async function saveTariffDraft(
     }
   }
 
-  await db.$transaction(async (tx) => {
-    for (const unitId of input.unitIds) {
+}
+
+/** Single canonical writer shared by the admin and scoped employee entry points. */
+async function writeTariffDraft(tx: Prisma.TransactionClient, input: SaveTariffInput, preserveApprovals = false, skipLong = false) {
+  for (const unitId of input.unitIds) {
       const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true } });
       if (!unit) throw new Error('UNIT_NOT_FOUND');
       const offers = await tx.commercialOffering.findMany({
@@ -231,6 +295,7 @@ export async function saveTariffDraft(
       const write = async (type: 'short_term_stay' | 'long_term_rental', grid: Row[] | null) => {
         const existing = offers.find(o => o.offeringType === type);
         if (!grid) return;
+        if (preserveApprovals && !existing) throw new PricingAccessError('Existing offering requires administrator setup', 409);
         const terms = asObject(existing?.pricingTerms);
         const previous = Array.isArray(terms.tariffGrid) ? terms.tariffGrid as Row[] : [];
         const mode = type === 'short_term_stay' ? 'daily' : 'monthly';
@@ -254,8 +319,7 @@ export async function saveTariffDraft(
           : null;
         const nextTerms = {
           ...terms,
-          quoteEngine: 'canonical_tariff_grid_v1',
-          taxPolicyVerified: true,
+          ...(preserveApprovals ? {} : { quoteEngine: 'canonical_tariff_grid_v1', taxPolicyVerified: true }),
           tariffGrid: grid,
           editedAt: new Date().toISOString(),
           editedByIdentityId: input.actorIdentityId,
@@ -295,10 +359,80 @@ export async function saveTariffDraft(
           includesBreakfast: input.draft.includesBreakfast, sourceSellable: true,
         }] : []),
       ];
-      await write('long_term_rental', longRows.length || Array.isArray(prevLong) ? longRows : null);
+      if (!skipLong) await write('long_term_rental', longRows.length || Array.isArray(prevLong) ? longRows : null);
     }
+}
+
+export async function saveTariffDraft(db: PrismaClient, input: SaveTariffInput): Promise<{ units: number; revision: string }> {
+  validateForSave(input);
+  return db.$transaction(async tx => {
+    await lockTariffSave(tx, input, true);
+    await writeTariffDraft(tx, input);
+    return { units: input.unitIds.length, revision: await readTariffRevision(tx, input.unitIds) };
   }, { timeout: 30_000 });
-  return { units: input.unitIds.length };
+}
+
+/** Employee editing cannot publish supply, approve source/tax policy, or fan out to a category. */
+export async function saveEmployeeTariffDraft(db: PrismaClient, input: {
+  unitId: string; draft: TariffDraft; actorIdentityId: string; expectedRevision: string;
+}): Promise<{ units: number; revision: string }> {
+  const save = { unitIds: [input.unitId], draft: input.draft, actorIdentityId: input.actorIdentityId, expectedRevision: input.expectedRevision };
+  validateForSave(save);
+  return db.$transaction(async tx => {
+    await lockTariffSave(tx, save, false);
+    const permissions = await employeeTariffPermissions(tx, input.unitId);
+    if (!permissions.canSave) throw new PricingAccessError(permissions.reason!, 409);
+    const offers = await tx.commercialOffering.findMany({
+      where: { unitId: input.unitId, offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
+      select: { offeringType: true, pricingTerms: true, rulesAndPolicies: true },
+    });
+    if (!permissions.canEditMonthly) {
+      const current = await readTariffDraft(tx, input.unitId);
+      if (JSON.stringify(input.draft.monthly) !== JSON.stringify(current.monthly) ||
+          JSON.stringify(input.draft.yearly) !== JSON.stringify(current.yearly))
+        throw new PricingAccessError('Monthly and yearly tariffs require administrator setup', 409);
+    }
+    for (const offer of offers) {
+      const mode = offer.offeringType === 'short_term_stay' ? 'daily' : 'monthly';
+      if (mode === 'monthly' && !permissions.canEditMonthly) continue;
+      const terms = asObject(offer.pricingTerms);
+      const rows = Array.isArray(terms.tariffGrid) ? terms.tariffGrid as Row[] : [];
+      for (const row of rows.filter(r => ['daily', 'monthly', 'yearly'].includes(String(r.rateMode)))) {
+        if ((['includesTaxes', 'includesServiceCharge', 'includesBreakfast'] as const).some(flag =>
+          row[flag] !== input.draft[flag]))
+          throw new PricingAccessError('Included taxes, charges and benefits require administrator approval', 409);
+        if (row.sourceSellable !== true)
+          throw new PricingAccessError('Unsellable source tariffs require administrator approval', 409);
+      }
+      const rules = asObject(offer.rulesAndPolicies);
+      const policies = Array.isArray(rules.bookingPolicies) ? rules.bookingPolicies as Row[] : [];
+      for (const season of input.draft[mode]) {
+        const previous = previousSeason(rows, mode, season);
+        const matching = policies.filter(p => p.active === true && p.rate_mode === mode &&
+          p.season_code === (previous?.seasonCode ?? season.seasonCode));
+        if ((terms.sourceSystem === 'layantara_os' || Boolean(season.cancellationSteps?.length)) && matching.length !== 1)
+          throw new PricingAccessError('This season needs an approved booking policy before staff can save it', 409);
+      }
+    }
+    await writeTariffDraft(tx, save, true, !permissions.canEditMonthly);
+    return { units: 1, revision: await readTariffRevision(tx, [input.unitId]) };
+  }, { timeout: 30_000 });
+}
+
+export async function employeeTariffPermissions(db: TariffDb, unitId: string) {
+  const offers = await db.commercialOffering.findMany({
+    where: { unitId, offeringType: { in: ['short_term_stay', 'long_term_rental'] } },
+    select: { offeringType: true, pricingTerms: true },
+  });
+  const ready = (type: string) => {
+    const offer = offers.find(o => o.offeringType === type);
+    const terms = asObject(offer?.pricingTerms);
+    return Boolean(offer && terms.quoteEngine === 'canonical_tariff_grid_v1' && terms.taxPolicyVerified === true &&
+      Array.isArray(terms.tariffGrid) && (terms.sourceSystem !== 'layantara_os' || terms.policyEngineVerified === true));
+  };
+  const canSave = ready('short_term_stay');
+  return { canSave, canEditMonthly: ready('long_term_rental'), canEditInclusions: false, canSaveCategory: false,
+    reason: canSave ? null : 'An administrator must set up and approve this unit’s seasonal tariff first.' };
 }
 
 /**

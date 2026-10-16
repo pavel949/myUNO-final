@@ -29,10 +29,15 @@ const rows = [
   ['saved', 'Saved. Review the updated scope below.', 'Сохранено. Проверьте обновлённые права ниже.', 'บันทึกแล้ว โปรดตรวจสอบขอบเขตที่อัปเดตด้านล่าง'],
   ['failed', 'Could not save. Your choices are kept; review the error and retry.', 'Не удалось сохранить. Выбор сохранён в форме: проверьте ошибку и повторите.', 'บันทึกไม่สำเร็จ ตัวเลือกยังอยู่ โปรดตรวจสอบข้อผิดพลาดแล้วลองอีกครั้ง'],
   ['loading', 'Loading…', 'Загрузка…', 'กำลังโหลด…'],
+  ['create_unit', 'Create property drafts', 'Создавать черновики объектов', 'สร้างร่างที่พัก', '创建房源草稿'],
+  ['create_complex', 'Create complex drafts', 'Создавать черновики комплексов', 'สร้างร่างโครงการ', '创建小区草稿'],
+  ['creation_note', 'Creation rights are independent. They allow descriptive drafts and administrator review within this verified workspace, without operational, pricing, ownership or publication rights. Only the founder manages these grants; managers cannot delegate them.', 'Права создания независимы. Они разрешают подготовку описательных черновиков для проверки администратором в пределах подтверждённого пространства, без прав на операции, цены, собственность или публикацию. Эти права назначает только основатель; менеджеры не могут их делегировать.', 'สิทธิ์สร้างแต่ละประเภทแยกจากกัน อนุญาตให้เตรียมร่างข้อมูลเพื่อให้ผู้ดูแลระบบตรวจสอบภายในพื้นที่ทำงานที่ยืนยันแล้ว ไม่ให้สิทธิ์ดำเนินงาน ตั้งราคา กรรมสิทธิ์ หรือเผยแพร่ ผู้ก่อตั้งเท่านั้นที่จัดการสิทธิ์เหล่านี้ ผู้จัดการไม่สามารถมอบหมายต่อได้', '两项创建权限相互独立，仅允许在已核实的工作区内准备描述性草稿并提交管理员审核，不授予运营、定价、所有权或发布权限。这些权限仅由创始人管理，经理不能转授。'],
   ['selected', 'Selected homes', 'Выбрано объектов', 'บ้านที่เลือก'],
 ] as const;
 export const OPERATING_GOVERNANCE_LABELS: Record<string, string> = Object.fromEntries(rows.map(([key, en]) => ['admin.access.' + key, en]));
-export const OPERATING_GOVERNANCE_KEYS = rows.map(([key, en, ru, th]) => ({
+export const OPERATING_GOVERNANCE_KEYS = rows.map(([key, en, ru, th, zh]) => ({
   key: 'admin.access.' + key, namespace: 'admin', description: 'Operating workspace access: ' + key,
-  en, ru, th, status: 'needs_review' as const,
+  en, ru, th, ...(zh ? { zh } : {}), status: 'needs_review' as const,
 }));
+
+export const OPERATING_GOVERNANCE_DRAFTS = Object.fromEntries(rows.map(([key, en, ru, th, zh]) => ['admin.access.' + key, { en, ru, th, ...(zh ? { zh } : {}) }]));

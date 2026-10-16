@@ -1,3 +1,5 @@
+import { getLocaleFallbackChain } from '@/modules/content/types';
+
 /**
  * The complete, content-only proposal boundary. Authorization, target binding,
  * baseline snapshots, media ownership and publication belong to the server.
@@ -31,11 +33,80 @@ export type ProjectContentFacts = {
 
 export type ContentFacts = UnitContentFacts | ProjectContentFacts;
 export type ContentDescription = { locale: ContentLocale; value: string };
+/** Descriptive changes only. Omitting an amenity never deletes or replaces it. */
+export type ContentAmenityHours = { mode: 'keep' } | { mode: 'clear' } | {
+  mode: 'daily'; open: string; close: string; timezone: string | null;
+};
+export type ContentAmenityStaffHours = { mode: 'keep' } | { mode: 'clear' } | { mode: 'range'; open: string; close: string; timezone?: string | null };
+export type ContentAmenityRules = { mode: 'keep' } | { mode: 'replace'; lines: string[] };
+export type ContentAmenity = {
+  id: string | null;
+  locale: ContentLocale;
+  name: string;
+  shortDescription: string | null;
+  description: string | null;
+  locationLabel: string | null;
+  accessInstructions: string | null;
+  openingHours: ContentAmenityHours;
+  staffHours?: ContentAmenityStaffHours;
+  rules: ContentAmenityRules;
+};
+export type ContentAmenityTextField = 'name' | 'shortDescription' | 'description' | 'accessInstructions';
+export const CONTENT_AMENITY_TEXT_FIELDS: readonly ContentAmenityTextField[] = ['name', 'shortDescription', 'description', 'accessInstructions'];
+export type ContentAmenitySnapshot = Omit<ContentAmenity, 'id' | 'locale' | 'openingHours' | 'staffHours' | 'rules'> & {
+  id: string; openingHours: unknown; rules: unknown;
+  translations?: Partial<Record<ContentLocale, Partial<Record<ContentAmenityTextField, string>>>>;
+};
+/** Matches the public content reader, including empty/needs_review fallbacks. */
+export function contentAmenityText(amenity: ContentAmenitySnapshot, locale: ContentLocale, field: ContentAmenityTextField): string | null {
+  for (const language of getLocaleFallbackChain(locale)) {
+    const value = amenity.translations?.[language]?.[field];
+    if (value) return value;
+  }
+  return amenity[field];
+}
+/** Parsing trims text; an auto-filled legacy whitespace difference is not authorship. */
+export function contentAmenityTextChanged(before: ContentAmenitySnapshot, after: ContentAmenity, field: ContentAmenityTextField): boolean {
+  const value = contentAmenityText(before, after.locale, field);
+  const proposed = after[field];
+  return (proposed === null ? null : proposed.trim()) !== (value === null ? null : value.trim());
+}
+/** Access and staff schedules share one canonical JSON value without replacing custom keys. */
+export function contentAmenityHoursValue(previous: unknown, opening: ContentAmenityHours,
+  staff: ContentAmenityStaffHours = { mode: 'keep' }): unknown {
+  if (opening.mode === 'keep' && staff.mode === 'keep') return previous;
+  const isRecord = previous !== null && typeof previous === 'object' && !Array.isArray(previous);
+  if (previous != null && !isRecord && opening.mode !== 'clear') throw new ContentProposalValidationError();
+  const old = isRecord ? previous as Record<string, unknown> : {};
+  const result: Record<string, unknown> = opening.mode === 'clear' ? {} : { ...old };
+  if (opening.mode === 'clear' && (old.staffContact !== undefined || staff.mode === 'range')) {
+    if (old.staffContact !== undefined) result.staffContact = old.staffContact;
+    if (old.timezone !== undefined) result.timezone = old.timezone;
+  }
+  if (opening.mode === 'daily') {
+    result.daily = [[opening.open, opening.close]];
+    if (opening.timezone === null) delete result.timezone;
+    else result.timezone = opening.timezone;
+  }
+  if (staff.mode === 'range') {
+    result.staffContact = [[staff.open, staff.close]];
+    if (Object.prototype.hasOwnProperty.call(staff, 'timezone')) {
+      if (opening.mode === 'daily' && staff.timezone !== opening.timezone) throw new ContentProposalValidationError();
+      if (staff.timezone === null) delete result.timezone;
+      else result.timezone = staff.timezone;
+    }
+  }
+  if (staff.mode === 'clear') delete result.staffContact;
+  if (Object.keys(result).every(key => key === 'timezone')) return null;
+  return result;
+}
 export type ContentGallery = { mediaIds: string[]; coverMediaId: string | null };
 export type ContentProposal<Scope extends ContentScope = ContentScope> = {
   facts: Scope extends 'unit' ? UnitContentFacts : ProjectContentFacts;
   description: ContentDescription | null;
   gallery: ContentGallery;
+  // Optional for compatibility with saved v1 proposals; project scope only.
+  amenities?: ContentAmenity[];
 };
 
 /** Safe to return as name/message. No submitted keys, values or exception details. */
@@ -198,6 +269,71 @@ function gallery(value: unknown): ContentGallery {
   return { mediaIds, coverMediaId };
 }
 
+const AMENITY_KEYS = ['id', 'locale', 'name', 'shortDescription', 'description', 'locationLabel',
+  'accessInstructions', 'openingHours', 'rules'] as const;
+const AMENITY_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+function amenityHours(value: unknown): ContentAmenityHours {
+  // Read the mode without invoking accessors, then validate the complete shape.
+  const mode = value !== null && typeof value === 'object'
+    ? Object.getOwnPropertyDescriptor(value, 'mode')?.value : undefined;
+  if (mode === 'keep' || mode === 'clear') {
+    record(value, ['mode']);
+    return { mode };
+  }
+  const fields = record(value, ['mode', 'open', 'close', 'timezone']);
+  if (fields.mode !== 'daily' || typeof fields.open !== 'string' || typeof fields.close !== 'string' ||
+      !AMENITY_TIME.test(fields.open) || !(AMENITY_TIME.test(fields.close) || fields.close === '24:00') ||
+      fields.open === fields.close) invalid();
+  const timezone = fields.timezone === null ? null : boundedString(fields.timezone, 100, true);
+  if (timezone !== null) {
+    try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format(); } catch { invalid(); }
+  }
+  return { mode: 'daily', open: fields.open, close: fields.close, timezone };
+}
+function amenityStaffHours(value: unknown): ContentAmenityStaffHours {
+  const mode = value !== null && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'mode')?.value : undefined;
+  if (mode === 'keep' || mode === 'clear') { record(value, ['mode']); return { mode }; }
+  const hasTimezone = value !== null && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'timezone');
+  const fields = record(value, hasTimezone ? ['mode', 'open', 'close', 'timezone'] : ['mode', 'open', 'close']);
+  if (fields.mode !== 'range' || typeof fields.open !== 'string' || typeof fields.close !== 'string' ||
+      !AMENITY_TIME.test(fields.open) || !(AMENITY_TIME.test(fields.close) || fields.close === '24:00') || fields.open === fields.close) invalid();
+  let timezone: string | null = null;
+  if (hasTimezone) {
+    timezone = fields.timezone === null ? null : boundedString(fields.timezone, 100, true);
+    if (timezone !== null) { try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format(); } catch { invalid(); } }
+  }
+  return { mode: 'range', open: fields.open, close: fields.close, ...(hasTimezone ? { timezone } : {}) };
+}
+function amenityRules(value: unknown): ContentAmenityRules {
+  const mode = value !== null && typeof value === 'object'
+    ? Object.getOwnPropertyDescriptor(value, 'mode')?.value : undefined;
+  if (mode === 'keep') { record(value, ['mode']); return { mode }; }
+  const fields = record(value, ['mode', 'lines']);
+  if (fields.mode !== 'replace') invalid();
+  return { mode: 'replace', lines: arrayValues(fields.lines, 50).map(line => boundedString(line, 500, true)) };
+}
+function amenities(value: unknown): ContentAmenity[] {
+  const result = arrayValues(value, 100).map(item => {
+    const hasStaffHours = item !== null && typeof item === 'object' && Object.prototype.hasOwnProperty.call(item, 'staffHours');
+    const fields = record(item, hasStaffHours ? [...AMENITY_KEYS, 'staffHours'] : AMENITY_KEYS);
+    if (typeof fields.locale !== 'string' || !LOCALES.includes(fields.locale)) invalid();
+    return {
+      id: fields.id === null ? null : parseTargetId(fields.id),
+      locale: fields.locale as ContentLocale,
+      name: boundedString(fields.name, 160, true),
+      shortDescription: nullableString(fields.shortDescription, 500),
+      description: nullableString(fields.description, 12000),
+      locationLabel: nullableString(fields.locationLabel, 500),
+      accessInstructions: nullableString(fields.accessInstructions, 4000),
+      openingHours: amenityHours(fields.openingHours), rules: amenityRules(fields.rules),
+      ...(hasStaffHours ? { staffHours: amenityStaffHours(fields.staffHours) } : {}),
+    };
+  });
+  const ids = result.flatMap(item => item.id === null ? [] : [item.id]);
+  if (new Set(ids).size !== ids.length) invalid();
+  return result;
+}
+
 export function parseScope(value: unknown): ContentScope {
   if (value !== 'unit' && value !== 'project') invalid();
   return value;
@@ -215,11 +351,15 @@ export function parseContentProposal<Scope extends ContentScope>(
 ): ContentProposal<Scope> {
   try {
     const parsedScope = parseScope(scope);
-    const fields = record(value, ROOT_KEYS);
+    const hasAmenities = value !== null && typeof value === 'object' &&
+      Object.prototype.hasOwnProperty.call(value, 'amenities');
+    if (hasAmenities && parsedScope !== 'project') invalid();
+    const fields = record(value, hasAmenities ? [...ROOT_KEYS, 'amenities'] : ROOT_KEYS);
     return {
       facts: parsedScope === 'unit' ? unitFacts(fields.facts) : projectFacts(fields.facts),
       description: description(fields.description),
       gallery: gallery(fields.gallery),
+      ...(hasAmenities ? { amenities: amenities(fields.amenities) } : {}),
     } as ContentProposal<Scope>;
   } catch {
     // A malformed Proxy can throw from reflection. Never leak its arbitrary

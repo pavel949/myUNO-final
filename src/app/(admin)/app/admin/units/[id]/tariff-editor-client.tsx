@@ -11,6 +11,7 @@ type Draft = {
   daily: Season[]; monthly: Season[]; yearly: { amountSatang: number; minimumNights: number } | null;
 };
 type Issue = { code: string; kind: string; season?: string; day?: string };
+type EditPermissions = { canSave: boolean; canEditMonthly: boolean; canEditInclusions: boolean; canSaveCategory: boolean; reason: string | null };
 type Validation = { errors: Issue[]; dailyGaps: string[]; monthlyGaps: string[] };
 
 const fill = (t: string, v: Record<string, string | number>) =>
@@ -29,6 +30,12 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
   const L = (k: string) => labels['admin.tariff_editor.' + k] ?? k;
   const [draft, setDraft] = useState<Draft | null>(null);
   const [categoryUnits, setCategoryUnits] = useState(1);
+  const [unitRevision, setUnitRevision] = useState<string | null>(null);
+  const [categoryRevision, setCategoryRevision] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const [conflict, setConflict] = useState(false);
+  const [permissions, setPermissions] = useState<EditPermissions | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [validation, setValidation] = useState<Validation | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading');
   const [savedCount, setSavedCount] = useState(0);
@@ -38,7 +45,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
 
   useEffect(() => {
     const controller = new AbortController();
-    setDraft(null);
+    setDraft(null); setPermissions(null); setServerError(null); setUnitRevision(null); setCategoryRevision(null); setConflict(false);
     setValidation(null);
     setState('loading');
     setRemaining(null); setCalendarError(null);
@@ -47,24 +54,26 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       .then(async response => {
         if (!response.ok) throw new Error('Tariff load failed');
         const data = await response.json();
-        if (!data?.draft || !Array.isArray(data.draft.daily) || !Array.isArray(data.draft.monthly)) {
+        if (!data?.draft || !Array.isArray(data.draft.daily) || !Array.isArray(data.draft.monthly) || !/^[a-f0-9]{64}$/.test(data.unitRevision ?? '')) {
           throw new Error('Invalid tariff response');
         }
         return data;
       })
       .then(data => {
         if (controller.signal.aborted) return;
+        setPermissions(data.permissions ?? null);
+        setUnitRevision(data.unitRevision); setCategoryRevision(data.categoryRevision ?? null);
         setDraft(data.draft); setCategoryUnits(data.categoryUnits ?? 1); setValidation(data.validation ?? null); setState('idle');
       })
       .catch(() => { if (!controller.signal.aborted) setState('error'); });
     return () => { controller.abort(); saving.current?.abort(); };
-  }, [unitId]);
+  }, [unitId, reload]);
 
   if (!draft) {
     return <section className="stitch-panel mt-24 p-20"><p role={state === 'error' ? 'alert' : 'status'} className="text-small text-text-secondary">{state === 'error' ? L('load_error') : L('loading')}</p></section>;
   }
 
-  const update = (next: Draft) => { setDraft(next); setState('idle'); setRemaining(null); setCalendarError(null); };
+  const update = (next: Draft) => { setDraft(next); setState('idle'); setServerError(null); setRemaining(null); setCalendarError(null); };
   const previewRemaining = (kind: 'daily' | 'monthly', index: number) => {
     setRemaining(null); setCalendarError(null);
     try { setRemaining({ kind, index, windows: remainingAnnualWindows(draft[kind], index) }); }
@@ -74,22 +83,27 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
     update({ ...draft, [kind]: draft[kind].map((s, j) => (j === i ? { ...s, ...patch } : s)) });
 
   async function save(scope: 'unit' | 'category') {
-    if (saving.current || remaining) return;
+    const expectedRevision = scope === 'unit' ? unitRevision : categoryRevision;
+    if (!expectedRevision || conflict || saving.current || remaining || permissions?.canSave === false || (scope === 'category' && permissions?.canSaveCategory === false)) return;
     const controller = new AbortController();
     saving.current = controller;
-    setState('saving');
+    setState('saving'); setServerError(null);
     setValidation(null);
     try {
       const res = await fetch(`/api/admin/units/${unitId}/tariff`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope }), signal: controller.signal,
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope, expectedRevision }), signal: controller.signal,
       });
       const data = await res.json().catch(() => null);
       if (controller.signal.aborted || saving.current !== controller) return;
       if (data?.validation) setValidation(data.validation);
-      if (!res.ok || !data || !Number.isInteger(data.saved) || data.saved < 1) {
+      if (!res.ok || !data || !Number.isInteger(data.saved) || data.saved < 1 || !/^[a-f0-9]{64}$/.test(data.revision ?? '')) {
+        if (res.status === 409) { setConflict(true); setUnitRevision(null); setCategoryRevision(null); }
+        setServerError(typeof data?.error === 'string' ? data.error : null);
         setState('error');
         return;
       }
+      setUnitRevision(scope === 'unit' ? data.revision : null);
+      setCategoryRevision(scope === 'category' ? data.revision : null);
       setSavedCount(data.saved);
       setState('saved');
       window.dispatchEvent(new CustomEvent('tariff-saved', { detail: { unitId } }));
@@ -108,8 +122,11 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('body')}</p>
       <p className="mt-8 max-w-3xl text-small text-text-secondary">{L('grid_precedence')}</p>
 
-      <fieldset disabled={state === 'saving'} className="min-w-0">
-      <fieldset className="mt-16 flex flex-wrap gap-16">
+      {conflict && <p role="alert" className="mt-12 text-small text-state-error">{L('conflict')}</p>}
+      <Button type="button" variant="secondary" className="mt-12" disabled={state === 'saving'} onClick={() => setReload(value => value + 1)}>{L('reload_current')}</Button>
+      {permissions && <p role={permissions.canSave ? undefined : 'alert'} className="mt-8 text-small text-text-secondary">{permissions.reason || L('scoped_hint')}</p>}
+      <fieldset disabled={state === 'saving' || permissions?.canSave === false} className="min-w-0">
+      <fieldset disabled={permissions?.canEditInclusions === false} className="mt-16 flex flex-wrap gap-16">
         <legend className="sr-only">{L('included')}</legend>
         {FLAGS.map(flag => (
           <label key={flag} className="inline-flex items-center gap-8 text-small text-text-ink">
@@ -120,7 +137,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       </fieldset>
 
       {KINDS.map(kind => (
-        <div key={kind} className="mt-20">
+        <fieldset key={kind} disabled={kind === 'monthly' && permissions?.canEditMonthly === false} className="mt-20">
           <h3 className="font-display text-title font-semibold text-text-ink">{L(kind + '_title')}</h3>
           <p className="text-small text-text-secondary">{L(kind + '_hint')}</p>
           {kind === 'daily' && <p className="text-small text-text-secondary">{L('base_hint')}</p>}
@@ -186,10 +203,10 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
             onClick={() => update({ ...draft, [kind]: [...draft[kind], { seasonCode: '', windows: [{ start: '', end: '' }], amountSatang: 0, minimumNights: kind === 'monthly' ? 30 : 1 }] })}>
             {L('add_season')}
           </Button>
-        </div>
+        </fieldset>
       ))}
 
-      <div className="mt-20">
+      <fieldset disabled={permissions?.canEditMonthly === false} className="mt-20">
         <h3 className="font-display text-title font-semibold text-text-ink">{L('yearly_title')}</h3>
         <p className="text-small text-text-secondary">{L('yearly_hint')}</p>
         <label className="mt-8 inline-flex items-center gap-8 text-small text-text-ink">
@@ -209,7 +226,7 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
             </label>
           </div>
         ) : null}
-      </div>
+      </fieldset>
 
       {calendarError && <p role="alert" className="mt-12 text-small text-state-error">{calendarError}</p>}
       {remaining && <div role="region" aria-label={L('remaining_preview')} className="mt-16 rounded-md border border-border-line p-16 text-small">
@@ -235,15 +252,15 @@ export default function TariffEditorClient({ unitId, labels }: { unitId: string;
       ) : null}
 
       <div className="mt-20 flex flex-wrap items-center gap-12">
-        <Button type="button" onClick={() => save('unit')} disabled={state === 'saving' || remaining !== null}>{L('save_unit')}</Button>
-        {categoryUnits > 1 ? (
-          <Button type="button" variant="secondary" onClick={() => save('category')} disabled={state === 'saving' || remaining !== null}>
+        <Button type="button" onClick={() => save('unit')} disabled={state === 'saving' || remaining !== null || permissions?.canSave === false || !unitRevision || conflict}>{L('save_unit')}</Button>
+        {categoryUnits > 1 && permissions?.canSaveCategory !== false ? (
+          <Button type="button" variant="secondary" onClick={() => save('category')} disabled={state === 'saving' || remaining !== null || !categoryRevision || conflict}>
             {fill(L('save_category'), { count: categoryUnits })}
           </Button>
         ) : null}
         {state === 'saving' ? <span className="text-small text-text-secondary">{L('saving')}</span> : null}
         {state === 'saved' ? <span role="status" className="text-small text-state-success">{fill(L('saved'), { count: savedCount })}</span> : null}
-        {state === 'error' && !validation?.errors.length ? <span role="alert" className="text-small text-state-error">{L('save_error')}</span> : null}
+        {state === 'error' && !validation?.errors.length ? <span role="alert" className="text-small text-state-error">{serverError || L('save_error')}</span> : null}
       </div>
     </section>
   );

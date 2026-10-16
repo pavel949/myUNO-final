@@ -32,9 +32,10 @@ beforeEach(() => {
   state.db.booking.findUnique.mockResolvedValue(null);
   state.create.mockResolvedValue({id: 'order'});
 });
-describe('content contributor cannot establish a property service-order relationship', () => {
+describe.each(['content_contributor', 'pricing_editor', 'booking_mode_editor'])('%s cannot establish a property service-order relationship', restrictedRole => {
+  beforeEach(() => { state.user.roles = [grant(null, restrictedRole)]; });
   it.each([null, 'unit-a', 'unit-b'])('denies contributor-only grant on %s, including same-project sibling units', async unitId => {
-    state.user.roles = [grant(unitId)];
+    state.user.roles = [grant(unitId, restrictedRole)];
     expect((await POST(request())).status).toBe(404);
     expect(state.create).not.toHaveBeenCalled();
   });

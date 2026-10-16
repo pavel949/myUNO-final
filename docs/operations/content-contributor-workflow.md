@@ -1,5 +1,7 @@
 # Assigned property content workflow
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 ## Scope and entry points
 
 - Employee signs in with their own identity at `/login?next=%2Fproperty%2Fcontent` and works at `/property/content`.

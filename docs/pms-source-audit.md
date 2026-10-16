@@ -1,5 +1,7 @@
 # PMS source and navigation audit — 2026-10-08
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Assessment baseline: `pavel949/myUNO-final`, main `e92f4a0080ac97698e77ad7b11f70170dfd0455d`. Scope: source routes, surfaces, role gates, linked workflows, operational scope, structural layout, single-unit/condominium/resort use. Read-only assessment; no PMS code, data, role, reservation, financial or deployment mutation performed by this audit worker.
 
 **Verdict:** substantial PMS screens and canonical workflows exist. Source evidence does not support calling the system fully usable for a whole resort or all delegated manager roles. Several ordinary navigation paths discard operational context or lead to staff/admin-only screens. These are broken journeys, not evidence that every target screen is absent. Production usability and resort cutover remain **not assessable from this source audit**.

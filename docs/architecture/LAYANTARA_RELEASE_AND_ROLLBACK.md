@@ -1,5 +1,7 @@
 # Layantara → myUNO: evidence-based release and rollback runbook
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Status:** staged code only. Nothing in this document authorizes live cutover by itself.
 **Scope:** existing myUNO main database and Layantara source database; no public custom domain needed. The signed HTTPS endpoint can use a stable deployment hostname that accepts service-to-service requests.
 

@@ -1,5 +1,7 @@
 # Release evidence and operator sequence
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Code baseline [main CI](https://github.com/pavel949/myUNO-final/actions/runs/38881807483): all5956 tests /548 files, lint/types/build/migration replay/drift passed. Follow-up local: 11 focused tests +4 migration-policy tests passed; actual PostgreSQL regression and full CI pending PR. Do not transfer the old CI result to the follow-up commit.
 
 ## Production stage

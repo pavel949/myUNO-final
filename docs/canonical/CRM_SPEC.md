@@ -1,5 +1,7 @@
 # CRM_SPEC.md — myUNO Relationship and Commercial Operating System
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Purpose
 CRM uses existing `Identity`, CRM profile/opportunity/activity/consent primitives as the relationship layer. It is not a duplicate booking/order/ledger/ownership system.
 

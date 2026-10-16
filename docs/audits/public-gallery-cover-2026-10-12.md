@@ -1,5 +1,7 @@
 # Public gallery cover presentation — 2026-10-12
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: CO24 content/media lifecycle; AT16 gallery configuration and AT29 public desktop/mobile presentation.
 
 ## Finding and reconciliation

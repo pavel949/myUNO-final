@@ -1,5 +1,7 @@
 # PMS surfaces
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Anonymous HTTP checks are transport checks only. Next.js streamed redirects can retain HTTP200; they do not prove an authenticated page works. No private response body or PII is stored here.
 
 | Surface | Actor / action → writer | Production observation | Tested-main evidence |

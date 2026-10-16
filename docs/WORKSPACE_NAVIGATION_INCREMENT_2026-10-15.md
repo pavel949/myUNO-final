@@ -1,5 +1,7 @@
 # Workspace navigation increment — 2026-10-15
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Scope and base
 
 This isolated increment follows the composed employee candidate identified by source-manifest SHA256 `9344b0748f6b254012609e54f0a9679ef590170676560e8ead7e0e1fdbedc30f` (PR289 base `78439150ac94f3e10197f3ce998162090dc6b526`). It adds explicit Personal / Property / Services navigation. No role, database schema, reservation, fee, or publication authority changes are included.

@@ -1,5 +1,7 @@
 # Process 8 — owner submits a property → admin review → draft → publication gates
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Local production build; browser as owner and admin.
 
 | Step | Result |

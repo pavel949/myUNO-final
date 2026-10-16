@@ -1,5 +1,7 @@
 # PMS facts and canonical writers
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 | Fact | Writer / tables | Reader / scope | Evidence |
 |---|---|---|---|
 | Physical inventory | projects → Unit/InventoryCategory | public + scoped calendars | schema, project tests; live count only |

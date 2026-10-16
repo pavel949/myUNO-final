@@ -1,4 +1,6 @@
 # INVENTORY AND RATE SCOPE AUDIT
+
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
 **Repository:** `pavel949/myUNO-final`
 **Domain:** Multi-Inventory Revenue, Tariff, Stay Rules, Tax & Quotation Engine
 

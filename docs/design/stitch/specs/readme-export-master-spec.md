@@ -1,4 +1,6 @@
 # myUNO — One-Stop Destination Living & Hospitality OS
+
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../../current/SYSTEM.md) и [остатка работ](../../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
 > **Comprehensive Export & Architecture Master Specification for Claude Code & Cursor**  
 > **Platform Version:** 2.4-canonical | **Date:** October 2026  
 > **Target Framework:** Next.js 14/15 (App Router, Server Components, Tailwind CSS, TypeScript)  

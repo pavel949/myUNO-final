@@ -1,5 +1,7 @@
 # Airbnb parity — where myUNO stands
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **What this document is.** An honest, evidence-backed comparison of myUNO's guest-facing surface against the marketplace features a guest arriving from Airbnb expects to find. Every "present" claim names the file or model that carries it. Every gap says whether it is a missing mechanism (build it) or a deliberate difference (do not build it).
 
 **What it is not.** A roadmap. Closing a gap is a founder decision; several of the gaps below should stay open on purpose.

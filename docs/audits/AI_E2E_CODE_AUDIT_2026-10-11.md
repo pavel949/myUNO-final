@@ -1,5 +1,7 @@
 # End-to-end code audit — 2026-10-11
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: booking & payment, owner finance & payouts, ops/services/comms/compliance/cron,
 auth & access (all 227 route files pattern-scanned, ~70 read in full), CRM/content/config/boundaries.
 Method: five independent read-only static reviews of `main` at `82f7171c`.

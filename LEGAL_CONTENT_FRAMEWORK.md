@@ -79,7 +79,7 @@
 ### 2.4 Data Subject Consent (Registration & Checkout)
 
 **Registration consent text:**
-> "I consent to the collection, use, and disclosure of my personal data as described in the [Privacy Policy](link) and [Terms of Service](link). I understand my data will be used to provide the service, file Thai immigration documents, and process payments. I can withdraw consent anytime in Account Settings."
+> "I consent to the collection, use, and disclosure of my personal data as described in the Privacy Policy (URL задаётся после проверки опубликованной страницы) and Terms of Service (URL задаётся после проверки опубликованной страницы). I understand my data will be used to provide the service, file Thai immigration documents, and process payments. I can withdraw consent anytime in Account Settings."
 
 **Checkout consent text (before payment):**
 > "I authorize the processing of my payment by [Payment Provider] and understand that Ignatev Estate does not store card data. I consent to the booking record and any necessary TM30 immigration filing."

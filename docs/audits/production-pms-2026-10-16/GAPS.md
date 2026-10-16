@@ -1,5 +1,7 @@
 # Findings and release decision
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 | Priority | Finding | Evidence / impact | Action / owner |
 |---|---|---|---|
 | P1 | Check-in ignored blocking maintenance; calendar could show ready | assertUnitReadyForCheckIn filtered only cleaning/inspection. getUnitReadinessMap omitted blocksInventory. | Fixed on this branch: include all open blocking work, retain blocker after cleaning; regression and locale key added. Release operator must deploy. |

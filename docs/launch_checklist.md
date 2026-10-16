@@ -1,5 +1,7 @@
 # Launch checklist (T-043)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **What this is.** Doc 16's last task: every box ticked, or explicitly waived by the founder, before production traffic. Its DoD is the checklist file committed — this file.
 
 **How it was run.** Each item below was checked against the real environment where that was possible, and recorded as unverifiable where it was not. **Nothing is ticked on the strength of it looking likely.** Four states are used, and the difference between the last two matters:

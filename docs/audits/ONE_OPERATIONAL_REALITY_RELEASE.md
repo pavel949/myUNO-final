@@ -1,5 +1,7 @@
 # One Operational Reality — integrated release acceptance
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Status: integrated release candidate, **not** production acceptance. Includes #139 + #144 (Layantara, calendar, pricing, category gallery and lease/sale), #148 (MLS/public integrity), #159 (managed portfolio, owner intake, guest continuity and delegated team), reconciled with current main #157. Code integration does not imply database/data/runtime acceptance.
 
 ## Four systems, one authority

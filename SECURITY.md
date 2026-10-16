@@ -1,57 +1,29 @@
-# Security policy
+# Безопасность myUNO
 
-This platform holds passport data, payment records and personal information for
-guests, owners and staff, under Thailand's PDPA. Security reports are treated as
-production incidents, not feature requests.
+Сверено с исходниками 2026-10-16; это архитектура и правила, не сертификат отсутствия уязвимостей. [Границы проверки](docs/current/IMPLEMENTATION_STATUS.md).
 
-## Reporting a vulnerability
+## Контроли в коде
 
-Email **security@ignatevestate.com** with:
+- Собственная Identity/auth/session модель, bcrypt password hashes, signed cookies, one-time hashed tokens, session generation/revocation и active-identity checks.
+- RoleAssignment, server permission matrix, organization/project/unit/provider scopes; operating-space/team membership и делегированные capabilities. UI hiding не является контролем доступа.
+- Общий PostgreSQL rate limiter в src/app/libs/rateLimit.ts; при недоступности shared counter запрос отклоняется. Это не только in-memory limiter.
+- Prisma server-side; Supabase Data API grants и RLS — отдельная поверхность, проверяемая migration/DB checks. Нет Supabase browser privileged client.
+- AES-256-GCM для чувствительных данных; private receipts/deal evidence имеют отдельный доступ, не публичную gallery URL.
+- AuditLog, retention/anonymization, notification delivery tracking; запрет PII/credentials в логах и analytics.
+- Inventory locks, idempotency, append-only money ledger, snapshot/sign-off, проверка provider facts. Эти механизмы требуют regression tests, не гарантируют абсолютную безопасность сами по себе.
 
-- what you found and where (URL, endpoint, or file),
-- the steps to reproduce it,
-- what an attacker could reach with it.
+## Секреты и окружения
 
-Please report privately. Do not open a public issue, and do not post details in a
-pull request or commit message — this repository's issue tracker is world-visible
-to everyone with repo access, and a description of a live hole is itself a risk.
+Production secrets в защищённом окружении платформы. Не хранить в Git, публичном UI, URL, screenshot/log или NEXT_PUBLIC_ variables. NEXT_PUBLIC_ — только намеренно публичные значения. Dev/preview используют отдельную БД и synthetic data.
 
-We aim to acknowledge within **2 business days** and to tell you our assessment
-and intended fix within **10 business days**.
+ENCRYPTION_KEY должен сохраняться для восстановления данных, которые им зашифрованы. Не менять ключ поверх существующего ciphertext; ротация — отдельный re-encryption проект. Не переносить production key/PII в обычную dev среду. Документация содержит имена ключей и consumer paths, не их значения.
 
-Please do not test against production. Anything that would create, modify or read
-real guest data belongs on a staging environment; ask and we will provide one.
+## Что проверять перед релизом
 
-## What we consider high severity
+Cross-scope read/write/export/search/aggregate/media; отзыв/истечение роли; access к passport/receipt/deal files; public DTO; secret vault reveal; webhooks/signatures/provider re-fetch; replay/concurrency; Data API grants/RLS и реальные DB role permissions; backup/restore и ключи. Наличие политики/теста не является runtime evidence.
 
-Ranked by what they expose, not by how clever the bug is:
+## Сообщение о проблеме
 
-| Class | Why it ranks here |
-|---|---|
-| Access to 🔒 fields (passports, dates of birth) | PDPA breach; the data cannot be un-disclosed |
-| Cross-scope data access (one owner reading another's units, statements or guests) | The scoping rule in doc 03 is the product's core promise |
-| Anything that moves money without authorisation | Deposits, captures, refunds, payouts, statement sign-off |
-| Authentication or session compromise | Leads to all of the above |
-| Stored XSS in admin-editable content | Content editors reach every visitor; see `serializeJsonLd` in `src/lib/seo.ts` |
-| Ledger tampering | The ledger is append-only by design; a write path that breaks that breaks the audit trail |
+Не публиковать exploit с credentials или PII в открытом issue. Использовать приватный канал владельца репозитория или GitHub private vulnerability reporting, если он включён. Доступность private reporting и отдельный security email этим репозиторием не подтверждены.
 
-## Handling secrets
-
-`ENCRYPTION_KEY` (AES-256-GCM) encrypts passport data. It has one property that
-makes it unlike every other secret here: **once it has encrypted data it can
-never be changed or lost.** A different key means permanent decryption failure
-and unrecoverable records. It is never rotated casually, never committed, and
-never pasted into a chat or issue. See `docs/15_deployment.md` §4.
-
-If you believe any secret has been exposed — in a commit, a log, a screenshot, a
-build output — report it through the address above and treat it as compromised
-until confirmed otherwise. For `ENCRYPTION_KEY` specifically, the response is to
-encrypt new data under a new key and migrate existing fields individually, never
-a straight rotation.
-
-## Scope
-
-This policy covers this repository and the deployed myUNO platform. Third-party
-services it integrates with (the payment provider, messaging channels, the
-managed database) have their own disclosure programmes; report issues in those
-products to their vendors.
+[Операции и recovery](docs/current/OPERATIONS.md) · [Canonical security requirements](docs/canonical/ARCHITECTURE.md).

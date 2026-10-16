@@ -1,5 +1,7 @@
 # Production PMS baseline — 2026-10-16
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Assessed repository `pavel949/myUNO-final`; main `436dd93567e4647e15c04fdafea850e0e103bf3a`. Follow-up fixes are on `fix/production-release-pms-20261016` until merged. Open PRs #283, #275, #279, #277 and #274 were inspected as separate work; none were silently merged.
 
 Production alias https://my-uno-final.vercel.app serves **408ad99abfae9e7e67b6f518a736b751d72a7283**, Vercel deployment `dpl_4hoKajzkxCMc1nRrp5LKzoBmSW7v` READY. Most recent attempted production deployment `dpl_9LoLVrceGWhBFooJso6JyHUwHxft` is ERROR at 94b280e5. Project `prj_GonhJLt1m9T060dxDBnSZtuiiWYj`, team `team_yhQPVQRquxdAw8pzvG4Lvfe1`; lookup by project ID succeeds. Supplying the team ID to one name lookup returned 404. Git deployments are disabled in vercel.json.

@@ -1,5 +1,7 @@
 # Project amenity content proposals: bounded employee journey
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 ## Outcome and authority
 
 An employee with an active exact-project `content_contributor` assignment can select existing canonical `ProjectAmenity` records or propose new facilities in `/property/content`, save and resume a draft, submit it, and receive an administrator review in `/app/admin/property-content-proposals`. Submission changes only the saved proposal. Approval applies the descriptive changes transactionally and records an audit event.

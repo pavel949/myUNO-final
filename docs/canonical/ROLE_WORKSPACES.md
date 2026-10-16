@@ -1,5 +1,7 @@
 # ROLE_WORKSPACES.md — Canonical Workspaces
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 | Role | First screen | Main blocks | Primary action | Scope |
 |---|---|---|---|---|
 | Founder / platform admin | Needs Attention | money exceptions, readiness, overdue work, supply, pipeline, integrations | open exception and assign action | authorized portfolio |

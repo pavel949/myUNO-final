@@ -1,5 +1,7 @@
 # SERVICES_MARKETPLACE.md — Phuket Services Network
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## 1. Purpose
 Services are a network utility across guests, owners, residents, property managers and standalone Phuket customers — not a static concierge directory.
 

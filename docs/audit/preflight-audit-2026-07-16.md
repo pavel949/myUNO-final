@@ -1,5 +1,7 @@
 # Preflight Audit · myUNO-final · 2026-07-16
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Read from:** Passes 1–4 (inventory, flows & copy, database readiness, copy sweep).
 
 ---

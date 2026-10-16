@@ -1,5 +1,7 @@
 # Static resource migration and gallery/onboarding audit — 2026-09-29
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Delivery and safety boundary
 Branch `feat/resource-profile-gallery-editor-20260929` / PR #141 targets the consolidated Layantara release branch #139, NOT production. This package is `definitions_only`: no booking, guest/staff roster, occupancy, hold, payment, historical finance, ledger, operational task or price-change events can enter the export. It does NOT delete such records from either live system. The existing source snapshots remain untouched as separate private audit evidence.
 

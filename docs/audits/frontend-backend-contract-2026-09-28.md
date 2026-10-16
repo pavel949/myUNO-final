@@ -1,5 +1,7 @@
 # Frontend ↔ Backend Contract Audit — 2026-09-28
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: PR #137, process-centred admin and canonical property → stay → financial close. This is a source/CI audit, not a production sign-off.
 
 ## Canonical chain

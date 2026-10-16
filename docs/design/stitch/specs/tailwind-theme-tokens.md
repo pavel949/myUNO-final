@@ -1,4 +1,6 @@
 # myUNO Design Tokens & Tailwind Theme Specification
+
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../../current/SYSTEM.md) и [остатка работ](../../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
 **Target Environment:** Claude Code / Cursor / Next.js / Tailwind CSS v3 & v4  
 **Design System Name:** Andaman Sanctuary & Architectural Living  
 **Date:** October 2026 | **Version:** 2.4-canonical

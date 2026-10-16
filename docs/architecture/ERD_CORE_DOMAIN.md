@@ -1,5 +1,7 @@
 # ERD — Core Domain
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Two diagrams: **what exists today** (verified against `prisma/schema.prisma`, 71 models) and
 **the target shape** from the master specification. The gap between them is the Phase 1–3 backlog.
 

@@ -1,93 +1,54 @@
-# Contributing
+# Разработка myUNO
 
-`CLAUDE.md` is the constitution — read it before the first change. This file is
-the mechanics: how to get running, what the gates are, and what will get a pull
-request sent back.
+Начать с [README](README.md), [текущей системы](docs/current/SYSTEM.md), [PROJECT](PROJECT.md) и [canonical rules](docs/canonical/AI_AGENT_RULES.md). Целевые требования не подменяют фактическое состояние main.
 
-## Getting running
+## Среда
+
+Node 20, npm lockfile, PostgreSQL. Отдельная dev DB и отдельная test DB; production credentials не копировать.
 
 ```bash
-npm install
-cp .env.example .env          # fill in DATABASE_URL and the secrets it names
-npx prisma migrate deploy     # apply the migration chain
-npm run db:seed               # staging seed: config, content, demo inventory
+npm ci
+cp .env.example .env
+# Заполнить локальные DATABASE_URL, DATABASE_URL_TEST и dev secrets.
+# Обычный PostgreSQL нуждается в ролях, ожидаемых migration chain:
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/sql/supabase-compat-roles.sql
+node scripts/provision-database.mjs
 npm run dev
 ```
 
-Two seeds, and the difference matters:
+Команды psql/node читают переменные процесса: одна запись в .env не экспортирует их в shell автоматически. Перед запуском использовать безопасный механизм загрузки окружения, проверить host/database. Никаких паролей в Git или command logs.
 
-| Command | Seeds | Use on |
-|---|---|---|
-| `npm run db:seed` | config, content, **plus demo projects, units, providers, identities** | local and staging only |
-| `npm run db:seed:registries` | config and content only | anywhere, including production |
+| Команда | Действие |
+|---|---|
+| npm ci | Установка lockfile + Prisma generate |
+| npm run dev / build / start | Next development / production compile / production server |
+| npm run db:seed:registries | Config/content seed без inventory; review изменений нужен |
+| npm run db:seed | Demo seed; только disposable/local |
+| npm run db:verify | Проверка воспроизводимости schema/drift/grants; только отдельная тестовая БД |
+| npm run audit:inventory | Статическая карта текущего checkout |
+| node scripts/generate-repository-reference.mjs | Обновление полного справочника |
+| node scripts/check-repository-docs.mjs | Проверка текущих doc links/инвентаря/устаревших deployment mentions |
 
-Never run `db:seed` against production. Demo inventory on a live domain is
-indistinguishable from real listings to a visitor.
-
-## The gates
-
-Every change ends green on all three. CI runs them; running them locally first is
-faster than a round trip.
-
-```bash
-npm test          # vitest: unit, integration, component
-npm run build     # also the typecheck — there is no separate script
-npm run lint      # --max-warnings 0, so a warning fails
-```
-
-**Integration tests share one Postgres database and truncate between tests.** If
-you see deadlocks or foreign-key violations that move around between runs, that
-is connection-pool contention, not your code — cap the pool:
+## Проверки
 
 ```bash
-DATABASE_URL_TEST="postgresql://…/myuno_test?connection_limit=1" npm test
+npm run audit:inventory:test
+node scripts/generate-repository-reference.mjs
+node scripts/check-repository-docs.mjs
+npm run lint
+npx tsc --noEmit --project tsconfig.production.json
+npm test
+npm run build
 ```
 
-Do not run two suites against the same database at once, for the same reason.
+Integration tests очищают таблицы. Нужен DATABASE_URL_TEST на отдельной disposable БД; не запускать параллельные suite на одной БД. CI содержит точные env и миграционные подготовительные шаги. CONTENT_REVIEW_GATE_ENABLED=false допустим для изолированных synthetic tests, а не обхода production review. Не фиксировать NODE_ENV вручную.
 
-## What gets a pull request sent back
+## Правила изменения
 
-- **A fix with no test that fails without it.** Write the test, watch it fail
-  against the unfixed code, then fix it. A test that passes either way proves
-  nothing.
-- **Hardcoded user-facing text.** Every string is a content key (doc 05),
-  rendered through `t()`, with a `needs_review` draft in the seed.
-- **A business rule in code.** Commissions, fees, caps, SLAs, cancellation
-  policy — all `config.get()` parameters (doc 04), registered in the same commit.
-- **Invented UI.** Colours, type and components come from the design system
-  (doc 06). Every list and screen ships empty, loading and error states.
-- **A registry addition without its doc.** New event, notification, config
-  parameter or content namespace updates docs 13/11/04/05 in the same commit, or
-  the addition is invalid.
-- **`prisma db push`.** Migration files only, forward-only, reviewed.
-- **Scope creep.** One task per pull request, per `docs/16_build_plan.md`.
+Работать в ветке; изучить main/open PRs; минимальный diff; scope/auth/data/money evidence; проверять затронутые сценарии. Сервер считает цену, money — satang integers; ledger corrections append-only. Никаких вымышленных owner/authority/rates/legal approvals. Права проверять в server guards/services/queries. Public marketing media отделять от private evidence.
 
-## Money, PII and scope rules
+Schema: reviewed forward migrations, никакого production db push или automatic migration repair. UI: локализация, существующие tokens/components, loading/empty/error/forbidden states. Добавление feature обновляет SYSTEM/IMPLEMENTATION_STATUS и генерируемый REFERENCE; docs checker должен проходить.
 
-These are not style preferences — they are the reasons the platform is allowed to
-operate:
+PR описывает конкретный результат, tests, migration/deploy impact и ограничения. Runtime readiness требует реального доказательства; green build или модель в schema недостаточны. Вопросы коммерческих условий фиксировать как unknown/blocker; обычные технические решения выполнять самостоятельно в рамках задачи.
 
-- Amounts are **server-computed**. A client-sent total is never trusted. THB in
-  satang integers.
-- The **ledger is append-only**. Any write that records a money movement is
-  paired with that movement in one transaction, or the two can disagree.
-- **Never log PII**, never put it in analytics dimensions or URLs, never store
-  card data. 🔒 fields are encrypted and their access is logged.
-- **Scope is enforced in the query**, server-side, on every read and write.
-  Hiding a control in the UI is not access control.
-- **Never operate FX and never hold guest funds.** Deposits are provider
-  pre-authorisations only. Both are licensing boundaries (AMLO, Bank of
-  Thailand), not product choices.
-
-## When something is missing
-
-If a text, rule, field, flow step or component is not specified: **stop and ask.**
-Log it in `docs/open_questions.md` and stop at that edge. A plausible guess in a
-money or compliance path is worse than an unfinished feature, because it looks
-finished.
-
-## Branches and commits
-
-Work on a branch, never directly on `main`. Write commit messages that explain
-the *why* — the diff already shows the what. Name the task id (`T-0xx`) where one
-applies. Open the pull request as a draft until the three gates are green.
+[Vercel и эксплуатация](docs/current/OPERATIONS.md) · [Security](SECURITY.md).

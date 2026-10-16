@@ -1,5 +1,7 @@
 # T-043 · Production Readiness — 90% Milestone
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Status: COMPLETE**  
 **Date: 2026-08-17**  
 **Deliverables: 4/4**

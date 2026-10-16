@@ -1,5 +1,7 @@
 # Production reconciliation
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Read-only aggregates: 44 live units; 0 management contracts; 0 canonical bookings; 0 payments; 0 service orders; 2 buyer signals. Zero booking→unit or payment→booking orphans; zero open inventory-blocking operational tasks. These counts are observations, not evidence of mandates or a validated 55-unit source manifest. No source inventory, pricing, occupancy, media or financial history was changed.
 
 The 39-villa Layantara source manifest, live source PMS, tariff Golden Master, external occupancy and payment identities were not re-extracted or reconciled in this task. Existing protected imported occupancy must remain protected. No authority cutover or source decommission is approved by this audit.

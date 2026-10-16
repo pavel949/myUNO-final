@@ -26,6 +26,7 @@ test('discovers routes, group-free URLs, domains, models and migration files', (
   add('src/modules/booking/booking.service.ts');
   add('src/modules/booking/booking.test.ts');
   add('src/modules/core/core.ts');
+  add('src/modules/global-desks.ts'); // Shared helper is not a module directory.
   add('prisma/schema.prisma', 'model Project {\n id String @id\n}\nenum Status {\n active\n}');
   add('prisma/migrations/20260929000000_init/migration.sql');
   const report = inventory(root);

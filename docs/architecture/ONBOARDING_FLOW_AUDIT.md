@@ -1,5 +1,7 @@
 # Property onboarding — what exists, and where it stops
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **What this is.** A step-by-step check of the property onboarding flow (doc 07 **F-OWN-1**, "Owner onboarding & mobilization") against what the application can actually do: what an admin can reach in the UI, and what reaches the database. Every claim below names a file.
 
 **Method.** For each entity the flow writes, every non-test write site was located, then every caller of that write traced back to an HTTP route and a screen. A function that exists but nothing calls is recorded as unreachable, not as built.

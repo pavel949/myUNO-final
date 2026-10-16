@@ -1,5 +1,7 @@
 # Media readiness and Project Portal release note — 2026-10-04
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Scope
 
 This release makes one canonical media system govern Project Space, category presentation, exact-unit listings and Stay discovery.

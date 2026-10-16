@@ -1,5 +1,7 @@
 # Broadsheet design system
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../../current/SYSTEM.md) и [остатка работ](../../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Broadsheet is newsprint set for the web: near-black Source Serif 4 on paper white, with the process accents — cyan and magenta, completed by a print yellow in the press treatments — used small and deliberately, like spot color. Page structure uses no boxes and no dividers between sections; hierarchy comes from the serif scale and from negative space alone. The one place rules print is as front-page furniture — the landing's thick-thin head pair around its dateline rail, in full-strength ink. Images print as their own misregistered process plates (interface imagery can take the simpler halftone dot screen).
 
 ## How to use this

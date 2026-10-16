@@ -1,5 +1,7 @@
 # Complex amenities: editor and public usage facts
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Requirement: owner-requested complex-level facilities, descriptions, location/floor, hours, booking notice and visitor rules; readable from the complex and linked units. Relevant acceptance: AT16 (reuse a project), AT28 (scoped access), AT29 (usable forms and locale copy).
 
 ## Reconciliation and outcome

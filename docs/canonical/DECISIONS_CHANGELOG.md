@@ -1,5 +1,7 @@
 # DECISIONS_CHANGELOG.md — Canonical Changes in v3
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## Added from the reviewed founder prompt
 1. Vendor-neutral agent language; no dependency on Claude.
 2. Standalone Phuket service/product ordering without property/stay requirement.

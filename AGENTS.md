@@ -1,5 +1,7 @@
 # AGENTS.md — myUNO implementation entry point
 
+> **Текущий код (2026-10-16):** [README](README.md), [SYSTEM](docs/current/SYSTEM.md), [реализовано/остаток](docs/current/IMPLEMENTATION_STATUS.md), [полный справочник](docs/current/REFERENCE.md). Canonical — целевые требования; historical reports не доказывают состояние main или production. Vercel — единственный deploy; Git auto-deploy сейчас отключён.
+
 All coding agents must follow the vendor-neutral canonical specification in this repository.
 
 Read in order:

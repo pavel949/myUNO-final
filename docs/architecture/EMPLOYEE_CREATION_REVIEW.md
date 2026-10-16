@@ -1,5 +1,7 @@
 # Delegated descriptive property creation
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 ## Canonical path
 
 The employee entry is `/property/create`. It saves and submits the existing creator-owned `CrmOpportunity` property intake (`source = myuno_property_submission_v1`). `/app/admin/property-submissions` reviews that intake and the existing conversion writer creates canonical `Project` or `Unit` records in `draft` status. An employee's next edit uses `/property/content?scope=unit|project&targetId=...`, the existing proposal and administrator-review workflow. No second inventory model is introduced.
@@ -40,7 +42,7 @@ An active creator can still read their own authored intake after grant revocatio
 
 Focused mocked service/API and component tests cover receipt forgery, cross-scope denial, revocation, read-only retained intake, separate capabilities, pending-write races, canonical draft conversion and exact-target proposal continuity. Real PostgreSQL integration cases cover atomicity, serializable races and lock/revocation behavior. `scripts/e2e/employee-creation.mjs` uses the existing isolated fixture/egress contract and drives founder grants, creator intake, administrator conversion and content review.
 
-The local review environment has no generated Prisma client or isolated PostgreSQL/browser application. Prepared integration/browser cases are not execution evidence. Full repository typecheck, migration/DB tests, production build and the isolated browser acceptance job must run on the final composed commit. Production is Vercel; this feature does not require Netlify.
+The local review environment has no generated Prisma client or isolated PostgreSQL/browser application. Prepared integration/browser cases are not execution evidence. Full repository typecheck, migration/DB tests, production build and the isolated browser acceptance job must run on the final composed commit. Production deployment uses Vercel.
 
 ### Process mapping and rollout
 

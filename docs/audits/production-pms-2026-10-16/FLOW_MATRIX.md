@@ -1,5 +1,7 @@
 # CO01–CO30 / AT01–AT30 evidence matrix
 
+> **Датированный отчёт / evidence конкретного среза.** Текущее [описание системы](../../current/SYSTEM.md) и [матрица реализации](../../current/IMPLEMENTATION_STATUS.md); production факты ниже относятся к указанной дате/окружению.
+
 Baseline: main436dd935, full CI38881807483. Each row uses the nine readiness dimensions, in order: specification, code, migration, data/config, permission, UI, critical acceptance, deploy, runtime. `partial` means the listed test verifies a seam, not its full process passport. No entire CO/AT process is marked complete from a matching test name. Non-PMS commercial processes are included for completeness as not checked.
 
 | ID / job | Route / canonical writer anchor | Test/evidence | Specification | Code | Migration | Data/config | Permission | UI | Critical acceptance | Deploy | Runtime |

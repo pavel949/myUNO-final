@@ -1,5 +1,7 @@
 # Layantara → myUNO consolidation: executable baseline and release gates
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 ## Scope of this change
 
 This change supplies a role-scoped operational calendar board on top of **existing myUNO Booking + BlockedDate + canonical Unit**. It also introduces a pure, non-destructive source occupancy classifier with tests. It does **not** copy financial records, run migrations against live databases, flip any write routing, or claim OTA push integration. Existing source and target keep their current behavior until cutover is signed off.

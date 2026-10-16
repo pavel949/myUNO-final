@@ -29,6 +29,7 @@ import { POST as recordCash } from './record-cash-payment/route';
 import { POST as accept } from './accept/route';
 import { POST as decline } from './decline/route';
 import { POST as fulfil } from './fulfil/route';
+import { POST as confirm } from './confirm/route';
 import { POST as cancel } from './cancel/route';
 import { POST as reportNoShow } from './no-show/route';
 
@@ -389,4 +390,26 @@ describe('service-order lifecycle routes (S1)', () => {
       expect((await getOrder(get(), { params: { id: orderId } })).status).toBe(404);
     });
   });
+  describe('customer fulfilment confirmation', () => {
+    it('requires the orderer even for an authorized provider or admin', async () => {
+      await db.serviceOrder.update({ where: { id: orderId }, data: { status: 'fulfilled', fulfilled_at: new Date() } });
+      mockGetCurrentUser.mockResolvedValue(null);
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(401);
+      asStranger();
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(404);
+      asProviderMember();
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(403);
+      mockGetCurrentUser.mockResolvedValue(userOf(staff, { isAdmin: true }));
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(403);
+      asOrderer();
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(200);
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(200);
+    });
+    it('reports a lifecycle conflict without changing a placed order', async () => {
+      asOrderer();
+      expect((await confirm(post(), { params: { id: orderId } })).status).toBe(409);
+      expect((await db.serviceOrder.findUniqueOrThrow({ where: { id: orderId } })).status).toBe('placed');
+    });
+  });
+
 });

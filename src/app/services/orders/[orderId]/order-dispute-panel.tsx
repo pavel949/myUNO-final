@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 
 type Labels = Record<string, string>;
@@ -8,10 +8,18 @@ type Labels = Record<string, string>;
 export default function OrderDisputePanel({
   orderId,
   labels,
+  deadline,
 }: {
   orderId: string;
   labels: Labels;
+  deadline?: string | null;
 }) {
+  const [expired, setExpired] = useState(() => Boolean(deadline && Date.now() >= new Date(deadline).getTime()));
+  useEffect(() => {
+    if (!deadline) return;
+    const interval = setInterval(() => setExpired(Date.now() >= new Date(deadline).getTime()), 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -21,7 +29,7 @@ export default function OrderDisputePanel({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (expired || busy || !title.trim() || !description.trim()) return;
     setBusy(true);
     setError(null);
     try {
@@ -49,6 +57,8 @@ export default function OrderDisputePanel({
       setBusy(false);
     }
   };
+
+  if (expired) return <p className="mb-24">{labels['service-order.confirm.expired']}</p>;
 
   return (
     <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">

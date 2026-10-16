@@ -8,6 +8,7 @@
 |---|---|
 | [README](../README.md) | Вход в репозиторий, стек, процессы, запуск и важные ограничения |
 | [SYSTEM](current/SYSTEM.md) | Все модули, связи, роли, данные, money и интеграции |
+| [План 9/10](current/PRODUCTION_READINESS_PLAN.md) | Критерии приёмки, последовательность исправлений и доказательства |
 | [PROCESS_COVERAGE](current/PROCESS_COVERAGE.md) | Все 30 целевых бизнес-процессов и функции, у которых ещё нет runtime-модуля |
 | [IMPLEMENTATION_STATUS](current/IMPLEMENTATION_STATUS.md) | Что реализовано, что осталось, confirmed gaps, runtime unknowns, open PRs |
 | [REFERENCE](current/REFERENCE.md) | Все pages/handlers/methods, module files/exports, модели/поля/enums, migrations/tests/env consumers |

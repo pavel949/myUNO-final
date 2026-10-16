@@ -24,13 +24,22 @@ export function NotificationBell({ labels }: { labels: BellLabels }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
+  const readVersion = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
+    const version = ++readVersion.current;
     try {
-      const response = await fetch('/api/notifications');
+      const response = await fetch('/api/notifications', { cache: 'no-store' });
+      if (version !== readVersion.current) return;
+      if (response.status === 401 || response.status === 403) {
+        setItems([]);
+        setUnread(0);
+        return;
+      }
       if (!response.ok) return;
       const data = await response.json();
+      if (version !== readVersion.current) return;
       setItems(data.notifications || []);
       setUnread(data.unreadCount || 0);
     } catch {
@@ -40,8 +49,18 @@ export function NotificationBell({ labels }: { labels: BellLabels }) {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 30000);
-    return () => clearInterval(interval);
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const interval = setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      // This is a request generation counter, not a DOM ref; invalidate every pending read.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ++readVersion.current;
+      clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [load]);
 
   useEffect(() => {

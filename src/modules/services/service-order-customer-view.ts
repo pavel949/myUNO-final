@@ -1,3 +1,4 @@
+import { serviceOrderDeadline } from './service-order-closure';
 import { parseStandaloneContext } from './standalone-context';
 import type { PrismaClient } from '@prisma/client';
 
@@ -88,6 +89,13 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     select: { id: true },
   });
 
+  const deadline = order.status === 'fulfilled' ? await serviceOrderDeadline(db, order) : null;
+  const dispute = await db.dispute.findFirst({
+    where: { subjectType: 'service_order', subjectId: id },
+    select: { id: true, ticketId: true, decidedAt: true },
+  });
+  const inWindow = deadline !== null && new Date() < deadline;
+
   // Parse price breakdown
   const priceBreakdown = typeof order.price_breakdown === 'string'
     ? JSON.parse(order.price_breakdown)
@@ -99,6 +107,12 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     updatedAt: order.updatedAt.toISOString(),
     status: order.status,
     quantity: order.quantity,
+    fulfilledAt: order.fulfilled_at?.toISOString() ?? null,
+    closedAt: order.closed_at?.toISOString() ?? null,
+    confirmationDeadline: deadline?.toISOString() ?? null,
+    canConfirm: order.status === 'fulfilled' && inWindow && (!dispute || dispute.decidedAt !== null),
+    canDispute: ['accepted', 'failed'].includes(order.status) || (order.status === 'fulfilled' && inWindow),
+    dispute: dispute ? { id: dispute.id, ticketId: dispute.ticketId, pending: dispute.decidedAt === null } : null,
     scheduledStart: order.scheduled_start.toISOString(),
     scheduledEnd: order.scheduled_end.toISOString(),
     totalThb: order.total_thb,

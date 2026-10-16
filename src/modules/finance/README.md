@@ -10,7 +10,7 @@ Cash/transfer records, Opn checkout/webhook/refund adapter, append-only ledger/r
 
 ## Что остаётся
 
-Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Найдено расхождение launch-readiness: omise вместо opn.
+Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Launch-readiness согласован с PAYMENT_PROVIDER=opn и реальной public/secret key конфигурацией; live charge/refund остаётся отдельной проверкой.
 
 ## Источники и сопровождение
 

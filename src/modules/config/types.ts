@@ -102,6 +102,7 @@ export interface CancellationConfig {
   'cancellation.host_cancel_full_refund': boolean;
   'cancellation.no_show_treated_as': 'late_cancel' | 'forfeit';
   'service.cancel_window_hours': number;
+  'service.fulfilment_confirm_window_hours': number;
   'service.provider_no_show_refund_pct': number;
   'service.accept_sla_hours': number;
 }

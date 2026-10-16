@@ -7,6 +7,7 @@ import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-con
 import type { Prisma } from '@prisma/client';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
+import OrderConfirmationPanel from './order-confirmation-panel';
 import OrderDisputePanel from './order-dispute-panel';
 import OrderNoShowPanel from './order-no-show-panel';
 import OrderRatingPanel from './order-rating-panel';
@@ -35,6 +36,12 @@ interface ServiceOrderDetail {
   cancelledAt: string | null;
   cancellationReason: string | null;
   rated: boolean;
+  fulfilledAt: string | null;
+  closedAt: string | null;
+  confirmationDeadline: string | null;
+  canConfirm: boolean;
+  canDispute: boolean;
+  dispute: { id: string; ticketId: string; pending: boolean } | null;
   service: {
     id: string;
     title: string;
@@ -98,6 +105,12 @@ export default async function ServiceOrderDetailPage({
   const acceptedTerms = order.termsSnapshot && typeof order.termsSnapshot === 'object' && !Array.isArray(order.termsSnapshot) ? order.termsSnapshot : null;
 
   const labels = await getLabels({
+    'service-order.confirm.action': 'Confirm service completed',
+    'service-order.confirm.notice': 'Confirm only if the service is complete. Confirmation closes this order. If there is a problem, raise a dispute before the deadline below.',
+    'service-order.confirm.deadline': 'Confirmation or dispute deadline',
+    'service-order.confirm.expired': 'The confirmation window has ended. Contact support if you need further help.',
+    'service-order.confirm.error': 'Could not confirm the order. Refresh and try again, or contact support.',
+    'service-order.detail.closed': 'Closed',
     'help.requests.cta': 'Open My requests',
     'services.standalone.responsibility': 'Responsible organization: {organization}',
     'services.standalone.cancellation': 'Full refund if cancelled more than {hours} hours before the service. No refund within that window.',
@@ -197,6 +210,7 @@ export default async function ServiceOrderDetailPage({
     placed: labels['service-order.detail.placed'],
     accepted: labels['service-order.detail.accepted'],
     declined: labels['service-order.detail.declined'],
+    closed: labels['service-order.detail.closed'],
     fulfilled: labels['service-order.detail.fulfilled'],
     cancelled: labels['service-order.detail.cancelled'],
     failed: labels['service-order.detail.failed'],
@@ -216,23 +230,13 @@ export default async function ServiceOrderDetailPage({
   const isPaymentRequired =
     order.status === 'placed' && order.totalThb > 0;
   const isPaid =
-    order.payments.some((p) => p.status === 'completed') ||
-    order.status === 'fulfilled';
+    order.payments.filter(p => p.status === 'succeeded').reduce((sum, p) => sum + p.amountThb, 0) >= order.totalThb;
 
   const isOrderer = order.orderer.id === user.identityId;
   const slotStarted = new Date() >= new Date(order.scheduledStart);
   const canReportNoShow = isOrderer && order.status === 'accepted' && slotStarted;
-  const disputableStatuses = ['accepted', 'fulfilled', 'closed', 'failed'];
-  const canDispute =
-    isOrderer && disputableStatuses.includes(order.status);
-
-  const existingDispute =
-    canDispute
-      ? await prisma.dispute.findFirst({
-          where: { subjectType: 'service_order', subjectId: order.id },
-          select: { id: true, ticketId: true },
-        })
-      : null;
+  const canDispute = isOrderer && order.canDispute;
+  const existingDispute = order.dispute;
 
   const breadcrumbs = [
     { label: labels['service-order.breadcrumb_home'], href: '/' },
@@ -270,7 +274,7 @@ export default async function ServiceOrderDetailPage({
               <div className="flex items-center gap-8">
                 <span
                   className={`px-12 py-4 rounded-full text-small font-semibold ${
-                    order.status === 'fulfilled'
+                    ['fulfilled', 'closed'].includes(order.status)
                       ? 'bg-state-success-soft bg-opacity-10 text-state-success'
                       : order.status === 'cancelled'
                         ? 'bg-state-error-soft bg-opacity-10 text-state-error'
@@ -541,12 +545,23 @@ export default async function ServiceOrderDetailPage({
           </div>
         )}
 
+        {order.status === 'fulfilled' && (
+          <div className="stitch-panel p-24 mb-24">
+            {order.confirmationDeadline && <>
+              <p className="text-small text-text-secondary">{labels['service-order.confirm.deadline']}</p>
+              <LocalDate value={order.confirmationDeadline} format={'dateTime'} />
+            </>}
+            {order.canConfirm ? <OrderConfirmationPanel orderId={order.id} deadline={order.confirmationDeadline!} labels={labels} />
+              : !order.dispute?.pending && <p className="mt-12">{labels['service-order.confirm.expired']}</p>}
+          </div>
+        )}
+
         {canReportNoShow && <OrderNoShowPanel orderId={order.id} labels={labels} />}
 
         {/* A fulfilled order can be rated from here, not only from the in-stay
             home space — after check-out that surface is no longer where anyone
             goes, and this is. */}
-        {order.status === 'fulfilled' && isOrderer && (
+        {['fulfilled', 'closed'].includes(order.status) && isOrderer && (
           <div className="mt-16">
             <OrderRatingPanel orderId={order.id} rated={order.rated} labels={labels} />
           </div>
@@ -564,7 +579,7 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {canDispute && !existingDispute && (
-          <OrderDisputePanel orderId={order.id} labels={labels} />
+          <OrderDisputePanel orderId={order.id} labels={labels} deadline={order.confirmationDeadline} />
         )}
 
         {existingDispute && (

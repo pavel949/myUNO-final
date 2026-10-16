@@ -10,7 +10,7 @@ Provider applications/approval, service catalogue/localized copy, project offers
 
 ## Что остаётся
 
-ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Customer confirm/dispute/auto-close после fulfillment не найден как законченный lifecycle. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
+ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Добавлены customer confirm, окно подтверждения/спора (по умолчанию 48h), общая row/advisory lock с dispute creation, auto-close в service-order sweep и customer UI deadline; незавершённый спор блокирует закрытие. Закрытие не создаёт commission/payout повторно. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
 
 ## Источники и сопровождение
 

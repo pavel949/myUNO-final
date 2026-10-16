@@ -107,7 +107,7 @@ export async function sendServiceOrderReviewPrompts(
 
   const candidates = await db.serviceOrder.findMany({
     where: {
-      status: 'fulfilled',
+      status: { in: ['fulfilled', 'closed'] },
       fulfilled_at: { not: null, lte: cutoff },
     },
     include: {

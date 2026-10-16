@@ -4,10 +4,10 @@
   "root": ".",
   "summary": {
     "pages": 174,
-    "handlers": 247,
-    "apiHandlers": 244,
+    "handlers": 248,
+    "apiHandlers": 245,
     "modules": 21,
-    "tests": 547,
+    "tests": 550,
     "prismaModels": 118,
     "migrations": 94,
     "routeCollisions": 0
@@ -1376,6 +1376,12 @@
       "area": "api"
     },
     {
+      "path": "/api/service-orders/[id]/confirm",
+      "source": "src/app/api/service-orders/[id]/confirm/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
       "path": "/api/service-orders/[id]/decline",
       "source": "src/app/api/service-orders/[id]/decline/route.ts",
       "kind": "handler",
@@ -2619,7 +2625,7 @@
     },
     {
       "name": "media",
-      "files": 15,
+      "files": 16,
       "testFiles": 5
     },
     {
@@ -2639,8 +2645,8 @@
     },
     {
       "name": "services",
-      "files": 20,
-      "testFiles": 10
+      "files": 23,
+      "testFiles": 12
     },
     {
       "name": "workflows",
@@ -3179,6 +3185,7 @@
     "src/components/LeadForm.test.tsx",
     "src/components/MoneyAmount.test.tsx",
     "src/components/Navbar.test.tsx",
+    "src/components/NotificationBell.test.tsx",
     "src/components/OwnerEvidenceDraftEditor.test.tsx",
     "src/components/Placeholder.test.tsx",
     "src/components/RoleContextBanner.test.tsx",
@@ -3496,6 +3503,8 @@
     "src/modules/services/notify-order-reminder.integration.test.ts",
     "src/modules/services/project-service-offer.test.ts",
     "src/modules/services/provider.service.integration.test.ts",
+    "src/modules/services/service-order-closure.integration.test.ts",
+    "src/modules/services/service-order-closure.test.ts",
     "src/modules/services/service-order-customer-view.integration.test.ts",
     "src/modules/services/service-order-public-terms.test.ts",
     "src/modules/services/service-order.service.integration.test.ts",

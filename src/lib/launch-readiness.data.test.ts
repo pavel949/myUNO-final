@@ -73,4 +73,13 @@ describe('launch readiness (catalogue gates)', () => {
     expect(item(items, 'permitted_use')).toMatchObject({ state: 'ok', blocking: true, detail: '0' });
     expect(item(items, 'scheduler_running')).toMatchObject({ state: 'action', blocking: true });
   });
+  it('a fresh frequent job cannot hide another stale frequent job', async () => {
+    getSchedulerHealthMock.mockResolvedValue([
+      { cadence: 'frequent', lastFinishedAt: new Date() },
+      { cadence: 'frequent', lastFinishedAt: new Date(Date.now() - 31 * 60 * 1000) },
+    ]);
+    const db = { unit: { count: vi.fn().mockResolvedValue(1) } } as unknown as PrismaClient;
+    expect(item(await evaluateDataReadiness(db), 'scheduler_running').state).toBe('action');
+  });
+
 });

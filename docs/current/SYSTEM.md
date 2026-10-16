@@ -110,7 +110,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /messages · /tickets · /announcements · /app/admin/tickets.
 
-**Остаток / проверка:** Для нескольких экземпляров требуется общий транспорт событий; внешние messenger adapters отсутствуют. Проверить фактическую доставку и повторы.
+**Остаток / проверка:** Клиенты уже читают durable messages/notifications polling через БД (15/30 секунд); добавлены refresh на focus/visibility и защита от stale responses/revoked access. In-memory SSE не является межсерверным транспортом. Внешние messenger adapters отсутствуют; фактическая доставка проверяется отдельно.
 
 [Исходники](../../src/modules/comms/README.md) · [полный состав файлов/exports](REFERENCE.md#module-comms)
 
@@ -180,7 +180,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /ops/costs · /ops/refunds · /owner/statements · /app/admin/statements · /app/admin/payouts.
 
-**Остаток / проверка:** Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Найдено расхождение launch-readiness: omise вместо opn.
+**Остаток / проверка:** Opn требует merchant configuration и доказательства реального charge/refund. Проверить statements на границах периодов, суммы, повторные выплаты и возвраты. Launch-readiness согласован с PAYMENT_PROVIDER=opn и реальной public/secret key конфигурацией; live charge/refund остаётся отдельной проверкой.
 
 [Исходники](../../src/modules/finance/README.md) · [полный состав файлов/exports](REFERENCE.md#module-finance)
 
@@ -210,7 +210,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /app/admin/projects/[id]/media · /property/content.
 
-**Остаток / проверка:** Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness проверяет только token и не учитывает OIDC+store, хотя upload поддерживает этот путь.
+**Остаток / проверка:** Проверить реальную загрузку и повтор finalize в окружении с Blob. Readiness и upload используют общий parser token либо OIDC+store; наличие config не заменяет actual upload/finalize acceptance.
 
 [Исходники](../../src/modules/media/README.md) · [полный состав файлов/exports](REFERENCE.md#module-media)
 
@@ -250,7 +250,7 @@ Layantara intake использует ExternalSystem(environment), ExternalMappi
 
 **Поверхности:** /services · /services/orders · /provider · /app/admin/service-orders.
 
-**Остаток / проверка:** ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Customer confirm/dispute/auto-close после fulfillment не найден как законченный lifecycle. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
+**Остаток / проверка:** ServiceQuoteRequest/Version есть в схеме, но рабочих writers/API не найдено. Добавлены customer confirm, окно подтверждения/спора (по умолчанию 48h), общая row/advisory lock с dispute creation, auto-close в service-order sweep и customer UI deadline; незавершённый спор блокирует закрытие. Закрытие не создаёт commission/payout повторно. SKU/stock/delivery/recurring не реализованы как отдельная торговая система.
 
 [Исходники](../../src/modules/services/README.md) · [полный состав файлов/exports](REFERENCE.md#module-services)
 

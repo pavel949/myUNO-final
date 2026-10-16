@@ -10,7 +10,7 @@ Threads/messages, in-app notifications, email delivery records, объявлен
 
 ## Что остаётся
 
-Для нескольких экземпляров требуется общий транспорт событий; внешние messenger adapters отсутствуют. Проверить фактическую доставку и повторы.
+Клиенты уже читают durable messages/notifications polling через БД (15/30 секунд); добавлены refresh на focus/visibility и защита от stale responses/revoked access. In-memory SSE не является межсерверным транспортом. Внешние messenger adapters отсутствуют; фактическая доставка проверяется отдельно.
 
 ## Источники и сопровождение
 

@@ -703,7 +703,7 @@ export async function rateServiceOrder(
     throw new Error('Only the orderer can rate this service order');
   }
 
-  if (order.status !== 'fulfilled') {
+  if (!['fulfilled', 'closed'].includes(order.status)) {
     throw new Error(`Cannot rate order in ${order.status} status`);
   }
 

@@ -28,7 +28,7 @@ export default async function PropertyWorkspacePage() {
     <ul className="mt-24 grid gap-16 sm:grid-cols-2">{workspaces.map(workspace => <li key={workspace} className="stitch-panel p-20">
       <h2 className="font-semibold">{labels[`property.workspace.${workspace}`]}</h2>
       <p className="mt-12 text-small text-text-secondary">{labels[`property.workspace.${workspace}_note`]}</p>
-      <Link href={`/property/${workspace}`} className="mt-16 inline-block text-brand-andaman underline">{labels['property.workspace.open']}</Link>
+      <Link href={workspace === 'access' ? '/property/access' : `/property/${workspace}`} className="mt-16 inline-block text-brand-andaman underline">{labels['property.workspace.open']}</Link>
     </li>)}{showCreation && <li className="stitch-panel p-20"><h2 className="font-semibold">{creationLabels['property.creation.title']}</h2><p className="mt-12 text-small text-text-secondary">{creationLabels['property.creation.intro']}</p><Link href="/property/create" className="mt-16 inline-block text-brand-andaman underline">{labels['property.workspace.open']}</Link></li>}</ul>
   </main>;
 }

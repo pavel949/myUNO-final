@@ -381,7 +381,13 @@ describe('People & roles service', () => {
 
       const token = await generateClaimLink(prisma, {
         identityId: invited.id,
-        ttlMinutes: -60, // Expired 60 minutes ago
+        ttlMinutes: 60,
+      });
+
+      // Minting rejects past expiries; model elapsed time on the isolated fixture.
+      await prisma.oneTimeToken.updateMany({
+        where: { tokenHash: hashToken(token) },
+        data: { expiresAt: new Date(Date.now() - 60 * 60 * 1000) },
       });
 
       await expect(

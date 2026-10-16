@@ -18,6 +18,9 @@ describe('T-004 · Content module', () => {
   beforeAll(async () => {
     await resetDb();
     await seedContent(db);
+    // This fixture bulk-loads the entire growing registry after TRUNCATE.
+    // Give PostgreSQL current cardinalities before testing the real join.
+    await db.$executeRawUnsafe('ANALYZE content_key, translation');
     // A real identity to author test translations (updatedByIdentityId is a FK).
     authorId = (await createIdentity()).id;
   });

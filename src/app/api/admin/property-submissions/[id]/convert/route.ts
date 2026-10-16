@@ -6,7 +6,7 @@ import { EmployeeCreationError } from '@/modules/onboarding/employee-creation.sc
 import { employeeCreationForConversionTx, employeeCreationFailure } from '@/modules/onboarding/employee-creation.service';
 import { setUnitOwnerTx } from '@/modules/projects';
 import { createDraftUnitEngagementTx } from '@/modules/core';
-import { createSubmissionDescriptionTx, resolveSubmissionDescription } from '@/modules/onboarding/submission-description';
+import { createSubmissionDescriptionTx, resolveSubmissionDescription, SubmissionDescriptionError } from '@/modules/onboarding/submission-description';
 import {
   ensureDraftCommercialOfferingsTx,
   resolveCanonicalUnitTx,
@@ -261,6 +261,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 });
     return NextResponse.json(converted);
   } catch (error) {
+    if (error instanceof SubmissionDescriptionError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     const failure = employeeCreationFailure(error);
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }

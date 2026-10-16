@@ -2,19 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Identity, IdentityStatus, Prisma, RoleAssignment, RoleType } from '@prisma/client';
 
 const singletonQuery = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/prisma', () => ({ prisma: { roleAssignment: { findMany: singletonQuery } } }));
+const singletonIdentity = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/prisma', () => ({ prisma: { roleAssignment: { findMany: singletonQuery }, identity: { findUnique: singletonIdentity } } }));
 import { can, PERMISSIONS } from './permissions';
+import { isPropertyCapabilityRole } from './property-capability-policy';
 
 const roles: Array<RoleType | 'admin'> = ['admin', ...new Set(PERMISSIONS.map(permission => permission.role))];
 const statuses: IdentityStatus[] = ['active', 'invited', 'blocked', 'merged', 'deletion_requested'];
 const cases = statuses.flatMap(status => roles.flatMap(role => ['read', 'allow'].flatMap(access => ['default', 'transaction'].map(client => ({ status, role, access, client })))));
-beforeEach(() => { singletonQuery.mockReset(); });
+beforeEach(() => { singletonQuery.mockReset(); singletonIdentity.mockReset(); });
 
 function identity(status: IdentityStatus, isAdmin = false) {
   return { id: 'permission-fixture', status, isAdmin } as Identity;
 }
 function assignment(role: RoleType, status: 'active' | 'revoked' = 'active') {
-  return { identityId: 'permission-fixture', role, status, scopeType: 'project', projectId: 'project-fixture', unitId: null } as RoleAssignment;
+  return { id: 'grant-fixture', identityId: 'permission-fixture', role, status, scopeType: 'project', projectId: 'project-fixture', unitId: null,
+    organizationId: null, providerId: null, parentGrantId: null, expiresAt: null, canDelegate: false, unit: null, parentGrant: null } as RoleAssignment;
 }
 
 describe('PR242 active-identity guard reconciled with optional transaction client', () => {
@@ -23,14 +26,22 @@ describe('PR242 active-identity guard reconciled with optional transaction clien
     const rows = role === 'admin' ? [] : [assignment(role)];
     singletonQuery.mockResolvedValue(rows);
     const query = vi.fn().mockResolvedValue(rows);
-    const tx = { roleAssignment: { findMany: query } } as unknown as Prisma.TransactionClient;
+    const lookup = vi.fn().mockResolvedValue(identity(status, role === 'admin'));
+    singletonIdentity.mockResolvedValue(identity(status, role === 'admin'));
+    const tx = { roleAssignment: { findMany: query }, identity: { findUnique: lookup } } as unknown as Prisma.TransactionClient;
     const context = { identity: identity(status, role === 'admin'), action: permission.action, requiredAccess: access as 'read' | 'allow', resource: { projectId: 'project-fixture' } };
     expect(await (client === 'transaction' ? can(context, tx) : can(context))).toBe(status === 'active');
     if (status !== 'active' || role === 'admin') {
       expect(singletonQuery).not.toHaveBeenCalled();
       expect(query).not.toHaveBeenCalled();
     } else {
-      expect(client === 'transaction' ? query : singletonQuery).toHaveBeenCalledWith({ where: { identityId: 'permission-fixture', status: 'active' } });
+      const called = client === 'transaction' ? query : singletonQuery;
+      if (isPropertyCapabilityRole(role)) {
+        expect(called).toHaveBeenCalledWith(expect.objectContaining({ where: { identityId: 'permission-fixture', role, status: 'active' } }));
+        expect(client === 'transaction' ? lookup : singletonIdentity).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'permission-fixture' } }));
+      } else {
+        expect(called).toHaveBeenCalledWith({ where: { identityId: 'permission-fixture', status: 'active' } });
+      }
       expect(client === 'transaction' ? singletonQuery : query).not.toHaveBeenCalled();
     }
   });

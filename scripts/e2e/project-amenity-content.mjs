@@ -420,14 +420,9 @@ try {
     assert.equal(await pp.getByRole('heading', { name: NEW_NAME, exact: true }).count(), 0);
     await expectNotFound(pp, `/projects/${project.slug}/amenities/${newFacility.slug}`);
     const bookingPath = `/projects/${project.slug}/amenities/${newFacility.slug}/book`;
-    // Authentication precedes facility eligibility on booking pages.
-    await pp.goto(bookingPath);
-    await pp.waitForURL(url => url.pathname === '/login');
-    const loginUrl = new URL(pp.url());
-    assert.equal(loginUrl.origin, baseUrl);
-    assert.equal(loginUrl.pathname, '/login');
-    assert.equal(loginUrl.searchParams.get('next'), bookingPath);
-    await pp.getByRole('button', { name: 'Log in', exact: true }).waitFor();
+    // Eligibility precedes authentication: a hidden facility must remain
+    // indistinguishable from an absent one, including for anonymous visitors.
+    await expectNotFound(pp, bookingPath);
     await expectNotFound(rp, bookingPath);
     const startAt = new Date(Date.now() + 3 * 86400000); const endAt = new Date(startAt.getTime() + 3600000);
     const rejected = await rp.request.post(`/api/project-amenities/${newFacility.id}/reservations`, { maxRedirects: 0,

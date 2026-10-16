@@ -1,5 +1,6 @@
 /** PMS release slice: readiness, effective-rate and channel-health operational UI. */
 export const PMS_RELEASE_KEYS = [
+  { key: 'staff.unified_calendar.blocked', namespace: 'staff', description: 'Calendar readiness: independent operational blocker', en: 'Blocked by operational work', ru: 'Заблокировано операционными работами', th: 'ไม่พร้อมเนื่องจากงานปฏิบัติการ', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.readiness', namespace: 'staff', description: 'Calendar readiness label', en: 'Readiness', ru: 'Готовность', th: 'ความพร้อม', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.ready', namespace: 'staff', description: 'Calendar readiness: ready', en: 'Ready', ru: 'Готово', th: 'พร้อม', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.needs_cleaning', namespace: 'staff', description: 'Calendar readiness: needs cleaning', en: 'Needs cleaning', ru: 'Нужна уборка', th: 'ต้องทำความสะอาด', status: 'needs_review' as const },

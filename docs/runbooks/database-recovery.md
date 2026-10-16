@@ -87,6 +87,11 @@ present regardless of what the migration chain does.
 
 ## Restoring a backup into a scratch database
 
+`pg_read_all_data` does not bypass RLS. A dedicated backup login needs
+separately reviewed all-row access; do not assume the example grants below
+are sufficient on this server-only, RLS-enabled schema. A failed or partial
+dump must stop release. Never add public Data API policies to make backup work.
+
 ```bash
 # 1. Dump production. Use a read-only role, never the application's credential:
 #      CREATE ROLE backup_reader LOGIN PASSWORD '<generated>';

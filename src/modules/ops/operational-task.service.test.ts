@@ -47,5 +47,14 @@ describe('operational readiness tasks', () => {
       transitionOperationalTask(db, 'task-a', 'in_progress')
     ).rejects.toThrow(/Invalid operational task transition/);
   });
+
+  it('keeps maintenance blockers visible regardless of task order and cleaning state', async () => {
+    const maintenance = { unitId: 'unit-a', taskType: 'preventive_maintenance', status: 'blocked', blocksInventory: true };
+    const cleaning = { unitId: 'unit-a', taskType: 'turnover_cleaning', status: 'in_progress', blocksInventory: false };
+    for (const tasks of [[maintenance, cleaning], [cleaning, maintenance], [maintenance]]) {
+      const db: any = { operationalTask: { findMany: vi.fn().mockResolvedValue(tasks) } };
+      expect((await getUnitReadinessMap(db, ['unit-a']))['unit-a']).toEqual({ state: 'blocked', openTaskCount: tasks.length });
+    }
+  });
 });
 

@@ -537,6 +537,44 @@ describe('Owner Statement Generation — golden numbers', () => {
     expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(0)
   })
 
+  it.each([
+    ['start', '2026-06-29', '2026-07-04'],
+    ['end', '2026-07-29', '2026-08-04'],
+  ])('blocks paid cancelled stays crossing the period %s', async (_edge, from, to) => {
+    await resetDb()
+    const { owner, project, unit } = await setUp('owner_direct')
+    const booking = await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: owner.id,
+      startDate: new Date(from), endDate: new Date(to), status: 'cancelled', totalThb: 12_000,
+    })
+    await db.payment.create({ data: {
+      bookingId: booking.id, payerIdentityId: owner.id, purpose: 'stay',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: 'succeeded', succeededAt: new Date(),
+    } })
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(409)
+    expect(body).toMatchObject({ code: 'STATEMENT_ALLOCATION_REQUIRED', bookingId: booking.id })
+    expect(await db.ownerStatement.count({ where: { unitId: unit.id } })).toBe(0)
+    expect(await db.payment.count({ where: { bookingId: booking.id } })).toBe(1)
+  })
+
+  it.each(['unpaid', 'failed', 'deposit', 'unreconciled'] as const)('does not block a crossing cancellation with %s non-rental funds', async (kind) => {
+    await resetDb()
+    const { owner, project, unit } = await setUp('owner_direct')
+    const booking = await createBooking({
+      unitId: unit.id, projectId: project.id, guestIdentityId: owner.id,
+      startDate: new Date('2026-06-29'), endDate: new Date('2026-07-04'), status: 'cancelled', totalThb: 12_000,
+    })
+    if (kind !== 'unpaid') await db.payment.create({ data: {
+      bookingId: booking.id, payerIdentityId: owner.id, purpose: kind === 'deposit' ? 'deposit_preauth' : 'stay',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: kind === 'failed' ? 'failed' : 'succeeded',
+      reconciliationReason: kind === 'unreconciled' ? 'PROVIDER_REVIEW_REQUIRED' : null,
+    } })
+    const { res, body } = await generate(unit.id, '2026-07-01', '2026-07-31')
+    expect(res.status).toBe(200)
+    expect(body.statement.grossBookingsAmountThb).toBe(0)
+  })
+
   it('includes expenses occurring during the final calendar day', async () => {
     await resetDb()
     await setGlobalConfig('finance.statement.service_fee_pct', 0)

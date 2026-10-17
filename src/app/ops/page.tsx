@@ -101,6 +101,9 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
     'staff.ops.add_unit_link': 'Add property →',
     'staff.ops.team_link': 'Project team →',
     'staff.ops.calendar_link': 'Unified calendar →',
+    'staff.ops.housekeeping_link': 'Housekeeping →',
+    'staff.ops.maintenance_link': 'Maintenance →',
+    'staff.ops.reservations_link': 'Reservations →',
     'staff.ops.stays_link': 'Stay operations →',
     'staff.ops.tm30_link': 'TM30 queue →',
     'staff.ops.requests_link': 'Booking requests →',
@@ -298,6 +301,15 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               {labels['staff.ops.team_link']}
             </Link>
 
+            <Link href={opsHref('/ops/housekeeping', validActiveProjectId)} className={navClass}>
+              {labels['staff.ops.housekeeping_link']}
+            </Link>
+            <Link href={opsHref('/ops/maintenance', validActiveProjectId)} className={navClass}>
+              {labels['staff.ops.maintenance_link']}
+            </Link>
+            <Link href={opsHref('/ops/reservations', validActiveProjectId)} className={navClass}>
+              {labels['staff.ops.reservations_link']}
+            </Link>
             <Link href={opsHref('/ops/stays', validActiveProjectId)} className={navClass}>
               {labels['staff.ops.stays_link']}
             </Link>

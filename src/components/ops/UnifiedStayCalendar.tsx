@@ -76,6 +76,7 @@ export default function UnifiedStayCalendar(props: Props) {
   const locale = useLocale();
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [attentionOnly, setAttentionOnly] = useState(false);
   const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
   const [mobileDate, setMobileDate] = useState(
     props.days.includes(props.today) ? props.today : (props.days[0] || props.start)
@@ -135,6 +136,7 @@ export default function UnifiedStayCalendar(props: Props) {
       setMobileDate(props.days.includes(props.today) ? props.today : (props.days[0] || props.start));
     }
   }, [mobileDate, props.days, props.start, props.today]);
+  const visibleRows = attentionOnly ? rows.filter(unit => unit.readiness !== 'ready' || unit.channelState === 'delayed' || unit.channelState === 'error' || (props.cells[unit.id] || []).some(cell => cell.state === 'conflict')) : rows;
   const mobileIndex = Math.max(0, props.days.indexOf(mobileDate));
   let booked=0, available=0, holds=0, conflicts=0;
   for (const unit of rows) for (const cell of props.cells[unit.id] || []) {
@@ -150,7 +152,7 @@ export default function UnifiedStayCalendar(props: Props) {
     [props.labels['staff.unified_calendar.readiness'],String(rows.filter(unit=>unit.readiness!=='ready').length)],
     [props.labels['staff.unified_calendar.arrivals'],String(props.arrivals)],
     [props.labels['staff.unified_calendar.departures'],String(props.departures)]];
-  const channelAttention = rows.filter((unit) => unit.channelState !== 'healthy').length;
+  const channelAttention = rows.filter((unit) => unit.channelState === 'delayed' || unit.channelState === 'error').length;
   const inspect=selected && props.units.find((unit)=>unit.id===selected.unitId);
   return <main className="stitch-workspace p-16 md:p-32">
     <div className="mx-auto max-w-[1600px] space-y-24">
@@ -193,6 +195,11 @@ export default function UnifiedStayCalendar(props: Props) {
       {channelAttention>0 && <div role="alert" className="rounded-md border border-state-warning/40 bg-state-warning-soft p-16 text-text-ink">
         {channelAttention} {props.labels['staff.unified_calendar.channel_warning']}
       </div>}
+      <label className="inline-flex items-center gap-8 text-small font-semibold text-text-ink">
+        <input type="checkbox" checked={attentionOnly} onChange={event=>setAttentionOnly(event.target.checked)}
+          className="h-16 w-16 accent-brand-andaman" />
+        Attention only: conflicts, readiness blockers and channel errors
+      </label>
       <section aria-label="Calendar filters" className="stitch-panel p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">
           <label className="text-small font-semibold text-text-secondary">
@@ -268,7 +275,7 @@ export default function UnifiedStayCalendar(props: Props) {
         </div>
         <div className="space-y-8">
           {rows.length===0 ? <p className="p-12 text-small text-text-secondary">{props.labels['staff.unified_calendar.empty']}</p> :
-            rows.map((unit)=>{
+            visibleRows.map((unit)=>{
               const cell=(props.cells[unit.id]||[])[mobileIndex];
               if (!cell) return null;
               const state=!unit.sellable&&cell.state==='free'
@@ -311,8 +318,8 @@ export default function UnifiedStayCalendar(props: Props) {
               </th>)}
             </tr></thead>
             <tbody>
-              {rows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">{props.labels['staff.unified_calendar.empty']}</td></tr> :
-                rows.map((unit)=><tr key={unit.id}>
+              {visibleRows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">{props.labels['staff.unified_calendar.empty']}</td></tr> :
+                visibleRows.map((unit)=><tr key={unit.id}>
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
                     <span className="block font-semibold text-text-ink">{unit.name}</span>
                     <span className="block text-[11px] font-normal text-text-secondary">{unit.projectName} · {unit.categoryName}</span>

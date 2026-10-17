@@ -301,13 +301,13 @@ export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) 
               {labels['staff.ops.team_link']}
             </Link>
 
-            <Link href={opsHref('/ops/housekeeping', validActiveProjectId)} className={navClass}>
+            <Link href={'/ops/spaces'} className={navClass}>
               {labels['staff.ops.housekeeping_link']}
             </Link>
-            <Link href={opsHref('/ops/maintenance', validActiveProjectId)} className={navClass}>
+            <Link href={'/ops/spaces'} className={navClass}>
               {labels['staff.ops.maintenance_link']}
             </Link>
-            <Link href={opsHref('/ops/reservations', validActiveProjectId)} className={navClass}>
+            <Link href={'/ops/spaces'} className={navClass}>
               {labels['staff.ops.reservations_link']}
             </Link>
             <Link href={opsHref('/ops/stays', validActiveProjectId)} className={navClass}>

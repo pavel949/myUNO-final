@@ -318,7 +318,7 @@ export default function UnifiedStayCalendar(props: Props) {
               </th>)}
             </tr></thead>
             <tbody>
-              {rows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">{props.labels['staff.unified_calendar.empty']}</td></tr> :
+              {visibleRows.length===0 ? <tr><td colSpan={props.days.length+1} className="p-24 text-text-secondary">{props.labels['staff.unified_calendar.empty']}</td></tr> :
                 visibleRows.map((unit)=><tr key={unit.id}>
                   <th scope="row" className="sticky left-0 z-10 border-b border-r border-border-line bg-surface-paper p-12 text-left">
                     <span className="block font-semibold text-text-ink">{unit.name}</span>

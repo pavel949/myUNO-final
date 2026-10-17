@@ -310,7 +310,7 @@ export default async function UnifiedStayCalendarPage({
       sellable: isUnitSellable(unit),
       categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
-      readiness: readinessByUnit[unit.id]?.state ?? 'blocked',
+      readiness: readinessByUnit[unit.id]?.state ?? 'in_progress',
       openTaskCount: readinessByUnit[unit.id]?.openTaskCount ?? 0,
       channelState: channelHealthByUnit[unit.id]?.state ?? 'manual_only',
       channelRows: (channelHealthByUnit[unit.id]?.rows ?? []).map((row) => ({

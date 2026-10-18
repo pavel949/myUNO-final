@@ -11,7 +11,7 @@ vi.mock('next/headers', () => ({ cookies: () => ({ get: () => ({ value: mocks.lo
 vi.mock('next/navigation', () => ({ redirect: (url: string) => { throw new Error(`Redirect:${url}`); } }));
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: async () => mocks.user }));
 vi.mock('@/modules/content', () => ({ tMany: mocks.tMany }));
-vi.mock('@/lib/prisma', () => ({ prisma: {} }));
+vi.mock('@/lib/prisma', () => ({ prisma: { identity: { findUnique: async () => mocks.user ? { status: 'active', isAdmin: mocks.user.isAdmin } : null } } }));
 
 describe('contributor pages and registered Russian copy', () => {
   beforeEach(() => { mocks.user = { identityId: 'employee', isAdmin: false }; mocks.locale = 'ru'; mocks.tMany.mockReset().mockResolvedValue({}); });

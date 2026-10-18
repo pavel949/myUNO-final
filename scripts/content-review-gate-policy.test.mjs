@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateContentReviewGate, isolatedContentBuild } from './content-review-gate-policy.mjs';
+import { contentGateDatabaseUrl, evaluateContentReviewGate, isolatedContentBuild } from './content-review-gate-policy.mjs';
 const prod = { NODE_ENV: 'production', DATABASE_URL: 'postgresql://synthetic:synthetic@localhost/app' };
 const db = count => ({ translation: { count: async () => count } });
 
@@ -33,4 +33,14 @@ test('only disposable local matching test databases may bypass a production comp
 test('development without a database remains usable without claiming content was reviewed', async () => {
   assert.deepEqual(await evaluateContentReviewGate({}, db(0)), { passed: true, state: 'database_missing' });
   assert.equal((await evaluateContentReviewGate({ ...prod, NODE_ENV: 'development' }, db(7))).state, 'review_pending');
+});
+
+test('the build gate connects through the same pooled route as the running app', () => {
+  const resolved = new URL(contentGateDatabaseUrl({ DATABASE_URL: 'postgresql://postgres:synthetic@db.burcnghheyzbzffzgmjz.supabase.co:5432/postgres' }));
+  assert.match(resolved.hostname, /\.pooler\.supabase\.com$/);
+  assert.equal(resolved.port, '5432');
+  assert.equal(resolved.username, 'postgres.burcnghheyzbzffzgmjz');
+  assert.equal(resolved.searchParams.get('sslmode'), 'require');
+  assert.equal(contentGateDatabaseUrl(prod), prod.DATABASE_URL);
+  assert.equal(contentGateDatabaseUrl({}), undefined);
 });

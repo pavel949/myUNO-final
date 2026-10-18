@@ -1,6 +1,6 @@
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import type { PublicProjectCard as PublicProject } from '@/modules/projects';
 import { projectPresentationImage } from '@/lib/presentation-media';
 

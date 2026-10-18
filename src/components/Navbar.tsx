@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import { usePathname } from 'next/navigation';
 import { isStitchWorkspace } from '@/lib/stitch-surface';
 import { Button } from './Button';

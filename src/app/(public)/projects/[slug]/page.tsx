@@ -8,14 +8,14 @@ import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { Metadata } from 'next';
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import { PropertyImage } from '@/components/property/PropertyImage';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
 import { listPublicMarketplaceServices } from '@/modules/services';
 import { getConfig } from '@/modules/config';
-import { t, tMany } from '@/modules/content';
+import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarketplace';
 import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
@@ -37,16 +37,27 @@ export const dynamic = 'force-dynamic';
 // cross-request inventory/permission snapshot.
 const readProject = cache(getPublicProjectBySlug);
 
-/** Resolve a project content key, returning '' when the key has no copy yet. */
-async function resolveKey(key: string | null | undefined): Promise<string> {
-  if (!key) return '';
-  try {
-    const value = await t(prisma, key, undefined, getRequestLocale());
+/** One request-local batch for page copy and metadata, including missing keys. */
+const readProjectCopy = cache(async (project: NonNullable<Awaited<ReturnType<typeof getPublicProjectBySlug>>>, locale: ReturnType<typeof getRequestLocale>) => {
+  const fields = {
+    areaLabel: project.areaLabelKey,
+    story: project.descriptionKey,
+    handbookTeaser: project.handbookKey,
+    houseRules: `project.${project.slug}.house_rules`,
+    shuttleSchedule: `project.${project.slug}.shuttle_schedule`,
+    licenceLine: `project.${project.slug}.licence`,
+  };
+  const keys = Object.values(fields).filter((key): key is string => Boolean(key));
+  const values = await tMany(prisma, keys, locale).catch(() => ({} as Record<string, string | null>));
+  const text = (key: string | null | undefined) => {
+    const value = key ? values[key] : null;
     return value && value !== key && value !== '—' ? value : '';
-  } catch {
-    return '';
-  }
-}
+  };
+  return {
+    areaLabel: text(fields.areaLabel), story: text(fields.story), handbookTeaser: text(fields.handbookTeaser),
+    houseRules: text(fields.houseRules), shuttleSchedule: text(fields.shuttleSchedule), licenceLine: text(fields.licenceLine),
+  };
+});
 
 export async function generateMetadata({
   params,
@@ -57,7 +68,7 @@ export async function generateMetadata({
   // notFound() here (not only in the page body) so the response carries a
   // real 404 status — thrown during page streaming it would soft-404 as 200.
   if (!project) notFound();
-  const description = await resolveKey(project.descriptionKey);
+  const { story: description } = await readProjectCopy(project, getRequestLocale());
   return {
     title: `${project.name} | myUNO`,
     description: description.slice(0, 160) || undefined,
@@ -211,15 +222,11 @@ export default async function ProjectLandingPage({
   }, getRequestLocale(), PROPERTY_PUBLIC_UI_DRAFTS);
 
   const detailsPromise = Promise.all([
-    resolveKey(project.areaLabelKey),
-    resolveKey(project.descriptionKey),
-    resolveKey(project.handbookKey),
-    resolveKey(`project.${project.slug}.house_rules`),
-    resolveKey(`project.${project.slug}.shuttle_schedule`),
+    readProjectCopy(project, getRequestLocale()),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
-    resolveKey(`project.${project.slug}.licence`),
     listPublicCommercialHomes(prisma, undefined, undefined, project.id).catch(() => []),
   ]);
+
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
   const editorialFields = [
@@ -260,7 +267,7 @@ export default async function ProjectLandingPage({
   const [labels, details, galleryLabels, discovery, editorialCopy] = await Promise.all([
     labelsPromise, detailsPromise, getGalleryCopy(), discoveryCopy(locale), editorialCopyPromise, pageViews,
   ]);
-  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = details;
+  const [{ areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, licenceLine }, services, allCommercialHomes] = details;
   const projectCommercialHomes = allCommercialHomes;
   const buyHomeCount = projectCommercialHomes.filter(home => home.intents.includes('buy')).length;
   const rentHomeCount = projectCommercialHomes.filter(home => home.intents.includes('rent')).length;

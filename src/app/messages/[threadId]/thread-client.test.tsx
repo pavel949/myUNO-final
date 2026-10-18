@@ -3,7 +3,11 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import ThreadClient from './thread-client';
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => router }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => router,
+  usePathname: () => '/messages/fixture-thread',
+  useSearchParams: () => new URLSearchParams(),
+}));
 const labels = {
   'messages.thread.loading': 'Loading conversation', 'messages.thread.not_found': 'Conversation not found',
   'messages.thread.error_generic': 'Could not send. Please try again.', 'messages.thread.back': 'Messages',

@@ -35,7 +35,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const userPromise = getCurrentUser();
-  const workspaceContextPromise = userPromise.then(getWorkspaceNavigationContext);
+  const workspaceContextPromise = userPromise.then(user => getWorkspaceNavigationContext(user));
   const locale = getRequestLocale();
 
   const navLabelsPromise = getLabels({

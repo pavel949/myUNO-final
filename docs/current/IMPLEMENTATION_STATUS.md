@@ -100,3 +100,8 @@
 - [Vercel config](../../vercel.json), [workflows](../../.github/workflows)
 
 Повторная проверка после изменения кода: обновить срез, status/evidence, справочник и release evidence. Старое «already fixed» из design/reconciliation не переносится без повторной сверки.
+
+
+## 2026-10-18: вход администратора в редактирование карточек
+
+Вход `/property/content` без выбранного объекта/предложения направляет активного администратора в существующий `/app/admin/projects`, вместо пустого списка назначений сотрудника. Сотрудники сохраняют прежний scoped proposal editor; явные target/proposal deep links не изменены. Новых прав и обхода review нет. Добавлены регрессионные проверки в `src/app/property/workspace-nav.test.tsx`. Это исправление навигации, не подтверждение полной приёмки публикации или готовности production.

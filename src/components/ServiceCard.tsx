@@ -71,7 +71,7 @@ export function ServiceCard({
   );
 
   return href ? (
-    <Link href={href} className="group block h-full min-w-0 overflow-hidden rounded-lg border border-border-line bg-surface-paper transition hover:shadow-card">
+    <Link prefetch={false} href={href} className="group block h-full min-w-0 overflow-hidden rounded-lg border border-border-line bg-surface-paper transition hover:shadow-card">
       {content}
     </Link>
   ) : (

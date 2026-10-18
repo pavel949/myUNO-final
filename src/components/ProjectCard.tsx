@@ -27,7 +27,7 @@ export function ProjectCard({
   const viewHasArrow = /→\s*$/.test(viewLabel);
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/projects/${project.slug}`}
       className={`group relative isolate block h-full min-w-0 overflow-hidden rounded-lg bg-brand-deep shadow-card transition-shadow hover:shadow-float focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
         featured ? 'min-h-[340px] md:min-h-[516px]' : 'min-h-[280px] md:min-h-[250px]'

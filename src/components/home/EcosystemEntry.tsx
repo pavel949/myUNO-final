@@ -58,10 +58,10 @@ export function EcosystemEntry({ places, copy }: { places: PlaceOption[]; copy: 
         <button type="submit" className="min-h-48 rounded-lg bg-brand-andaman px-24 font-semibold text-white">{copy.submit}</button>
       </form>
       {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={copy.matches}>
-        {matches.map((place) => <Link key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? place.slug ? '/projects/' + encodeURIComponent(place.slug) : '/search?projectId=' + encodeURIComponent(place.id) : place.slug ? '/search?areaSlug=' + encodeURIComponent(place.slug) : '/search'}>{place.name}</Link>)}
+        {matches.map((place) => <Link prefetch={false} key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? place.slug ? '/projects/' + encodeURIComponent(place.slug) : '/search?projectId=' + encodeURIComponent(place.id) : place.slug ? '/search?areaSlug=' + encodeURIComponent(place.slug) : '/search'}>{place.name}</Link>)}
       </div>}
       <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">
-        {routes.map((route) => <Link key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
+        {routes.map((route) => <Link prefetch={false} key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
           <div className="flex min-w-0 items-start justify-between gap-4"><span className="min-w-0 break-normal hyphens-none [overflow-wrap:normal] [word-break:normal] text-small font-semibold leading-snug text-text-ink sm:text-body">{route.title}</span><span aria-hidden="true" className="shrink-0 text-brand-andaman">→</span></div>
           <p className="mt-8 hidden text-small leading-relaxed text-text-secondary sm:block">{route.detail}</p>
         </Link>)}

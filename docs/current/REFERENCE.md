@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `c7642f0048df96269f441a59cef9a6678a17a7fe`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `ab4690e039d52671de3079b44109911de708f32d`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 555 |
+| tests | 556 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -1057,6 +1057,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/DataTable.tsx](<../../src/components/DataTable.tsx>)
 - [src/components/DiscoveryHomes.tsx](<../../src/components/DiscoveryHomes.tsx>)
 - [src/components/DiscoverySearch.tsx](<../../src/components/DiscoverySearch.tsx>)
+- [src/components/FeedbackLink.tsx](<../../src/components/FeedbackLink.tsx>)
 - [src/components/FieldLabel.tsx](<../../src/components/FieldLabel.tsx>)
 - [src/components/fieldStyles.ts](<../../src/components/fieldStyles.ts>)
 - [src/components/Footer.tsx](<../../src/components/Footer.tsx>)
@@ -6389,6 +6390,7 @@ model RateLimitBucket {
 - [src/components/Button.test.tsx](<../../src/components/Button.test.tsx>)
 - [src/components/Chip.test.tsx](<../../src/components/Chip.test.tsx>)
 - [src/components/DiscoverySearch.test.tsx](<../../src/components/DiscoverySearch.test.tsx>)
+- [src/components/FeedbackLink.test.tsx](<../../src/components/FeedbackLink.test.tsx>)
 - [src/components/FieldAccessibility.test.tsx](<../../src/components/FieldAccessibility.test.tsx>)
 - [src/components/Input.test.tsx](<../../src/components/Input.test.tsx>)
 - [src/components/LeadForm.test.tsx](<../../src/components/LeadForm.test.tsx>)

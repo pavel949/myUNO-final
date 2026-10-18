@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PropertyWorkspaceNav from './workspace-nav';
+import PropertyContentPage from './content/page';
 
-const h = vi.hoisted(() => ({ actor: vi.fn(), roles: vi.fn(), creation: vi.fn() }));
+const h = vi.hoisted(() => ({ actor: vi.fn(), roles: vi.fn(), creation: vi.fn(), user: vi.fn(), redirect: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({ prisma: { identity: { findUnique: h.actor }, roleAssignment: { findMany: h.roles } } }));
 vi.mock('@/modules/onboarding/employee-creation.service', () => ({ createEmployeeCreationService: () => ({ list: h.creation }) }));
-vi.mock('@/lib/i18n', () => ({ getLabels: async (defaults: Record<string, string>) => defaults }));
+vi.mock('@/lib/i18n', () => ({ getLabels: async (defaults: Record<string, string>) => defaults, getRequestLocale: () => 'en' }));
+vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: h.user }));
+vi.mock('next/navigation', () => ({ redirect: h.redirect }));
+vi.mock('./content/content-client', () => ({ default: () => null }));
 vi.mock('next/link', () => ({ default: 'a' }));
 const grant = (role: 'content_contributor' | 'pricing_editor' | 'booking_mode_editor') => ({
   id: 'grant-' + role, parentGrantId: null, parentGrant: null, canDelegate: false, expiresAt: null, role, identityId: 'employee', status: 'active', scopeType: 'unit', projectId: 'project-a', unitId: 'unit-a',
@@ -57,5 +61,39 @@ describe('independent employee workspace navigation', () => {
   it('shows admin destinations without fabricating employee assignments', async () => {
     h.actor.mockResolvedValue({ status: 'active', isAdmin: true }); await show();
     expect(screen.getAllByRole('link')).toHaveLength(4);
+  });
+});
+
+describe('property content entry routing', () => {
+  beforeEach(() => {
+    h.user.mockResolvedValue({ identityId: 'employee' });
+    h.redirect.mockImplementation((url: string) => { throw new Error('REDIRECT:' + url); });
+  });
+  it('routes an active admin to the existing canonical project editors', async () => {
+    h.actor.mockResolvedValue({ status: 'active', isAdmin: true });
+    await expect(PropertyContentPage({})).rejects.toThrow('REDIRECT:/app/admin/projects');
+  });
+  it('keeps the scoped employee proposal editor', async () => {
+    const page = await PropertyContentPage({});
+    expect(page).toBeTruthy();
+    expect(h.redirect).not.toHaveBeenCalled();
+  });
+  it('does not route a blocked identity into admin editors', async () => {
+    h.actor.mockResolvedValue({ status: 'blocked', isAdmin: true });
+    await PropertyContentPage({});
+    expect(h.redirect).not.toHaveBeenCalled();
+  });
+  it('preserves explicit target and proposal deep links', async () => {
+    h.actor.mockResolvedValue({ status: 'active', isAdmin: true });
+    const page = await PropertyContentPage({ searchParams: { scope: 'unit', targetId: 'unit-a', proposalId: 'proposal-a' } });
+    expect(page.props.children[1].props.initialTarget).toEqual({ scope: 'unit', id: 'unit-a' });
+    expect(page.props.children[1].props.initialProposalId).toBe('proposal-a');
+    expect(h.redirect).not.toHaveBeenCalled();
+  });
+  it('preserves login return context for a signed-out visitor', async () => {
+    h.user.mockResolvedValue(null);
+    await expect(PropertyContentPage({ searchParams: { scope: 'unit', targetId: 'unit-a' } }))
+      .rejects.toThrow('REDIRECT:/login?next=');
+    expect(h.actor).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,18 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ScopedGalleryEditor from './ScopedGalleryEditor';
+import { PhotoUploadError } from '@/modules/media/client-upload';
+const uploads = vi.hoisted(() => ({ upload: vi.fn(), finalize: vi.fn() }));
+vi.mock('@/modules/media/client-upload', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/media/client-upload')>(),
+  uploadPhoto: uploads.upload, finalizePhoto: uploads.finalize,
+}));
+beforeEach(() => {
+  uploads.upload.mockReset().mockResolvedValue({ mediaAssetId: 'media-1', url: 'https://example.com/test.jpg' });
+  uploads.finalize.mockReset().mockResolvedValue({ mediaAssetId: 'media-1', url: 'https://example.com/test.jpg' });
+});
 import { galleryCopyLabelsForLocale, GALLERY_COPY_KEYS } from '@/modules/content/gallery-editor.seed';
 
 const labels: Record<string,string> = {
@@ -51,7 +61,6 @@ describe('three-level gallery editor',()=>{
  it('reports attach failure rather than a false success message',async()=>{
   const fetchMock=vi.fn()
    .mockResolvedValueOnce(empty)
-   .mockResolvedValueOnce({ok:true,json:async()=>({mediaAssetId:'media-1'})})
    .mockResolvedValueOnce({ok:false,json:async()=>({error:'Attachment denied'})});
   vi.stubGlobal('fetch',fetchMock);
   render(<ScopedGalleryEditor {...props}/>);
@@ -348,5 +357,53 @@ describe('scoped gallery route navigation', () => {
   expect(fetchMock.mock.calls.filter(([, options]) => options?.method)).toEqual([
    [`${unitA}?mediaId=a`, { method: 'DELETE', headers: undefined, body: undefined }],
   ]);
+ });
+});
+
+describe('direct transport for large admin gallery photos', () => {
+ afterEach(() => vi.unstubAllGlobals());
+ it.each([
+  ['project:project-1', 'project', 'project-1', '/api/admin/projects/project-1/media'],
+  ['category:cat-1', 'project', 'project-1', '/api/admin/categories/cat-1/media'],
+  ['unit:unit-1', 'unit', 'unit-1', '/api/admin/units/unit-1/media'],
+ ])('uses scoped direct transport for %s without proxying file bytes', async (selection, scope, targetId, endpoint) => {
+  const fetchMock = vi.fn().mockResolvedValue(empty);
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ScopedGalleryEditor {...props} initialSelection={selection} />);
+  await screen.findByText('No photos');
+  const file = new File([new Uint8Array(5 * 1024 * 1024)], 'large.png', { type: 'image/png' });
+  fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [file] } });
+  await screen.findByText('Gallery saved');
+  expect(uploads.upload).toHaveBeenCalledWith(file, { scope, targetId }, expect.objectContaining({ signal: expect.any(AbortSignal), onPending: expect.any(Function) }));
+  expect(fetchMock).toHaveBeenCalledWith(endpoint, {
+   method: 'POST', headers: { 'Content-Type': 'application/json' },
+   body: JSON.stringify({ mediaAssetId: 'media-1', cover: true }),
+  });
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/media/upload')).toBe(false);
+ });
+ it('recovers uncertain finalization using the original intent without another byte transfer', async () => {
+  const pending = { scope: 'project', targetId: 'project-1', intent: 'test-intent' };
+  uploads.upload.mockImplementation(async (_file, _target, options) => {
+   options.onPending(pending);
+   throw new PhotoUploadError('upload_finalize_uncertain');
+  });
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(empty));
+  render(<ScopedGalleryEditor {...props} />);
+  await screen.findByText('No photos');
+  fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [new File(['test'], 'photo.png', { type: 'image/png' })] } });
+  await screen.findByText('Gallery saved');
+  expect(uploads.upload).toHaveBeenCalledTimes(1);
+  expect(uploads.finalize).toHaveBeenCalledWith(pending, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+ });
+ it('does not attach an asset when direct upload is denied', async () => {
+  uploads.upload.mockRejectedValue(new PhotoUploadError('forbidden'));
+  const fetchMock = vi.fn().mockResolvedValue(empty);
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ScopedGalleryEditor {...props} />);
+  await screen.findByText('No photos');
+  fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [new File(['test'], 'photo.png', { type: 'image/png' })] } });
+  await screen.findByText('Upload failed');
+  expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
+  expect(uploads.finalize).not.toHaveBeenCalled();
  });
 });

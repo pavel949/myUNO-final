@@ -109,6 +109,24 @@ async function verifyPrefix(fetcher: typeof fetch, url: string, intent: DirectUp
 const ASSET_SELECT = { id: true, storageKey: true, uploadedByIdentityId: true, kind: true,
   mimeType: true, sizeBytes: true, encrypted: true, deleteAfter: true } as const;
 
+/** Same existing administrator authority as the gallery writers; no new grants.
+ * Contributor uploads retain their exact assigned target policy.
+ */
+async function authorizeDirectTarget(tx: Prisma.TransactionClient, actorId: string, scope: 'unit' | 'project', id: string) {
+  const actor = await tx.identity.findUnique({ where: { id: actorId }, select: { status: true, isAdmin: true } });
+  if (actor?.status !== 'active' || !actor.isAdmin) return authorizeContentTargetTx(tx, actorId, scope, id, true);
+  if (scope === 'unit') {
+    await tx.$queryRaw`SELECT id FROM unit WHERE id = ${id} FOR SHARE`;
+    const unit = await tx.unit.findUnique({ where: { id }, select: { projectId: true } });
+    if (!unit) return uploadFailure(404, 'Content target not found.');
+    return { projectId: unit.projectId };
+  }
+  await tx.$queryRaw`SELECT id FROM project WHERE id = ${id} FOR SHARE`;
+  const project = await tx.project.findUnique({ where: { id }, select: { id: true } });
+  if (!project) return uploadFailure(404, 'Content target not found.');
+  return { projectId: project.id };
+}
+
 /** Public content photos only. Never attaches media, approves content or publishes. */
 export function createDirectUploadService(db: PrismaClient, deps: DirectUploadDependencies = {}) {
   const configuration = deps.config ?? directUploadConfig;
@@ -121,7 +139,7 @@ export function createDirectUploadService(db: PrismaClient, deps: DirectUploadDe
       const configured = configuration();
       const config = { ...configured, storeId: normalizeStore(configured.storeId).toLowerCase() };
       if (input.action === 'initiate') {
-        const target = await serializable(db, tx => authorizeContentTargetTx(tx, actorId, input.scope, input.targetId, true));
+        const target = await serializable(db, tx => authorizeDirectTarget(tx, actorId, input.scope, input.targetId));
         const issuedAt = now(), requestedUntil = issuedAt + DIRECT_UPLOAD_TTL_MS;
         const pathname = photoPath((deps.uuid ?? randomUUID)(), input.mimeType);
         let uploadUrl: string, uploadUntil: number;
@@ -143,7 +161,7 @@ export function createDirectUploadService(db: PrismaClient, deps: DirectUploadDe
       const intent = verifyDirectUploadIntent(input.intent, config.secret, now());
       bindCurrent(intent, actorId, config);
       const authorize = async (tx: Prisma.TransactionClient) => {
-        const target = await authorizeContentTargetTx(tx, actorId, intent.scope, intent.targetId, true);
+        const target = await authorizeDirectTarget(tx, actorId, intent.scope, intent.targetId);
         if (target.projectId !== intent.projectId) return uploadFailure(409, 'The content target changed.');
       };
       // Reject revoked users before a storage request, then check again under the

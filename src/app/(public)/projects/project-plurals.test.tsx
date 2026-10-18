@@ -1,17 +1,19 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ count: 1 }));
+// Next's server React supplies cache(); the client React used by jsdom does not.
+vi.mock('react', async (original) => ({ ...(await original<typeof import('react')>()), cache: <T,>(fn: T) => fn }));
+const state = vi.hoisted(() => ({ count: 1, labelsGate: null as Promise<void> | null, services: vi.fn(async () => []), singleCopy: vi.fn(async () => ''), batchCopy: vi.fn(async () => ({})) }));
 vi.mock('@/modules/projects', () => ({ getPublicProjectBySlug: async () => ({
   id: 'synthetic-project', name: 'Synthetic project', slug: 'synthetic-project', address: 'Synthetic address',
   categories: [{ id: 'synthetic-category', key: 'synthetic', name: 'Synthetic category', unitCount: state.count, galleryUrls: [], bedrooms: null, fromNightlyThb: null, monthlyFromThb: null }],
   units: [], amenities: [], nearbyPlaces: [], reviews: { count: 0 }, galleryUrls: [],
 }) }));
-vi.mock('@/lib/i18n', () => ({ getRequestLocale: () => 'ru', getLabels: async (labels: Record<string, string>) => ({ ...labels,
+vi.mock('@/lib/i18n', () => ({ getRequestLocale: () => 'ru', getLabels: async (labels: Record<string, string>) => { await state.labelsGate; return ({ ...labels,
   'project_page.categories.homes_count': '{count} объектов', 'project_category.available': '{count} объектов',
-}) }));
-vi.mock('@/modules/content', () => ({ t: async () => '', tMany: async () => ({}) }));
+}); } }));
+vi.mock('@/modules/content', () => ({ t: state.singleCopy, tMany: state.batchCopy }));
 vi.mock('@/lib/prisma', () => ({ prisma: {} }));
-vi.mock('@/modules/services', () => ({ listPublicMarketplaceServices: async () => [] }));
+vi.mock('@/modules/services', () => ({ listPublicMarketplaceServices: state.services }));
 vi.mock('@/modules/config', () => ({ getConfig: async () => null }));
 vi.mock('@/modules/analytics', () => ({ track: async () => undefined }));
 vi.mock('@/modules/destinations', () => ({ getDestination: () => ({ key: 'synthetic' }) }));
@@ -38,5 +40,25 @@ describe('rendered project category property counts', () => {
     expect(project).toContain('/projects/synthetic-project/categories/synthetic?');
     expect(category).toContain(`>${count} ${noun}<`);
     expect(category).toContain('Synthetic category');
+  });
+});
+
+
+describe('project read scheduling', () => {
+  it('starts services and batched category copy while labels are still pending', async () => {
+    let release!: () => void;
+    state.labelsGate = new Promise<void>(resolve => { release = resolve; });
+    state.services.mockClear(); state.batchCopy.mockClear(); state.singleCopy.mockClear();
+    const pending = ProjectLandingPage({ params: { slug: 'synthetic-project' } });
+    try {
+      await vi.waitFor(() => expect(state.services).toHaveBeenCalledTimes(1));
+      expect(state.batchCopy).toHaveBeenCalledWith({}, expect.arrayContaining([
+        'catalog.unit_categories.synthetic.label',
+      ]), 'ru');
+      expect(state.singleCopy).not.toHaveBeenCalledWith({}, 'catalog.unit_categories.synthetic.label', undefined, 'ru');
+    } finally {
+      release(); state.labelsGate = null;
+      await pending;
+    }
   });
 });

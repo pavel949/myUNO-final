@@ -50,7 +50,7 @@ export default async function LandingPage({
   const activeDestination = getDestination();
   const initialIntent = parseHomeIntent(searchParams?.intent);
 
-  await track(prisma, 'page_landing_viewed', {
+  const pageView = track(prisma, 'page_landing_viewed', {
     locale,
     destination: activeDestination.key,
   }).catch(() => null);
@@ -214,6 +214,7 @@ export default async function LandingPage({
       'landing.hp.help.trust': 'How we verify information',
     }),
     getPublicHomepageData(locale),
+    pageView,
   ]);
 
   const { projects, commercialHomes, services, stayUnits, areas, placeAreas, placeUnits } = homepageData;

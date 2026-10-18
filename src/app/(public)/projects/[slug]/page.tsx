@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getGalleryCopy } from '@/lib/gallery-copy';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
@@ -32,6 +33,10 @@ import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
+// React cache is request-scoped: metadata and page share a read, never a stale
+// cross-request inventory/permission snapshot.
+const readProject = cache(getPublicProjectBySlug);
+
 /** Resolve a project content key, returning '' when the key has no copy yet. */
 async function resolveKey(key: string | null | undefined): Promise<string> {
   if (!key) return '';
@@ -48,7 +53,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
+  const project = await readProject(params.slug, getRequestLocale());
   // notFound() here (not only in the page body) so the response carries a
   // real 404 status — thrown during page streaming it would soft-404 as 200.
   if (!project) notFound();
@@ -71,7 +76,7 @@ export default async function ProjectLandingPage({
   params: { slug: string };
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
+  const project = await readProject(params.slug, getRequestLocale());
   if (!project) notFound();
 
   const viewer = await getCurrentUser().catch(() => null);
@@ -93,7 +98,7 @@ export default async function ProjectLandingPage({
     locale: getRequestLocale(),
     source: 'project_portal',
   };
-  await Promise.all([
+  const pageViews = Promise.all([
     track(prisma, 'page_project_viewed', projectEventDimensions),
     track(prisma, 'project_opened', projectEventDimensions),
   ]).catch(() => null);
@@ -109,7 +114,7 @@ export default async function ProjectLandingPage({
       ])
   );
 
-  const labels = await getLabels({
+  const labelsPromise = getLabels({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
@@ -205,7 +210,7 @@ export default async function ProjectLandingPage({
     ...serviceCategoryLabels,
   }, getRequestLocale(), PROPERTY_PUBLIC_UI_DRAFTS);
 
-  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = await Promise.all([
+  const detailsPromise = Promise.all([
     resolveKey(project.areaLabelKey),
     resolveKey(project.descriptionKey),
     resolveKey(project.handbookKey),
@@ -215,13 +220,6 @@ export default async function ProjectLandingPage({
     resolveKey(`project.${project.slug}.licence`),
     listPublicCommercialHomes(prisma, undefined, undefined, project.id).catch(() => []),
   ]);
-  const projectCommercialHomes = allCommercialHomes;
-  const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
-  const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
-  const galleryLabels = await getGalleryCopy();
-  const context = discoveryContext(searchParams, { projectId: project.id });
-  const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
-
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
   const editorialFields = [
@@ -234,7 +232,7 @@ export default async function ProjectLandingPage({
   ] as const;
   const editorialPrefix = `project.${project.slug}.editorial.`;
   const locale = getRequestLocale();
-  const discovery = await discoveryCopy(locale);
+
   const editorialKeys = editorialFields.map(field => editorialPrefix + field);
   const categoryDescriptionKeys = project.categories.flatMap(category => [category.titleKey, category.descriptionKey]);
   const unitEditorialKeys = project.units.flatMap(unit =>
@@ -246,7 +244,12 @@ export default async function ProjectLandingPage({
       .filter(feature => /^[a-z0-9_]+$/.test(feature))
       .map(feature => `catalog.unit_features.${feature}.label`),
   ]);
-  const editorialCopy = await tMany(prisma, [
+  const categoryKeys = project.categories.flatMap(c => [
+    `catalog.unit_categories.${c.key}.label`,
+    ...(c.styleKey ? [`catalog.styles.${c.styleKey}.label`] : []),
+  ]);
+  const editorialCopyPromise = tMany(prisma, [
+    ...categoryKeys,
     ...editorialKeys,
     ...categoryDescriptionKeys,
     ...unitEditorialKeys,
@@ -254,6 +257,16 @@ export default async function ProjectLandingPage({
     ...(project.areaNameKey ? [project.areaNameKey] : []),
     ...(project.areaDescriptionKey ? [project.areaDescriptionKey] : []),
   ], locale);
+  const [labels, details, galleryLabels, discovery, editorialCopy] = await Promise.all([
+    labelsPromise, detailsPromise, getGalleryCopy(), discoveryCopy(locale), editorialCopyPromise, pageViews,
+  ]);
+  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = details;
+  const projectCommercialHomes = allCommercialHomes;
+  const buyHomeCount = projectCommercialHomes.filter(home => home.intents.includes('buy')).length;
+  const rentHomeCount = projectCommercialHomes.filter(home => home.intents.includes('rent')).length;
+  const context = discoveryContext(searchParams, { projectId: project.id });
+  const bookableStayCount = project.units.filter(unit => unit.bookable).length;
+
   const copy = (field: string) => editorialCopy[editorialPrefix + field] || '';
   const editorial = {
     eyebrow: copy('eyebrow'), headline: copy('headline'), lead: copy('lead'),
@@ -273,9 +286,9 @@ export default async function ProjectLandingPage({
   const categoryLabels: Record<string, string> = {};
   const styleLabels: Record<string, string> = {};
   for (const c of project.categories) {
-    categoryLabels[c.key] = await resolveKey(`catalog.unit_categories.${c.key}.label`);
+    categoryLabels[c.key] = editorialCopy[`catalog.unit_categories.${c.key}.label`] || '';
     if (c.styleKey && !(c.styleKey in styleLabels)) {
-      styleLabels[c.styleKey] = await resolveKey(`catalog.styles.${c.styleKey}.label`);
+      styleLabels[c.styleKey] = editorialCopy[`catalog.styles.${c.styleKey}.label`] || '';
     }
   }
   const styleKeys = [...new Set(project.categories.map((c) => c.styleKey).filter(Boolean))] as string[];

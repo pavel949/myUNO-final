@@ -34,10 +34,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const userPromise = getCurrentUser();
+  const workspaceContextPromise = userPromise.then(getWorkspaceNavigationContext);
   const locale = getRequestLocale();
 
-  const navLabels = await getLabels({
+  const navLabelsPromise = getLabels({
     'nav.find_stay': 'Stay',
     'nav.monthly': 'Monthly',
     'nav.buy': 'Buy',
@@ -91,18 +92,9 @@ export default async function RootLayout({
     'nav.account_home': 'Account',
   });
 
-  const workspaceContext = await getWorkspaceNavigationContext(user);
-  const workspaceLabels = await getLabels(WORKSPACE_NAVIGATION_LABELS, locale, WORKSPACE_NAVIGATION_DRAFTS);
-  const roleLinks = [
-    ...workspaceContext.propertyOptions,
-    ...workspaceContext.serviceOptions,
-    ...workspaceContext.personalLinks,
-    ...(workspaceContext.controlPlane ? [workspaceContext.controlPlane] : []),
-  ].filter(surface => surface.href !== '/trips')
-    .filter((surface, index, all) => all.findIndex(item => item.href === surface.href) === index)
-    .map(surface => ({ href: surface.href, label: workspaceLabels[surface.labelKey] + ('scopeName' in surface && surface.scopeName ? ` · ${surface.scopeName}` : '') }));
+  const workspaceLabelsPromise = getLabels(WORKSPACE_NAVIGATION_LABELS, locale, WORKSPACE_NAVIGATION_DRAFTS);
 
-  const footerLabels = await getLabels({
+  const footerLabelsPromise = getLabels({
     'nav.footer.brand_name': 'myUNO',
     'nav.footer.brand_tagline': `Property, stays and services connected across ${destination.name}.`,
     'nav.footer.brand_column': 'Explore',
@@ -138,6 +130,19 @@ export default async function RootLayout({
       'Ignatev Estate Co., Ltd · DBD 083-5-56602358-7 · Pavel Ignatev · pavel@ignatevestate.com',
     'nav.footer.copyright': '© 2026 myUNO. All rights reserved.',
   });
+
+  // Independent shell reads run together; authority is still resolved fresh per request.
+  const [user, workspaceContext, navLabels, workspaceLabels, footerLabels] = await Promise.all([
+    userPromise, workspaceContextPromise, navLabelsPromise, workspaceLabelsPromise, footerLabelsPromise,
+  ]);
+  const roleLinks = [
+    ...workspaceContext.propertyOptions,
+    ...workspaceContext.serviceOptions,
+    ...workspaceContext.personalLinks,
+    ...(workspaceContext.controlPlane ? [workspaceContext.controlPlane] : []),
+  ].filter(surface => surface.href !== '/trips')
+    .filter((surface, index, all) => all.findIndex(item => item.href === surface.href) === index)
+    .map(surface => ({ href: surface.href, label: workspaceLabels[surface.labelKey] + ('scopeName' in surface && surface.scopeName ? ` · ${surface.scopeName}` : '') }));
 
   return (
     <html lang={locale}>

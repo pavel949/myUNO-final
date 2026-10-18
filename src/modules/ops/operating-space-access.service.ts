@@ -151,6 +151,19 @@ export async function getOperatingSpaceOverviewAccess(db: Db, identityId: string
   const dailyCapabilities = OPERATING_SPACE_CAPABILITIES.filter(cap => !isOperatingCreationCapability(cap));
   const capabilities = actor.isAdmin ? dailyCapabilities :
     dailyCapabilities.filter(cap => membership!.capabilities.includes(cap));
+  // Admin scope is independent of department. Resolve the canonical intersection
+  // once, rather than repeating the same database reads for all 13 capabilities
+  // on every root-layout render. This is invocation-local, never an auth cache.
+  if (actor.isAdmin) {
+    const access = await getScopedOperationalAccess(db, identityId, spaceId, 'view_calendar', CAPABILITY_DEPARTMENTS.view_calendar);
+    // A role changed during the read: fail closed rather than reuse staff scope
+    // as administrative authority for unrelated capabilities.
+    if (!access.isAdmin) throw new OperatingAccessError('Authority changed; reload the workspace');
+    return {
+      space: access.space, unitIds: access.unitIds, isAdmin: true,
+      byCapability: Object.fromEntries(dailyCapabilities.map(capability => [capability, [...access.unitIds]])) as Partial<Record<OperatingSpaceCapability, string[]>>,
+    };
+  }
   const byCapability: Partial<Record<OperatingSpaceCapability, string[]>> = {};
   let space: Awaited<ReturnType<typeof getScopedOperationalAccess>>['space'] | undefined;
   for (const capability of capabilities) {

@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `667124f718085141232a3dbbc63a9a3b64978dcd`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `c7642f0048df96269f441a59cef9a6678a17a7fe`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 554 |
+| tests | 555 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -852,7 +852,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### ops
 
-Файлов: 35; тестовых файлов: 18. [Описание](../../src/modules/ops/README.md).
+Файлов: 36; тестовых файлов: 19. [Описание](../../src/modules/ops/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -6659,6 +6659,7 @@ model RateLimitBucket {
 - [src/modules/ops/operating-creation-governance.test.ts](<../../src/modules/ops/operating-creation-governance.test.ts>)
 - [src/modules/ops/operating-space-access.integration.test.ts](<../../src/modules/ops/operating-space-access.integration.test.ts>)
 - [src/modules/ops/operating-space-governance.integration.test.ts](<../../src/modules/ops/operating-space-governance.integration.test.ts>)
+- [src/modules/ops/operating-space-overview-performance.test.ts](<../../src/modules/ops/operating-space-overview-performance.test.ts>)
 - [src/modules/ops/operating-space.schema.test.ts](<../../src/modules/ops/operating-space.schema.test.ts>)
 - [src/modules/ops/operational-task-concurrency.integration.test.ts](<../../src/modules/ops/operational-task-concurrency.integration.test.ts>)
 - [src/modules/ops/operational-task.schema.test.ts](<../../src/modules/ops/operational-task.schema.test.ts>)

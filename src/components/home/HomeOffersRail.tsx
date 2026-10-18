@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { formatPropertyCount } from '@/lib/property-count';
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import { useHomeIntent } from './HomeIntentProvider';
 import { HOME_INTENTS, homeCatalogHref, type HomeIntent } from './home-intent';
 import { deviceClass, trackPublicInteraction } from '@/components/public-analytics';

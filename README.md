@@ -42,7 +42,7 @@ myUNO объединяет поиск жилья, прямое брониров�
 | Карта | MapLibre GL 4.7.1; поиск мест в `src/lib/place-search.ts` |
 | Данные | PostgreSQL через Prisma 5; Supabase используется как PostgreSQL, без Supabase JS/Auth SDK |
 | Авторизация | Собственные Identity/AuthAccount, bcrypt, signed session cookies, Google OAuth |
-| Деплой | **Vercel**, `vercel.json`, функции `sin1` |
+| Деплой | **Vercel**, `vercel.json`, функции `bom1` |
 | Файлы | Vercel Blob; внешние разрешённые фото отдельно перечислены в `next.config.js` |
 | Email | Resend через HTTP adapter |
 | Оплаты | Cash/transfer accounting; Opn adapter; mock только для разработки |

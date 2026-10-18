@@ -6,7 +6,7 @@
 
 Репозиторий `pavel949/myUNO-final`; production branch `main`; известный адрес [my-uno-final.vercel.app](https://my-uno-final.vercel.app). Адрес не подтверждает актуальный deployment SHA.
 
-`vercel.json`: install `npm ci`, build `npm run build`, output `.next`, functions region `sin1`, **git.deploymentEnabled=false**. Автоматическая публикация после push/merge отключена. Preview также создаётся явным Vercel deployment и получает отдельную БД/секреты.
+`vercel.json`: install `npm ci`, build `npm run build`, output `.next`, functions region `bom1`, **git.deploymentEnabled=false**. Автоматическая публикация после push/merge отключена. Preview также создаётся явным Vercel deployment и получает отдельную БД/секреты.
 
 `postinstall`: только Prisma generate. Build: Prisma generate → content review gate → Next production build. Никакого автоматического migration repair или schema rollout. Content gate теперь fail-closed в production при отсутствующей/недоступной БД или needs_review; production bypass запрещён. Исключение разрешено только explicit isolated CI с совпадающими DATABASE_URL/DATABASE_URL_TEST на loopback/test DB, без VERCEL_ENV/VERCEL_TARGET_ENV. Server rendering также может обращаться к БД; поведение сборки без БД проверять отдельно.
 
@@ -128,3 +128,12 @@ Read-only probes на main0286152c: [configured38936441214](https://github.com/p
 
 
 Фактический итог R22: [preflight38940368573](https://github.com/pavel949/myUNO-final/actions/runs/38940368573) на reviewed main53634204 — route metadata passed, endpointaws-1-ap-south-1.pooler.supabase.com:5432, ledger_read P1001/network_unreachable; backup/migrate skipped. Это не доказывает неверный пароль и не устраняет runner connectivity. Нужна защищённая проверка действующей migration connection/auth/TLS/доступности; не извлекать Vercel credentials, не сбрасывать пароль, не обходить workflow и не ремонтировать ledger. Полные PR/main CI6005 tests/554 files,12 policy/preflight checks и Chromium passed. Итоговая оценка8.5/10 код,5/10 production; полноценный deployment и live acceptance остаются открытыми.
+
+
+## Локальность базы и функций (18 октября 2026)
+
+Функции выполняются в `bom1` (Mumbai), рядом с действующим Supabase-проектом MyUno-final (`ap-south-1`). Ранее функции `sin1` обращались к базе через другой регион. Это настройка выполнения существующего приложения, не перенос базы, не репликация и не увеличение пула соединений. Статические ресурсы продолжают обслуживаться CDN. Изменение требует отдельного production deployment; одного merge недостаточно.
+
+Проверка: точный SHA deployment, состояние Ready, регион Mumbai в журнале реального запроса и время ответа для главной → комплекса → юнита в той же сессии. Сравнивать несколько наблюдений, не выдавать один запрос за SLA. Откат: вернуть предыдущий production deployment; настройки и данные базы не меняются.
+
+Официальная рекомендация: https://vercel.com/docs/functions/configuring-functions/region .

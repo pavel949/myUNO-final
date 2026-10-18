@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { PrismaClient } from '@prisma/client';
-import { evaluateContentReviewGate } from './content-review-gate-policy.mjs';
+import { contentGateDatabaseUrl, evaluateContentReviewGate } from './content-review-gate-policy.mjs';
 
-const prisma = new PrismaClient();
+const url = contentGateDatabaseUrl(process.env);
+const prisma = new PrismaClient(url ? { datasources: { db: { url } } } : undefined);
 try {
   const result = await evaluateContentReviewGate(process.env, prisma);
   // Status/count only. Driver exceptions and editable translation values may contain secrets or private text.

@@ -89,7 +89,7 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
           </h2>
           <p className="mt-12 max-w-xl text-body text-text-secondary">{labels.body[intent]}</p>
         </div>
-        <Link href={catalogHref} className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
+        <Link prefetch={false} href={catalogHref} className="shrink-0 text-body font-semibold text-brand-andaman hover:underline">
           {labels.cta[intent]} →
         </Link>
       </div>
@@ -115,7 +115,7 @@ export function HomeOffersRail({ items, labels }: { items: HomeOfferItem[]; labe
       {visible.length ? (
         <div className="-mx-20 flex snap-x gap-16 overflow-x-auto px-20 pb-8 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-3">
           {visible.map((item) => (
-            <Link
+            <Link prefetch={false}
               key={item.key}
               href={contextualHref(item)}
               onClick={() => trackPublicInteraction('result_opened', {

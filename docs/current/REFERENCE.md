@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `45e8c36e0fbc173af5c96264aa108069a349d16c`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `667124f718085141232a3dbbc63a9a3b64978dcd`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 553 |
+| tests | 554 |
 | prismaModels | 118 |
 | migrations | 94 |
 | routeCollisions | 0 |
@@ -6407,6 +6407,7 @@ model RateLimitBucket {
 - [src/components/home/HomeOffersRail.plurals.test.tsx](<../../src/components/home/HomeOffersRail.plurals.test.tsx>)
 - [src/components/instay/ActiveOrdersList.test.tsx](<../../src/components/instay/ActiveOrdersList.test.tsx>)
 - [src/components/instay/ServicesRail.test.tsx](<../../src/components/instay/ServicesRail.test.tsx>)
+- [src/components/navigation-prefetch.test.ts](<../../src/components/navigation-prefetch.test.ts>)
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)

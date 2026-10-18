@@ -178,19 +178,19 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     return (
       <header ref={headerRef} className="sticky top-0 z-50 border-b border-border-line bg-surface-ivory/95 backdrop-blur-xl">
         <nav aria-label={labels.myUno} className="flex h-64 items-center justify-between gap-12 px-16 md:px-24">
-          <Link href="/" className="font-sans text-title font-bold tracking-tight text-brand-andaman">myUNO</Link>
+          <Link prefetch={false} href="/" className="font-sans text-title font-bold tracking-tight text-brand-andaman">myUNO</Link>
           <div className="flex min-w-0 items-center gap-8 md:gap-12">
             <LocaleSwitcher locale={locale} ariaLabel={labels.language} optionLabels={localeOptions} />
             {user ? <>
               <details className="relative min-w-0">
                 <summary className="max-w-[96px] sm:max-w-[180px] cursor-pointer truncate rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-brand-andaman">{user.firstName}</summary>
                 <div className="absolute right-0 top-full z-50 mt-8 flex max-h-[70vh] min-w-[240px] flex-col gap-4 overflow-y-auto rounded-lg border border-border-line bg-surface-paper p-12 shadow-float">
-                  {userLinks.map(link => <Link key={link.href} href={link.href} className="stitch-list-row text-small">{link.label}</Link>)}
+                  {userLinks.map(link => <Link prefetch={false} key={link.href} href={link.href} className="stitch-list-row text-small">{link.label}</Link>)}
                   <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={loggingOut}>{labels.logout}</Button>
                 </div>
               </details>
               <NotificationBell labels={bellLabels} />
-            </> : <Link href="/login" className="text-small font-semibold text-brand-andaman">{labels.login}</Link>}
+            </> : <Link prefetch={false} href="/login" className="text-small font-semibold text-brand-andaman">{labels.login}</Link>}
           </div>
         </nav>
       </header>
@@ -201,7 +201,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     <header ref={headerRef} className="sticky top-0 z-40 border-b border-border-line bg-surface-ivory/85 backdrop-blur-xl">
       <nav className="mx-auto flex min-h-64 max-w-7xl items-center justify-between gap-16 px-20 py-8 md:px-32">
         <div className="flex min-w-0 items-center gap-32 xl:gap-40">
-          <Link
+          <Link prefetch={false}
             href="/"
             className="shrink-0 font-display text-heading-3 font-bold tracking-[-0.02em] text-brand-andaman"
             onClick={closeMenu}
@@ -216,14 +216,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </summary>
               <div className="absolute left-0 top-full z-50 mt-12 grid min-w-[220px] gap-12 rounded-md border border-border-line bg-surface-paper p-16 shadow-float">
                 {rentLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                  <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                     {link.label}
                   </Link>
                 ))}
               </div>
             </details>
             {primaryLinks.filter((link) => link.label !== labels.myUno).map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.activeBase || link.href)}
@@ -237,14 +237,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </summary>
               <div className="absolute left-0 top-full z-50 mt-12 grid min-w-[250px] gap-12 rounded-md border border-border-line bg-surface-paper p-16 shadow-float">
                 {ownerLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                  <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                     {link.label}
                   </Link>
                 ))}
               </div>
             </details>
             {primaryLinks.filter((link) => link.label === labels.myUno).map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.activeBase || link.href)}
@@ -262,14 +262,14 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             </summary>
             <div className="absolute right-0 top-full z-50 mt-12 grid min-w-[260px] gap-12 rounded-md border border-border-line bg-surface-paper p-20 shadow-float">
               {exploreLinks.map((link) => (
-                <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                   {link.label}
                 </Link>
               ))}
               <div className="mt-4 border-t border-border-line pt-12">
-                <Link href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
+                <Link prefetch={false} href="/developers" className={navLinkClass(pathname, '/developers')}>{labels.developers}</Link>
               </div>
-              <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
+              <Link prefetch={false} href="/management-companies" className={navLinkClass(pathname, '/management-companies')}>{labels.management}</Link>
             </div>
           </details>
 
@@ -283,7 +283,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
                 </summary>
                 <div className="absolute right-0 top-full z-50 mt-12 flex max-h-[70vh] min-w-[250px] flex-col gap-12 overflow-y-auto rounded-md border border-border-line bg-surface-paper p-20 shadow-float">
                   {userLinks.map((link) => (
-                    <Link key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                    <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
                       {link.label}
                     </Link>
                   ))}
@@ -295,7 +295,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </Button>
             </>
           ) : (
-            <Link href="/login">
+            <Link prefetch={false} href="/login">
               <Button variant="ghost" size="sm">
                 {labels.login}
               </Button>
@@ -331,7 +331,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           <div className="flex flex-col">
             <p className="py-8 text-small font-semibold text-text-secondary">{labels.homes}</p>
             {rentLinks.map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
@@ -341,7 +341,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </Link>
             ))}
             {primaryLinks.filter((link) => link.label !== labels.myUno).map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-12')}
@@ -352,7 +352,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             ))}
             <p className="mt-16 py-8 text-small font-semibold text-text-secondary">{labels.owners}</p>
             {ownerLinks.map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
@@ -362,7 +362,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </Link>
             ))}
             {primaryLinks.filter((link) => link.label === labels.myUno).map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.activeBase || link.href, 'border-b border-border-line py-12')}
@@ -376,7 +376,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
           <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.more}</p>
           <div className="flex flex-col">
             {exploreLinks.map((link) => (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
                 className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
@@ -385,10 +385,10 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
                 {link.label}
               </Link>
             ))}
-            <Link href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-12')} onClick={closeMenu}>
+            <Link prefetch={false} href="/developers" className={navLinkClass(pathname, '/developers', 'border-b border-border-line py-12')} onClick={closeMenu}>
               Developers
             </Link>
-            <Link href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-12')} onClick={closeMenu}>
+            <Link prefetch={false} href="/management-companies" className={navLinkClass(pathname, '/management-companies', 'border-b border-border-line py-12')} onClick={closeMenu}>
               Management companies
             </Link>
           </div>
@@ -398,7 +398,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <p className="mb-12 mt-24 text-kicker uppercase tracking-[0.18em] text-text-secondary">{labels.myUno}</p>
               <div className="flex flex-col">
                 {userLinks.map((link) => (
-                  <Link
+                  <Link prefetch={false}
                     key={link.href}
                     href={link.href}
                     className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
@@ -414,10 +414,10 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
             </>
           ) : (
             <div className="mt-24 grid grid-cols-2 gap-12">
-              <Link href="/login" onClick={closeMenu}>
+              <Link prefetch={false} href="/login" onClick={closeMenu}>
                 <Button variant="secondary" size="md" fullWidth>{labels.login}</Button>
               </Link>
-              <Link href="/register" onClick={closeMenu}>
+              <Link prefetch={false} href="/register" onClick={closeMenu}>
                 <Button variant="primary" size="md" fullWidth>{labels.register}</Button>
               </Link>
             </div>

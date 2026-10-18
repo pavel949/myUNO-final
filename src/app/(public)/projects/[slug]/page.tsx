@@ -403,7 +403,7 @@ export default async function ProjectLandingPage({
             </p>
             <div className="mt-24 grid gap-16 md:grid-cols-2">
               {buyHomeCount > 0 ? (
-                <Link
+                <Link prefetch={false}
                   href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
                   className="rounded-lg border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
@@ -419,7 +419,7 @@ export default async function ProjectLandingPage({
                 </Link>
               ) : null}
               {rentHomeCount > 0 ? (
-                <Link
+                <Link prefetch={false}
                   href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
                   className="rounded-lg border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
@@ -465,7 +465,7 @@ export default async function ProjectLandingPage({
           </h2>
           <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.categories.map((category) => (
-              <Link
+              <Link prefetch={false}
                 key={category.key}
                 href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}?${context}`}
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
@@ -535,7 +535,7 @@ export default async function ProjectLandingPage({
                 </div>
               ))}
             </div>
-            <Link
+            <Link prefetch={false}
               href={longStayCtaHref}
               className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
             >
@@ -557,7 +557,7 @@ export default async function ProjectLandingPage({
         ) : (
           <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.units.map((unit) => (
-              <Link
+              <Link prefetch={false}
                 key={unit.id}
                 href={`/units/${unit.id}?${context}`}
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
@@ -650,7 +650,7 @@ export default async function ProjectLandingPage({
             <h3 className="font-display text-heading-3 font-semibold text-text-ink">{labels['project_page.owner_intake.title']}</h3>
             <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
           </div>
-          <Link href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
+          <Link prefetch={false} href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
             className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-20 py-12 text-small font-semibold text-white hover:bg-brand-deep">
             {labels['project_page.owner_intake.cta']}
           </Link>
@@ -827,13 +827,13 @@ export default async function ProjectLandingPage({
           ))}
         </div>
         <div className="flex flex-col items-center justify-center gap-12 text-center sm:flex-row">
-          <Link
+          <Link prefetch={false}
             href={`/projects/${project.slug}/passport`}
             className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
           >
             {labels['project_page.trust.passport']}
           </Link>
-          <Link href="/trust" className="text-brand-andaman font-semibold hover:underline">
+          <Link prefetch={false} href="/trust" className="text-brand-andaman font-semibold hover:underline">
             {labels['landing.trust.cta']}
           </Link>
         </div>

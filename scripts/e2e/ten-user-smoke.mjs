@@ -75,7 +75,7 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
     for (const viewport of [desktop, mobile]) {
       await mp.setViewportSize(viewport); await managerCalendar();
       await layout(mp, `limited-manager-${viewport.width}`);
-      await mp.screenshot({ path: `${out}/limited-manager-${viewport.width}.png`, fullPage: true });
+      await mp.screenshot({ caret: 'initial', path: `${out}/limited-manager-${viewport.width}.png`, fullPage: true });
     }
     await mp.setViewportSize(desktop); await managerCalendar();
     report.tenUsers.managerScope = { ownUnit: extra.managedUnitId, deniedUnits: [extra.deniedUnitId, extra.foreignUnitId],
@@ -108,7 +108,7 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
       await confirm.click({ trial: true, timeout: 15_000 });
       assert.equal(await confirm.isEnabled(), true); await layout(guest.page, `guest-${index + 1}-review`, confirm);
       guest.confirm = confirm;
-      if (index < 2) await guest.page.screenshot({ path: `${out}/concurrent-review-${guest.viewport.width}.png`, fullPage: true });
+      if (index < 2) await guest.page.screenshot({ caret: 'initial', path: `${out}/concurrent-review-${guest.viewport.width}.png`, fullPage: true });
     }));
     const originalCount = await db.booking.count({ where: { unitId: fixture.unitId } });
     const startedAt = Date.now();
@@ -159,9 +159,9 @@ export async function runTenUserSmoke({ db, fixture, founderPage, context, login
     const held = founderPage.getByRole('button', { name: new RegExp(`${fixture.unitName} · ${fixture.startDate} ·`) });
     await held.waitFor(); assert.match(await held.getAttribute('aria-label'), /Hold/);
     await layout(founderPage, 'founder-desktop-calendar');
-    await founderPage.screenshot({ path: `${out}/concurrent-single-hold.png`, fullPage: true });
+    await founderPage.screenshot({ caret: 'initial', path: `${out}/concurrent-single-hold.png`, fullPage: true });
     const loser = guests.find(guest => guest.status === 409);
-    await loser.page.screenshot({ path: `${out}/concurrent-conflict-feedback.png`, fullPage: true });
+    await loser.page.screenshot({ caret: 'initial', path: `${out}/concurrent-conflict-feedback.png`, fullPage: true });
     report.tenUsers.winner = { bookingId: id, guestId: winner.id, replayedSameBooking: true, occupyingBookings: 1, newPayments: 0 };
   });
 

@@ -18,11 +18,12 @@ export const dynamic = 'force-dynamic';
  * person in the audience across the project, so it is a separate, deliberate
  * act — and one that leaves an audit entry naming who sent it.
  */
-export default async function AdminAnnouncementsPage({
-  searchParams,
-}: {
-  searchParams: { projectId?: string };
-}) {
+export default async function AdminAnnouncementsPage(
+  props: {
+    searchParams: Promise<{ projectId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const projects = await listProjects();
   const projectId =
     searchParams.projectId && projects.some((p) => p.id === searchParams.projectId)

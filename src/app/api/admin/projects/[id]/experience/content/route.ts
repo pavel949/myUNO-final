@@ -7,7 +7,8 @@ import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '
 const supported = new Set(PROJECT_EXPERIENCE_CONTENT_FIELDS.map(field => field.key));
 const locales = new Set(['en', 'ru', 'th']);
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
 

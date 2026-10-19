@@ -8,9 +8,8 @@ import type { OperatingSpaceCapability } from '@/modules/ops/operating-space.ser
 
 export const dynamic = 'force-dynamic';
 
-export default async function OperatingSpaceHome({
-  params,
-}: { params: { spaceId: string } }) {
+export default async function OperatingSpaceHome(props: { params: Promise<{ spaceId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/spaces/' + encodeURIComponent(params.spaceId));
 

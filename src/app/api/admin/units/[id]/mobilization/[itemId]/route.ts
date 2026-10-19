@@ -21,8 +21,9 @@ import { logAudit } from '@/modules/audit';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  props: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  const params = await props.params;
   const guard = await requireAction('units:create');
   if (!guard.ok) return guard.error;
 

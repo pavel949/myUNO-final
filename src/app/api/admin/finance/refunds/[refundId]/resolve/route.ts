@@ -10,10 +10,8 @@ interface ResolveRefundRequest {
   action: 'retry' | 'write_off';
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { refundId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ refundId: string }> }) {
+  const params = await props.params;
   try {
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;

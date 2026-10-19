@@ -11,8 +11,9 @@ import PropertyWorkspaceNav from '@/app/property/workspace-nav';
 import BookingModeClient from '@/app/(admin)/app/admin/units/[id]/booking-mode-client';
 export const dynamic = 'force-dynamic';
 const WORKSPACE = 'booking-mode' as const;
-export default async function UnitBookingModePage({ params }: { params: { unitId: string } }) {
-  const user = await getCurrentUser(); if (!user) redirect('/login?next=' + encodeURIComponent('/property/booking-mode/' + params.unitId));
+export default async function UnitBookingModePage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
+  const user = await getCurrentUser();if (!user) redirect('/login?next=' + encodeURIComponent('/property/booking-mode/' + params.unitId));
   const access = await assertPropertyCapabilityForUnit(prisma, user.identityId, 'booking_mode_editor', params.unitId).catch(error => {
     if (error instanceof PropertyCapabilityError) notFound(); throw error;
   });

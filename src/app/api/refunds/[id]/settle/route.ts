@@ -14,7 +14,8 @@ import { canOperateBookingAsStaff, resolveBookingAccess } from '@/app/libs/booki
  * paid it back and writes the append-only refund_out ledger line. The amount is
  * the stored refund amount, never client-sent. Card refunds are not settled here.
  */
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('unauthorized', 401);

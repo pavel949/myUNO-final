@@ -5,11 +5,12 @@ import PassportsClient from './passports-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PassportsPage({
-  params,
-}: {
-  params: { bookingId: string };
-}) {
+export default async function PassportsPage(
+  props: {
+    params: Promise<{ bookingId: string }>;
+  }
+) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/bookings/${params.bookingId}/passports`);

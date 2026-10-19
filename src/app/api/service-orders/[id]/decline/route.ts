@@ -10,10 +10,8 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * job (F-PROV-3). Auto-refunds a paid order in full (module logic). Body:
  * { reason?: string }. Provider-member (of this order's provider) or admin.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

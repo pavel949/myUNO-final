@@ -148,9 +148,9 @@ export default function UnitsAdminClient({
       {success && (
         <div role="status" className="bg-state-success-soft border border-state-success rounded-lg p-16 mb-16">
           <p className="text-body text-text-ink">{success.message}</p>
-          <Link href={`/app/admin/units/${encodeURIComponent(success.unitId)}`} className="mt-8 inline-block text-small font-semibold text-brand-andaman hover:underline">
+          <a href={`/app/admin/units/${encodeURIComponent(success.unitId)}`} className="mt-8 inline-block text-small font-semibold text-brand-andaman hover:underline">
             {labels['admin.unit_publication.review_status']} →
-          </Link>
+          </a>
         </div>
       )}
       {units.map((unit) => (

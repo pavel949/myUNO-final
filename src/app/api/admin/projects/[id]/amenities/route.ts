@@ -4,7 +4,8 @@ import { projectExperienceAccess } from '@/app/libs/projectExperienceGuard';
 import { logAudit } from '@/modules/audit';
 import { projectAmenityData } from '@/modules/projects';
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const project = await prisma.project.findUnique({ where: { id: params.id }, select: { id: true } });
@@ -24,7 +25,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ amenities });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
 

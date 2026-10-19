@@ -20,11 +20,12 @@ const EDITABLE_KEYS = [
   'comms.whatsapp_number',
 ] as const;
 
-export default async function AdminConfigPage({
-  searchParams,
-}: {
-  searchParams: { projectId?: string };
-}) {
+export default async function AdminConfigPage(
+  props: {
+    searchParams: Promise<{ projectId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const projects = await listProjects();
   const projectId =
     searchParams.projectId && projects.some((p) => p.id === searchParams.projectId)

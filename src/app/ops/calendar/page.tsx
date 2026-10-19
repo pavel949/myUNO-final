@@ -5,9 +5,12 @@ import { getStaffProjectIds } from '@/app/libs/projectScope';
 export const dynamic = 'force-dynamic';
 
 /** One entry point for project, category and individual-home occupancy. */
-export default async function OpsCalendarIndexPage({ searchParams }: {
-  searchParams?: { spaceId?: string; projectId?: string; categoryId?: string; unitId?: string; start?: string; days?: string };
-}) {
+export default async function OpsCalendarIndexPage(
+  props: {
+    searchParams?: Promise<{ spaceId?: string; projectId?: string; categoryId?: string; unitId?: string; start?: string; days?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/calendar');
   if (!user.isAdmin && !getStaffProjectIds(user).length) redirect('/');

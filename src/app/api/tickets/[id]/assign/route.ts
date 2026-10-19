@@ -7,10 +7,8 @@ import { loadTicketForUser } from '@/app/libs/ticketScope';
 import { standaloneTicketAuthority } from '@/modules/comms/standalone-ticket-access';
 
 /** POST /api/tickets/[id]/assign — scoped operator assignment (defaults to self). */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

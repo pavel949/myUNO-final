@@ -15,15 +15,16 @@ import {
 export const dynamic = 'force-dynamic';
 
 interface RecordCostPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
 /**
  * Recording a cost (doc 07 F-OPS-3).
  */
-export default async function RecordCostPage({ searchParams }: RecordCostPageProps) {
+export default async function RecordCostPage(props: RecordCostPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user?.identityId) redirect('/login?next=/ops/costs');
 

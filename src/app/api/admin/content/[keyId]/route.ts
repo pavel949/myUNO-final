@@ -4,10 +4,8 @@ import { getContentKey, updateTranslation } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { keyId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ keyId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -58,10 +56,8 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { keyId: string } }
-) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ keyId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

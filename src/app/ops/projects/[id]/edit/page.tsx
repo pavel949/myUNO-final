@@ -6,7 +6,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import ProjectFactsForm from './project-facts-form';
 export const dynamic = 'force-dynamic';
-export default async function EditProjectFactsPage({ params }: { params: { id: string } }) {
+export default async function EditProjectFactsPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops');
   const assigned = await prisma.roleAssignment.findFirst({

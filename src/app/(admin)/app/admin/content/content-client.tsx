@@ -41,6 +41,7 @@ export default function ContentAdminClient({
   labels: Labels;
 }) {
   const [activeNs, setActiveNs] = useState(initialNamespace);
+  const [hydrated, setHydrated] = useState(false);
   const [keys, setKeys] = useState<KeyRow[]>(initialKeys);
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -55,6 +56,9 @@ export default function ContentAdminClient({
   const namespaceRequest = useRef(0);
   const confirmedInitialKeys = useRef(initialKeys);
   const savePending = useRef(false);
+  const errorLabel = labels['admin.content.error_generic'];
+  const editorScope = JSON.stringify([activeNs, initialNamespace, initialKeys.map(row => [row.id, row.key])]);
+  const previousEditorScope = useRef(editorScope);
 
   const loadNamespace = useCallback(
     async (namespace: string) => {
@@ -65,7 +69,7 @@ export default function ContentAdminClient({
         const response = await fetch(
           `/api/admin/content/namespace/${encodeURIComponent(namespace)}`
         );
-        if (!response.ok) throw new Error(labels['admin.content.error_generic']);
+        if (!response.ok) throw new Error(errorLabel);
         const data = await response.json();
         const rows = Array.isArray(data.keys) ? data.keys.map(mapApiKey) : [];
         if (request !== namespaceRequest.current) return;
@@ -73,31 +77,38 @@ export default function ContentAdminClient({
         setDrafts({});
       } catch (err) {
         if (request !== namespaceRequest.current) return;
-        setError(err instanceof Error ? err.message : labels['admin.content.error_generic']);
+        setError(err instanceof Error ? err.message : errorLabel);
         setKeys([]);
       } finally {
         if (request === namespaceRequest.current) setLoadingKeys(false);
       }
     },
-    [labels]
+    [errorLabel]
   );
+
+  // Do not accept typing into server HTML before its React handlers are ready.
+  useEffect(() => { setHydrated(true); }, []);
 
   useEffect(() => {
     confirmedInitialKeys.current = initialKeys;
   }, [initialKeys]);
 
   useEffect(() => {
+    const changedScope = previousEditorScope.current !== editorScope;
+    previousEditorScope.current = editorScope;
     if (activeNs === initialNamespace) {
       namespaceRequest.current += 1;
       setKeys(confirmedInitialKeys.current);
-      setDrafts({});
+      // A fresh RSC payload can recreate labels/rows without changing the
+      // editor. Retain unsaved input until the actual key/namespace changes.
+      if (changedScope) setDrafts({});
       setError(null);
       setLoadingKeys(false);
     } else if (activeNs) {
       void loadNamespace(activeNs);
     }
     return () => { namespaceRequest.current += 1; };
-  }, [activeNs, initialNamespace, initialKeys, loadNamespace]);
+  }, [activeNs, initialNamespace, initialKeys, loadNamespace, editorScope]);
 
   const draftId = (key: string, locale: string) => `${key}::${locale}`;
 
@@ -310,7 +321,7 @@ export default function ContentAdminClient({
                           variant="ghost"
                           onClick={() => save(row, locale)}
                           isLoading={busyKey === id}
-                          disabled={busyKey !== null || !row.id || drafts[id] === undefined}
+                          disabled={!hydrated || busyKey !== null || !row.id || drafts[id] === undefined}
                         >
                           {savedFlash === id
                             ? labels['admin.content.saved']
@@ -318,6 +329,7 @@ export default function ContentAdminClient({
                         </Button>
                       </div>
                       <textarea
+                        disabled={!hydrated}
                         value={current}
                         onChange={(e) =>
                           setDrafts((prev) => ({ ...prev, [id]: e.target.value }))

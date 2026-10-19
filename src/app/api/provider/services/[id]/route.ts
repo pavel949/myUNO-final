@@ -9,10 +9,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * services. The module enforces draft-only editing; another provider's
  * service reads as 404 (existence hidden).
  */
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const { providerId } = await requireProviderMember();
 

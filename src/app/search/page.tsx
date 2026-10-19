@@ -11,7 +11,10 @@ import { listPublicDiscoveryUnits } from '@/modules/projects/public-discovery';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams = {} }: { searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function SearchPage(
+  props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const searchParams = (await props.searchParams) ?? {};
   const param = (key: string) => typeof searchParams[key] === 'string' ? searchParams[key] as string : undefined;
   const bedroomValue = param('bedrooms');
   const bedrooms = bedroomValue && /^\d+$/.test(bedroomValue) ? Number(bedroomValue) : undefined;

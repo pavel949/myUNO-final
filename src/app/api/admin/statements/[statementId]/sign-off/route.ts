@@ -24,12 +24,12 @@ interface SignOffRequest {
  * `PUT /api/owner/statements/{id}/sign-off` instead (Q33); both routes share
  * the state machine in `@/modules/finance`.
  */
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
   try {
+    // Resolve the caller before awaiting params: identity is read in the first
+    // synchronous segment, exactly as before the async-params signature.
     const currentUser = await getCurrentUser()
+    const params = await props.params;
 
     if (!currentUser) {
       return NextResponse.json(

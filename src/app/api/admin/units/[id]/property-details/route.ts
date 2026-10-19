@@ -42,7 +42,8 @@ async function findExistingStayOffering(unitId: string) {
   });
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
   const unit = await prisma.unit.findUnique({
@@ -57,7 +58,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return unit ? NextResponse.json(unit) : NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
   try {
@@ -164,10 +166,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         existingOffering = await findExistingStayOffering(params.id);
       }
       // Mapping a channel must not activate a source-owned Layantara offer.
-      const offering = existingOffering || await prisma.commercialOffering.create({
+      const offering = existingOffering || (await prisma.commercialOffering.create({
         data: { unitId: params.id, offeringType,
           status: stayType ? 'draft' : 'active' },
-      });
+      }));
       const mapping = await prisma.channelMapping.upsert({
         where: { offeringId_channel: { offeringId: offering.id, channel: body.channel } },
         create: {

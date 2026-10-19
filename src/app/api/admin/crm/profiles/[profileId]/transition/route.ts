@@ -24,10 +24,8 @@ interface TransitionRequest {
   notes?: Record<string, unknown>;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { profileId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -74,14 +72,14 @@ export async function POST(
         where: { ownerIdentityId: profile.identityId },
         select: { id: true },
       });
-      const effectiveTitle = currentTitle ?? await prisma.ownershipPeriod.findFirst({
+      const effectiveTitle = currentTitle ?? (await prisma.ownershipPeriod.findFirst({
         where: {
           ownerIdentityId: profile.identityId,
           startsOn: { lte: today },
           OR: [{ endsOn: null }, { endsOn: { gte: today } }],
         },
         select: { unitId: true },
-      });
+      }));
       if (!effectiveTitle) {
         return NextResponse.json({ error: 'verified_ownership_required' }, { status: 409 });
       }

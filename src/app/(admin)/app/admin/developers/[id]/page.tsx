@@ -16,7 +16,8 @@ type DeveloperTrackRecord = {
   totalUnitsDelivered?: number;
 };
 
-export default async function Developer360Page({ params }: { params: { id: string } }) {
+export default async function Developer360Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const data = await getDeveloper360(prisma, params.id);
   if (!data) notFound();
 

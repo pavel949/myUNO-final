@@ -9,7 +9,11 @@ import PropertyOnboardingClient from './property-onboarding-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PropertyOnboardingPage({ params, searchParams }: { params: { id: string }; searchParams?: { gallery?: string } }) {
+export default async function PropertyOnboardingPage(
+  props: { params: Promise<{ id: string }>; searchParams?: Promise<{ gallery?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const [project, readiness, galleryLabels, ownerEvidenceLabels, sleepingLabels] = await Promise.all([
     prisma.project.findUnique({
       where: { id: params.id },

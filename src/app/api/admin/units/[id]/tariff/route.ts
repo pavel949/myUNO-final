@@ -13,7 +13,8 @@ export const dynamic = 'force-dynamic';
  * monthly and yearly rates to this villa, or to every villa in its category.
  * Amounts are satang integers; nothing is charged or published by saving.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireUnitPricing(params.id);
   if (!guard.ok) return guard.error;
   try {
@@ -25,7 +26,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireUnitPricing(params.id);
   if (!guard.ok) return guard.error;
   const body = await req.json().catch(() => null) as { draft?: TariffDraft; scope?: string; expectedRevision?: string } | null;

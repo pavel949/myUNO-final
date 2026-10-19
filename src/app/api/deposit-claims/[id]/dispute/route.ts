@@ -9,7 +9,8 @@ import type { RoleType } from '@prisma/client';
  * POST /api/deposit-claims/[id]/dispute
  * Guest disputes a filed damage claim (doc 07 F-DIS-1 → F-DIS-2).
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

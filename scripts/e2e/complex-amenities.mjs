@@ -21,10 +21,10 @@ async function step(name, page, work) {
   const item = { name, status: 'running' }; report.steps.push(item);
   try {
     await work(); item.status = 'passed'; console.log(`PASS ${name}`);
-    if (page) await page.screenshot({ path: `browser-results/complex-amenities-${report.steps.length}.png`, fullPage: true });
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/complex-amenities-${report.steps.length}.png`, fullPage: true });
   } catch (error) {
     item.status = 'failed'; item.error = String(error);
-    if (page) await page.screenshot({ path: `browser-results/complex-amenities-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/complex-amenities-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
     throw error;
   } finally { await persist(); }
 }
@@ -193,7 +193,7 @@ try {
           .slice(0, 12).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right })),
       }));
       assert.ok(overflow.width <= overflow.viewport, `Editor must fit ${width}px: ${JSON.stringify(overflow)}`);
-      await sp.screenshot({ path: `browser-results/complex-amenities-editor-${width}.png`, fullPage: true });
+      await sp.screenshot({ caret: 'initial', path: `browser-results/complex-amenities-editor-${width}.png`, fullPage: true });
     }
     await sp.setViewportSize({ width: 1440, height: 1000 });
   });
@@ -234,7 +234,7 @@ try {
       await pp.goto(`/units/${unit.id}`);
       await pp.getByRole('heading', { name: shared, exact: true }).waitFor();
       assert.ok(await pp.locator('body').evaluate(node => node.scrollWidth <= window.innerWidth), `${locale} shared facilities fit mobile`);
-      await pp.screenshot({ path: `browser-results/complex-amenities-locale-${locale}.png`, fullPage: true });
+      await pp.screenshot({ caret: 'initial', path: `browser-results/complex-amenities-locale-${locale}.png`, fullPage: true });
     }
     await publicContext.addCookies([{ name: 'locale', value: 'en', url: baseUrl }]);
   });

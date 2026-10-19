@@ -16,12 +16,13 @@ import {
 export const dynamic = 'force-dynamic';
 
 interface Tm30QueuePageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
-export default async function Tm30QueuePage({ searchParams }: Tm30QueuePageProps) {
+export default async function Tm30QueuePage(props: Tm30QueuePageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops/tm30');

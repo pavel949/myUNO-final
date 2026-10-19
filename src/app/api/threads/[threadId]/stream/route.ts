@@ -8,10 +8,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 /** SSE authorizes at subscription and before every event, so an open stream
  * rechecks financial-statement authority before emitting any message.
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { threadId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ threadId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('unauthorized', 401);

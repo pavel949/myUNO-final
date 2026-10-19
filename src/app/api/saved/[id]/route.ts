@@ -7,7 +7,8 @@ import { handleError } from '@/app/libs/errorHandler';
 export const dynamic = 'force-dynamic';
 
 /** Remove exactly one saved-list entry; its owner is derived from the session. */
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

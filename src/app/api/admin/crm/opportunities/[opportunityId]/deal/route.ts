@@ -9,7 +9,7 @@ import {
 } from '@/modules/crm/property-deal.service';
 import type { Prisma } from '@prisma/client';
 
-type Params={params:{opportunityId:string}};
+type Params={params: Promise<{opportunityId:string}>};
 const day=/^\d{4}-\d{2}-\d{2}$/;
 function parseDate(value:unknown,field:string):Date|null{
   if(value===null||value===undefined||value==='')return null;
@@ -33,7 +33,8 @@ function terms(value:unknown):Prisma.InputJsonValue {
   return JSON.parse(raw) as Prisma.InputJsonValue;
 }
 
-export async function GET(_req:NextRequest,{params}:Params){
+export async function GET(_req:NextRequest, props:Params) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   const opportunity=await prisma.crmOpportunity.findUnique({
@@ -49,7 +50,8 @@ export async function GET(_req:NextRequest,{params}:Params){
     NextResponse.json({error:'opportunity_not_found'},{status:404});
 }
 
-export async function POST(req:NextRequest,{params}:Params){
+export async function POST(req:NextRequest, props:Params) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   try{
@@ -71,7 +73,8 @@ export async function POST(req:NextRequest,{params}:Params){
   }catch(error){return failed(error,'Unable to create agreement');}
 }
 
-export async function PATCH(req:NextRequest,{params}:Params){
+export async function PATCH(req:NextRequest, props:Params) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   try{

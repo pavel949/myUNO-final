@@ -7,7 +7,8 @@ import { getLabels } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
-export default async function UnitStructurePage({params}:{params:{id:string}}){
+export default async function UnitStructurePage(props:{params: Promise<{id:string}>}) {
+  const params = await props.params;
   const unit=await prisma.unit.findUnique({
     where:{id:params.id},
     select:{id:true,name:true,projectId:true,structureNodeId:true,floor:true,

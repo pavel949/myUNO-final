@@ -10,7 +10,8 @@ import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Project360Page({ params }: { params: { id: string } }) {
+export default async function Project360Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const data = await getProjectFacts360(prisma, params.id);
   if (!data) notFound();
   const projectAmenityCount = await prisma.projectAmenity.count({ where: { projectId: params.id } });

@@ -13,13 +13,14 @@ export const dynamic = 'force-dynamic';
 function human(value: string) {
   return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
-export default async function AmenityDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string; amenitySlug: string };
-  searchParams?: { bookingId?: string };
-}) {
+export default async function AmenityDetailPage(
+  props: {
+    params: Promise<{ slug: string; amenitySlug: string }>;
+    searchParams?: Promise<{ bookingId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
   if (!data) notFound();
   const { project, amenity } = data;

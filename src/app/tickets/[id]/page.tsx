@@ -18,11 +18,12 @@ function isStatusError(error: unknown, statusCode: number): boolean {
   );
 }
 
-export default async function TicketDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function TicketDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/tickets/${params.id}`)}`);

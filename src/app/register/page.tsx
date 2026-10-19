@@ -7,7 +7,8 @@ import { RegisterForm } from './register-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RegisterPage({ searchParams }: { searchParams?: { next?: string | string[] } }) {
+export default async function RegisterPage(props: { searchParams?: Promise<{ next?: string | string[] }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (user) {
     redirect(safeNextPath(typeof searchParams?.next === 'string' ? searchParams.next : null) || '/');

@@ -4,13 +4,14 @@ import { getMCProjectScopes, getStaffProjectIds } from '@/app/libs/projectScope'
 
 export const dynamic = 'force-dynamic';
 
-type PageProps = { searchParams?: { month?: string; projectId?: string; organizationId?: string } };
+type PageProps = { searchParams?: Promise<{ month?: string; projectId?: string; organizationId?: string }> };
 
 /**
  * Compatibility route. For management-company users, Portfolio now opens the
  * managed-property section of PMS Today. Staff/admin retain the calendar route.
  */
-export default async function ManagedPortfolioCompatibilityPage({ searchParams }: PageProps) {
+export default async function ManagedPortfolioCompatibilityPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/mc/portfolio');
 

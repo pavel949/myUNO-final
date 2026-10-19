@@ -12,7 +12,8 @@ function serializePlace(place: any) {
   };
 }
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const project = await prisma.project.findUnique({ where: { id: params.id }, select: { id: true } });
@@ -25,7 +26,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   return NextResponse.json({ places: places.map(serializePlace) });
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const project = await prisma.project.findUnique({ where: { id: params.id }, select: { id: true } });

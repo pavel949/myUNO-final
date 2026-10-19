@@ -22,7 +22,8 @@ const PRIVATE_HEADERS = {
   'Referrer-Policy': 'no-referrer',
 };
 
-export async function GET(_req: NextRequest, { params }: { params: { receiptId: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ receiptId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

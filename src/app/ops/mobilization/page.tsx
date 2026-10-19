@@ -16,9 +16,9 @@ import OpsProjectSwitcher from '@/components/ops/OpsProjectSwitcher';
 export const dynamic = 'force-dynamic';
 
 interface OpsMobilizationPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -32,7 +32,8 @@ function fill(template: string, params: Record<string, string | number>): string
 /**
  * Mobilization queue for staff (doc 07 F-OWN-1 ops path).
  */
-export default async function OpsMobilizationPage({ searchParams }: OpsMobilizationPageProps) {
+export default async function OpsMobilizationPage(props: OpsMobilizationPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops/mobilization');

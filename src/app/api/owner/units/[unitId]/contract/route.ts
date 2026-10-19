@@ -9,10 +9,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/owner/units/[unitId]/contract
  * Read-only management contract for an owner's unit (CLAUDE.md fee transparency).
  */
-export async function GET(
-  _req: unknown,
-  { params }: { params: { unitId: string } }
-) {
+export async function GET(_req: unknown, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user?.identityId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

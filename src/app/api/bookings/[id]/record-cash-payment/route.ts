@@ -33,10 +33,8 @@ import { canRecordBookingReceipt } from '@/app/libs/bookingOperatorAccess';
  * Amount is ALWAYS the server-stored initial total or remaining balance — never client-sent.
  * Auth: scoped staff/admin or the scoped management company member.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

@@ -29,10 +29,8 @@ const CHECK_IN_BLOCK_LABELS = {
   'booking.checkin.blocked.passport_missing': 'Every foreign guest needs a passport number on file before check-in (TM30).',
 };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

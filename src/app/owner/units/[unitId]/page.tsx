@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
  * Per-unit owner dashboard (doc 06 S7/S8, doc 07 F-OWN-2).
  * Portfolio owners drill into one unit; single-unit owners are redirected here from `/owner`.
  */
-export default async function OwnerUnitPage({ params }: { params: { unitId: string } }) {
+export default async function OwnerUnitPage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/owner/units/${params.unitId}`);

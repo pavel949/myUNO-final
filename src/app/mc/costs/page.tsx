@@ -10,17 +10,18 @@ import RecordCostClient from '@/app/ops/costs/record-cost-client';
 export const dynamic = 'force-dynamic';
 
 interface McCostsPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
-  };
+  }>;
 }
 
 /**
  * Record costs on MC-managed units (doc 07 F-MC-2 / F-OPS-3).
  * Reuses the ops cost form; scope is limited to units under the active MC engagement.
  */
-export default async function McCostsPage({ searchParams }: McCostsPageProps) {
+export default async function McCostsPage(props: McCostsPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc/costs');

@@ -3,10 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { flagPurchaseQuestion } from '@/modules/analytics';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { messageId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ messageId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

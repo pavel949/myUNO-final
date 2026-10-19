@@ -22,10 +22,8 @@ export const dynamic = 'force-dynamic'
  * must have passed the admin sign-off gate — an owner cannot sign a draft they
  * are not allowed to read.
  */
-export async function PUT(
-  _req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function PUT(_req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
+  const params = await props.params;
   try {
     const currentUser = await getCurrentUser()
 

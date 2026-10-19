@@ -9,11 +9,12 @@ export const dynamic = 'force-dynamic';
  * through /ops/stays and /ops. Financial reconciliation has a separate,
  * read-only booking journey under /app/admin/bookings/[id]/journey.
  */
-export default function AdminBookingsPage({
-  searchParams,
-}: {
-  searchParams?: { projectId?: string; department?: string };
-}) {
+export default async function AdminBookingsPage(
+  props: {
+    searchParams?: Promise<{ projectId?: string; department?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const query = new URLSearchParams();
   if (searchParams?.projectId) query.set('projectId', searchParams.projectId);
   if (searchParams?.department) query.set('department', searchParams.department);

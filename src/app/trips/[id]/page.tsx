@@ -4,7 +4,8 @@ import BookingDetailClient from './booking-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function BookingDetailPage({ params }: { params: { id: string } }) {
+export default async function BookingDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const labels = await getLabels({
     'booking.detail.title': 'Your trip',
     'booking.detail.back': '← My trips',

@@ -20,7 +20,8 @@ async function loadContext(unitId: string) {
   return { user, identity, unit } as const;
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 
@@ -65,7 +66,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 

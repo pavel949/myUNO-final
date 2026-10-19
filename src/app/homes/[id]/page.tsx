@@ -14,22 +14,26 @@ import { getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CommercialHomePage({ params, searchParams }: {
-  params: { id: string }; searchParams?: {
-    intent?: string;
-    area?: string;
-    type?: string;
-    bedrooms?: string;
-    minArea?: string;
-    maxArea?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    moveIn?: string;
-    leaseTermMonths?: string;
-    pets?: string;
-    projectId?: string;
-  };
-}) {
+export default async function CommercialHomePage(
+  props: {
+    params: Promise<{ id: string }>; searchParams?: Promise<{
+      intent?: string;
+      area?: string;
+      type?: string;
+      bedrooms?: string;
+      minArea?: string;
+      maxArea?: string;
+      minPrice?: string;
+      maxPrice?: string;
+      moveIn?: string;
+      leaseTermMonths?: string;
+      pets?: string;
+      projectId?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const galleryLabels = await getGalleryCopy();
   const discovery = await discoveryCopy(getRequestLocale());
   const home = await getPublicCommercialHomeById(prisma, params.id);

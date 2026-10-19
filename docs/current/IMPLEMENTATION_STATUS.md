@@ -105,3 +105,7 @@
 ## 2026-10-18: вход администратора в редактирование карточек
 
 Вход `/property/content` без выбранного объекта/предложения направляет активного администратора в существующий `/app/admin/projects`, вместо пустого списка назначений сотрудника. Сотрудники сохраняют прежний scoped proposal editor; явные target/proposal deep links не изменены. Новых прав и обхода review нет. Добавлены регрессионные проверки в `src/app/property/workspace-nav.test.tsx`. Это исправление навигации, не подтверждение полной приёмки публикации или готовности production.
+
+## 2026-10-19: обновление зависимостей по `npm audit`
+
+Next.js 14.2.35 → 15.5.28 (закрыты advisory уровня critical/high, в т.ч. RCE в Image Optimizer), maplibre-gl 4.7.1 → 6.15.0 (XSS sanitizer bypass), вложенный PostCSS Next переопределён на корневой patched-версию через `overrides`. `npm audit --omit=dev`: 0 уязвимостей. Request-API (`params`, `searchParams`, `headers`) переведены на async-форму по codemod; `getRequestLocale` и `handleError` оставлены на синхронном `UnsafeUnwrapped*` (работает в Next 15, удаляется в Next 16 — отдельная миграция ~140 вызовов). Dev-зависимости (vitest toolchain и др.) не обновлялись, их advisories не входят в production-сборку. Это проверка кода и сборки (tsc, eslint, `next build`, unit-тесты без БД), не live-приёмка: на staged deployment нужно проверить карту поиска, изображения, навигацию и cookie-локаль.

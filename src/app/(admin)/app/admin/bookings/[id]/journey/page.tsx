@@ -18,7 +18,8 @@ const stages = [
 
 const money = (satang: number) => (satang / 100).toLocaleString('en-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default async function BookingJourneyPage({ params }: { params: { id: string } }) {
+export default async function BookingJourneyPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const booking = await prisma.booking.findUnique({
     where: { id: params.id },
     select: {

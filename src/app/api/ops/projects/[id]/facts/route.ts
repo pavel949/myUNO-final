@@ -14,7 +14,8 @@ async function guard(projectId: string) {
   return { user } as const;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await guard(params.id);
   if ('error' in access) return access.error;
   const project = await prisma.project.findUnique({
@@ -24,7 +25,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return project ? NextResponse.json(project) : NextResponse.json({ error: 'Project not found' }, { status: 404 });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await guard(params.id);
   if ('error' in access) return access.error;
   try {

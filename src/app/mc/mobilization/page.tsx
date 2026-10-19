@@ -9,10 +9,10 @@ import { getMCProjectScopes } from '@/app/libs/projectScope';
 export const dynamic = 'force-dynamic';
 
 interface McMobilizationPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
-  };
+  }>;
 }
 
 function fill(template: string, params: Record<string, string | number>): string {
@@ -26,7 +26,8 @@ function fill(template: string, params: Record<string, string | number>): string
 /**
  * Mobilization queue for MC-managed units (doc 07 F-OWN-1 via MC path).
  */
-export default async function McMobilizationPage({ searchParams }: McMobilizationPageProps) {
+export default async function McMobilizationPage(props: McMobilizationPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc/mobilization');

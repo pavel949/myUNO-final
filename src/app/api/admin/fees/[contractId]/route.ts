@@ -4,10 +4,8 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  _req: unknown,
-  { params }: { params: { contractId: string } }
-) {
+export async function GET(_req: unknown, props: { params: Promise<{ contractId: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

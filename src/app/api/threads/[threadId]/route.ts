@@ -7,10 +7,8 @@ import { getThreadMessages, markThreadRead } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
 /** GET /api/threads/[threadId] — full thread; participant-only; marks read. */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { threadId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ threadId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -60,10 +58,8 @@ export async function GET(
 }
 
 /** POST /api/threads/[threadId] — send a message; participant-only. */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { threadId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ threadId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

@@ -8,10 +8,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 /** Staff-only operational completion after checkout.
  * Financial close is a distinct milestone in the owner statement / payout ledger.
  */
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('unauthorized', 401);

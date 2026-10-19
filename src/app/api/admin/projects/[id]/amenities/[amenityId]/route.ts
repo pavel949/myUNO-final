@@ -8,7 +8,11 @@ async function ownedAmenity(projectId: string, amenityId: string) {
   return prisma.projectAmenity.findFirst({ where: { id: amenityId, projectId } });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);
@@ -80,7 +84,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function DELETE(
+  _req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);

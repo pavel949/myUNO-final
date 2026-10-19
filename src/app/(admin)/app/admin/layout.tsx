@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) {
-    const pathname = headers().get('x-myuno-request-path') ?? '';
+    const pathname = (await headers()).get('x-myuno-request-path') ?? '';
     const safePath = pathname === '/app/admin' || pathname.startsWith('/app/admin/')
       ? pathname
       : '/app/admin';

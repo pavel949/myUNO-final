@@ -12,7 +12,8 @@ import { requireAction } from '@/app/libs/onboardingGuard';
  */
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: Request, { params }: { params: { identityId: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ identityId: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('people:view');
   if (!guard.ok) return guard.error;
 

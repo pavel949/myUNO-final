@@ -5,11 +5,12 @@ import LedgerAdminClient from './ledger-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminLedgerPage({
-  searchParams,
-}: {
-  searchParams: { projectId?: string; startDate?: string; endDate?: string };
-}) {
+export default async function AdminLedgerPage(
+  props: {
+    searchParams: Promise<{ projectId?: string; startDate?: string; endDate?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const projects = await listProjects();
   const projectId =
     searchParams.projectId && projects.some((p) => p.id === searchParams.projectId)

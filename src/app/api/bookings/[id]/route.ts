@@ -14,10 +14,8 @@ const CANCELLABLE_STATUSES = ['requested', 'pending_payment', 'confirmed'];
  * Visible to: the guest, the unit owner, staff, admin.
  * Includes a live refund preview when the booking is cancellable.
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

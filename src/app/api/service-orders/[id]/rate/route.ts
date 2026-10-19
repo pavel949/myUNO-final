@@ -8,10 +8,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * POST /api/service-orders/[id]/rate — guest/orderer rates a fulfilled service order.
  * Body: { rating: 1-5, comment?: string }
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

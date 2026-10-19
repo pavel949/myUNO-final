@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { createProjectAmenityReservation } from '@/modules/projects';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
-export async function GET(_req: NextRequest, { params }: { params: { amenityId: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ amenityId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const reservations = await prisma.projectAmenityReservation.findMany({
@@ -23,7 +24,8 @@ export async function GET(_req: NextRequest, { params }: { params: { amenityId: 
   return NextResponse.json({ reservations });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { amenityId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ amenityId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('Unauthorized', 401);

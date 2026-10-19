@@ -41,11 +41,12 @@ function formatThb(amount: number, locale: string): string {
   return Math.round(amount).toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US');
 }
 
-export default async function LandingPage({
-  searchParams,
-}: {
-  searchParams?: { intent?: string };
-}) {
+export default async function LandingPage(
+  props: {
+    searchParams?: Promise<{ intent?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const locale = getRequestLocale();
   const activeDestination = getDestination();
   const initialIntent = parseHomeIntent(searchParams?.intent);
@@ -313,7 +314,11 @@ export default async function LandingPage({
   const serviceGroups = groupServicesBySituation(services, 2);
   const intents = ['stay', 'monthly', 'buy'] as const;
   const perIntent = <T,>(build: (intent: (typeof intents)[number]) => T) =>
-    ({ stay: build('stay'), monthly: build('monthly'), buy: build('buy') }) as Record<(typeof intents)[number], T>;
+    (({
+      stay: build('stay'),
+      monthly: build('monthly'),
+      buy: build('buy')
+    }) as Record<(typeof intents)[number], T>);
 
   const ownerGoalEvent = PUBLIC_ANALYTICS_EVENTS.ownerGoalSelected;
   const ownerGoals = [

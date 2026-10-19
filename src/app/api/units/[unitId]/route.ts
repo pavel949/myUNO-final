@@ -25,10 +25,8 @@ import { getRequestLocale } from '@/lib/i18n';
  * Legacy baseNightlyThb/minNights remain in the response temporarily for old
  * clients, but new guest surfaces should prefer `pricing`.
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { unitId: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   try {
     const searchParams = req.nextUrl.searchParams;
     const startDateStr = searchParams.get('startDate');

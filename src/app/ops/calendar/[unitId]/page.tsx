@@ -13,7 +13,11 @@ import { getUnitIcalConflictAlerts, listIntegrationAccounts } from '@/modules/in
 
 export const dynamic = 'force-dynamic';
 
-export default async function OpsUnitCalendarPage({ params, searchParams }: { params: { unitId: string }; searchParams?: { spaceId?: string; start?: string; days?: string; categoryId?: string } }) {
+export default async function OpsUnitCalendarPage(
+  props: { params: Promise<{ unitId: string }>; searchParams?: Promise<{ spaceId?: string; start?: string; days?: string; categoryId?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/ops/calendar/${params.unitId}`);

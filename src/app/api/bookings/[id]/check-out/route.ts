@@ -18,10 +18,8 @@ import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookin
  * Check out a stay: checked_in → checked_out (guest, scoped staff, or scoped MC).
  * Optional condition report payload (F-OPS-1 departure inspection).
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

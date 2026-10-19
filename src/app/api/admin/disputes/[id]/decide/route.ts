@@ -10,7 +10,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * decision and move the money it calls for, if any (doc 07 F-DIS-2).
  * Body: { resolutionAmountThb?, decisionNote }
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;

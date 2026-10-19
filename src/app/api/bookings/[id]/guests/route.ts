@@ -51,10 +51,8 @@ async function authorize(bookingId: string) {
  * List the booking's party members. Passport numbers are NEVER returned —
  * only whether one has been provided (PDPA, doc 12).
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const { booking } = await authorize(params.id);
 
@@ -96,10 +94,8 @@ export async function GET(
  *
  * Body: { fullName, nationality, passportNumber, dateOfBirth?, isLead? }
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await authorize(params.id);
 

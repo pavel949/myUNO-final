@@ -26,16 +26,15 @@ interface CalendarSearchParams {
   start?: string;
   days?: string;
 }
-export default async function UnifiedStayCalendarPage({
-  searchParams,
-}: { searchParams?: CalendarSearchParams }) {
+export default async function UnifiedStayCalendarPage(props: { searchParams?: Promise<CalendarSearchParams> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/calendar/board');
 
   const staffProjectIds = await getDepartmentProjectIds(user,['reservations','front_desk','housekeeping','maintenance','guest_care','pricing']);
   const requestedSpaceId = typeof searchParams?.spaceId === 'string' ? searchParams.spaceId : '';
   if (requestedSpaceId && !user.isAdmin &&
-      !await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'view_calendar')) {
+      !(await hasOperatingSpaceCapability(prisma, requestedSpaceId, user.identityId, 'view_calendar'))) {
     redirect('/ops/spaces');
   }
   const spaceUnitIds = requestedSpaceId

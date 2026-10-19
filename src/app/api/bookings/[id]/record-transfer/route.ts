@@ -13,7 +13,8 @@ import { logAudit } from '@/modules/audit';
  * bank statement. A guest able to mark their own booking paid is not a payment
  * method, it is a free stay.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

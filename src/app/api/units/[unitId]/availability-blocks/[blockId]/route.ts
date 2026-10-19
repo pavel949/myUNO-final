@@ -12,8 +12,9 @@ import { logAudit } from '@/modules/audit';
  */
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { unitId: string; blockId: string } }
+  props: { params: Promise<{ unitId: string; blockId: string }> }
 ) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,7 +38,7 @@ export async function DELETE(
     requiredAccess: 'allow',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
+  if (!allowed && !(await hasSelfListingAccess(identity.id, unit.id))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

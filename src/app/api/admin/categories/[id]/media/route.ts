@@ -20,7 +20,8 @@ async function guard(categoryId: string) {
 }
 
 /** Category gallery: one truthful representative photo collection per sellable room/villa type. */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await guard(params.id);
   if ('error' in access) return access.error;
   const category = await prisma.inventoryCategory.findUnique({
@@ -41,7 +42,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     : NextResponse.json({ error: 'Category not found' }, { status: 404 });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (typeof mediaAssetId !== 'string' || !mediaAssetId) {
       throw createPublicError('mediaAssetId is required', 400);
     }
-    if (!await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin)) {
+    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin))) {
       throw createPublicError('Use a non-encrypted public JPEG/PNG/WebP photo you uploaded.', 403);
     }
 
@@ -87,7 +89,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;
@@ -140,7 +143,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;

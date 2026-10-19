@@ -9,13 +9,14 @@ import { prisma } from '@/lib/prisma';
 import ManagedUnitEditor from './managed-unit-editor';
 export const dynamic = 'force-dynamic';
 
-export default async function EditManagedUnitPage({
-  params,
-  searchParams,
-}: {
-  params: { unitId: string };
-  searchParams?: { returnTo?: string };
-}) {
+export default async function EditManagedUnitPage(
+  props: {
+    params: Promise<{ unitId: string }>;
+    searchParams?: Promise<{ returnTo?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/ops/units/' + params.unitId + '/edit'));
   const unit = await prisma.unit.findUnique({ where: { id: params.unitId }, select: {

@@ -11,10 +11,8 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * config `service.cancel_window_hours`: full refund outside the window, none
  * inside it. Body: { reason?: string }.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

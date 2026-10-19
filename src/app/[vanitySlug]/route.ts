@@ -15,10 +15,8 @@ export const dynamic = 'force-dynamic';
  * Static segments still win over this dynamic one, so /search etc. are
  * unaffected.
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { vanitySlug: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ vanitySlug: string }> }) {
+  const params = await props.params;
   const slug = await resolveLiveProjectSlug(params.vanitySlug);
   if (!slug) return vanityNotFound();
   return NextResponse.redirect(new URL(`/projects/${slug}`, req.url), 307);

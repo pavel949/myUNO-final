@@ -14,10 +14,8 @@ const accountInclude = {
   assignedTo: { select: { id: true, email: true, firstName: true, lastName: true } },
 } as const;
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

@@ -10,10 +10,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  * session for the booking's server-stored total and returns its URL.
  * Guest-only; reuses an existing pending session instead of stacking new ones.
  */
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

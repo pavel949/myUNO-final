@@ -12,7 +12,8 @@ function human(value: string) {
   return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-export default async function ProjectAmenitiesPage({ params }: { params: { slug: string } }) {
+export default async function ProjectAmenitiesPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const project = await getPublicAmenityProjectBySlug(prisma, params.slug);
   if (!project) notFound();
 

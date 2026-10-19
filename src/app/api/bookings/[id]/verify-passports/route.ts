@@ -10,10 +10,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData } from '@/modules/ops';
 import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

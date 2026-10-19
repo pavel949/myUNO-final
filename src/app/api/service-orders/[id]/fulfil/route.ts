@@ -10,10 +10,8 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * done (accepted → fulfilled; prompts the orderer to review, N-27).
  * Provider-member (of this order's provider) or admin.
  */
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

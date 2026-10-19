@@ -5,10 +5,11 @@ import { PAYMENT_CHECKOUT_DRAFTS } from '@/modules/content/guest-checkout.seed';
 export const dynamic = 'force-dynamic';
 
 interface CheckoutPageProps {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }
 
-export default async function CheckoutPage({ params }: CheckoutPageProps) {
+export default async function CheckoutPage(props: CheckoutPageProps) {
+  const params = await props.params;
   const labels = await getLabels({
     'payments.checkout.order_reconciliation_body': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.order_reconciliation_body'].en,
     'payments.checkout.order_refunded_body': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.order_refunded_body'].en,

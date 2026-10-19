@@ -17,10 +17,8 @@ const ALLOWED_STATUSES = new Set<TicketStatus>([
 ]);
 
 /** POST /api/tickets/[id]/status — scoped status transition (operator + reporter self-service). */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

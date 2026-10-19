@@ -11,13 +11,14 @@ import { getMcIcalConflictAlerts } from '@/modules/projects';
 export const dynamic = 'force-dynamic';
 
 interface MCPortalPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
-  };
+  }>;
 }
 
-export default async function MCPortalPage({ searchParams }: MCPortalPageProps) {
+export default async function MCPortalPage(props: MCPortalPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc');

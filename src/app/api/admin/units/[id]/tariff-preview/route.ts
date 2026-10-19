@@ -16,7 +16,8 @@ const calendarDate = (value: unknown): Date | null => {
 /** Saved-price preview. Active stays use the exact booking calculator, including
  * fees and policy checks. Draft grids expose only an explicitly partial tariff
  * subtotal. Neither path checks availability, holds dates or authorizes booking. */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireUnitPricing(params.id);
   if (!guard.ok) return guard.error;
   const body = await req.json().catch(() => null);

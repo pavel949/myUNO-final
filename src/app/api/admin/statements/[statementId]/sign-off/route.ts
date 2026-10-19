@@ -24,10 +24,8 @@ interface SignOffRequest {
  * `PUT /api/owner/statements/{id}/sign-off` instead (Q33); both routes share
  * the state machine in `@/modules/finance`.
  */
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
+  const params = await props.params;
   try {
     const currentUser = await getCurrentUser()
 

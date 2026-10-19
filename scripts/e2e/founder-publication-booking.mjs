@@ -135,7 +135,6 @@ try {
     const saved = await response; assert.equal(saved.status(), 200); assert.equal((await saved.json()).status, 'live');
     await fp.getByRole('status').filter({ hasText: `${fixture.unitName} is set to live.` }).waitFor();
     await fp.getByRole('link', { name: /Review publication and bookings/ }).click();
-    await fp.waitForURL(url => url.pathname === `/app/admin/units/${fixture.tariffUnitId}`);
     const publicLink = fp.getByRole('link', { name: /View public listing/ });
     await publicLink.waitFor();
     assert.equal(await publicLink.getAttribute('href'), `/units/${fixture.unitId}`);

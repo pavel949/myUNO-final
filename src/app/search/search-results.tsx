@@ -489,7 +489,7 @@ export default function SearchResults({
           </div>
         )}
 
-        {loading && (
+        {loading && !searched && (
           <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
@@ -549,13 +549,15 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && searched && (
+        {searched && (
           <section className="grid gap-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
             <div role="group" aria-label={ux.map} className="flex gap-8 lg:hidden">
               {(['list', 'map'] as const).map(value => <button key={value} type="button" aria-pressed={view === value}
                 onClick={() => setView(value)} className={`min-h-48 flex-1 rounded-full border border-border-line px-16 ${view === value ? 'bg-brand-andaman text-white' : 'bg-surface-paper text-brand-andaman'}`}>{ux[value]}</button>)}
             </div>
             <div className={view === 'map' ? 'hidden lg:block' : ''}>
+              {loading && <p role="status" className="p-16 text-small text-text-secondary">{labels.loading}</p>}
+              <div hidden={loading}>
               <div className="mb-12 flex flex-wrap items-center justify-between gap-8">
                 <p className="text-small text-text-secondary">
                   {fill(labels.mapResults, { shown: units.length, total })}
@@ -650,6 +652,7 @@ export default function SearchResults({
                   </div>
                 </>
               )}
+              </div>
             </div>
 
             <div className={view === 'list' ? 'hidden lg:block' : ''}>

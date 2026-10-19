@@ -31,7 +31,8 @@ try {
     const card = page.locator(`#unit-card-${fixture.unitId}`); await card.waitFor();
     if (width < 1024) await page.getByRole('group', { name: 'Map', exact: true }).getByRole('button', { name: 'Map', exact: true }).click();
     const marker = page.locator('.maplibregl-marker').filter({ hasText: 'Synthetic Browser Estate' });
-    await marker.waitFor(); await page.waitForTimeout(1000); // settle the debounced initial bounds navigation
+    await marker.waitFor();
+    await page.locator('.maplibregl-canvas').waitFor({ state: 'visible' });
     assert.equal(await page.locator('.maplibregl-canvas').count(), 1);
     await marker.click();
     if (width >= 1024) { await page.locator('.maplibregl-popup').waitFor(); assert.match(await page.locator('.maplibregl-popup').innerText(), /Synthetic Browser Estate/); }

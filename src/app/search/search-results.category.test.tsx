@@ -23,7 +23,7 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('next/image', () => ({ default: () => null }));
 vi.mock('@/components/SearchBar', () => ({ SearchBar: () => null }));
-vi.mock('@/components/search/SearchResultsMap', () => ({ SearchResultsMap: () => null }));
+vi.mock('@/components/search/SearchResultsMap', () => ({ SearchResultsMap: () => <div data-testid="search-map" /> }));
 
 import SearchResults from './search-results';
 
@@ -31,6 +31,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   vi.unstubAllGlobals();
+  params.delete('sort');
 });
 
 /**
@@ -40,6 +41,28 @@ afterEach(() => {
  * InventoryCategory id the search API already returns.
  */
 describe('SearchResults — category booking uses the canonical id', () => {
+  it('keeps the map mounted while new search results load', async () => {
+    let calls = 0;
+    let finish!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      const empty = { ok: true, json: async () => ({ units: [], mapProjects: [], total: 0, categories: [] }) } as Response;
+      if (String(url).includes('groupBy=category')) return Promise.resolve(empty);
+      calls++;
+      return calls === 1 ? Promise.resolve(empty) : new Promise<Response>(resolve => { finish = resolve; });
+    }));
+    const labels = new Proxy({}, { get: (_t, key) => String(key) });
+    const props = { labels: labels as never, sortOptions: [{ key: 'recommended', label: 'Recommended' }], typeOptions: [] };
+    const view = render(<SearchResults {...props} />);
+    const map = await screen.findByTestId('search-map');
+    params.set('sort', 'price_asc');
+    view.rerender(<SearchResults {...props} />);
+    await screen.findByRole('status');
+    expect(screen.getByTestId('search-map')).toBe(map);
+    finish({ ok: true, json: async () => ({ units: [], mapProjects: [], total: 0 }) } as Response);
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    expect(screen.getByTestId('search-map')).toBe(map);
+  });
+
   it('retries a failed request without changing the search context', async () => {
     let unitCalls = 0;
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {

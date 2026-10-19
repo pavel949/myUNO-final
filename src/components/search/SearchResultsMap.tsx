@@ -147,7 +147,7 @@ export function SearchResultsMap({
     };
 
     import('maplibre-gl')
-      .then((mod) => start((mod.default ?? mod) as MapLibre))
+      .then((mod) => start(((mod as { default?: unknown }).default ?? mod) as MapLibre))
       .catch(onError);
 
     return dispose;

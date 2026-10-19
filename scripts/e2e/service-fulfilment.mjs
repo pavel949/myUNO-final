@@ -20,7 +20,7 @@ let browser;
 async function persist() { await writeFile('browser-results/service-fulfilment-result.json', JSON.stringify(report, null, 2)); }
 async function step(name, page, fn) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
-  try { await fn(); entry.status = 'passed'; await page.screenshot({ path: `browser-results/service-fulfilment-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
+  try { await fn(); entry.status = 'passed'; await page.screenshot({ caret: 'initial', path: `browser-results/service-fulfilment-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
   catch (error) { entry.status = 'failed'; entry.error = String(error); throw error; }
   finally { await persist(); }
 }

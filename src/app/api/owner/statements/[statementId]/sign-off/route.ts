@@ -23,9 +23,11 @@ export const dynamic = 'force-dynamic'
  * are not allowed to read.
  */
 export async function PUT(_req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
-  const params = await props.params;
   try {
+    // Resolve the caller before awaiting params: identity is read in the first
+    // synchronous segment, exactly as before the async-params signature.
     const currentUser = await getCurrentUser()
+    const params = await props.params;
 
     if (!currentUser) {
       return NextResponse.json(

@@ -118,6 +118,11 @@ export function SearchResultsMap({
       if (cancelled || !containerRef.current || mapRef.current) return;
       libRef.current = maplibregl;
 
+      // v6 cannot discover its worker after webpack replaces import.meta.url.
+      // Build/dev copy the locked package's self-contained worker to public/.
+      // Versioned URLs prevent a cached worker from an older release being used.
+      maplibregl.setWorkerUrl(`/maplibre/maplibre-gl-worker-${maplibregl.getVersion()}.mjs`);
+
       map = new maplibregl.Map({
         container: containerRef.current,
         center: [98.32, 7.95],

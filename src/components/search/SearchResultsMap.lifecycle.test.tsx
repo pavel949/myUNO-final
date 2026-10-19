@@ -30,6 +30,15 @@ beforeEach(() => { vi.resetModules(); vi.useFakeTimers(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.doUnmock('maplibre-gl'); });
 
 describe('SearchResultsMap lifecycle', () => {
+  it('configures the matching same-origin worker before constructing a map', async () => {
+    const fake = mockMapLibre();
+    const { SearchResultsMap } = await import('./SearchResultsMap');
+    render(<SearchResultsMap {...props()} />);
+    await finishImport();
+    expect(fake.api.setWorkerUrl).toHaveBeenCalledWith('/maplibre/maplibre-gl-worker-6.15.0.mjs');
+    expect(fake.maps).toHaveLength(1);
+  });
+
   it('puts the project name and count label in the popup as text, never as markup', async () => {
     const fake = mockMapLibre();
     const { SearchResultsMap } = await import('./SearchResultsMap');

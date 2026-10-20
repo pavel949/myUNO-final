@@ -1,0 +1,64 @@
+name: Scheduler and recovery acceptance (isolated)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/myuno_recovery_test
+      DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_recovery_test
+      MYUNO_RECOVERY_REHEARSAL: isolated
+      MYUNO_SCHEDULER_SQL_TEST: isolated
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: synthetic-recovery-only
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      RECOVERY_HEAD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Start disposable PostgreSQL 17
+        run: |
+          set -euo pipefail
+          docker run --name myuno-release-postgres -d \
+            -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=myuno_recovery_test \
+            -p 127.0.0.1:5432:5432 \
+            postgres@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+          for attempt in $(seq 1 30); do
+            if docker exec myuno-release-postgres pg_isready -U test; then break; fi
+            sleep 1
+          done
+          docker exec -i myuno-release-postgres psql -U test -d myuno_recovery_test \
+            -v ON_ERROR_STOP=1 < scripts/sql/supabase-compat-roles.sql
+          docker exec myuno-release-postgres createdb -U test myuno_scheduler_test
+      - name: Test real SQL dispatch, stale-job detection and alert/retry behavior
+        run: node --test scripts/scheduler-sql.integration.test.mjs
+      - name: Migrate the disposable recovery source
+        run: npx prisma migrate deploy
+      - name: Restore and reconcile mocked external payments without duplicates
+        run: npx tsx scripts/rehearse-isolated-recovery.ts
+      - name: Publish bounded synthetic recovery result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-recovery-${{ github.sha }}
+          path: recovery-results/result.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Remove disposable database container
+        if: always()
+        run: docker rm -f myuno-release-postgres

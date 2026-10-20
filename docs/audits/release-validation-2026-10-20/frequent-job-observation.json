@@ -1,0 +1,26 @@
+[
+  {
+    "checked_at": "2026-10-20 16:22:17.174377+00",
+    "job_key": "booking_lifecycle",
+    "started_at": "2026-10-20 14:57:20.383",
+    "finished_at": "2026-10-20 14:57:20.761",
+    "outcome": "ok",
+    "age_minutes": "84.9"
+  },
+  {
+    "checked_at": "2026-10-20 16:22:17.174377+00",
+    "job_key": "ical_sync",
+    "started_at": "2026-10-20 14:57:20.922",
+    "finished_at": "2026-10-20 14:57:20.937",
+    "outcome": "ok",
+    "age_minutes": "84.9"
+  },
+  {
+    "checked_at": "2026-10-20 16:22:17.174377+00",
+    "job_key": "tm30_escalations",
+    "started_at": "2026-10-20 14:57:20.797",
+    "finished_at": "2026-10-20 14:57:20.915",
+    "outcome": "ok",
+    "age_minutes": "84.9"
+  }
+]

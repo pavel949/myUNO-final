@@ -1,0 +1,409 @@
+{
+  "production": 464,
+  "freshReplay": 384,
+  "extra": 80,
+  "missing": 0,
+  "changed": 0,
+  "extraIndexes": [
+    {
+      "name": "analytics_event_actor_identity_id_fkey_idx",
+      "table": "analytics_event",
+      "definition": "CREATE INDEX analytics_event_actor_identity_id_fkey_idx ON public.analytics_event USING btree (actor_identity_id)"
+    },
+    {
+      "name": "analytics_event_booking_id_fkey_idx",
+      "table": "analytics_event",
+      "definition": "CREATE INDEX analytics_event_booking_id_fkey_idx ON public.analytics_event USING btree (booking_id)"
+    },
+    {
+      "name": "analytics_event_service_order_id_fkey_idx",
+      "table": "analytics_event",
+      "definition": "CREATE INDEX analytics_event_service_order_id_fkey_idx ON public.analytics_event USING btree (service_order_id)"
+    },
+    {
+      "name": "announcement_created_by_identity_id_fkey_idx",
+      "table": "announcement",
+      "definition": "CREATE INDEX announcement_created_by_identity_id_fkey_idx ON public.announcement USING btree (created_by_identity_id)"
+    },
+    {
+      "name": "announcement_organization_id_fkey_idx",
+      "table": "announcement",
+      "definition": "CREATE INDEX announcement_organization_id_fkey_idx ON public.announcement USING btree (organization_id)"
+    },
+    {
+      "name": "auth_account_identity_id_fkey_idx",
+      "table": "auth_account",
+      "definition": "CREATE INDEX auth_account_identity_id_fkey_idx ON public.auth_account USING btree (identity_id)"
+    },
+    {
+      "name": "blocked_date_created_by_identity_id_fkey_idx",
+      "table": "blocked_date",
+      "definition": "CREATE INDEX blocked_date_created_by_identity_id_fkey_idx ON public.blocked_date USING btree (created_by_identity_id)"
+    },
+    {
+      "name": "booking_cancelled_by_identity_id_fkey_idx",
+      "table": "booking",
+      "definition": "CREATE INDEX booking_cancelled_by_identity_id_fkey_idx ON public.booking USING btree (cancelled_by_identity_id)"
+    },
+    {
+      "name": "booking_change_actor_identity_id_fkey_idx",
+      "table": "booking_change",
+      "definition": "CREATE INDEX booking_change_actor_identity_id_fkey_idx ON public.booking_change USING btree (actor_identity_id)"
+    },
+    {
+      "name": "booking_guest_identity_id_fkey_idx",
+      "table": "booking_guest",
+      "definition": "CREATE INDEX booking_guest_identity_id_fkey_idx ON public.booking_guest USING btree (identity_id)"
+    },
+    {
+      "name": "booking_guest_passport_media_id_fkey_idx",
+      "table": "booking_guest",
+      "definition": "CREATE INDEX booking_guest_passport_media_id_fkey_idx ON public.booking_guest USING btree (passport_media_id)"
+    },
+    {
+      "name": "buyer_signal_reviewed_by_identity_id_fkey_idx",
+      "table": "buyer_signal",
+      "definition": "CREATE INDEX buyer_signal_reviewed_by_identity_id_fkey_idx ON public.buyer_signal USING btree (reviewed_by_identity_id)"
+    },
+    {
+      "name": "compliance_checklist_instance_checked_by_identity_id_fkey_idx",
+      "table": "compliance_checklist_instance",
+      "definition": "CREATE INDEX compliance_checklist_instance_checked_by_identity_id_fkey_idx ON public.compliance_checklist_instance USING btree (checked_by_identity_id)"
+    },
+    {
+      "name": "compliance_checklist_instance_template_id_fkey_idx",
+      "table": "compliance_checklist_instance",
+      "definition": "CREATE INDEX compliance_checklist_instance_template_id_fkey_idx ON public.compliance_checklist_instance USING btree (template_id)"
+    },
+    {
+      "name": "compliance_record_media_id_fkey_idx",
+      "table": "compliance_record",
+      "definition": "CREATE INDEX compliance_record_media_id_fkey_idx ON public.compliance_record USING btree (media_id)"
+    },
+    {
+      "name": "compliance_record_verified_by_identity_id_fkey_idx",
+      "table": "compliance_record",
+      "definition": "CREATE INDEX compliance_record_verified_by_identity_id_fkey_idx ON public.compliance_record USING btree (verified_by_identity_id)"
+    },
+    {
+      "name": "condition_report_created_by_identity_id_fkey_idx",
+      "table": "condition_report",
+      "definition": "CREATE INDEX condition_report_created_by_identity_id_fkey_idx ON public.condition_report USING btree (created_by_identity_id)"
+    },
+    {
+      "name": "condition_report_media_media_id_fkey_idx",
+      "table": "condition_report_media",
+      "definition": "CREATE INDEX condition_report_media_media_id_fkey_idx ON public.condition_report_media USING btree (media_id)"
+    },
+    {
+      "name": "config_change_changed_by_identity_id_fkey_idx",
+      "table": "config_change",
+      "definition": "CREATE INDEX config_change_changed_by_identity_id_fkey_idx ON public.config_change USING btree (changed_by_identity_id)"
+    },
+    {
+      "name": "crm_activity_created_by_identity_id_fkey_idx",
+      "table": "crm_activity",
+      "definition": "CREATE INDEX crm_activity_created_by_identity_id_fkey_idx ON public.crm_activity USING btree (created_by_identity_id)"
+    },
+    {
+      "name": "crm_opportunity_project_id_fkey_idx",
+      "table": "crm_opportunity",
+      "definition": "CREATE INDEX crm_opportunity_project_id_fkey_idx ON public.crm_opportunity USING btree (project_id)"
+    },
+    {
+      "name": "crm_opportunity_unit_id_fkey_idx",
+      "table": "crm_opportunity",
+      "definition": "CREATE INDEX crm_opportunity_unit_id_fkey_idx ON public.crm_opportunity USING btree (unit_id)"
+    },
+    {
+      "name": "identity_avatar_media_id_fkey_idx",
+      "table": "identity",
+      "definition": "CREATE INDEX identity_avatar_media_id_fkey_idx ON public.identity USING btree (avatar_media_id)"
+    },
+    {
+      "name": "identity_merged_into_id_fkey_idx",
+      "table": "identity",
+      "definition": "CREATE INDEX identity_merged_into_id_fkey_idx ON public.identity USING btree (merged_into_id)"
+    },
+    {
+      "name": "incident_log_assigned_to_identity_id_fkey_idx",
+      "table": "incident_log",
+      "definition": "CREATE INDEX incident_log_assigned_to_identity_id_fkey_idx ON public.incident_log USING btree (assigned_to_identity_id)"
+    },
+    {
+      "name": "incident_log_reported_by_identity_id_fkey_idx",
+      "table": "incident_log",
+      "definition": "CREATE INDEX incident_log_reported_by_identity_id_fkey_idx ON public.incident_log USING btree (reported_by_identity_id)"
+    },
+    {
+      "name": "integration_account_project_id_fkey_idx",
+      "table": "integration_account",
+      "definition": "CREATE INDEX integration_account_project_id_fkey_idx ON public.integration_account USING btree (project_id)"
+    },
+    {
+      "name": "integration_account_unit_id_fkey_idx",
+      "table": "integration_account",
+      "definition": "CREATE INDEX integration_account_unit_id_fkey_idx ON public.integration_account USING btree (unit_id)"
+    },
+    {
+      "name": "ledger_entry_created_by_identity_id_fkey_idx",
+      "table": "ledger_entry",
+      "definition": "CREATE INDEX ledger_entry_created_by_identity_id_fkey_idx ON public.ledger_entry USING btree (created_by_identity_id)"
+    },
+    {
+      "name": "ledger_entry_statement_id_fkey_idx",
+      "table": "ledger_entry",
+      "definition": "CREATE INDEX ledger_entry_statement_id_fkey_idx ON public.ledger_entry USING btree (statement_id)"
+    },
+    {
+      "name": "lifecycle_transition_log_approved_by_identity_id_fkey_idx",
+      "table": "lifecycle_transition_log",
+      "definition": "CREATE INDEX lifecycle_transition_log_approved_by_identity_id_fkey_idx ON public.lifecycle_transition_log USING btree (approved_by_identity_id)"
+    },
+    {
+      "name": "management_contract_signed_by_owner_identity_id_fkey_idx",
+      "table": "management_contract",
+      "definition": "CREATE INDEX management_contract_signed_by_owner_identity_id_fkey_idx ON public.management_contract USING btree (signed_by_owner_identity_id)"
+    },
+    {
+      "name": "media_asset_uploaded_by_identity_id_fkey_idx",
+      "table": "media_asset",
+      "definition": "CREATE INDEX media_asset_uploaded_by_identity_id_fkey_idx ON public.media_asset USING btree (uploaded_by_identity_id)"
+    },
+    {
+      "name": "message_sender_identity_id_fkey_idx",
+      "table": "message",
+      "definition": "CREATE INDEX message_sender_identity_id_fkey_idx ON public.message USING btree (sender_identity_id)"
+    },
+    {
+      "name": "mobilization_checklist_item_completed_by_identity_id_fkey_idx",
+      "table": "mobilization_checklist_item",
+      "definition": "CREATE INDEX mobilization_checklist_item_completed_by_identity_id_fkey_idx ON public.mobilization_checklist_item USING btree (completed_by_identity_id)"
+    },
+    {
+      "name": "one_time_token_identity_id_fkey_idx",
+      "table": "one_time_token",
+      "definition": "CREATE INDEX one_time_token_identity_id_fkey_idx ON public.one_time_token USING btree (identity_id)"
+    },
+    {
+      "name": "organization_project_id_fkey_idx",
+      "table": "organization",
+      "definition": "CREATE INDEX organization_project_id_fkey_idx ON public.organization USING btree (project_id)"
+    },
+    {
+      "name": "owner_statement_engagement_id_fkey_idx",
+      "table": "owner_statement",
+      "definition": "CREATE INDEX owner_statement_engagement_id_fkey_idx ON public.owner_statement USING btree (engagement_id)"
+    },
+    {
+      "name": "owner_statement_pdf_media_id_fkey_idx",
+      "table": "owner_statement",
+      "definition": "CREATE INDEX owner_statement_pdf_media_id_fkey_idx ON public.owner_statement USING btree (pdf_media_id)"
+    },
+    {
+      "name": "owner_statement_published_by_identity_id_fkey_idx",
+      "table": "owner_statement",
+      "definition": "CREATE INDEX owner_statement_published_by_identity_id_fkey_idx ON public.owner_statement USING btree (published_by_identity_id)"
+    },
+    {
+      "name": "ownership_period_recorded_by_identity_id_fkey_idx",
+      "table": "ownership_period",
+      "definition": "CREATE INDEX ownership_period_recorded_by_identity_id_fkey_idx ON public.ownership_period USING btree (recorded_by_identity_id)"
+    },
+    {
+      "name": "payment_receipt_media_id_fkey_idx",
+      "table": "payment",
+      "definition": "CREATE INDEX payment_receipt_media_id_fkey_idx ON public.payment USING btree (receipt_media_id)"
+    },
+    {
+      "name": "payment_received_by_identity_id_fkey_idx",
+      "table": "payment",
+      "definition": "CREATE INDEX payment_received_by_identity_id_fkey_idx ON public.payment USING btree (received_by_identity_id)"
+    },
+    {
+      "name": "payment_service_order_id_fkey_idx",
+      "table": "payment",
+      "definition": "CREATE INDEX payment_service_order_id_fkey_idx ON public.payment USING btree (service_order_id)"
+    },
+    {
+      "name": "payout_recorded_by_identity_id_fkey_idx",
+      "table": "payout",
+      "definition": "CREATE INDEX payout_recorded_by_identity_id_fkey_idx ON public.payout USING btree (recorded_by_identity_id)"
+    },
+    {
+      "name": "project_cover_media_id_fkey_idx",
+      "table": "project",
+      "definition": "CREATE INDEX project_cover_media_id_fkey_idx ON public.project USING btree (cover_media_id)"
+    },
+    {
+      "name": "project_media_media_id_fkey_idx",
+      "table": "project_media",
+      "definition": "CREATE INDEX project_media_media_id_fkey_idx ON public.project_media USING btree (media_id)"
+    },
+    {
+      "name": "provider_applicant_identity_id_fkey_idx",
+      "table": "provider",
+      "definition": "CREATE INDEX provider_applicant_identity_id_fkey_idx ON public.provider USING btree (applicant_identity_id)"
+    },
+    {
+      "name": "provider_logo_media_id_fkey_idx",
+      "table": "provider",
+      "definition": "CREATE INDEX provider_logo_media_id_fkey_idx ON public.provider USING btree (logo_media_id)"
+    },
+    {
+      "name": "provider_vetted_by_identity_id_fkey_idx",
+      "table": "provider",
+      "definition": "CREATE INDEX provider_vetted_by_identity_id_fkey_idx ON public.provider USING btree (vetted_by_identity_id)"
+    },
+    {
+      "name": "provider_project_project_id_fkey_idx",
+      "table": "provider_project",
+      "definition": "CREATE INDEX provider_project_project_id_fkey_idx ON public.provider_project USING btree (project_id)"
+    },
+    {
+      "name": "refund_initiated_by_identity_id_fkey_idx",
+      "table": "refund",
+      "definition": "CREATE INDEX refund_initiated_by_identity_id_fkey_idx ON public.refund USING btree (initiated_by_identity_id)"
+    },
+    {
+      "name": "refund_paid_back_by_identity_id_fkey_idx",
+      "table": "refund",
+      "definition": "CREATE INDEX refund_paid_back_by_identity_id_fkey_idx ON public.refund USING btree (paid_back_by_identity_id)"
+    },
+    {
+      "name": "review_replier_identity_id_fkey_idx",
+      "table": "review",
+      "definition": "CREATE INDEX review_replier_identity_id_fkey_idx ON public.review USING btree (replier_identity_id)"
+    },
+    {
+      "name": "role_assignment_granted_by_identity_id_fkey_idx",
+      "table": "role_assignment",
+      "definition": "CREATE INDEX role_assignment_granted_by_identity_id_fkey_idx ON public.role_assignment USING btree (granted_by_identity_id)"
+    },
+    {
+      "name": "role_assignment_organization_id_fkey_idx",
+      "table": "role_assignment",
+      "definition": "CREATE INDEX role_assignment_organization_id_fkey_idx ON public.role_assignment USING btree (organization_id)"
+    },
+    {
+      "name": "role_assignment_project_id_fkey_idx",
+      "table": "role_assignment",
+      "definition": "CREATE INDEX role_assignment_project_id_fkey_idx ON public.role_assignment USING btree (project_id)"
+    },
+    {
+      "name": "role_assignment_provider_id_fkey_idx",
+      "table": "role_assignment",
+      "definition": "CREATE INDEX role_assignment_provider_id_fkey_idx ON public.role_assignment USING btree (provider_id)"
+    },
+    {
+      "name": "role_assignment_unit_id_fkey_idx",
+      "table": "role_assignment",
+      "definition": "CREATE INDEX role_assignment_unit_id_fkey_idx ON public.role_assignment USING btree (unit_id)"
+    },
+    {
+      "name": "service_approved_by_identity_id_fkey_idx",
+      "table": "service",
+      "definition": "CREATE INDEX service_approved_by_identity_id_fkey_idx ON public.service USING btree (approved_by_identity_id)"
+    },
+    {
+      "name": "service_cover_media_id_fkey_idx",
+      "table": "service",
+      "definition": "CREATE INDEX service_cover_media_id_fkey_idx ON public.service USING btree (cover_media_id)"
+    },
+    {
+      "name": "service_media_media_id_fkey_idx",
+      "table": "service_media",
+      "definition": "CREATE INDEX service_media_media_id_fkey_idx ON public.service_media USING btree (media_id)"
+    },
+    {
+      "name": "service_order_booking_id_fkey_idx",
+      "table": "service_order",
+      "definition": "CREATE INDEX service_order_booking_id_fkey_idx ON public.service_order USING btree (booking_id)"
+    },
+    {
+      "name": "service_order_cancelled_by_identity_id_fkey_idx",
+      "table": "service_order",
+      "definition": "CREATE INDEX service_order_cancelled_by_identity_id_fkey_idx ON public.service_order USING btree (cancelled_by_identity_id)"
+    },
+    {
+      "name": "service_order_service_id_fkey_idx",
+      "table": "service_order",
+      "definition": "CREATE INDEX service_order_service_id_fkey_idx ON public.service_order USING btree (service_id)"
+    },
+    {
+      "name": "service_order_unit_id_fkey_idx",
+      "table": "service_order",
+      "definition": "CREATE INDEX service_order_unit_id_fkey_idx ON public.service_order USING btree (unit_id)"
+    },
+    {
+      "name": "service_project_project_id_fkey_idx",
+      "table": "service_project",
+      "definition": "CREATE INDEX service_project_project_id_fkey_idx ON public.service_project USING btree (project_id)"
+    },
+    {
+      "name": "ticket_raised_by_identity_id_fkey_idx",
+      "table": "ticket",
+      "definition": "CREATE INDEX ticket_raised_by_identity_id_fkey_idx ON public.ticket USING btree (raised_by_identity_id)"
+    },
+    {
+      "name": "ticket_thread_id_fkey_idx",
+      "table": "ticket",
+      "definition": "CREATE INDEX ticket_thread_id_fkey_idx ON public.ticket USING btree (thread_id)"
+    },
+    {
+      "name": "ticket_unit_id_fkey_idx",
+      "table": "ticket",
+      "definition": "CREATE INDEX ticket_unit_id_fkey_idx ON public.ticket USING btree (unit_id)"
+    },
+    {
+      "name": "ticket_event_actor_identity_id_fkey_idx",
+      "table": "ticket_event",
+      "definition": "CREATE INDEX ticket_event_actor_identity_id_fkey_idx ON public.ticket_event USING btree (actor_identity_id)"
+    },
+    {
+      "name": "ticket_media_media_id_fkey_idx",
+      "table": "ticket_media",
+      "definition": "CREATE INDEX ticket_media_media_id_fkey_idx ON public.ticket_media USING btree (media_id)"
+    },
+    {
+      "name": "tm30_filing_receipt_media_id_fkey_idx",
+      "table": "tm30_filing",
+      "definition": "CREATE INDEX tm30_filing_receipt_media_id_fkey_idx ON public.tm30_filing USING btree (receipt_media_id)"
+    },
+    {
+      "name": "translation_updated_by_identity_id_fkey_idx",
+      "table": "translation",
+      "definition": "CREATE INDEX translation_updated_by_identity_id_fkey_idx ON public.translation USING btree (updated_by_identity_id)"
+    },
+    {
+      "name": "unit_cover_media_id_fkey_idx",
+      "table": "unit",
+      "definition": "CREATE INDEX unit_cover_media_id_fkey_idx ON public.unit USING btree (cover_media_id)"
+    },
+    {
+      "name": "unit_owner_identity_id_fkey_idx",
+      "table": "unit",
+      "definition": "CREATE INDEX unit_owner_identity_id_fkey_idx ON public.unit USING btree (owner_identity_id)"
+    },
+    {
+      "name": "unit_engagement_management_org_id_fkey_idx",
+      "table": "unit_engagement",
+      "definition": "CREATE INDEX unit_engagement_management_org_id_fkey_idx ON public.unit_engagement USING btree (management_org_id)"
+    },
+    {
+      "name": "unit_engagement_mandate_media_id_fkey_idx",
+      "table": "unit_engagement",
+      "definition": "CREATE INDEX unit_engagement_mandate_media_id_fkey_idx ON public.unit_engagement USING btree (mandate_media_id)"
+    },
+    {
+      "name": "unit_engagement_owner_identity_id_fkey_idx",
+      "table": "unit_engagement",
+      "definition": "CREATE INDEX unit_engagement_owner_identity_id_fkey_idx ON public.unit_engagement USING btree (owner_identity_id)"
+    },
+    {
+      "name": "unit_media_media_id_fkey_idx",
+      "table": "unit_media",
+      "definition": "CREATE INDEX unit_media_media_id_fkey_idx ON public.unit_media USING btree (media_id)"
+    }
+  ]
+}

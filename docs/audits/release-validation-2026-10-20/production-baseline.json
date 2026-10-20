@@ -1,0 +1,744 @@
+[
+  {
+    "jsonb_build_object": {
+      "jobs": [
+        {
+          "job_key": "booking_lifecycle",
+          "outcome": "ok",
+          "started_at": "2026-10-20T14:57:20.383",
+          "finished_at": "2026-10-20T14:57:20.761"
+        },
+        {
+          "job_key": "deposit_release",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:34.643",
+          "finished_at": "2026-10-19T22:50:34.653"
+        },
+        {
+          "job_key": "guest_lifecycle",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:34.468",
+          "finished_at": "2026-10-19T22:50:34.494"
+        },
+        {
+          "job_key": "ical_sync",
+          "outcome": "ok",
+          "started_at": "2026-10-20T14:57:20.922",
+          "finished_at": "2026-10-20T14:57:20.937"
+        },
+        {
+          "job_key": "metrics_rollup",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:34.072",
+          "finished_at": "2026-10-19T22:50:34.463"
+        },
+        {
+          "job_key": "preventive_maintenance",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:34.656",
+          "finished_at": "2026-10-19T22:50:34.668"
+        },
+        {
+          "job_key": "retention",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:33.968",
+          "finished_at": "2026-10-19T22:50:34.067"
+        },
+        {
+          "job_key": "service_order_expiry",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:34.498",
+          "finished_at": "2026-10-19T22:50:34.585"
+        },
+        {
+          "job_key": "tm30_escalations",
+          "outcome": "ok",
+          "started_at": "2026-10-20T14:57:20.797",
+          "finished_at": "2026-10-20T14:57:20.915"
+        },
+        {
+          "job_key": "verification_deadlines",
+          "outcome": "ok",
+          "started_at": "2026-10-19T22:50:33.954",
+          "finished_at": "2026-10-19T22:50:33.961"
+        }
+      ],
+      "database": "postgres",
+      "projects": [
+        {
+          "count": 3,
+          "status": "archived"
+        },
+        {
+          "count": 1,
+          "status": "live"
+        },
+        {
+          "count": 7,
+          "status": "draft"
+        }
+      ],
+      "checked_at": "2026-10-20T16:08:25.257965+00:00",
+      "migrations": [
+        {
+          "name": "0_init",
+          "checksum": "9630c491525bc8a52f92deef9f433698483c4465aa953a4dd777c60d6f9cd812",
+          "finished_at": "2026-07-18T06:51:32.703685+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "1_order_cancelled_notification",
+          "checksum": "964af2a16651debbf371e2305def4e6d4e1368209a41605a521eff35bc099ad0",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "2_provider_applicant_identity",
+          "checksum": "4722d11d7ebc1265ea5502fa90ed77fb2ff5ce5a039c5310dcad8ec58bb03ab5",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260716000000_align_init_baseline",
+          "checksum": "886239d65043f4e967d8381b5700a6d3ae474827b85af99a6e012769f5deb693",
+          "finished_at": "2026-08-17T05:35:24.605187+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260719000001_order_cancelled_notification",
+          "checksum": "fd175be887b593e99ca57f40449c4ebdb5415a5893e395377e02d4329d5bb8b9",
+          "finished_at": "2026-08-17T05:31:04.192667+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260719000002_provider_applicant_identity",
+          "checksum": "a0e48bc81df3a47fd12d96487ab7757e099c63a511ecfe9ef76e233ebabbd03d",
+          "finished_at": "2026-08-17T05:31:13.133249+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260719000003_metric_daily_owner_stay_nights",
+          "checksum": "fbc3acbfc5164b0f8d60ae69575225f00891b1092ad08ed2a244620505274218",
+          "finished_at": "2026-08-17T05:31:21.52611+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260719000004_service_order_expiry",
+          "checksum": "931c2a215b2a07b369f941914718938c548b4e1230ea921b012e3a393f642bb7",
+          "finished_at": "2026-08-17T05:31:29.746514+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260727000005_guest_pii_encryption",
+          "checksum": "8575104540f91ec9ecdf98acd73f582242b70e735ec4365e0a887a7510cc2d85",
+          "finished_at": "2026-08-17T05:31:38.081066+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260727000006_one_active_engagement_per_unit",
+          "checksum": "46b3449d8496c93c58e3c01fc39c814c2be0bc558fa90bc6ac792a28aca50e1a",
+          "finished_at": "2026-08-17T05:31:46.619831+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260727000007_indexes_and_deletion_status",
+          "checksum": "5ea43cb7710309b959da2ce2bed93c56bacf282d8b879eae42d77190a3d48f14",
+          "finished_at": "2026-08-17T05:31:54.766069+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260728000008_unit_category_key",
+          "checksum": "1291a49a44ae853dc515ea55a9ad39f8cc92bfea6c54fee904342937b14f4296",
+          "finished_at": "2026-08-17T05:33:53.005321+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260813000009_crm_foundation",
+          "checksum": "68efca837e0f5db5aa5795cb074096a9e1f7eeea862d8133df6aa79a3f05c8b7",
+          "finished_at": "2026-08-17T05:35:26.488071+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260813000010_owner_reporting_and_transparency",
+          "checksum": "f9228212dccdedbd976d38d782093d2cff5a409c5637d0e2ac2d2c2349398be4",
+          "finished_at": "2026-08-17T05:35:28.031384+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260815000011_operational_crm_contracts_and_lifecycle",
+          "checksum": "ad30fd6e0ee253e04fc73ec69c1d8f8417b6c2658e859a33744ccc4694ba21cb",
+          "finished_at": "2026-08-17T05:35:29.632105+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260816000012_service_approval_audit",
+          "checksum": "92756c85a20eba736b0ad6b53f2934f606967909a1ae31d92a0e81f70d3aa6b5",
+          "finished_at": "2026-08-17T05:35:31.157879+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260816000013_T032_deposits_preauth_and_damage_claims",
+          "checksum": "3ab807d512e1ad377e80d906a3bc402e871dc268d92447a14848844bcdcd6c0e",
+          "finished_at": "2026-08-17T05:35:32.70182+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000014_booking_no_overlap_exclusion",
+          "checksum": "b62121fa53fe090b85de4b976f90d59b2720fd6fb7ed018fe676da079bf1bb3d",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000015_ownership_period",
+          "checksum": "7aca830b2967f9e4fe184f225eb827fdd88ce1c1093cf207ae53a629a9cc3d3c",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000016_immutable_financial_records",
+          "checksum": "4e61b66d99f320ee01e2674116b5f011e149ade4f26dd46a6b4b7c5166a416be",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000017_booking_party_composition",
+          "checksum": "d663d37f4de555483d1cc1557ee99ba2746afc38f6933ed1ac39f881bbf16784",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000018_guest_reviews",
+          "checksum": "712497234a520be7126c5528575d47a38c6b82e34aa98f761969fbdd281cd8f8",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000019_saved_units_and_searches",
+          "checksum": "b555e10555d8bc710ddcf9e635e23278134ddb689228c4e0943112e3a3211274",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260818000020_area",
+          "checksum": "ea591c6193c26586e88b6788900cfea785235dd6d3053d0f56fb51129a14c77a",
+          "finished_at": "2026-08-18T23:38:59.022877+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260824000021_rls_every_table",
+          "checksum": "36573f210965b5fb0fc50e2a4b89477e5940c8a2b4b64887ceedf58c0b155989",
+          "finished_at": "2026-08-24T06:14:01.194089+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260824000022_bank_transfer_payments",
+          "checksum": "6989754b353d729a2a519955eef236f6255ae46d5dbd65f78b50ffd9ce0b6597",
+          "finished_at": "2026-08-24T06:14:01.194089+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260825044246_disputes",
+          "checksum": "53f7bb80367b6293a30051b652deff47f6a36d96fddb5f8069cb979bb9c328f1",
+          "finished_at": "2026-09-06T23:59:54.052459+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260825050000_dispute_rls",
+          "checksum": "0d4b2bc705e14477f884dd8cd15208ca8974269fc27ab904c88d3f23030aeed8",
+          "finished_at": "2026-09-07T00:00:15.711072+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260904000023_thread_context_statement",
+          "checksum": "bcbb265e57f30243107bb8e9f525e02dfdc983706ec9835d6fefae56d3162deb",
+          "finished_at": "2026-09-07T00:00:28.79355+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260904000024_service_order_fulfilled_at",
+          "checksum": "d52561d4ccba0f6add57f4778b3bd7be92efd38db360f86bda28b19a37983cab",
+          "finished_at": "2026-09-07T00:10:28.299015+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260904060200_role_assignment_scope_constraints",
+          "checksum": "c577066d7c151e3686edcab356382ed6f6c4e454a38898bc65e8fec0d1b57ce6",
+          "finished_at": "2026-09-07T00:10:28.299015+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260904062200_relax_role_assignment_unit_scope_check",
+          "checksum": "1fbf89d2ff0b544cdf6f54b6e41a72c39fcbf6e1a59eca692ec2e3a2b365cb0f",
+          "finished_at": "2026-09-07T00:10:28.299015+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260904130000_job_run_scheduler_health",
+          "checksum": "55b60a001838c4166000221e09cfa7999ca2e7c2c2ed7d0b65b1012f92c41e25",
+          "finished_at": "2026-09-07T00:11:06.213587+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260905000025_drop_project_default_currency",
+          "checksum": "d34b43c040139429bc068dc2b44d11d9abb826294c3d7ed5e67c1525dccadd84",
+          "finished_at": "2026-09-07T00:11:24.27161+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260906000026_crm_opportunity_value_in_satang",
+          "checksum": "19741b601ec94b2846dd8cd07f1579e6243dfa7a7a7e2ac6a51ab5d805f56ebd",
+          "finished_at": "2026-09-07T00:11:24.27161+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260907000000_canonical_property_data_system",
+          "checksum": "b1e8cc4195a0fa135767a5c0d076e3c20b0957dcbe90b425ee208d82905a05db",
+          "finished_at": "2026-09-07T15:43:36.159778+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260907001000_unit_project_coherence",
+          "checksum": "058daeede13831f2d19c1c7ca1d07f128714bf581baa6ac35609bdda84c9cea7",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260907120000_fix_project_org_role_index_name",
+          "checksum": "d8aac28ff03fc97e6b5dc2d5783610be7e5f06fda200a2ce545fa3c73485eb03",
+          "finished_at": "2026-09-07T15:43:36.159778+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260908000000_service_order_close_window",
+          "checksum": "89ac16bb40ac6a2512d3a1ce4a323b3a3b86dc8016981e73915aa07d7c38f3bf",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260908000100_service_order_closed_event",
+          "checksum": "0fa5fc8a352731e7f914b3c68d4cacbeb97916f2ec9adfc1a7521957f91e56f7",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260909062500_dispute_subject_concurrency_guard",
+          "checksum": "0b1c7aeec32c46802027c6715ae2b8e3ac0dcaf4d5b56ebea83cdf5ac90cc265",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260909160000_canonical_commerce_federation_onboarding",
+          "checksum": "75ddf86e4e02aa02e8a9b283badcc2f3939d7349f59d478b51b8f6d4c1334756",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260909161000_reschedule_hold_cleanup",
+          "checksum": "004c7b834513776eaf2cace5c23608c5d441fb45185f38d56d0bd78579beba8a",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260909162000_seed_onboarding_templates",
+          "checksum": "7dc17146ca122f35861b27af0c384f5e0891bd25f28ad5c3c0e210c9d6b638a5",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260912000000_secure_canonical_v3_operational_tables",
+          "checksum": "6e1f06ce9339c56256774c2321c0fca993a56242d6edda028441e95cb262b519",
+          "finished_at": "2026-09-11T17:12:10.043498+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260912010000_payout_ledger_integrity",
+          "checksum": "3846cfc4836514b81132627b04515e40445c90cc2335b86a8aafbedffecd6ad8",
+          "finished_at": "2026-09-12T01:07:56.509818+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260913100000_canonical_inventory_category_links",
+          "checksum": "5409787fa4a672928636e590a7489ac4b65562b5a87ad6a1ad44f64f42313ecc",
+          "finished_at": "2026-09-13T13:35:10.109457+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260913210000_canonical_inventory_bootstrap",
+          "checksum": "5cdddad1e07812cdfdac470ecc1b946304e73f2be4d1fcf376ba8668d32e3f80",
+          "finished_at": "2026-09-13T13:35:10.109457+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260923043000_pin_inventory_trigger_search_path",
+          "checksum": "643fb980f144cded9de1a88886b648afafc99b840983d9f7019a697e61f542e3",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260924180000_refund_written_off_status",
+          "checksum": "dfb0c0b75d0dea0536523f8abad08f0092b81ba2fbb5f397d2b68180568cb44f",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928090000_unified_domain_event_outbox",
+          "checksum": "528488d36d8be8012a899a3ed97fc4ab4717b751891507cd49dfcf3b87bb3722",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928100000_layantara_private_snapshot",
+          "checksum": "7d24a46900c141aa238c9d99c7b2282e3207c98d79d4bb3315ed361a4b3f45d8",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928183000_layantara_booking_cutover_guard",
+          "checksum": "68a97481c30b55faa6f02a52d87fc4aa18d9c4772f73b5b840e9b38447de772a",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928194500_layantara_catalog_content_and_rate_matrix",
+          "checksum": "5c6a1bdf08b13e6f2d507ea8511df87e31952ae9237cff99a98fc52f85b8f334",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928201000_layantara_origin_photo_galleries",
+          "checksum": "9536ede61ccaefc42f2a362c136f2a1135955668e1144fae8fa4d3667d5c49e5",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928202000_project_staff_department_permissions",
+          "checksum": "aec6a13334dcefd40c522604a7fd4f90f90f7e678492b2f0b79281115ef2eba0",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928203500_unit_commercial_offering_uniqueness",
+          "checksum": "97d337dc4f24defbac90136eb5db7c6d5439d82b68590dce11a7b9b54f0a0afb",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928204500_private_unit_access_instructions",
+          "checksum": "db4cf932e127d36a67348d2dd4703277e1de72dd24ab6ae4b65bb99e917d10ba",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928210000_phuket_property_areas",
+          "checksum": "7867ee68832c3cbb5dc291c981010165562ed77846861cd0741e131de3739b20",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928211000_layantara_draft_rental_offers",
+          "checksum": "de951a1ea32fe2c35fc646aae79e88c464e755b4ffb4e50c111ff2dd755b6a8b",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928212000_canonical_offering_type_alignment",
+          "checksum": "b2425f99735624eadbfe0aab85a36988b2788d05957e8433c549953b6e2ad1e9",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260928213000_layantara_staging_protection",
+          "checksum": "11928135e04387fe18b6b01cdbc4195659a8094485a9140fc1030b0cf3200511",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260929090000_inventory_category_gallery",
+          "checksum": "cbb727e1b434fa2c4172e8ca4c23d082ddbb4b7b1e0362bda21bffbd090bfa8b",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260929100000_project_structure_nodes",
+          "checksum": "785510ff8c85125162336be495d966340cd94fa1262e11c6583c1bdbbf309bb3",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260929110000_property_deal_agreements",
+          "checksum": "160c07f8441e6f29cd75e787ce40f8b328937f3f880913acf619224f3f9a469e",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260930090000_project_amenity_experience",
+          "checksum": "f4c796dcd67d59daffca6ca613b29b6c0e09f780f413c0ca7eee026cdf177300",
+          "finished_at": "2026-09-30T23:22:50.874138+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20260930120000_pin_trigger_function_search_path",
+          "checksum": "28dc916ed9a05cfde276a5a23339a439a946ba6c859b261703f3f978a1e49388",
+          "finished_at": "2026-09-30T23:43:00.135242+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261002193000_pms_operational_tasks",
+          "checksum": "6ea0c1703e0cbd6be083a0148a62a52a6329be8b750ef2dd71e4d9680288d940",
+          "finished_at": "2026-10-02T12:42:07.054293+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261003070000_operating_spaces_foundation",
+          "checksum": "57e3db6b9132353a154c8bc507021f9a2ca865ab0b2b7d63773ac791f85ca230",
+          "finished_at": "2026-10-05T02:19:29.152234+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261003075000_pms_operational_task_enums",
+          "checksum": "26b799f94003b2983cd7b9f236c00076dfeeae952e8a5fd1cc3a84554c55a060",
+          "finished_at": "2026-10-05T02:19:29.152234+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261003080000_pms_operational_task_expansion",
+          "checksum": "35012b01400e6c4ae3e93d67c43b3f3401231ffb89b7b6658a28681d35723e50",
+          "finished_at": "2026-10-05T02:19:29.152234+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261003090000_reservation_groups",
+          "checksum": "7b8265e2f8601ea759869fb7df592b7d0318924e37ba14916803b77439c56a71",
+          "finished_at": "2026-10-05T02:19:29.152234+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261005120000_backfill_stay_offerings",
+          "checksum": "73e2ef37434f8f39df0c4d2b0167921dbebb1f89217e556147358829c2c38171",
+          "finished_at": "2026-10-05T02:19:29.152234+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261005130000_project_portal_nearby_places",
+          "checksum": "14295eb268726ccd6b23af6e5722e02796d43671e123ca559cfc30b37186f14e",
+          "finished_at": "2026-10-12T05:01:08.364215+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261005134500_homepage_placements",
+          "checksum": "23944bd5e04dc440ef8f12ce38cbbab943d613992b7f2103db5bbec086aa880e",
+          "finished_at": "2026-10-12T05:01:08.364215+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261005150000_homepage_funnel_events",
+          "checksum": "496516af657ad24b7f049f16c333ca115e2cf4adcebb4913aefe8d7fc6c6edb9",
+          "finished_at": "2026-10-12T05:01:08.364215+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261005170000_stitch_additive_gaps",
+          "checksum": "8ba753f729568d003f28eb5e2e3bbcff5ce3c7a885a011f400bc7a098468d0ee",
+          "finished_at": "2026-10-12T05:01:08.364215+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261006070000_layantara_public_content_normalization",
+          "checksum": "d8756edc3274e10f40c358d3c5cb99b945231518ee935c49fd49c49684ebd040",
+          "finished_at": "2026-10-12T07:42:40.991649+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261006090000_booking_channel_expedia_trip_com",
+          "checksum": "1aaafdfb906bda3936f53e5d9e53b6da4d926d4a0b8f8d82a1ae62a644dfc6b5",
+          "finished_at": "2026-10-12T05:01:08.364215+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261008170000_booking_payment_method",
+          "checksum": "628d171567011de67e87aeb6bb912d8ed89000a197297e0a0c342a9048df7abe",
+          "finished_at": "2026-10-11T03:39:29.841784+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261008173000_booking_creation_intent",
+          "checksum": "45445ea147d83d9c41f3324e559a20c7994533d5f94b98fdc350e37fe40f80a3",
+          "finished_at": "2026-10-11T03:39:29.841784+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261008190000_payment_reconciliation",
+          "checksum": "3f7ddac5f5874fca45818f9e4dbf7ce8c07e4789535fa5099a4d3ed452cdcadc",
+          "finished_at": "2026-10-11T03:39:29.841784+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261008193000_recoverable_checkout",
+          "checksum": "792b03ed7c81249f8a0ae201bdd56b9814bc582b803f564d07224847aa1600d9",
+          "finished_at": "2026-10-11T03:39:29.841784+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261010070000_manual_cost_integrity",
+          "checksum": "77e75ab63abf6b91a1c5360bb1e3b954953c1f0e0bdbd0a4c1d8b4279fed197d",
+          "finished_at": "2026-10-12T04:41:55.215579+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261010102000_private_expense_receipts",
+          "checksum": "1cf87ee1709742e787d942cd06d1c6ef1e8c235fc37ba8950d35ebe36e7ee3d6",
+          "finished_at": "2026-10-12T04:41:55.215579+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261010103000_statement_snapshot_lines",
+          "checksum": "5a00b572c44acbc89ca9810c2a7536248f14972433776da4c3f22245c32cb598",
+          "finished_at": "2026-10-12T04:41:55.215579+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261010104000_pin_finance_trigger_search_path",
+          "checksum": "0e9d6a0f7a0e6080b25d4cc8ac6e48d50a3eeedb27fa4a6f1d8a32dab3b27800",
+          "finished_at": "2026-10-12T04:41:55.215579+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261012120000_secret_vault",
+          "checksum": "32bcd668b30463bce8432de604ba6c276f0e923a47fc0f69aa1cffa5e77d2d7d",
+          "finished_at": "2026-10-14T06:04:48.803484+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261013100000_session_revocation",
+          "checksum": "6d0c49c63cbdc6a84d24e04d92229ff806070bb8260bf3efb1b1a5a1147ff06a",
+          "finished_at": "2026-10-14T06:04:48.803484+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261013101000_rate_limit_bucket",
+          "checksum": "03ce7a4f9d2cbf0794c90df6c216d7bb7c7e7ef8ba434ee57a9c456bde7f5edd",
+          "finished_at": "2026-10-14T06:04:48.803484+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015010000_booking_receivable_review",
+          "checksum": "954e0c2eb04fea0e6c0bbc3b2382bde5436a97ce665a40efed2e1ed8c5f3df52",
+          "finished_at": "2026-10-15T01:55:07.500346+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015064143_content_contributor_role",
+          "checksum": "12f9c14febcdf35835cda4784890383c39e7e5c1e998a5e894b792efc3f3b7c0",
+          "finished_at": "2026-10-15T13:10:58.519328+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015070000_standalone_service_support",
+          "checksum": "5376743ad871b20f29feece8a5b4b0ab024e502e4333024b73a9978e1c25948e",
+          "finished_at": "2026-10-15T02:20:08.675113+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015074000_unit_marketing_title_pointer",
+          "checksum": "897c0e205d309de434865f4b6eac3a0fbc2821da662d731e1f28100c33cba3c7",
+          "finished_at": "2026-10-15T13:11:41.654442+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015080331_pricing_editor_role",
+          "checksum": "0a75546ed2a581661bb5a2051dedadaec13818505142839bf90353e24044aa99",
+          "finished_at": "2026-10-18T03:23:11.39909+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "20261015120347_property_capability_delegation",
+          "checksum": "121ed259cdd4faf1248b6848c161e78c5d7922c683e6bd17050acbd1ad040798",
+          "finished_at": "2026-10-18T03:23:27.827545+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "3_metric_daily_owner_stay_nights",
+          "checksum": "27442a607da1326e70cbd3e021bf6f1e66fb33a8e9d2b9918719cf4f37750175",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "4_service_order_expiry",
+          "checksum": "9de477225774529d80c323a380a168fa4817692b540587fe2abe0249a6cf5dfd",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "5_guest_pii_encryption",
+          "checksum": "e73421547b28a93782f7ab93b69f784427fd39aeda677ff2bfb31ee79ac751e9",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "6_one_active_engagement_per_unit",
+          "checksum": "f6930fa00c7751da829bcbe7c3353ce7602de542e58c2fc22bab6b84a179ce23",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "7_indexes_and_deletion_status",
+          "checksum": "22261dbfa630aadeb2adb51d9bbc8db874364249fa3b21d0e545f51d3f28cd0d",
+          "finished_at": "2026-07-27T15:48:45.284906+00:00",
+          "rolled_back_at": null
+        },
+        {
+          "name": "8_unit_category_key",
+          "checksum": "7c17872545c38587877ab8d5c1f87f87f8207afba76ec530b7519313e62eeff1",
+          "finished_at": "2026-07-28T12:49:25.606454+00:00",
+          "rolled_back_at": null
+        }
+      ],
+      "unit_status": [
+        {
+          "count": 44,
+          "status": "live",
+          "no_cover": 27,
+          "no_permitted_use": 0
+        },
+        {
+          "count": 12,
+          "status": "draft",
+          "no_cover": 5,
+          "no_permitted_use": 1
+        }
+      ],
+      "translations": [
+        {
+          "count": 4323,
+          "locale": "en",
+          "status": "ok"
+        },
+        {
+          "count": 4323,
+          "locale": "ru",
+          "status": "ok"
+        },
+        {
+          "count": 3985,
+          "locale": "th",
+          "status": "ok"
+        },
+        {
+          "count": 298,
+          "locale": "zh",
+          "status": "ok"
+        }
+      ],
+      "exclusion_constraints": [
+        {
+          "table": "booking",
+          "definition": "EXCLUDE USING gist (unit_id WITH =, daterange(start_date, end_date, '[)'::text) WITH &&) WHERE ((status = ANY (ARRAY['confirmed'::\"BookingStatus\", 'checked_in'::\"BookingStatus\", 'pending_payment'::\"BookingStatus\"])))"
+        },
+        {
+          "table": "ownership_period",
+          "definition": "EXCLUDE USING gist (unit_id WITH =, daterange(starts_on, COALESCE(ends_on, 'infinity'::date), '[)'::text) WITH &&)"
+        }
+      ]
+    }
+  }
+]

@@ -1,6 +1,25 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { checkMigrationLedger, migrationFailureSummary, productionMigrationConnection } from './production-migration-policy.mjs';
+import { backupConnection } from './backup-policy.mjs';
+
+/** The ledger reader needs SELECT, never the migration writer's credentials. */
+export function readonlyPreflightConnection(env) {
+  if (!env.READONLY_DATABASE_URL) return productionMigrationConnection(env.DATABASE_URL);
+  // Same canonical project and dedicated restricted principal as verified backups.
+  // Never repurpose this connection for production-migrate.mjs or DDL.
+  backupConnection(env.READONLY_DATABASE_URL);
+  const target = new URL(env.READONLY_DATABASE_URL);
+  if (target.searchParams.get('schema') && target.searchParams.get('schema') !== 'public') {
+    throw new Error('Refusing a foreign preflight schema');
+  }
+  if (target.searchParams.get('pgbouncer') === 'true') {
+    throw new Error('Refusing a transaction preflight pooler');
+  }
+  target.searchParams.set('sslmode', 'require');
+  target.searchParams.set('connection_limit', '1');
+  return target.toString();
+}
 
 /** No DDL, subprocess, repair, business writer or credential output in this path. */
 export async function inspectReadonlyMigrationLedger(db, files) {
@@ -17,7 +36,7 @@ async function main() {
     if (process.env.GITHUB_REF !== 'refs/heads/main' || !/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA ?? '')) {
       throw new Error('Read-only preflight requires reviewed main');
     }
-    const url = productionMigrationConnection(process.env.DATABASE_URL);
+    const url = readonlyPreflightConnection(process.env);
     const target = new URL(url);
     // Only a validated Supabase hostname and port; never the connection URI.
     console.log(`Read-only migration preflight: host=${target.hostname}; port=${target.port || '5432'}`);

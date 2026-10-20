@@ -1,0 +1,21 @@
+[
+  {
+    "jsonb_build_object": {
+      "media": [
+        {
+          "kind": "photo",
+          "assets": 718,
+          "encrypted": false,
+          "invalid_size": 0
+        }
+      ],
+      "checked_at": "2026-10-20T16:12:14.695478+00:00",
+      "live_units": 44,
+      "regulatory": null,
+      "rls_disabled": 0,
+      "unit_media_links": 624,
+      "live_without_project_live": 5,
+      "live_without_category_media": 6
+    }
+  }
+]

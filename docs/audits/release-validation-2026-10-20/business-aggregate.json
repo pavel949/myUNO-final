@@ -1,0 +1,12 @@
+[
+  {
+    "jsonb_build_object": {
+      "bookings": null,
+      "rls_disabled": 0,
+      "payment_status": null,
+      "pending_review": 0,
+      "media_relation_orphans": 0,
+      "public_function_security_definer": 0
+    }
+  }
+]

@@ -1,5 +1,7 @@
 # Реализованное, незавершённое и проверки
 
+> Follow-up 2026-10-20: [release validation evidence](../audits/release-validation-2026-10-20/RELEASE_EVIDENCE.md) records fresh read-only production schema/content/job facts, 6,055 passing local tests, isolated Chromium acceptance and recovery rehearsal. Release, scheduler activation and real email delivery remain blocked; the operational changes are prepared for review, not deployed.
+
 Дата 2026-10-16; application codeRevision `c61412e71801e345fb7d3cde0168a6631b0b4932`, ops main53634204 после PR294–297. Exact codeRevision указан в REFERENCE; production acceptance оценивается отдельно. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
 
 ## Как читать статус

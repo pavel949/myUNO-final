@@ -1,0 +1,23 @@
+{
+  "headCommit": "1fa0309d7e81f7948d8f58f414809771b604096f",
+  "synthetic": true,
+  "steps": [
+    {
+      "locale": "en",
+      "result": "passed",
+      "scenario": "locale cookie → localized login → protected admin redirect → project/unit async params → dates → next/image"
+    },
+    {
+      "locale": "ru",
+      "result": "passed",
+      "scenario": "locale cookie → localized login → protected admin redirect → project/unit async params → dates → next/image"
+    },
+    {
+      "locale": "th",
+      "result": "passed",
+      "scenario": "locale cookie → localized login → protected admin redirect → project/unit async params → dates → next/image"
+    }
+  ],
+  "pageErrors": [],
+  "result": "passed"
+}

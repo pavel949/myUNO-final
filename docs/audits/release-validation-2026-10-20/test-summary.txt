@@ -5,7 +5,6 @@ Application source: 1fa0309d7e81f7948d8f58f414809771b604096f
    Duration  696.12s (transform 21.48s, setup 2.58s, collect 63.12s, tests 601.45s, environment 434ms, prepare 157ms)
 
 
-
 Updated release policies:
 ℹ tests 16
 ℹ suites 0
@@ -14,23 +13,22 @@ Updated release policies:
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 389.702184
+ℹ duration_ms 188.040935
 
-
-Scheduler SQL PostgreSQL integration:
-✔ invoker functions and tables are inaccessible to public API roles (208.244615ms)
-✔ missing credentials refuse a request and expose no secret (405.359011ms)
-✔ repeated dispatch while HTTP is pending enqueues only once (399.000732ms)
-✔ concurrent dispatchers enqueue only one request (525.209641ms)
-✔ activation refuses the disposable database before creating schedules (220.708171ms)
-✔ successful HTTP alone is insufficient without every expected job result (406.834235ms)
-✔ well-formed response plus persisted fresh jobs passes (412.4353ms)
-✔ positive HTTP body cannot replace persisted job records for this dispatch (332.897632ms)
-✔ malformed or redirected/protected response fails safely (314.084297ms)
-✔ watchdog detects never-run, stale and failed jobs independently (696.690206ms)
-✔ alerts deduplicate during incident, repeat after cooldown and notify recovery (847.051185ms)
-✔ timed-out dispatch is failed and can be retried without duplicating a pending request (529.165822ms)
-✔ missing alert destination refuses to claim watchdog acceptance (438.598602ms)
+Scheduler PostgreSQL integration:
+✔ invoker functions and tables are inaccessible to public API roles (315.852899ms)
+✔ missing credentials refuse a request and expose no secret (420.552175ms)
+✔ repeated dispatch while HTTP is pending enqueues only once (439.988895ms)
+✔ concurrent dispatchers enqueue only one request (526.074512ms)
+✔ activation refuses the disposable database before creating schedules (198.83442ms)
+✔ successful HTTP alone is insufficient without every expected job result (416.109261ms)
+✔ well-formed response plus persisted fresh jobs passes (401.814056ms)
+✔ positive HTTP body cannot replace persisted job records for this dispatch (324.031531ms)
+✔ malformed or redirected/protected response fails safely (321.751246ms)
+✔ watchdog detects never-run, stale and failed jobs independently (688.227461ms)
+✔ alerts deduplicate during incident, repeat after cooldown and notify recovery (818.500219ms)
+✔ timed-out dispatch is failed and can be retried without duplicating a pending request (494.030421ms)
+✔ missing alert destination refuses to claim watchdog acceptance (411.690103ms)
 ℹ tests 13
 ℹ suites 0
 ℹ pass 13
@@ -38,4 +36,4 @@ Scheduler SQL PostgreSQL integration:
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 6041.989417
+ℹ duration_ms 6098.314147

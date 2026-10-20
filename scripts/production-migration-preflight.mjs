@@ -10,7 +10,8 @@ export function readonlyPreflightConnection(env) {
   // Never repurpose this connection for production-migrate.mjs or DDL.
   backupConnection(env.READONLY_DATABASE_URL);
   const target = new URL(env.READONLY_DATABASE_URL);
-  if (target.searchParams.get('schema') && target.searchParams.get('schema') !== 'public') {
+  if ([...target.searchParams].some(([key, value]) =>
+    key.toLowerCase() === 'schema' && (key !== 'schema' || value !== 'public'))) {
     throw new Error('Refusing a foreign preflight schema');
   }
   if (target.searchParams.get('pgbouncer') === 'true') {

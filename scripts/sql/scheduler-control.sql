@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS myuno_ops.scheduler_watch (
   state text NOT NULL CHECK (state IN ('ok', 'action')),
   last_alert_at timestamptz
 );
+ALTER TABLE myuno_ops.scheduler_delivery ENABLE ROW LEVEL SECURITY;
+ALTER TABLE myuno_ops.scheduler_watch ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA myuno_ops FROM PUBLIC, anon, authenticated;
 
 -- Invoker security: only the postgres-owned cron can read Vault and enqueue HTTP.

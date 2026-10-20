@@ -41,6 +41,7 @@ test('invoker functions and tables are inaccessible to public API roles', () => 
   assert.equal(sql(`SELECT has_schema_privilege('anon','myuno_ops','USAGE'),
     has_function_privilege('authenticated','myuno_ops.dispatch_frequent()','EXECUTE'),
     has_table_privilege('anon','myuno_ops.scheduler_delivery','SELECT');`), 'f|f|f');
+  assert.equal(sql("SELECT count(*) FROM pg_tables WHERE schemaname='myuno_ops' AND rowsecurity"), '2');
 });
 test('missing credentials refuse a request and expose no secret', () => {
   sql("DELETE FROM vault.decrypted_secrets WHERE name='myuno_scheduler_cron_secret'");

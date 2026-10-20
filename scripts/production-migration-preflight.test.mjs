@@ -19,6 +19,8 @@ test('preflight selects the restricted canonical backup reader without copying w
     env.READONLY_DATABASE_URL.replace('backup_reader.burcnghheyzbzffzgmjz', 'postgres.burcnghheyzbzffzgmjz'),
     env.READONLY_DATABASE_URL.replace(':5432', ':6543'),
     env.READONLY_DATABASE_URL + '&schema=private',
+    env.READONLY_DATABASE_URL + '&SCHEMA=private',
+    env.READONLY_DATABASE_URL + '&schema=',
     env.READONLY_DATABASE_URL + '&pgbouncer=true',
   ]) assert.throws(() => readonlyPreflightConnection({ READONLY_DATABASE_URL: invalid }));
 });

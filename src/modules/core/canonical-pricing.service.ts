@@ -85,7 +85,7 @@ export async function computeCanonicalPriceBreakdown(
   guestCount: number,
   bookingDate: Date = new Date(),
   pets: number = 0,
-  options: { calendarProjection?: boolean } = {}
+  options: { calendarProjection?: boolean; freshConfig?: boolean } = {}
 ): Promise<PriceBreakdown> {
   const unit = await db.unit.findUnique({
     where: { id: unitId },
@@ -114,7 +114,7 @@ export async function computeCanonicalPriceBreakdown(
     }
   }
 
-  const scope = { unitId: unit.id, projectId: unit.projectId };
+  const scope = { unitId: unit.id, projectId: unit.projectId, fresh: options.freshConfig };
   const nights = daysBetween(checkInDate, checkOutDate);
   if (nights < 1) throw new Error('Stay must contain at least one night');
 
@@ -222,6 +222,7 @@ export async function computeCanonicalPriceBreakdown(
       service_fee_thb: serviceFee,
       occupancy_tax_thb: tax,
       total_thb: quoted.subtotalSatang + cleaningFee + serviceFee + tax,
+      tariffInclusions: { taxes: quoted.includesTaxes, serviceCharge: quoted.includesServiceCharge, breakfast: quoted.includesBreakfast },
       ...(commercialTerms ? { commercialTerms } : {}),
     };
   }

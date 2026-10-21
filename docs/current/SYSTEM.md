@@ -277,3 +277,9 @@ Canonical pack описывает развитие системы, в том ч�
 ## PMS remediation, 2026-10-21 (local branch)
 
 Reservation guest/finance access, cancellation refund durability/recovery, property-local date boundaries and calendar/form correctness were hardened with regressions. See [scope and verification boundaries](../audits/PMS_REMEDIATION_2026-10-21.md). No production deployment or historical data repair is asserted.
+
+## Sales desk and client proposals (2026-10-21 implementation)
+
+`/ops/sales?spaceId=…` reuses existing reservation capability/effective-unit scope to search canonical availability and pricing, compare up to four alternatives and persist append-only offer revisions. `SalesTariffValidation` independently approves an exact canonical rules/config fingerprint; calculability alone never emits a firm price. No tariff approvals are seeded, including Layantara. Existing booking writer handles explicit staff request handoff with fresh scope/price checks, idempotency and no automatic guest notification.
+
+The explicit share action creates an expiring/revocable hash-only capability. `/proposal` is a standalone shell without authenticated navigation or identity payload; a URL fragment is exchanged through POST for the recursively allowlisted snapshot. No privileged public booking writer exists. Text and browser print/Save PDF use the same snapshot, with stale-version/rule/availability checks. See [sales-offers README](../../src/modules/sales-offers/README.md). Production migration, property tariff approval and deployment are separate release prerequisites.

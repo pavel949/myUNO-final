@@ -95,6 +95,8 @@ jobs:
             # Each runner retains its own isolation and prerequisite guards.
             node "scripts/e2e/$journey.mjs" || journey_failed=1
           done
+          npx tsx scripts/e2e/seed-sales-offer.ts || journey_failed=1
+          node scripts/e2e/sales-offer.mjs || journey_failed=1
           test ! -s browser-results/blocked-server-egress.log
           exit "$journey_failed"
       - name: Upload synthetic screenshots and step evidence

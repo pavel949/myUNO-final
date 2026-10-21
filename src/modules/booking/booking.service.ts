@@ -39,6 +39,12 @@ function selectedInventoryCategoryId(priceBreakdown: unknown): string | null {
 }
 
 export interface CreateBookingInput {
+  /** Trusted server-only handoff: recheck effective scope and frozen offer under inventory lock. */
+  validateBeforeCreate?: (tx: Prisma.TransactionClient, authoritative: import("@/modules/core/availability.service").PriceBreakdown) => Promise<void>;
+  /** Manual sales handoffs do not autonomously message the client. */
+  suppressRequestNotifications?: boolean;
+  /** Issued by the validated server offer handoff, never accepted from public input. */
+  offerReference?: { offerId: string; version: number; optionId: string };
   unitId: string;
   projectId: string;
   guestIdentityId: string;
@@ -386,7 +392,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
     let totalThb = suppliedTotalThb;
     let priceBreakdown = suppliedPriceBreakdown;
     if (bookingType === 'guest_stay') {
-      const authoritative = await computePriceBreakdown(tx as PrismaClient, unitId, startDate, endDate, adults + children, now, pets);
+      const authoritative = await computePriceBreakdown(tx as PrismaClient, unitId, startDate, endDate, adults + children, now, pets, { freshConfig: Boolean(input.validateBeforeCreate) });
       if (acceptedMaxTotalThb !== undefined && (
         !Number.isSafeInteger(acceptedMaxTotalThb) || acceptedMaxTotalThb < 0 || authoritative.total_thb > acceptedMaxTotalThb
       )) {
@@ -394,9 +400,11 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
         (err as { code?: string }).code = 'REQUOTE_REQUIRED';
         throw err;
       }
+      if (input.validateBeforeCreate) await input.validateBeforeCreate(tx, authoritative);
       totalThb = authoritative.total_thb;
       priceBreakdown = {
         ...authoritative,
+        ...(input.validateBeforeCreate && input.offerReference ? { sales_offer_reference: { ...input.offerReference } } : {}),
         ...(inventoryCategoryId
           ? categorySelectionSnapshot(inventoryCategoryId)
           : { inventory_selection: { version: 1, kind: 'unit', unitId } }),
@@ -538,7 +546,7 @@ export async function createBookingAttempt(db: PrismaClient, input: CreateBookin
       totalThb: booking.totalThb,
     }).catch(() => null);
 
-    await notifyBookingRequested(db, booking.id, requestHours).catch(() => null);
+    if (!input.suppressRequestNotifications) await notifyBookingRequested(db, booking.id, requestHours).catch(() => null);
   }
 
   return result;

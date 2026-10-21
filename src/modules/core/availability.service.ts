@@ -31,6 +31,7 @@ export interface PriceBreakdown {
   occupancy_tax_thb: number;
   total_thb: number;
   commercialTerms?: SourceBookingTerms;
+  tariffInclusions?: { taxes: boolean; serviceCharge: boolean; breakfast: boolean };
 }
 
 function isDateInSeason(date: Date, season: SeasonPeriod): boolean {

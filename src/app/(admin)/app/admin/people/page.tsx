@@ -26,6 +26,7 @@ export default async function AdminPeoplePage() {
 
   const labels = await getLabels({
     ...PROPERTY_WORKSPACE_LABELS,
+    'administration.manageAccount': 'Manage account',
     'admin.people.workspace_access': 'Workspace scope & member access →',
     'admin.people.title': 'People & roles',
     'admin.people.project_teams': 'Operational teams by project',

@@ -349,6 +349,9 @@ export default function PeopleAdminClient({
             <h2 className="text-heading-3 font-semibold text-text-ink mb-16">
               {selected.firstName} {selected.lastName}
             </h2>
+            <p className="mb-16"><Link className="text-brand-andaman underline" href={'/app/admin/people/' + encodeURIComponent(selected.id)}>
+              {labels['administration.manageAccount'] || 'Manage account'}
+            </Link></p>
 
             <h3 className="text-small text-text-secondary mb-8">{labels['admin.people.roles_held']}</h3>
             {assignments.length === 0 ? (

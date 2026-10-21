@@ -13,6 +13,7 @@ import { GUEST_AUTH_SUPPORT_KEYS } from './guest-auth-support.seed';
 import { GUEST_SERVICE_CONTEXT_KEYS } from './guest-service-context.seed';
 import { STAY_UX_KEYS } from './stay-ux.seed';
 import { RESERVATION_GUEST_KEYS } from './reservation-guest.seed';
+import { ADMINISTRATION_KEYS } from './administration.seed';
 import { INQUIRY_CONTENT_KEYS } from './inquiry-copy';
 import { PRICING_WORKSPACE_KEYS } from './pricing-workspace.seed';
 import { PRICING_EDITOR_ROLE_KEYS } from './pricing-editor-role.seed';
@@ -76,6 +77,7 @@ const COMMON_KEYS: KeyDef[] = [
   ...GUEST_SERVICE_CONTEXT_KEYS,
   ...STAY_UX_KEYS,
   ...RESERVATION_GUEST_KEYS,
+  ...ADMINISTRATION_KEYS,
   ...SALES_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },

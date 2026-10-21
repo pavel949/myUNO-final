@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import { eligibleOrganizationUnits, getLegacyOperationalUnitIds, getOperationalActor, OperatingAccessError, validOperatingCapabilities } from './operating-space-access.service';
 import { CAPABILITY_DEPARTMENTS, GOVERNED_DAILY_CAPABILITIES } from './operating-space-capabilities';
 import { isOperatingCreationCapability } from './operating-creation-capabilities';
+import { lockAdministration } from '@/modules/core/administration.service';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -114,16 +115,22 @@ export async function updateGovernedOperatingMember(db: PrismaClient, actorId: s
   }
   const capabilities = [...new Set(input.capabilities)];
   return db.$transaction(async tx => {
+    await lockAdministration(tx);
     await requireGovernanceFounder(tx, actorId);
     const space = await lockSpaceVersion(tx, spaceId, input.expectedUpdatedAt);
     const org = await tx.organization.findUnique({ where: { id: space.organizationId }, select: { status: true } });
     if (org?.status !== 'active') throw new OperatingAccessError('Organization is not active', 400);
-    const target = await tx.identity.findUnique({ where: { id: input.identityId }, select: { id: true, status: true } });
+    const target = await tx.identity.findUnique({ where: { id: input.identityId }, select: { id: true, status: true, isSuperAdmin: true } });
     if (!target || (input.active && target.status !== 'active')) throw new OperatingAccessError('An active existing account is required', 400);
     const now = new Date();
     const attached = await tx.operatingSpaceUnit.findMany({ where: { operatingSpaceId: spaceId, active: true, startsOn: { lte: now }, OR: [{ endsOn: null }, { endsOn: { gt: now } }] }, select: { unitId: true } });
     const eligible = new Set((await eligibleOrganizationUnits(tx, space.organizationId, now)).map(u => u.id));
-    const before = await tx.operatingSpaceMember.findUnique({ where: { operatingSpaceId_identityId: { operatingSpaceId: spaceId, identityId: input.identityId } }, select: { active: true, capabilities: true } });
+    const before = await tx.operatingSpaceMember.findUnique({ where: { operatingSpaceId_identityId: { operatingSpaceId: spaceId, identityId: input.identityId } }, select: { active: true, capabilities: true, isAdministrator: true } });
+    if (target.isSuperAdmin || before?.isAdministrator) {
+      const actor = await tx.identity.findUnique({ where: { id: actorId }, select: { isSuperAdmin: true } });
+      if (!actor?.isSuperAdmin) throw new OperatingAccessError('Protected administrative account');
+      if (actorId === input.identityId && !input.active) throw new OperatingAccessError('Cannot disable your own administrative access');
+    }
     const effectiveUnits: Record<string, number> = {};
     if (input.active) {
       if (!capabilities.length) throw new OperatingAccessError('Choose at least one capability or deactivate access', 400);

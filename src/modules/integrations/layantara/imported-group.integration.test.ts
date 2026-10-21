@@ -6,10 +6,27 @@ import { parseReservationsWorkbook, planWorkbookImport, applyWorkbookImport, map
 import { evidenceDigest, type ReviewedWorkbookManifest } from './reviewed-workbook';
 import { removeBlockedDate } from '@/modules/core/availability.service';
 import { listImportedGroupsForUnits } from './imported-group.service';
+import { isolatedWorkspaceAdministratorUnitIds } from '@/modules/ops/operating-space-access.service';
 
 const now = new Date('2026-10-21T00:00:00Z');
 describe('reviewed historical group source and canonical protected placements', () => {
   beforeEach(resetDb);
+  it('withholds units whose imported group belongs to a foreign workspace even without a Booking', async () => {
+    const f = await fixture();
+    await applyWorkbookImport(db, f.plan, { actorIdentityId: f.actor.id, now });
+    const org = await db.organization.create({ data: { name: 'Synthetic scoped operator', orgType: 'management_company',
+      contactEmail: 'scope@example.test', contactPhone: '+66000000000' } });
+    const local = await db.operatingSpace.create({ data: { key: 'synthetic-local', name: 'Local', organizationId: org.id } });
+    const foreign = await db.operatingSpace.create({ data: { key: 'synthetic-foreign', name: 'Foreign', organizationId: org.id } });
+    const source = await db.importedReservationSource.findFirstOrThrow();
+    const ids = f.units.map(unit => unit.id);
+    expect((await isolatedWorkspaceAdministratorUnitIds(db, local.id, ids)).sort()).toEqual([...ids].sort());
+    await db.reservationGroup.update({ where: { id: source.reservationGroupId }, data: { operatingSpaceId: foreign.id } });
+    expect(await db.booking.count()).toBe(0);
+    expect(await isolatedWorkspaceAdministratorUnitIds(db, local.id, ids)).toEqual([]);
+    await db.reservationGroup.update({ where: { id: source.reservationGroupId }, data: { operatingSpaceId: local.id } });
+    expect((await isolatedWorkspaceAdministratorUnitIds(db, local.id, ids)).sort()).toEqual([...ids].sort());
+  });
   async function fixture(empty = false) {
     const actor = await createIdentity({ isAdmin: true });
     const project = await createProject({ status: 'live' });

@@ -24,6 +24,9 @@ describe('operating-space calendar authorization', () => {
     const manager = await createIdentity();
     const owner = await createIdentity();
     const organization = await createOrganization('Space MC', project.id);
+    // Scoped calendar access requires a verified organization authority, not just a roster row.
+    await db.projectOrganizationRole.create({ data: { projectId: project.id, organizationId: organization.id,
+      roleKey: 'operator', provenance: 'verified' } });
     await db.roleAssignment.create({ data: { identityId: manager.id, role: 'mc_member', scopeType: 'project',
       projectId: project.id, organizationId: organization.id, status: 'active' } });
     const space = await db.operatingSpace.create({ data: { key: 'scope-a', name: 'Scope A', organizationId: organization.id } });

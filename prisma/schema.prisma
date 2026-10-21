@@ -813,6 +813,8 @@ model Identity {
   avatarMediaId   String?        @map("avatar_media_id")
   status          IdentityStatus @default(active)
   isAdmin         Boolean        @default(false) @map("is_admin")
+  /// Protected platform authority. Assigned explicitly, never inferred from email or seeds.
+  isSuperAdmin    Boolean        @default(false) @map("is_super_admin")
   notesInternal   String?        @map("notes_internal")
   mergedIntoId    String?        @map("merged_into_id")
 
@@ -4026,6 +4028,9 @@ model OperatingSpaceMember {
   identityId       String   @map("identity_id")
   capabilities     String[] @default([])
   active           Boolean  @default(true)
+  /// Local administrative authority; never mapped to Identity.isAdmin.
+  isAdministrator  Boolean  @default(false) @map("is_administrator")
+  displayName      String?  @map("display_name")
 
   operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
   identity       Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)

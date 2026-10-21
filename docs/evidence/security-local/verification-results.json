@@ -1,0 +1,43 @@
+{
+  "full_suite": {
+    "revision": "1f794a2c",
+    "exit": 0,
+    "files": 578,
+    "tests": 6223,
+    "duration_seconds": 559.12,
+    "database": "isolated local PostgreSQL; all 97 migrations replayed"
+  },
+  "additional_regression_suite": {
+    "files": 1,
+    "tests": 31,
+    "exit": 0,
+    "additional_cases": 2,
+    "application_source_changed_since_full_suite": false
+  },
+  "production_build": {
+    "exit": 0,
+    "deployment": false
+  },
+  "ci_production_typecheck": {
+    "config": "tsconfig.production.json",
+    "exit": 0
+  },
+  "changed_file_eslint": {
+    "exit": 0
+  },
+  "browser": {
+    "artifact": "browser-results.json",
+    "synthetic_accounts_only": true,
+    "uncaught_page_errors": 0,
+    "live_email_delivery_verified": false
+  },
+  "production_mutation": false,
+  "full_baseline_suite": {
+    "revision": "a0f19fe4",
+    "exit": 0,
+    "files": 576,
+    "tests": 6191,
+    "duration_seconds": 549.07,
+    "environment": "same compiler/dependencies, separate disposable database, additive generated Prisma client/schema shared with candidate"
+  }
+}

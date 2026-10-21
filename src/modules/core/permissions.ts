@@ -366,6 +366,17 @@ export async function can(
     return true;
   }
 
+  // Workspace administrators act on an exact authorized physical unit only.
+  // No project/platform fallback, global finance, publishing or role delegation.
+  const workspaceUnitActions = [
+    'stays:view_booking', 'stays:approve_decline_booking_requests', 'stays:modify_cancel_booking',
+    'stays:record_checkin_checkout_and_reports', 'money:record_costs_on_units',
+  ];
+  if (workspaceUnitActions.includes(resolvedAction) && resource?.projectId && resource?.unitId) {
+    const { hasWorkspaceAdministratorUnitAccess } = await import('@/modules/ops/workspace-unit-authority');
+    if (await hasWorkspaceAdministratorUnitAccess(db, identity.id, { projectId: resource.projectId, unitId: resource.unitId })) return true;
+  }
+
   // Rule 3: Check role-based permissions
   if (!isKnownPermissionAction(resolvedAction)) {
     return false;

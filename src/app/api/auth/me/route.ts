@@ -12,6 +12,7 @@ export async function GET() {
     firstName: user.firstName,
     lastName: user.lastName,
     isAdmin: user.isAdmin,
+    isSuperAdmin: Boolean(user.isSuperAdmin),
     roles: user.roles.map((role) => role.role),
   });
 }

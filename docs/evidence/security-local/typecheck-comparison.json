@@ -1,0 +1,13 @@
+{
+  "baseline_count": 238,
+  "candidate_count": 238,
+  "candidate_only": [],
+  "baseline_only": [],
+  "baseline_revision": "a0f19fe4",
+  "candidate_revision": "aa696a66",
+  "baseline_exit": 2,
+  "candidate_exit": 2,
+  "baseline_raw_diagnostics": 773,
+  "candidate_raw_diagnostics": 770,
+  "normalization": "Only (line,column) coordinates removed; source file, TypeScript code and diagnostic message retained. Same compiler/dependencies."
+}

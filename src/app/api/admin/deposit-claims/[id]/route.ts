@@ -12,7 +12,8 @@ import { logAudit } from '@/modules/audit';
  * money decisions with a named human behind them, so both are audited and both
  * carry the resolution note into the record.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

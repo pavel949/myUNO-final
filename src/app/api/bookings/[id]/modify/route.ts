@@ -32,10 +32,8 @@ async function checkoutForSavedChange(bookingId: string, payerIdentityId: string
  * - adultsCount?: number (optional)
  * - childrenCount?: number (optional)
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

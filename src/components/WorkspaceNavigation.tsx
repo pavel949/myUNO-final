@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   createContext,
@@ -200,7 +200,7 @@ export function WorkspaceContextLink({ href, ...props }: Omit<ComponentProps<typ
       scoped = `${pathname}?${params.toString()}${fragment ? `#${fragment}` : ''}`;
     }
   }
-  return <Link {...props} href={scoped} />;
+  return <Link prefetch={false} {...props} href={scoped} />;
 }
 
 function useMeasuredHeight(ref: RefObject<HTMLElement>, property: string, visible = true) {
@@ -334,7 +334,7 @@ export function WorkspaceTabs() {
             return (
               <li key={tab.id} className="min-w-0 flex-1">
                 {tab.href ? (
-                  <Link href={tab.href} aria-current={active ? 'page' : undefined} className={className}>{content}</Link>
+                  <Link prefetch={false} href={tab.href} aria-current={active ? 'page' : undefined} className={className}>{content}</Link>
                 ) : (
                   <button type="button" className={className} aria-haspopup="dialog"
                     aria-expanded={sheet?.tab.id === tab.id} aria-controls={sheet?.tab.id === tab.id ? dialogId : undefined}
@@ -416,14 +416,14 @@ function WorkspaceSheet({ id, sheet, links, labels, onClose }: {
             <p id={reasonId} className="mb-20 text-body text-text-secondary">
               {labels[sheet.tab.unavailableReason === 'not_authorized' ? 'workspace.notAuthorized' : 'workspace.notAvailable']}
             </p>
-            {sheet.tab.nextHref ? <Link href={sheet.tab.nextHref} onClick={onClose}
+            {sheet.tab.nextHref ? <Link prefetch={false} href={sheet.tab.nextHref} onClick={onClose}
               className={`flex min-h-44 items-center justify-center rounded-md bg-brand-andaman px-16 py-12 text-body font-semibold text-surface-ivory ${FOCUS_STYLE}`}>
               {labels['workspace.nextStep']}
             </Link> : null}
           </>
         ) : (
           <ul className="space-y-4">
-            {links.map((link) => <li key={`${link.href}:${link.labelKey}`}><Link href={link.href} onClick={onClose}
+            {links.map((link) => <li key={`${link.href}:${link.labelKey}`}><Link prefetch={false} href={link.href} onClick={onClose}
               className={`flex min-h-48 items-center rounded-md px-12 py-12 text-body text-text-ink hover:bg-surface-subtle ${FOCUS_STYLE}`}>
               {labels[link.labelKey]}
             </Link></li>)}

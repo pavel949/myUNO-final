@@ -17,7 +17,7 @@ const unitName = 'Synthetic applicant condo A201';
 const description = 'Тестовое описание квартиры: отдельная спальня и балкон. Не реальный объект.';
 async function step(name, page, work) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
-  try { await work(); entry.status = 'passed'; await page.screenshot({ path: `browser-results/property-submission-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
+  try { await work(); entry.status = 'passed'; await page.screenshot({ caret: 'initial', path: `browser-results/property-submission-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
   catch (error) { entry.status = 'failed'; entry.error = String(error); throw error; }
   finally { await writeFile('browser-results/property-submission-result.json', JSON.stringify(report, null, 2)); }
 }

@@ -4,10 +4,8 @@ import { assertNoEmployeeCreationInput, hasEmployeeCreationReceipt, employeeCrea
 import { EmployeeCreationError } from '@/modules/onboarding/employee-creation.schema';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -136,10 +134,8 @@ export async function GET(
   });
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

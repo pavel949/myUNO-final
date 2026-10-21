@@ -13,7 +13,8 @@ import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectExperiencePage({ params }: { params: { id: string } }) {
+export default async function ProjectExperiencePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/experience'));
   const actor = await getProjectExperienceActor(params.id);

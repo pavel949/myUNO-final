@@ -8,7 +8,8 @@ import OpsStatusPill, { opsStateTone } from '@/components/ops/OpsStatusPill';
 
 export const dynamic='force-dynamic';
 
-export default async function MaintenanceWorkspace({searchParams}:{searchParams?:{spaceId?:string}}){
+export default async function MaintenanceWorkspace(props:{searchParams?: Promise<{spaceId?:string}>}) {
+  const searchParams = await props.searchParams;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/maintenance');
   const spaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';

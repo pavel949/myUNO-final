@@ -29,7 +29,7 @@ async function step(name, page, fn) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
   try {
     await fn(); entry.status = 'passed';
-    if (page) await page.screenshot({ path: `${out}/${String(report.steps.length).padStart(2, '0')}.png`, fullPage: true });
+    if (page) await page.screenshot({ caret: 'initial', path: `${out}/${String(report.steps.length).padStart(2, '0')}.png`, fullPage: true });
     console.log(`PASS ${name}`);
   } catch (error) { entry.status = 'failed'; entry.error = String(error); throw error; }
   finally { await writeFile(`${out}/result.json`, JSON.stringify(report, null, 2)); }
@@ -203,7 +203,7 @@ try {
     const cell = fp.getByRole('button', { name: new RegExp(`${fixture.unitName} · ${fixture.startDate} ·`) });
     await cell.waitFor(); assert.match(await cell.getAttribute('aria-label'), /Available/);
     await cell.click(); await fp.getByText('No reservation or closure for this date.', { exact: true }).waitFor();
-    await fp.screenshot({ path: `${out}/calendar-released.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/calendar-released.png`, fullPage: true });
   });
   await step('Founder records a manual reservation through the operational desk', fp, async () => {
     assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 0);
@@ -254,7 +254,7 @@ try {
     assert.ok(reservation.holdExpiresAt && reservation.holdExpiresAt.getTime() > Date.now());
     assert.equal(await db.payment.count({ where: { bookingId: reservation.id } }), 0);
     report.manualReservation = { bookingId: reservation.id, status: reservation.status, totalSatang: reservation.totalThb, startDate: fixture.manualStartDate, endDate: fixture.manualEndDate, persisted: true };
-    await fp.screenshot({ path: `${out}/manual-reservation-after-submit.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/manual-reservation-after-submit.png`, fullPage: true });
 
     // Inspect the persisted hold in a second real page so a stuck submission
     // form is preserved for diagnosis rather than repaired by navigation.
@@ -268,7 +268,7 @@ try {
       const stay = detail.getByRole('link', { name: /Open canonical stay/ });
       await stay.waitFor();
       assert.equal(await stay.getAttribute('href'), `/ops/stays/${reservation.id}`);
-      await calendar.screenshot({ path: `${out}/manual-calendar-held.png`, fullPage: true });
+      await calendar.screenshot({ caret: 'initial', path: `${out}/manual-calendar-held.png`, fullPage: true });
       report.manualReservation.calendarVerified = true;
     } finally { await calendar.close(); }
 
@@ -318,7 +318,7 @@ try {
     assert.equal(task.blocksInventory, false);
     assert.equal(await db.operationalTaskMedia.count({ where: { operationalTaskId: task.id } }), 0, 'No photo upload belongs to this task slice');
     report.staffTask = { taskId: task.id, staffId: fixture.staffId, title: taskTitle, persisted: true, status: task.status };
-    await fp.screenshot({ path: `${out}/task-after-submit.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/task-after-submit.png`, fullPage: true });
 
     // Keep the founder form untouched so separate staff evidence cannot hide a
     // committed-but-stuck create form by navigating or refreshing that page.
@@ -341,7 +341,7 @@ try {
     assert.equal(inProgress.assignedIdentityId, fixture.staffId);
     assert.ok(inProgress.startedAt);
     await article.getByRole('button', { name: 'Ready', exact: true }).waitFor();
-    await sp.screenshot({ path: `${out}/staff-task-in-progress.png`, fullPage: true });
+    await sp.screenshot({ caret: 'initial', path: `${out}/staff-task-in-progress.png`, fullPage: true });
     const readyResponse = sp.waitForResponse(r => r.url().endsWith(`/api/ops/tasks/${task.id}`) && r.request().method() === 'PATCH');
     readyResponse.catch(() => {});
     await article.getByRole('button', { name: 'Ready', exact: true }).click();
@@ -361,7 +361,7 @@ try {
     report.staffTask.staffFlowVerified = true;
     report.staffTask.readyAt = completed.readyAt.toISOString();
     report.staffTask.completedAt = completed.completedAt.toISOString();
-    await sp.screenshot({ path: `${out}/staff-task-ready.png`, fullPage: true });
+    await sp.screenshot({ caret: 'initial', path: `${out}/staff-task-ready.png`, fullPage: true });
 
     await poll(async () => {
       const submit = form.getByRole('button', { name: 'Create task', exact: true });
@@ -394,7 +394,7 @@ try {
     await review.waitFor();
     assert.match(await review.innerText(), /01-11\s*–\s*12-19/);
     assert.equal(await rates.getByLabel('From', { exact: true }).first().inputValue(), '01-01', 'Preview must not silently change draft dates');
-    await fp.screenshot({ path: `${out}/seasonal-review-base-dates.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/seasonal-review-base-dates.png`, fullPage: true });
     await review.getByRole('button', { name: 'Apply these dates to draft', exact: true }).click();
     assert.equal(await rates.getByLabel('From', { exact: true }).first().inputValue(), '01-11');
     assert.equal(await rates.getByLabel('To', { exact: true }).first().inputValue(), '12-19');
@@ -421,8 +421,8 @@ try {
     assert.equal(reloadResponse.status(), 200);
     const reloaded = await reloadResponse.json();
     assert.deepEqual(reloaded.draft.daily.map(row => row.sourceRateId), grid.map(row => row.sourceRateId));
-    await fp.screenshot({ path: `${out}/seasonal-saved-reloaded.png`, fullPage: true });
-    await rates.screenshot({ path: `${out}/seasonal-rates-region.png` });
+    await fp.screenshot({ caret: 'initial', path: `${out}/seasonal-saved-reloaded.png`, fullPage: true });
+    await rates.screenshot({ caret: 'initial', path: `${out}/seasonal-rates-region.png` });
     const preview = fp.locator('section').filter({ has: fp.getByRole('heading', { name: 'Seasonal tariff and booking-policy preview', exact: true }) });
     await preview.locator('select').selectOption('stay');
     await preview.getByLabel('Check-in', { exact: true }).fill(fixture.tariffStartDate);
@@ -437,8 +437,8 @@ try {
     assert.equal(result.totalSatang, 592400);
     await poll(async () => /5,924/.test(await preview.innerText()), 'Saved-price preview must show the base/holiday total');
     report.seasonalTariff = { unitId: fixture.tariffUnitId, baseSatang: 123400, holidaySatang: 234500, startDate: fixture.tariffStartDate, endDate: fixture.tariffEndDate, previewTotalSatang: result.totalSatang, savedAndReloaded: true };
-    await fp.screenshot({ path: `${out}/seasonal-canonical-preview.png`, fullPage: true });
-    await preview.screenshot({ path: `${out}/seasonal-preview-region.png` });
+    await fp.screenshot({ caret: 'initial', path: `${out}/seasonal-canonical-preview.png`, fullPage: true });
+    await preview.screenshot({ caret: 'initial', path: `${out}/seasonal-preview-region.png` });
   });
   await step('Guest selects seasonal dates and books the same 5924 THB quote', gp, async () => {
     await fp.goto('/app/admin/units');
@@ -468,7 +468,7 @@ try {
     assert.equal(guestQuote.isAvailable, true); assert.equal(guestQuote.nights, 3);
     assert.equal(guestQuote.acceptedTotalSatang, 592400);
     await poll(async () => /5,924/.test(await body(gp)), 'Guest card must show saved base/holiday pricing');
-    await gp.screenshot({ path: `${out}/seasonal-guest-quote.png`, fullPage: true });
+    await gp.screenshot({ caret: 'initial', path: `${out}/seasonal-guest-quote.png`, fullPage: true });
     await gp.getByRole('button', { name: 'Reserve', exact: true }).first().click();
     await gp.waitForURL(url => url.pathname === '/book/review' && url.searchParams.has('bookingIntent'));
     await poll(async () => /5,924/.test(await body(gp)), 'Booking review must keep the same seasonal total');
@@ -493,7 +493,7 @@ try {
     const detail = fp.getByRole('region', { name: 'Night details' });
     const canonicalLink = detail.getByRole('link', { name: /Open canonical stay/ });
     await canonicalLink.waitFor(); assert.equal(await canonicalLink.getAttribute('href'), `/ops/stays/${reservation.id}`);
-    await fp.screenshot({ path: `${out}/seasonal-booking-calendar.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/seasonal-booking-calendar.png`, fullPage: true });
     report.seasonalTariff.guestQuoteSatang = guestQuote.acceptedTotalSatang;
     report.seasonalTariff.bookingId = reservation.id;
     report.seasonalTariff.bookingTotalSatang = reservation.totalThb;
@@ -546,12 +546,12 @@ try {
     assert.equal((await gp.request.post(`/api/bookings/${id}/confirm-unpaid`, { data: command })).status(), 403, 'A guest cannot exercise the operator confirmation');
     await fp.reload();
     await fp.getByText(/^Reservation confirmed\. Payment is still outstanding\./).waitFor();
-    await fp.screenshot({ path: `${out}/manual-confirmed-unpaid.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/manual-confirmed-unpaid.png`, fullPage: true });
     await mgp.goto(`/trips/${id}`);
     await mgp.getByText('Reservation confirmed — payment outstanding', { exact: true }).waitFor();
     const displayedBalance = (original.totalThb / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     assert.ok((await body(mgp)).includes(`Outstanding balance: ฿${displayedBalance}`));
-    await mgp.screenshot({ path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
+    await mgp.screenshot({ caret: 'initial', path: `${out}/guest-confirmed-unpaid-balance.png`, fullPage: true });
     const { execFileSync } = await import('node:child_process');
     execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e/expire-synthetic-holds.ts', id], { env: process.env, stdio: 'pipe' });
     report.unpaidExpiry = JSON.parse(await readFile(`${out}/unpaid-expiry.json`, 'utf8'));
@@ -566,7 +566,7 @@ try {
     report.manualReservation.confirmedUnpaid = true;
     report.manualReservation.outstandingSatang = confirmed.balanceDueThb;
     report.manualReservation.holdExpiresAt = null;
-    await fp.screenshot({ path: `${out}/manual-durable-calendar.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/manual-durable-calendar.png`, fullPage: true });
   });
   await step('A separate deliberate synthetic cash receipt settles the real outstanding balance', fp, async () => {
     const id = report.manualReservation.bookingId;
@@ -722,7 +722,7 @@ try {
     await requestPage.getByRole('heading', { name: 'Review your booking request', exact: true }).waitFor();
     await requestPage.locator('main input[type=checkbox]').check();
     await requestPage.locator('select').filter({ hasText: 'Cash on arrival' }).selectOption('cash');
-    await requestPage.screenshot({ path: `${out}/request-review-before-payment.png`, fullPage: true });
+    await requestPage.screenshot({ caret: 'initial', path: `${out}/request-review-before-payment.png`, fullPage: true });
     firstRequest = await submitRequest(requestPage);
     report.bookingModes.registeredGuestId = registeredGuest.id;
     report.bookingModes.intentPreserved = true; report.bookingModes.requoteConsentVerified = true;
@@ -742,7 +742,7 @@ try {
     assert.equal(await db.payment.count({ where: { bookingId: approved.id } }), 0);
     assert.equal((await publicQuote(ap)).isAvailable, false);
     await requestCalendar(/Hold/);
-    await fp.screenshot({ path: `${out}/approved-request-calendar-hold.png`, fullPage: true });
+    await fp.screenshot({ caret: 'initial', path: `${out}/approved-request-calendar-hold.png`, fullPage: true });
     await requestPage.goto(`/trips/${approved.id}`);
     await requestPage.getByRole('button', { name: 'Cancel booking', exact: true }).waitFor();
     report.bookingModes.approvalExpiry = await runRequestExpiry(approved.id, 'hold');
@@ -811,14 +811,14 @@ try {
       assert.equal(await actions.isEnabled(), false);
       assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
       assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
-      await ap.screenshot({ path: `${out}/blocked-unit-${viewport.width}.png`, fullPage: true });
+      await ap.screenshot({ caret: 'initial', path: `${out}/blocked-unit-${viewport.width}.png`, fullPage: true });
       await ap.goto(reviewUrl);
       await ap.getByText(unavailableCopy, { exact: true }).waitFor();
       assert.equal(await ap.getByRole('checkbox').isEnabled(), false);
       assert.equal(await ap.getByRole('button', { name: 'Confirm booking', exact: true }).isEnabled(), false);
       assert.equal(await ap.getByText('Total', { exact: true }).count(), 0);
       assert.equal(await ap.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
-      await ap.screenshot({ path: `${out}/blocked-review-${viewport.width}.png`, fullPage: true });
+      await ap.screenshot({ caret: 'initial', path: `${out}/blocked-review-${viewport.width}.png`, fullPage: true });
     }
     // Supplemental authenticated HTTP negative probe: a hand-crafted attempt
     // must still fail under the canonical writer, even if a client ignores UI.
@@ -856,7 +856,7 @@ try {
   report.result = 'passed';
 } catch (error) {
   report.result = 'failed'; report.error = String(error); console.error(error); process.exitCode = 1;
-  for (const { ctx, name } of contexts) for (const [i, page] of ctx.pages().entries()) await page.screenshot({ path: `${out}/failure-${name}-${i}.png`, fullPage: true }).catch(() => {});
+  for (const { ctx, name } of contexts) for (const [i, page] of ctx.pages().entries()) await page.screenshot({ caret: 'initial', path: `${out}/failure-${name}-${i}.png`, fullPage: true }).catch(() => {});
 } finally {
   report.finishedAt = new Date().toISOString();
   for (const { ctx, name } of contexts) await ctx.tracing.stop({ path: `${out}/trace-${name}.zip` }).catch(() => {});

@@ -12,11 +12,12 @@ function money(satang: number) {
   return '฿' + (satang / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default async function DailyReconciliationPage({
-  searchParams,
-}: {
-  searchParams?: { projectId?: string; date?: string };
-}) {
+export default async function DailyReconciliationPage(
+  props: {
+    searchParams?: Promise<{ projectId?: string; date?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/night-audit');
 

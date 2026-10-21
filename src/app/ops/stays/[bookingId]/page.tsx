@@ -13,7 +13,11 @@ import StayActions from '@/components/ops/StayActions';
 import { checkOutModalLabelDrafts } from '@/lib/checkOutModalLabels';
 
 export const dynamic='force-dynamic';
-export default async function CanonicalStayPage({params,searchParams}:{params:{bookingId:string};searchParams?:{spaceId?:string}}){
+export default async function CanonicalStayPage(
+  props:{params: Promise<{bookingId:string}>;searchParams?: Promise<{spaceId?:string}>}
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays/'+params.bookingId);
   const booking=await prisma.booking.findUnique({where:{id:params.bookingId},
@@ -54,7 +58,7 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   const balanceSatang=outstandingStayBalanceSatang(booking);
   const canConfirmUnpaid=!needsReview&&booking.status==='pending_payment'&&booking.payments.length===0&&!booking.depositPreauth&&
     (!booking.holdExpiresAt||booking.holdExpiresAt>new Date())&&
-    await canConfirmUnpaidBooking(prisma,user.identityId,booking);
+    (await canConfirmUnpaidBooking(prisma,user.identityId,booking));
   const locale=getRequestLocale();
   const labels=await getLabels({
     ...checkOutModalLabelDrafts,
@@ -111,112 +115,114 @@ export default async function CanonicalStayPage({params,searchParams}:{params:{b
   });
   const paid=booking.payments.filter(p=>p.status==='succeeded').reduce((s,p)=>s+p.amountThb,0);
   const amount=(n:number)=>'฿'+(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  return <main className="stitch-workspace p-16 md:p-32">
-    <div className="mx-auto max-w-5xl space-y-24">
-      <Link href={pmsNavigationHref('/ops/stays', { spaceId: searchParams?.spaceId, projectId: booking.projectId })} className="text-small font-semibold text-brand-andaman">
-        ← {labels['staff.stay_360.back']}
-      </Link>
-      <header className="stitch-panel p-24">
-        <p className="stitch-kicker">{labels['staff.stay_360.booking']} · {booking.id}</p>
-        <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.stay_360.title']}</h1>
-        <p className="mt-8 text-body text-text-secondary">
-          {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
-        </p>
-      </header>
-      {canSeeFinance && <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
-        {[
-          [labels['staff.stay_360.total'],amount(booking.totalThb)],
-          [labels['staff.stay_360.collected'],amount(paid)],
-          [needsReview?labels['staff.stay_360.review']:labels['staff.stay_360.balance'],needsReview?amount(booking.balanceDueThb):amount(balanceSatang)],
-          [labels['staff.stay_360.refund'],amount(booking.refundAccruedThb)],
-        ].map(([label,value])=><div key={label} className="stitch-panel p-16">
-          <p className="text-small text-text-secondary">{label}</p>
-          <p className="mt-8 font-display text-heading-3 font-semibold text-text-ink">{value}</p>
-        </div>)}
-      </div>}
-      {needsReview&&(canSeeFinance||access.canManageReservations)&&<section role="status" className="stitch-panel p-16 text-state-warning">
-        <p>{labels['staff.stay_360.review_note']}</p>
-        {canSeeFinance&&<dl className="mt-12 grid grid-cols-2 gap-12">
-          <div><dt>{labels['staff.stay_360.source_paid']}</dt><dd>{sourcePaid===null?labels['staff.stay_360.unknown']:amount(sourcePaid)}</dd></div>
-          <div><dt>{labels['staff.stay_360.source_status']}</dt><dd>{typeof sourcePayment.rawStatus==='string'&&sourcePayment.rawStatus?sourcePayment.rawStatus:labels['staff.stay_360.unknown']}</dd></div>
-        </dl>}
-      </section>}
-      {booking.status==='confirmed'&&balanceSatang>0&&(access.canManageReservations||canSeeFinance)&&
-        <p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.payment_outstanding']} {amount(balanceSatang)}</p>}
-      {partyUnknown&&<p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.party_review']}</p>}
-      <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
+  return (
+    <main className="stitch-workspace p-16 md:p-32">
+      <div className="mx-auto max-w-5xl space-y-24">
+        <Link href={pmsNavigationHref('/ops/stays', { spaceId: searchParams?.spaceId, projectId: booking.projectId })} className="text-small font-semibold text-brand-andaman">
+          ← {labels['staff.stay_360.back']}
+        </Link>
+        <header className="stitch-panel p-24">
+          <p className="stitch-kicker">{labels['staff.stay_360.booking']} · {booking.id}</p>
+          <h1 className="mt-8 font-display text-display-xl font-semibold text-text-ink">{labels['staff.stay_360.title']}</h1>
+          <p className="mt-8 text-body text-text-secondary">
+            {booking.project.name} · {booking.unit.name} · {booking.unit.inventoryCategory?.name}
+          </p>
+        </header>
+        {canSeeFinance && <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
+          {[
+            [labels['staff.stay_360.total'],amount(booking.totalThb)],
+            [labels['staff.stay_360.collected'],amount(paid)],
+            [needsReview?labels['staff.stay_360.review']:labels['staff.stay_360.balance'],needsReview?amount(booking.balanceDueThb):amount(balanceSatang)],
+            [labels['staff.stay_360.refund'],amount(booking.refundAccruedThb)],
+          ].map(([label,value])=><div key={label} className="stitch-panel p-16">
+            <p className="text-small text-text-secondary">{label}</p>
+            <p className="mt-8 font-display text-heading-3 font-semibold text-text-ink">{value}</p>
+          </div>)}
+        </div>}
+        {needsReview&&(canSeeFinance||access.canManageReservations)&&<section role="status" className="stitch-panel p-16 text-state-warning">
+          <p>{labels['staff.stay_360.review_note']}</p>
+          {canSeeFinance&&<dl className="mt-12 grid grid-cols-2 gap-12">
+            <div><dt>{labels['staff.stay_360.source_paid']}</dt><dd>{sourcePaid===null?labels['staff.stay_360.unknown']:amount(sourcePaid)}</dd></div>
+            <div><dt>{labels['staff.stay_360.source_status']}</dt><dd>{typeof sourcePayment.rawStatus==='string'&&sourcePayment.rawStatus?sourcePayment.rawStatus:labels['staff.stay_360.unknown']}</dd></div>
+          </dl>}
+        </section>}
+        {booking.status==='confirmed'&&balanceSatang>0&&(access.canManageReservations||canSeeFinance)&&
+          <p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.payment_outstanding']} {amount(balanceSatang)}</p>}
+        {partyUnknown&&<p role="status" className="stitch-panel p-16 text-state-warning">{labels['staff.stay_360.party_review']}</p>}
+        <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
+          <section className="stitch-panel p-20">
+            <dl className="grid grid-cols-2 gap-12">
+              {[
+                [labels['staff.stay_360.status'],enumLabel(labels,'bookingStatus',booking.status)],
+                [labels['staff.stay_360.channel'],enumLabel(labels,'bookingChannel',booking.channel)],
+                [labels['staff.stay_360.guest'],[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')],
+                [labels['staff.stay_360.adults'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'adults')?(typeof sourceParty.adults==='number'?String(sourceParty.adults):labels['staff.stay_360.unknown']):String(booking.adults)],
+                [labels['staff.stay_360.children'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'children')?(typeof sourceParty.children==='number'?String(sourceParty.children):labels['staff.stay_360.unknown']):String(booking.children)],
+                [labels['staff.stay_360.dates'],formatDate(booking.startDate,locale)+' — '+formatDate(booking.endDate,locale)],
+              ].map(([label,value])=><div key={label}><dt className="text-small text-text-secondary">{label}</dt>
+                <dd className="mt-4 text-body font-semibold text-text-ink">{value}</dd></div>)}
+            </dl>
+            {booking.guestNote&&<p className="mt-16 text-small text-text-secondary">
+              {labels['staff.stay_360.guest_note']}: {booking.guestNote}
+            </p>}
+          </section>
+          <StayActions id={booking.id} status={booking.status} updatedAt={booking.updatedAt.toISOString()}
+            balanceSatang={canSeeFinance||access.canManageReservations?balanceSatang:0} canConfirmUnpaid={canConfirmUnpaid}
+            canRecordMoney={access.canRecordMoney&&!needsReview} canManageReservations={access.canManageReservations} canManageFrontDesk={access.canManageFrontDesk&&!partyUnknown}
+            guestName={[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')} unitName={booking.unit?.name??''}
+            labels={labels}/>
+        </div>
+        {canSeeFinance && <section className="stitch-panel p-20">
+          <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.payment_history']}</h2>
+          {booking.payments.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_payments']}</p>:
+            <ul className="mt-12 space-y-8">{booking.payments.map(p=><li key={p.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
+              <span>{p.method} · {p.status} {p.receiptRef??''}</span><span>{amount(p.amountThb)}</span>
+            </li>)}</ul>}
+        </section>}
+        {canSeeFinance && <section className="stitch-panel p-20">
+          <div className="flex flex-wrap items-center justify-between gap-8">
+            <div>
+              <p className="stitch-kicker">{labels['staff.stay_360.folio']}</p>
+              <h2 className="mt-4 text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.services']}</h2>
+            </div>
+            {booking.depositPreauth ? <span className="rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold">
+              {labels['staff.stay_360.deposit']} · {booking.depositPreauth.status} · {amount(booking.depositPreauth.amountThb)}
+            </span> : null}
+          </div>
+          {booking.serviceOrders.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_services']}</p>:
+            <ul className="mt-12 space-y-8">{booking.serviceOrders.map(order=><li key={order.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
+              <span>{order.service.title} · {order.status} · {formatDate(order.scheduled_start,locale)}</span>
+              <span>{amount(order.total_thb)}</span>
+            </li>)}</ul>}
+          <div className="mt-20 grid gap-16 md:grid-cols-2">
+            <div>
+              <h3 className="font-semibold">{labels['staff.stay_360.claims']}</h3>
+              {booking.depositClaims.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_claims']}</p>:
+                <ul className="mt-8 space-y-8">{booking.depositClaims.map(claim=><li key={claim.id} className="rounded-md bg-surface-ivory p-12 text-small">
+                  <div className="flex justify-between gap-8"><span className="font-semibold">{claim.status}</span><span>{amount(claim.claimedAmountThb)}</span></div>
+                  <p className="mt-4 text-text-secondary">{claim.description}</p>
+                </li>)}</ul>}
+            </div>
+            <div>
+              <h3 className="font-semibold">{labels['staff.stay_360.condition']}</h3>
+              {booking.conditionReports.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_condition']}</p>:
+                <ul className="mt-8 space-y-8">{booking.conditionReports.map(report=><li key={report.id} className="rounded-md bg-surface-ivory p-12 text-small">
+                  <div className="flex justify-between gap-8"><span className="font-semibold">{report.reportType.replace(/_/g,' ')}</span><span>{report._count.media} {labels['staff.stay_360.media']}</span></div>
+                  <p className="mt-4 text-text-secondary">{formatDate(report.createdAt,locale)}{report.notes?' · '+report.notes:''}</p>
+                </li>)}</ul>}
+            </div>
+          </div>
+        </section>}
         <section className="stitch-panel p-20">
-          <dl className="grid grid-cols-2 gap-12">
-            {[
-              [labels['staff.stay_360.status'],enumLabel(labels,'bookingStatus',booking.status)],
-              [labels['staff.stay_360.channel'],enumLabel(labels,'bookingChannel',booking.channel)],
-              [labels['staff.stay_360.guest'],[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')],
-              [labels['staff.stay_360.adults'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'adults')?(typeof sourceParty.adults==='number'?String(sourceParty.adults):labels['staff.stay_360.unknown']):String(booking.adults)],
-              [labels['staff.stay_360.children'],partyUnknown&&Object.prototype.hasOwnProperty.call(sourceParty,'children')?(typeof sourceParty.children==='number'?String(sourceParty.children):labels['staff.stay_360.unknown']):String(booking.children)],
-              [labels['staff.stay_360.dates'],formatDate(booking.startDate,locale)+' — '+formatDate(booking.endDate,locale)],
-            ].map(([label,value])=><div key={label}><dt className="text-small text-text-secondary">{label}</dt>
-              <dd className="mt-4 text-body font-semibold text-text-ink">{value}</dd></div>)}
-          </dl>
-          {booking.guestNote&&<p className="mt-16 text-small text-text-secondary">
-            {labels['staff.stay_360.guest_note']}: {booking.guestNote}
-          </p>}
+          <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.change_history']}</h2>
+          {booking.changes.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_changes']}</p>:
+            <ul className="mt-12 space-y-8">{booking.changes.map(c=><li key={c.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
+              <span>{c.createdAt.toISOString().slice(0,16)} · {c.changeType}</span>
+              {canSeeFinance && <span>{amount(c.priceDeltaThb)}</span>}
+            </li>)}</ul>}
         </section>
-        <StayActions id={booking.id} status={booking.status} updatedAt={booking.updatedAt.toISOString()}
-          balanceSatang={canSeeFinance||access.canManageReservations?balanceSatang:0} canConfirmUnpaid={canConfirmUnpaid}
-          canRecordMoney={access.canRecordMoney&&!needsReview} canManageReservations={access.canManageReservations} canManageFrontDesk={access.canManageFrontDesk&&!partyUnknown}
-          guestName={[booking.guestIdentity.firstName,booking.guestIdentity.lastName].join(' ')} unitName={booking.unit?.name??''}
-          labels={labels}/>
       </div>
-      {canSeeFinance && <section className="stitch-panel p-20">
-        <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.payment_history']}</h2>
-        {booking.payments.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_payments']}</p>:
-          <ul className="mt-12 space-y-8">{booking.payments.map(p=><li key={p.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
-            <span>{p.method} · {p.status} {p.receiptRef??''}</span><span>{amount(p.amountThb)}</span>
-          </li>)}</ul>}
-      </section>}
-      {canSeeFinance && <section className="stitch-panel p-20">
-        <div className="flex flex-wrap items-center justify-between gap-8">
-          <div>
-            <p className="stitch-kicker">{labels['staff.stay_360.folio']}</p>
-            <h2 className="mt-4 text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.services']}</h2>
-          </div>
-          {booking.depositPreauth ? <span className="rounded-full bg-surface-ivory px-12 py-4 text-small font-semibold">
-            {labels['staff.stay_360.deposit']} · {booking.depositPreauth.status} · {amount(booking.depositPreauth.amountThb)}
-          </span> : null}
-        </div>
-        {booking.serviceOrders.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_services']}</p>:
-          <ul className="mt-12 space-y-8">{booking.serviceOrders.map(order=><li key={order.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
-            <span>{order.service.title} · {order.status} · {formatDate(order.scheduled_start,locale)}</span>
-            <span>{amount(order.total_thb)}</span>
-          </li>)}</ul>}
-        <div className="mt-20 grid gap-16 md:grid-cols-2">
-          <div>
-            <h3 className="font-semibold">{labels['staff.stay_360.claims']}</h3>
-            {booking.depositClaims.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_claims']}</p>:
-              <ul className="mt-8 space-y-8">{booking.depositClaims.map(claim=><li key={claim.id} className="rounded-md bg-surface-ivory p-12 text-small">
-                <div className="flex justify-between gap-8"><span className="font-semibold">{claim.status}</span><span>{amount(claim.claimedAmountThb)}</span></div>
-                <p className="mt-4 text-text-secondary">{claim.description}</p>
-              </li>)}</ul>}
-          </div>
-          <div>
-            <h3 className="font-semibold">{labels['staff.stay_360.condition']}</h3>
-            {booking.conditionReports.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_condition']}</p>:
-              <ul className="mt-8 space-y-8">{booking.conditionReports.map(report=><li key={report.id} className="rounded-md bg-surface-ivory p-12 text-small">
-                <div className="flex justify-between gap-8"><span className="font-semibold">{report.reportType.replace(/_/g,' ')}</span><span>{report._count.media} {labels['staff.stay_360.media']}</span></div>
-                <p className="mt-4 text-text-secondary">{formatDate(report.createdAt,locale)}{report.notes?' · '+report.notes:''}</p>
-              </li>)}</ul>}
-          </div>
-        </div>
-      </section>}
-      <section className="stitch-panel p-20">
-        <h2 className="text-subtitle font-semibold text-text-ink">{labels['staff.stay_360.change_history']}</h2>
-        {booking.changes.length===0?<p className="mt-12 text-small text-text-secondary">{labels['staff.stay_360.no_changes']}</p>:
-          <ul className="mt-12 space-y-8">{booking.changes.map(c=><li key={c.id} className="flex flex-wrap justify-between gap-8 border-b border-border-line py-8 text-small">
-            <span>{c.createdAt.toISOString().slice(0,16)} · {c.changeType}</span>
-            {canSeeFinance && <span>{amount(c.priceDeltaThb)}</span>}
-          </li>)}</ul>}
-      </section>
-    </div>
-  </main>;
+    </main>
+  );
 }
 

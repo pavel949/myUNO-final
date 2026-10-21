@@ -1,82 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { cancelBooking } from '@/modules/booking';
+import { cancelBookingAttempt } from '@/modules/booking';
 import { parseCancellationQuote } from '@/modules/booking/cancellation-quote';
-import { refund as requestCardProviderRefund } from '@/modules/finance';
+import { processRequestedCardRefund } from '@/modules/finance';
 import { notifyBookingCancelled } from '@/app/libs/bookingCancelled';
-
-async function issueCancellationRefunds(input: {
-  bookingId: string;
-  initiatedByIdentityId: string;
-  totalRefundThb: number;
-}) {
-  if (input.totalRefundThb <= 0) {
-    return { issuedRefundThb: 0, refundsCreated: 0 };
-  }
-
-  const succeededPayments = await prisma.payment.findMany({
-    where: {
-      bookingId: input.bookingId,
-      status: 'succeeded',
-      reconciliationReason: null,
-      purpose: { in: ['stay', 'stay_balance'] },
-    },
-    include: {
-      refunds: {
-        where: { status: { in: ['requested', 'processing', 'succeeded'] } },
-        select: { amountThb: true },
-      },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
-
-  let remaining = input.totalRefundThb;
-  let issuedRefundThb = 0;
-  let refundsCreated = 0;
-
-  for (const payment of succeededPayments) {
-    if (remaining <= 0) {
-      break;
-    }
-
-    const alreadyRefunded = payment.refunds.reduce((sum, row) => sum + row.amountThb, 0);
-    const refundableOnPayment = Math.max(0, payment.amountThb - alreadyRefunded);
-    const refundAmount = Math.min(refundableOnPayment, remaining);
-    if (refundAmount <= 0) {
-      continue;
-    }
-
-    if (payment.method === 'card_provider') {
-      await requestCardProviderRefund(
-        prisma,
-        payment.id,
-        refundAmount,
-        'cancellation',
-        input.initiatedByIdentityId
-      );
-    } else {
-      // Cash and manual transfer refunds require an operator payout step; mark
-      // them as requested so finance can settle them with an explicit trace.
-      await prisma.refund.create({
-        data: {
-          paymentId: payment.id,
-          method: 'cash',
-          amountThb: refundAmount,
-          reason: 'cancellation',
-          status: 'requested',
-          initiatedByIdentityId: input.initiatedByIdentityId,
-        },
-      });
-    }
-
-    remaining -= refundAmount;
-    issuedRefundThb += refundAmount;
-    refundsCreated += 1;
-  }
-
-  return { issuedRefundThb, refundsCreated };
-}
 
 /**
  * POST /api/bookings/[id]/cancel
@@ -87,10 +15,8 @@ async function issueCancellationRefunds(input: {
  * - reason?: string
  * - cancellationQuote: the exact quote displayed by GET /api/bookings/[id]
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -136,21 +62,31 @@ export async function POST(
 
     // Bind consent to the displayed snapshot, not a fresh server read in this
     // POST. The canonical writer rechecks the version and amount under locks.
-    const cancelled = await cancelBooking(prisma, {
+    const result = await cancelBookingAttempt(prisma, {
       bookingId,
       cancelledByIdentityId: user.identityId,
       reason,
       refundAmountThb: cancellationQuote.refundAmountSatang,
       cancellationQuote,
     });
+    const cancelled = result.booking;
     const refundAmountThb = cancelled.refundAccruedThb;
-    const { issuedRefundThb, refundsCreated } = await issueCancellationRefunds({
-      bookingId,
-      initiatedByIdentityId: user.identityId,
-      totalRefundThb: refundAmountThb,
-    });
-
-    await notifyBookingCancelled(prisma, bookingId, refundAmountThb);
+    const refunds = await prisma.refund.findMany({ where: {
+      payment: { bookingId }, reason: 'cancellation',
+    }, select: { id: true, method: true, status: true, amountThb: true } }).catch(() => []);
+    // Failure after commit must not report cancellation as failed. Requested
+    // card work is durable and recoverable by the refund dispatcher.
+    for (const refund of refunds) {
+      if (refund.method === 'card_provider' && refund.status === 'requested') {
+        await processRequestedCardRefund(prisma, refund.id).catch(() => null);
+      }
+    }
+    // These fields describe current outstanding liability, including on replay
+    // after settlement; an already paid refund must not exceed that balance.
+    const issuedRefundThb = Math.min(refundAmountThb, refunds.filter(refund => (result.replayed || result.refundIds.includes(refund.id)) && ['requested', 'processing', 'succeeded'].includes(refund.status))
+      .reduce((sum, refund) => sum + refund.amountThb, 0));
+    const refundsCreated = result.refundIds.length;
+    if (!result.replayed) await notifyBookingCancelled(prisma, bookingId, refundAmountThb).catch(() => null);
 
     return NextResponse.json(
       {

@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
+import { uploadPhoto, finalizePhoto, PhotoUploadError, type PendingPhotoUpload, type UploadedPhoto } from '@/modules/media/client-upload';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   assessGalleryReadiness,
@@ -169,11 +170,26 @@ function GalleryEditor({
   }
 
   async function upload(file: File, makeCover: boolean) {
-    const data = new FormData(); data.set('file', file); data.set('kind', 'photo');
-    const res = await fetch('/api/media/upload', { method: 'POST', body: data });
-    const body = await res.json().catch(() => null);
-    if (!res.ok || !body?.mediaAssetId) throw new Error(body?.error || 'Upload failed');
-    await write('POST', { mediaAssetId: body.mediaAssetId, cover: makeCover });
+    // Category attachments require project authority. The upload creates only
+    // an asset; the existing scoped gallery writer remains the attachment gate.
+    const uploadTarget = target.scope === 'unit'
+      ? { scope: 'unit' as const, targetId: target.id }
+      : { scope: 'project' as const, targetId: projectId };
+    const signal = new AbortController().signal;
+    let pending: PendingPhotoUpload | null = null;
+    let uploaded: UploadedPhoto;
+    try {
+      uploaded = await uploadPhoto(file, uploadTarget, { signal, onPending: value => { pending = value; } });
+    } catch (error) {
+      if (pending && error instanceof PhotoUploadError &&
+          ['upload_finalize_uncertain', 'upload_transfer_uncertain'].includes(error.key)) {
+        // Retry registration of the same intent, never transfer the bytes again.
+        uploaded = await finalizePhoto(pending, { signal }).catch(() => { throw new Error('Upload failed'); });
+      } else {
+        throw new Error('Upload failed');
+      }
+    }
+    await write('POST', { mediaAssetId: uploaded.mediaAssetId, cover: makeCover });
   }
 
   async function persistOrder(ordered: Item[], nextCover = cover) {

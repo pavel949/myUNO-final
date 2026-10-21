@@ -33,7 +33,7 @@ let browser, fixture, creationFixture, contentFixture, supportThread, staffSpace
 async function persist() { await writeFile(`browser-results/${stem}-result.json`, JSON.stringify(report, null, 2)); }
 async function screenshot(page, suffix) {
   const path = `browser-results/${stem}-${suffix}.png`;
-  await page.screenshot({ path, fullPage: true }); report.screenshots.push(path);
+  await page.screenshot({ caret: 'initial', path, fullPage: true }); report.screenshots.push(path);
 }
 async function step(name, page, work) {
   const entry = { name, status: 'running' }; report.steps.push(entry);

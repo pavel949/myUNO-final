@@ -10,12 +10,13 @@ import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import AvailabilityPricingPanel from '@/components/units/AvailabilityPricingPanel';
 export const dynamic = 'force-dynamic';
-export default async function SupplierListingPage({ params }: { params: { unitId: string } }) {
+export default async function SupplierListingPage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent('/property/listings/' + params.unitId)}`);
   const unit = await prisma.unit.findUnique({ where: { id: params.unitId }, select: { id: true, name: true, projectId: true, status: true } });
   if (!unit) notFound();
-  const allowed = await hasSelfListingAccess(user.identityId, unit.id) || await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id });
+  const allowed = (await hasSelfListingAccess(user.identityId, unit.id)) || (await hasManagedUnitMcAccess(user, { projectId: unit.projectId, unitId: unit.id }));
   if (!allowed) notFound();
   const labels = await getLabels(UNIT_CALENDAR_LABEL_KEYS);
   return <StitchMain>

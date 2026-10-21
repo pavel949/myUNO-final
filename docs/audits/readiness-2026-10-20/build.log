@@ -1,0 +1,24 @@
+
+> myuno@0.1.0 prebuild
+> node scripts/prepare-maplibre-worker.mjs
+
+Prepared same-origin MapLibre 6.15.0 worker
+
+> myuno@0.1.0 build
+> prisma generate && NODE_ENV=production node scripts/check-content-review-gate.mjs && NODE_ENV=production next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 2.00s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+
+(node:953) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/myUNO-final/src/lib/resolveDatabaseUrl.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/myUNO-final/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[CONTENT GATE] production_bypass_refused
+Release blocked. Restore registry connectivity or review content in the existing editor; no automatic approval is performed.

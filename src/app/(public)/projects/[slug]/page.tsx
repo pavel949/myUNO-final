@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getGalleryCopy } from '@/lib/gallery-copy';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PROPERTY_PUBLIC_UI_DRAFTS } from '@/modules/content/property-public-ui-drafts';
@@ -7,14 +8,14 @@ import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { UI_LOCALE } from '@/lib/format';
 import { Metadata } from 'next';
-import Link from 'next/link';
+import Link from '@/components/FeedbackLink';
 import { PropertyImage } from '@/components/property/PropertyImage';
 import { notFound } from 'next/navigation';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getPublicProjectBySlug } from '@/modules/projects';
 import { listPublicMarketplaceServices } from '@/modules/services';
 import { getConfig } from '@/modules/config';
-import { t, tMany } from '@/modules/content';
+import { tMany } from '@/modules/content';
 import ProjectEditorialSections from '@/components/projects/ProjectEditorialSections';
 import ProjectServiceMarketplace from '@/components/projects/ProjectServiceMarketplace';
 import ProjectAmenitiesSection from '@/components/projects/ProjectAmenitiesSection';
@@ -32,27 +33,43 @@ import { getDestination } from '@/modules/destinations';
 
 export const dynamic = 'force-dynamic';
 
-/** Resolve a project content key, returning '' when the key has no copy yet. */
-async function resolveKey(key: string | null | undefined): Promise<string> {
-  if (!key) return '';
-  try {
-    const value = await t(prisma, key, undefined, getRequestLocale());
-    return value && value !== key && value !== '—' ? value : '';
-  } catch {
-    return '';
-  }
-}
+// React cache is request-scoped: metadata and page share a read, never a stale
+// cross-request inventory/permission snapshot.
+const readProject = cache(getPublicProjectBySlug);
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
+/** One request-local batch for page copy and metadata, including missing keys. */
+const readProjectCopy = cache(async (project: NonNullable<Awaited<ReturnType<typeof getPublicProjectBySlug>>>, locale: ReturnType<typeof getRequestLocale>) => {
+  const fields = {
+    areaLabel: project.areaLabelKey,
+    story: project.descriptionKey,
+    handbookTeaser: project.handbookKey,
+    houseRules: `project.${project.slug}.house_rules`,
+    shuttleSchedule: `project.${project.slug}.shuttle_schedule`,
+    licenceLine: `project.${project.slug}.licence`,
+  };
+  const keys = Object.values(fields).filter((key): key is string => Boolean(key));
+  const values = await tMany(prisma, keys, locale).catch(() => ({} as Record<string, string | null>));
+  const text = (key: string | null | undefined) => {
+    const value = key ? values[key] : null;
+    return value && value !== key && value !== '—' ? value : '';
+  };
+  return {
+    areaLabel: text(fields.areaLabel), story: text(fields.story), handbookTeaser: text(fields.handbookTeaser),
+    houseRules: text(fields.houseRules), shuttleSchedule: text(fields.shuttleSchedule), licenceLine: text(fields.licenceLine),
+  };
+});
+
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
+  const project = await readProject(params.slug, getRequestLocale());
   // notFound() here (not only in the page body) so the response carries a
   // real 404 status — thrown during page streaming it would soft-404 as 200.
   if (!project) notFound();
-  const description = await resolveKey(project.descriptionKey);
+  const { story: description } = await readProjectCopy(project, getRequestLocale());
   return {
     title: `${project.name} | myUNO`,
     description: description.slice(0, 160) || undefined,
@@ -65,13 +82,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProjectLandingPage({
-  params, searchParams = {},
-}: {
-  params: { slug: string };
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const project = await getPublicProjectBySlug(params.slug, getRequestLocale());
+export default async function ProjectLandingPage(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  }
+) {
+  const searchParams = (await props.searchParams) ?? {};
+  const params = await props.params;
+  const project = await readProject(params.slug, getRequestLocale());
   if (!project) notFound();
 
   const viewer = await getCurrentUser().catch(() => null);
@@ -93,7 +112,7 @@ export default async function ProjectLandingPage({
     locale: getRequestLocale(),
     source: 'project_portal',
   };
-  await Promise.all([
+  const pageViews = Promise.all([
     track(prisma, 'page_project_viewed', projectEventDimensions),
     track(prisma, 'project_opened', projectEventDimensions),
   ]).catch(() => null);
@@ -109,7 +128,7 @@ export default async function ProjectLandingPage({
       ])
   );
 
-  const labels = await getLabels({
+  const labelsPromise = getLabels({
     'project_page.availability.title': 'Check availability',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
@@ -205,22 +224,11 @@ export default async function ProjectLandingPage({
     ...serviceCategoryLabels,
   }, getRequestLocale(), PROPERTY_PUBLIC_UI_DRAFTS);
 
-  const [areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, services, licenceLine, allCommercialHomes] = await Promise.all([
-    resolveKey(project.areaLabelKey),
-    resolveKey(project.descriptionKey),
-    resolveKey(project.handbookKey),
-    resolveKey(`project.${project.slug}.house_rules`),
-    resolveKey(`project.${project.slug}.shuttle_schedule`),
+  const detailsPromise = Promise.all([
+    readProjectCopy(project, getRequestLocale()),
     listPublicMarketplaceServices(prisma, getRequestLocale(), { projectId: project.id, limit: 8 }).catch(() => []),
-    resolveKey(`project.${project.slug}.licence`),
     listPublicCommercialHomes(prisma, undefined, undefined, project.id).catch(() => []),
   ]);
-  const projectCommercialHomes = allCommercialHomes;
-  const buyHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('buy')).length;
-  const rentHomeCount = projectCommercialHomes.filter((home) => home.intents.includes('rent')).length;
-  const galleryLabels = await getGalleryCopy();
-  const context = discoveryContext(searchParams, { projectId: project.id });
-  const bookableStayCount = project.units.filter((unit) => unit.bookable).length;
 
   // Project editorial and locality are editable ContentKey records, not a
   // resort-specific React page. The same component works for condos and hotels.
@@ -234,7 +242,7 @@ export default async function ProjectLandingPage({
   ] as const;
   const editorialPrefix = `project.${project.slug}.editorial.`;
   const locale = getRequestLocale();
-  const discovery = await discoveryCopy(locale);
+
   const editorialKeys = editorialFields.map(field => editorialPrefix + field);
   const categoryDescriptionKeys = project.categories.flatMap(category => [category.titleKey, category.descriptionKey]);
   const unitEditorialKeys = project.units.flatMap(unit =>
@@ -246,7 +254,12 @@ export default async function ProjectLandingPage({
       .filter(feature => /^[a-z0-9_]+$/.test(feature))
       .map(feature => `catalog.unit_features.${feature}.label`),
   ]);
-  const editorialCopy = await tMany(prisma, [
+  const categoryKeys = project.categories.flatMap(c => [
+    `catalog.unit_categories.${c.key}.label`,
+    ...(c.styleKey ? [`catalog.styles.${c.styleKey}.label`] : []),
+  ]);
+  const editorialCopyPromise = tMany(prisma, [
+    ...categoryKeys,
     ...editorialKeys,
     ...categoryDescriptionKeys,
     ...unitEditorialKeys,
@@ -254,6 +267,16 @@ export default async function ProjectLandingPage({
     ...(project.areaNameKey ? [project.areaNameKey] : []),
     ...(project.areaDescriptionKey ? [project.areaDescriptionKey] : []),
   ], locale);
+  const [labels, details, galleryLabels, discovery, editorialCopy] = await Promise.all([
+    labelsPromise, detailsPromise, getGalleryCopy(), discoveryCopy(locale), editorialCopyPromise, pageViews,
+  ]);
+  const [{ areaLabel, story, handbookTeaser, houseRules, shuttleSchedule, licenceLine }, services, allCommercialHomes] = details;
+  const projectCommercialHomes = allCommercialHomes;
+  const buyHomeCount = projectCommercialHomes.filter(home => home.intents.includes('buy')).length;
+  const rentHomeCount = projectCommercialHomes.filter(home => home.intents.includes('rent')).length;
+  const context = discoveryContext(searchParams, { projectId: project.id });
+  const bookableStayCount = project.units.filter(unit => unit.bookable).length;
+
   const copy = (field: string) => editorialCopy[editorialPrefix + field] || '';
   const editorial = {
     eyebrow: copy('eyebrow'), headline: copy('headline'), lead: copy('lead'),
@@ -273,9 +296,9 @@ export default async function ProjectLandingPage({
   const categoryLabels: Record<string, string> = {};
   const styleLabels: Record<string, string> = {};
   for (const c of project.categories) {
-    categoryLabels[c.key] = await resolveKey(`catalog.unit_categories.${c.key}.label`);
+    categoryLabels[c.key] = editorialCopy[`catalog.unit_categories.${c.key}.label`] || '';
     if (c.styleKey && !(c.styleKey in styleLabels)) {
-      styleLabels[c.styleKey] = await resolveKey(`catalog.styles.${c.styleKey}.label`);
+      styleLabels[c.styleKey] = editorialCopy[`catalog.styles.${c.styleKey}.label`] || '';
     }
   }
   const styleKeys = [...new Set(project.categories.map((c) => c.styleKey).filter(Boolean))] as string[];
@@ -352,7 +375,6 @@ export default async function ProjectLandingPage({
         ) : null}
       </section>
 
-
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
       {bookableStayCount > 0 && <section id="availability" className="mx-auto max-w-content px-20 py-24 md:px-32">
         <div className="rounded-lg border border-border-line bg-surface-paper p-16 shadow-card md:p-20">
@@ -390,7 +412,7 @@ export default async function ProjectLandingPage({
             </p>
             <div className="mt-24 grid gap-16 md:grid-cols-2">
               {buyHomeCount > 0 ? (
-                <Link
+                <Link prefetch={false}
                   href={`/homes?intent=buy&projectId=${encodeURIComponent(project.id)}`}
                   className="rounded-lg border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
@@ -406,7 +428,7 @@ export default async function ProjectLandingPage({
                 </Link>
               ) : null}
               {rentHomeCount > 0 ? (
-                <Link
+                <Link prefetch={false}
                   href={`/homes?intent=rent&projectId=${encodeURIComponent(project.id)}`}
                   className="rounded-lg border border-border-line bg-surface-ivory p-20 shadow-card transition hover:shadow-float"
                 >
@@ -452,7 +474,7 @@ export default async function ProjectLandingPage({
           </h2>
           <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.categories.map((category) => (
-              <Link
+              <Link prefetch={false}
                 key={category.key}
                 href={`/projects/${project.slug}/categories/${encodeURIComponent(category.key)}?${context}`}
                 className="block overflow-hidden rounded-lg border border-border-line bg-surface-paper p-16 shadow-card transition hover:shadow-float"
@@ -522,7 +544,7 @@ export default async function ProjectLandingPage({
                 </div>
               ))}
             </div>
-            <Link
+            <Link prefetch={false}
               href={longStayCtaHref}
               className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
             >
@@ -544,7 +566,7 @@ export default async function ProjectLandingPage({
         ) : (
           <div className="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
             {project.units.map((unit) => (
-              <Link
+              <Link prefetch={false}
                 key={unit.id}
                 href={`/units/${unit.id}?${context}`}
                 className="group flex flex-col overflow-hidden rounded-lg border border-border-line bg-surface-paper shadow-card transition-shadow hover:shadow-float"
@@ -637,7 +659,7 @@ export default async function ProjectLandingPage({
             <h3 className="font-display text-heading-3 font-semibold text-text-ink">{labels['project_page.owner_intake.title']}</h3>
             <p className="mt-8 max-w-2xl text-small text-text-secondary">{labels['project_page.owner_intake.body']}</p>
           </div>
-          <Link href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
+          <Link prefetch={false} href={`/property/onboard?projectId=${encodeURIComponent(project.id)}`}
             className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-20 py-12 text-small font-semibold text-white hover:bg-brand-deep">
             {labels['project_page.owner_intake.cta']}
           </Link>
@@ -814,13 +836,13 @@ export default async function ProjectLandingPage({
           ))}
         </div>
         <div className="flex flex-col items-center justify-center gap-12 text-center sm:flex-row">
-          <Link
+          <Link prefetch={false}
             href={`/projects/${project.slug}/passport`}
             className="inline-flex min-h-44 items-center rounded-md bg-brand-andaman px-24 text-small font-semibold text-white hover:bg-brand-deep"
           >
             {labels['project_page.trust.passport']}
           </Link>
-          <Link href="/trust" className="text-brand-andaman font-semibold hover:underline">
+          <Link prefetch={false} href="/trust" className="text-brand-andaman font-semibold hover:underline">
             {labels['landing.trust.cta']}
           </Link>
         </div>

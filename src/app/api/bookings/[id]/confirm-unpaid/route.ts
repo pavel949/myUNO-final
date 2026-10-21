@@ -6,7 +6,8 @@ import { confirmBooking } from '@/modules/booking';
 import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 
 /** Commercial acceptance only. This endpoint never records receipt of money. */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => null);

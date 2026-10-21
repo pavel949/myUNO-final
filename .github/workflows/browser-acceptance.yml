@@ -88,9 +88,9 @@ jobs:
           done
           test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
           journey_failed=0
-          for journey in founder-publication-booking guest-ux-completion property-submission-description \
+          for journey in founder-publication-booking property-card-editing guest-ux-completion property-submission-description \
             content-contributor complex-amenities project-amenity-content employee-workspaces \
-            employee-creation workspace-navigation service-fulfilment; do
+            employee-creation workspace-navigation service-fulfilment search-map next-migration-smoke; do
             # Preserve every assertion and collect all failures in one run.
             # Each runner retains its own isolation and prerequisite guards.
             node "scripts/e2e/$journey.mjs" || journey_failed=1
@@ -113,7 +113,10 @@ jobs:
             browser-results/employee-creation-result.json
             browser-results/workspace-navigation-result.json
             browser-results/service-fulfilment-result.json
+            browser-results/search-map-result.json
+            browser-results/next-migration-result.json
             browser-results/*.png
+            browser-results/property-editing/
             browser-results/server.log
             browser-results/blocked-server-egress.log
           retention-days: 7

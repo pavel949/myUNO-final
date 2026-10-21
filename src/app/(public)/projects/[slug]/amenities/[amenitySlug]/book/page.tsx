@@ -8,13 +8,14 @@ import AmenityBookingClient from '@/components/projects/AmenityBookingClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AmenityBookingPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string; amenitySlug: string };
-  searchParams?: { bookingId?: string };
-}) {
+export default async function AmenityBookingPage(
+  props: {
+    params: Promise<{ slug: string; amenitySlug: string }>;
+    searchParams?: Promise<{ bookingId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   // Resource eligibility is public; reject unavailable resources before login so
   // draft/archived links cannot turn into a successful login-page navigation.
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());

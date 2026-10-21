@@ -10,7 +10,8 @@ import { EmptyState } from '@/components/premium/PremiumPrimitives';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AreaDetailPage({ params }: { params: { slug: string } }) {
+export default async function AreaDetailPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const locale = getRequestLocale();
   const area = await getAreaForBrowse(prisma, params.slug);
   if (!area) notFound();

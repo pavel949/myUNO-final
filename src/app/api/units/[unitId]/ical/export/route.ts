@@ -117,10 +117,8 @@ async function generateICalContent(unitId: string): Promise<string> {
   return lines.join('\r\n');
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { unitId: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   try {
     const { unitId } = params;
 

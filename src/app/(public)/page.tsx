@@ -41,16 +41,17 @@ function formatThb(amount: number, locale: string): string {
   return Math.round(amount).toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US');
 }
 
-export default async function LandingPage({
-  searchParams,
-}: {
-  searchParams?: { intent?: string };
-}) {
+export default async function LandingPage(
+  props: {
+    searchParams?: Promise<{ intent?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const locale = getRequestLocale();
   const activeDestination = getDestination();
   const initialIntent = parseHomeIntent(searchParams?.intent);
 
-  await track(prisma, 'page_landing_viewed', {
+  const pageView = track(prisma, 'page_landing_viewed', {
     locale,
     destination: activeDestination.key,
   }).catch(() => null);
@@ -214,6 +215,7 @@ export default async function LandingPage({
       'landing.hp.help.trust': 'How we verify information',
     }),
     getPublicHomepageData(locale),
+    pageView,
   ]);
 
   const { projects, commercialHomes, services, stayUnits, areas, placeAreas, placeUnits } = homepageData;
@@ -312,7 +314,11 @@ export default async function LandingPage({
   const serviceGroups = groupServicesBySituation(services, 2);
   const intents = ['stay', 'monthly', 'buy'] as const;
   const perIntent = <T,>(build: (intent: (typeof intents)[number]) => T) =>
-    ({ stay: build('stay'), monthly: build('monthly'), buy: build('buy') }) as Record<(typeof intents)[number], T>;
+    (({
+      stay: build('stay'),
+      monthly: build('monthly'),
+      buy: build('buy')
+    }) as Record<(typeof intents)[number], T>);
 
   const ownerGoalEvent = PUBLIC_ANALYTICS_EVENTS.ownerGoalSelected;
   const ownerGoals = [
@@ -445,19 +451,19 @@ export default async function LandingPage({
               </div></details>
               <p className="mt-12 px-4 text-small text-text-ink">
                 {labels['landing.hp.hero.dates_note']}{' '}
-                <Link href="/search" className="font-semibold text-brand-andaman hover:underline">
+                <Link prefetch={false} href="/search" className="font-semibold text-brand-andaman hover:underline">
                   {labels['landing.hp.hero.no_dates']} →
                 </Link>
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-16 gap-y-8 px-4 text-small">
                 <span className="text-text-ink">{labels['landing.hp.owner.question']}</span>
-                <Link href="/sell" className="font-semibold text-brand-andaman hover:underline">
+                <Link prefetch={false} href="/sell" className="font-semibold text-brand-andaman hover:underline">
                   {labels['landing.hp.owner.sell']}
                 </Link>
-                <Link href="/rent-out" className="font-semibold text-brand-andaman hover:underline">
+                <Link prefetch={false} href="/rent-out" className="font-semibold text-brand-andaman hover:underline">
                   {labels['landing.hp.owner.rent']}
                 </Link>
-                <Link href="/manage" className="font-semibold text-brand-andaman hover:underline">
+                <Link prefetch={false} href="/manage" className="font-semibold text-brand-andaman hover:underline">
                   {labels['landing.hp.owner.manage']}
                 </Link>
               </div>
@@ -475,7 +481,7 @@ export default async function LandingPage({
                 </h2>
                 <p className="mt-12 max-w-xl text-body text-text-secondary">{labels['landing.hp.complexes.body']}</p>
               </div>
-              <Link href="/projects" className={linkMore}>
+              <Link prefetch={false} href="/projects" className={linkMore}>
                 {labels['landing.hp.complexes.cta']} →
               </Link>
             </div>
@@ -549,7 +555,7 @@ export default async function LandingPage({
               </h2>
               <p className="mt-12 text-body text-text-secondary">{labels['landing.hp.services.body']}</p>
             </div>
-            <Link href="/services" className={linkMore}>
+            <Link prefetch={false} href="/services" className={linkMore}>
               {labels['landing.hp.services.cta']} →
             </Link>
           </div>
@@ -597,7 +603,7 @@ export default async function LandingPage({
                 </h2>
                 <p className="mt-12 max-w-xl text-body text-text-secondary">{labels['landing.hp.areas.body']}</p>
               </div>
-              <Link href="/areas" className={linkMore}>
+              <Link prefetch={false} href="/areas" className={linkMore}>
                 {labels['landing.hp.areas.cta']} →
               </Link>
             </div>
@@ -606,7 +612,7 @@ export default async function LandingPage({
               {areas.slice(0, 3).map((area) => {
                 const media = projectPresentationImage(area.id, area.coverUrl);
                 return (
-                  <Link
+                  <Link prefetch={false}
                     key={area.id}
                     href={`/areas/${area.slug}`}
                     className="group relative isolate min-h-[320px] overflow-hidden rounded-lg bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
@@ -680,21 +686,21 @@ export default async function LandingPage({
 
           <div className="mt-32 grid gap-24 border-t border-border-line pt-24 md:grid-cols-2">
             <p className="text-body text-text-secondary">
-              <Link href="/owners" className="font-semibold text-brand-andaman hover:underline">
+              <Link prefetch={false} href="/owners" className="font-semibold text-brand-andaman hover:underline">
                 {labels['landing.hp.owners.all']} →
               </Link>
               <span className="mx-8 text-text-stone">·</span>
               {labels['landing.hp.owners.existing']}{' '}
-              <Link href="/app" className="font-semibold text-brand-andaman hover:underline">
+              <Link prefetch={false} href="/app" className="font-semibold text-brand-andaman hover:underline">
                 {labels['landing.hp.owners.existing_cta']} →
               </Link>
             </p>
             <div className="flex flex-wrap items-center gap-x-16 gap-y-8 text-body">
               <span className="font-semibold text-text-ink">{labels['landing.hp.partners.title']}</span>
-              <Link href="/developers" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.developers']}</Link>
-              <Link href="/management-companies" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.management']}</Link>
-              <Link href="/providers" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.providers']}</Link>
-              <Link href="/partners" className="font-semibold text-brand-andaman hover:underline">{labels['landing.hp.partners.all']} →</Link>
+              <Link prefetch={false} href="/developers" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.developers']}</Link>
+              <Link prefetch={false} href="/management-companies" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.management']}</Link>
+              <Link prefetch={false} href="/providers" className="text-brand-andaman hover:underline">{labels['landing.hp.partners.providers']}</Link>
+              <Link prefetch={false} href="/partners" className="font-semibold text-brand-andaman hover:underline">{labels['landing.hp.partners.all']} →</Link>
             </div>
           </div>
         </div>
@@ -709,7 +715,7 @@ export default async function LandingPage({
                 {labels['landing.hp.after.title']}
               </h2>
               <p className="mt-12 max-w-xl text-body text-surface-ivory/80">{labels['landing.hp.after.body']}</p>
-              <Link
+              <Link prefetch={false}
                 href="/app"
                 className="mt-32 inline-flex min-h-48 items-center justify-center rounded-lg bg-surface-paper px-24 font-semibold text-brand-deep transition-opacity hover:opacity-90"
               >
@@ -725,7 +731,7 @@ export default async function LandingPage({
                 { href: '/app', key: 'owner' },
               ].map((item) => (
                 <li key={item.key}>
-                  <Link
+                  <Link prefetch={false}
                     href={item.href}
                     className="flex min-h-44 items-center gap-12 border-b border-surface-ivory/10 pb-12 text-body text-surface-ivory hover:text-brand-sun-soft"
                   >
@@ -748,9 +754,9 @@ export default async function LandingPage({
             <p className="mt-8 text-body text-text-secondary">{labels['landing.hp.help.body']}</p>
           </div>
           <div className="flex flex-wrap gap-x-24 gap-y-12 text-body font-semibold text-brand-andaman">
-            <Link href="/help" className="min-h-44 hover:underline">{labels['landing.hp.help.help']} →</Link>
-            <Link href="/desks" className="min-h-44 hover:underline">{labels['landing.hp.help.desks']} →</Link>
-            <Link href="/trust" className="min-h-44 hover:underline">{labels['landing.hp.help.trust']} →</Link>
+            <Link prefetch={false} href="/help" className="min-h-44 hover:underline">{labels['landing.hp.help.help']} →</Link>
+            <Link prefetch={false} href="/desks" className="min-h-44 hover:underline">{labels['landing.hp.help.desks']} →</Link>
+            <Link prefetch={false} href="/trust" className="min-h-44 hover:underline">{labels['landing.hp.help.trust']} →</Link>
           </div>
         </div>
       </section>

@@ -1,0 +1,9 @@
+[
+  {
+    "jsonb_build_object": {
+      "columns": "e611e745ab76dc28ccaf3cbc2537397a",
+      "indexes": "b69cc2a26d07bad4dfcbf39b8b4d1685",
+      "constraints": "2731e7ea90ba195ab20b47a2d057fd78"
+    }
+  }
+]

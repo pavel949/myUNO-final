@@ -14,7 +14,7 @@ let browser;
 let orderId;
 async function step(name, page, fn) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
-  try { await fn(); entry.status = 'passed'; await page.screenshot({ path: `browser-results/guest-ux-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
+  try { await fn(); entry.status = 'passed'; await page.screenshot({ caret: 'initial', path: `browser-results/guest-ux-${report.steps.length}.png`, fullPage: true }); console.log(`PASS ${name}`); }
   catch (error) { entry.status = 'failed'; entry.error = String(error); throw error; }
   finally { await writeFile('browser-results/guest-ux-result.json', JSON.stringify(report, null, 2)); }
 }
@@ -121,7 +121,7 @@ try {
   report.result = 'passed';
 } catch (error) {
   report.result = 'failed'; report.error = String(error); process.exitCode = 1; console.error(error);
-  for (const { name, ctx } of contexts) for (const page of ctx.pages()) await page.screenshot({ path: `browser-results/failure-${name}.png`, fullPage: true }).catch(() => {});
+  for (const { name, ctx } of contexts) for (const page of ctx.pages()) await page.screenshot({ caret: 'initial', path: `browser-results/failure-${name}.png`, fullPage: true }).catch(() => {});
 } finally {
   for (const { name, ctx } of contexts) await ctx.tracing.stop({ path: `browser-results/trace-${name}.zip` }).catch(() => {});
   await writeFile('browser-results/guest-ux-result.json', JSON.stringify(report, null, 2));

@@ -5,10 +5,11 @@ import AuthVerifyClient from './verify-client';
 export const dynamic = 'force-dynamic';
 
 interface VerifyPageProps {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }
 
-export default async function VerifyEmailPage({ searchParams }: VerifyPageProps) {
+export default async function VerifyEmailPage(props: VerifyPageProps) {
+  const searchParams = await props.searchParams;
   const labels = await getLabels({
     'auth.verify.title': 'Email verification',
     'auth.verify.loading': 'Verifying your email…',

@@ -9,7 +9,10 @@ import CreationClient from './creation-client';
 export const dynamic = 'force-dynamic';
 const CURRENT_WORKSPACE = 'create' as const;
 
-export default async function EmployeeCreationPage({ searchParams }: { searchParams?: { id?: string; kind?: string; from?: string } }) {
+export default async function EmployeeCreationPage(
+  props: { searchParams?: Promise<{ id?: string; kind?: string; from?: string }> }
+) {
+  const searchParams = await props.searchParams;
   const params = new URLSearchParams();
   if (typeof searchParams?.id === 'string') params.set('id', searchParams.id);
   if (searchParams?.kind === 'unit' || searchParams?.kind === 'complex') params.set('kind', searchParams.kind);

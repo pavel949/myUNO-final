@@ -1,5 +1,7 @@
 # Реализованное, незавершённое и проверки
 
+> Follow-up 2026-10-20: [release validation evidence](../audits/release-validation-2026-10-20/RELEASE_EVIDENCE.md) records fresh read-only production schema/content/job facts, 6,055 passing local tests, isolated Chromium acceptance and recovery rehearsal. Release, scheduler activation and real email delivery remain blocked; the operational changes are prepared for review, not deployed.
+
 Дата 2026-10-16; application codeRevision `c61412e71801e345fb7d3cde0168a6631b0b4932`, ops main53634204 после PR294–297. Exact codeRevision указан в REFERENCE; production acceptance оценивается отдельно. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
 
 ## Как читать статус
@@ -100,3 +102,22 @@
 - [Vercel config](../../vercel.json), [workflows](../../.github/workflows)
 
 Повторная проверка после изменения кода: обновить срез, status/evidence, справочник и release evidence. Старое «already fixed» из design/reconciliation не переносится без повторной сверки.
+
+
+## 2026-10-18: вход администратора в редактирование карточек
+
+Вход `/property/content` без выбранного объекта/предложения направляет активного администратора в существующий `/app/admin/projects`, вместо пустого списка назначений сотрудника. Сотрудники сохраняют прежний scoped proposal editor; явные target/proposal deep links не изменены. Новых прав и обхода review нет. Добавлены регрессионные проверки в `src/app/property/workspace-nav.test.tsx`. Это исправление навигации, не подтверждение полной приёмки публикации или готовности production.
+
+## 2026-10-19: обновление зависимостей по `npm audit`
+
+Next.js 14.2.35 → 15.5.28 (закрыты advisory уровня critical/high, в т.ч. RCE в Image Optimizer), maplibre-gl 4.7.1 → 6.15.0 (XSS sanitizer bypass), вложенный PostCSS Next переопределён на корневой patched-версию через `overrides`. `npm audit --omit=dev`: 0 уязвимостей. Request-API (`params`, `searchParams`, `headers`) переведены на async-форму по codemod; `getRequestLocale` и `handleError` оставлены на синхронном `UnsafeUnwrapped*` (работает в Next 15, удаляется в Next 16 — отдельная миграция ~140 вызовов). Dev-зависимости (vitest toolchain и др.) не обновлялись, их advisories не входят в production-сборку. Это проверка кода и сборки (tsc, eslint, `next build`, unit-тесты без БД), не live-приёмка: на staged deployment нужно проверить карту поиска, изображения, навигацию и cookie-локаль.
+
+Известное ограничение React 19.2 (Next 15.5): ложная ошибка гидратации #418 на идентичном дереве, когда Flight-узел страницы лежит прямо в дочерних элементах DOM-тега при поэтапной гидратации ([react/react#37584](https://github.com/react/react/issues/37584), исправлено в React 19.3.0, в 19.2 не бэкпортируется). `ApplicationFrame` оборачивает контент страницы в `ContentSlot` (отдельный fiber); обходной путь убрать при переходе на Next с React ≥ 19.3. Локальные изолированные прогоны `founder-publication-booking` на production-сборке: без обхода 8–14 ошибок #418 за прогон, с обходом 0 в трёх прогонах подряд (25/25 шагов). Не покрыт исходящий баг [react/react#37321](https://github.com/react/react/issues/37321) (редкая гонка при холодной загрузке с кэшированными чанками).
+
+## PMS remediation, 2026-10-21 (local branch)
+
+Reservation guest/finance access, cancellation refund durability/recovery, property-local date boundaries and calendar/form correctness were hardened with regressions. See [scope and verification boundaries](../audits/PMS_REMEDIATION_2026-10-21.md). No production deployment or historical data repair is asserted.
+
+## Property-card editing, 2026-10-21 (local branch)
+
+PMS project-facts saves use descriptive fields without legacy facility arrays. Unit writers validate physical facts; the PMS unit/project forms submit optimistic versions and retain failed/conflicting edits. Editors expose distinct area measurements, protect unsaved navigation and localize controls. Administrators can maintain documentary sleeping spaces/beds from the PMS editor using the existing admin guard; staff permissions and physical capacity are unchanged. Gallery uploads retain distinct asset ownership and refresh partial results after failure. See [verification and remaining boundaries](../audits/PROPERTY_CARD_EDITING_2026-10-21.md). No production deployment, migration or property-data repair is asserted.

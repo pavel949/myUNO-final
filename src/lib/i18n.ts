@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, type UnsafeUnwrappedCookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { tMany } from '@/modules/content';
 import type { Locale } from '@/modules/content';
@@ -12,7 +12,9 @@ const DEFAULT_UI_LOCALE: Locale = 'ru';
 /** The request's UI locale: `locale` cookie (set by the navbar switcher), default RU. */
 export function getRequestLocale(): Locale {
   try {
-    const value = cookies().get('locale')?.value as Locale | undefined;
+    // Synchronous on purpose: getRequestLocale has ~140 sync callers. Next 15
+    // still supports the unwrapped form; Next 16 removes it, so migrate then.
+    const value = (cookies() as unknown as UnsafeUnwrappedCookies).get('locale')?.value as Locale | undefined;
     return value && SUPPORTED_LOCALES.includes(value) ? value : DEFAULT_UI_LOCALE;
   } catch {
     return DEFAULT_UI_LOCALE;

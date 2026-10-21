@@ -18,7 +18,7 @@ export function PublicAnalyticsLink({
   children: ReactNode;
 }) {
   return (
-    <Link
+    <Link prefetch={false}
       href={href}
       className={className}
       onClick={() => trackPublicInteraction(eventKey, {

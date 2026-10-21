@@ -10,7 +10,8 @@ async function guard(id: string) {
   return managedMediaAccess({ projectId: unit.projectId, unitId: unit.id });
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await guard(params.id);
   if ('error' in access) return access.error;
   const target = await prisma.unit.findUnique({
@@ -22,7 +23,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return target ? NextResponse.json(target) : NextResponse.json({ error: 'Unit not found' }, { status: 404 });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (typeof mediaAssetId !== 'string' || !mediaAssetId) {
       throw createPublicError('mediaAssetId is required', 400);
     }
-    if (!await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin))
+    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin)))
       throw createPublicError('Use a non-encrypted photo you uploaded.', 403);
     await prisma.$transaction(async tx => {
       const [target, asset] = await Promise.all([
@@ -53,7 +55,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } catch (error) { return handleError(error); }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;
@@ -83,7 +86,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (error) { return handleError(error); }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await guard(params.id);
     if ('error' in access) return access.error;

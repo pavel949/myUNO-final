@@ -45,11 +45,12 @@ async function unitDescription(descriptionKey: string | null): Promise<string | 
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];
 
   // Only live units and explicitly imported public discovery inventory get metadata.
@@ -71,7 +72,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function UnitDetailPage({ params, searchParams = {} }: { params: { id: string }; searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function UnitDetailPage(
+  props: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const searchParams = (await props.searchParams) ?? {};
+  const params = await props.params;
   // Booking stays behind the strict gate; imported inventory gets inquiry-only details.
   const context = discoveryContext(searchParams);
   const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];

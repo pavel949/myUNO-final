@@ -6,7 +6,8 @@ import { fileDepositClaim } from '@/modules/finance';
 import { logAudit } from '@/modules/audit';
 
 /** File a damage claim against a finished stay (doc 07 F-DIS-1). */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

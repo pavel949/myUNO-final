@@ -17,9 +17,8 @@ import ReservationSummaryCard from '@/components/ops/ReservationSummaryCard';
 
 export const dynamic='force-dynamic';
 
-export default async function ReservationDesk({
-  searchParams,
-}:{searchParams?:{spaceId?:string;status?:string}}){
+export default async function ReservationDesk(props:{searchParams?: Promise<{spaceId?:string;status?:string}>}) {
+  const searchParams = await props.searchParams;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/reservations');
 

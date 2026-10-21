@@ -26,12 +26,12 @@ async function step(name, page, work) {
   const item = { name, status: 'running' }; report.steps.push(item);
   try {
     await work(); item.status = 'passed';
-    if (page) await page.screenshot({ path: `browser-results/employee-workspaces-${report.steps.length}.png`, fullPage: true,
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/employee-workspaces-${report.steps.length}.png`, fullPage: true,
       mask: [page.locator('.font-mono')] });
     console.log(`PASS ${name}`);
   } catch (error) {
     item.status = 'failed'; item.error = String(error);
-    if (page) await page.screenshot({ path: `browser-results/employee-workspaces-${report.steps.length}-failed.png`, fullPage: true,
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/employee-workspaces-${report.steps.length}-failed.png`, fullPage: true,
       mask: [page.locator('.font-mono')] }).catch(() => {});
     throw error;
   } finally { await persist(); }

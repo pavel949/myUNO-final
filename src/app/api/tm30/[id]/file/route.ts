@@ -10,10 +10,8 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { markTm30FilingFiled } from '@/modules/ops';
 import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

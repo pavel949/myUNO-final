@@ -5,14 +5,14 @@ import { getMCProjectScopes } from '@/app/libs/projectScope';
 export const dynamic = 'force-dynamic';
 
 interface McCalendarIndexPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
     categoryId?: string;
     unitId?: string;
     start?: string;
     days?: string;
-  };
+  }>;
 }
 
 /**
@@ -20,7 +20,8 @@ interface McCalendarIndexPageProps {
  * operational projection at /ops/calendar/board; unit writes remain on the
  * existing canonical unit availability/pricing screens.
  */
-export default async function McCalendarIndexPage({ searchParams }: McCalendarIndexPageProps) {
+export default async function McCalendarIndexPage(props: McCalendarIndexPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/mc/calendar');
 

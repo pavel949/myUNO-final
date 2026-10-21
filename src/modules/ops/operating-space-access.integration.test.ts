@@ -364,3 +364,23 @@ describe('Workspace summaries and team recipients retain the effective boundary'
     await expect(assertOperationalTeamAssignment(db, team.id, f.task)).rejects.toMatchObject({ status: 403 });
   });
 });
+
+describe('admin overview canonical scope parity', () => {
+  beforeEach(resetDb);
+  it('keeps only eligible attached units, then immediately respects revocation', async () => {
+    const f = await fixture();
+    await db.identity.update({ where: { id: f.actor.id }, data: { isAdmin: true } });
+    const overview = await getOperatingSpaceOverviewAccess(db, f.actor.id, f.space.id);
+    expect(overview.unitIds).toEqual([f.unit.id]);
+    expect(Object.keys(overview.byCapability)).toHaveLength(13);
+    for (const ids of Object.values(overview.byCapability)) expect(ids).toEqual([f.unit.id]);
+    expect(overview.byCapability).not.toHaveProperty('create_unit');
+    expect(overview.byCapability).not.toHaveProperty('create_complex');
+    await db.identity.update({ where: { id: f.actor.id }, data: { isAdmin: false } });
+    const staff = await getOperatingSpaceOverviewAccess(db, f.actor.id, f.space.id);
+    expect(staff.isAdmin).toBe(false);
+    expect(Object.keys(staff.byCapability)).toEqual(['manage_tasks']);
+    await db.operatingSpaceMember.update({ where: { id: f.member.id }, data: { active: false } });
+    await expect(getOperatingSpaceOverviewAccess(db, f.actor.id, f.space.id)).rejects.toMatchObject({ status: 403 });
+  });
+});

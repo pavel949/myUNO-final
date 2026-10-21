@@ -46,10 +46,10 @@ async function step(name, page, work) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
   try {
     await work(); entry.status = 'passed'; console.log(`PASS ${name}`);
-    if (page) await page.screenshot({ path: `browser-results/${stem}-${report.steps.length}.png`, fullPage: true });
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/${stem}-${report.steps.length}.png`, fullPage: true });
   } catch (error) {
     entry.status = 'failed'; entry.error = String(error);
-    if (page) await page.screenshot({ path: `browser-results/${stem}-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/${stem}-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
     throw error;
   } finally { await persist(); }
 }

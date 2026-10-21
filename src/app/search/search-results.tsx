@@ -1,4 +1,5 @@
 'use client';
+import { propertyHeadlineArea } from '@/lib/property-area';
 
 
 import { formatPropertyCount } from '@/lib/property-count';
@@ -25,6 +26,7 @@ interface Unit {
   bathrooms?: number;
   maxGuests?: number;
   sizeSqm?: number | null;
+  grossAreaSqm?: number | string | null;
   pricing?: { stayTotalThb: number | null };
   description?: string;
   projectId?: string;
@@ -489,7 +491,7 @@ export default function SearchResults({
           </div>
         )}
 
-        {loading && (
+        {loading && !searched && (
           <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
@@ -549,13 +551,15 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && searched && (
+        {searched && (
           <section className="grid gap-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
             <div role="group" aria-label={ux.map} className="flex gap-8 lg:hidden">
               {(['list', 'map'] as const).map(value => <button key={value} type="button" aria-pressed={view === value}
                 onClick={() => setView(value)} className={`min-h-48 flex-1 rounded-full border border-border-line px-16 ${view === value ? 'bg-brand-andaman text-white' : 'bg-surface-paper text-brand-andaman'}`}>{ux[value]}</button>)}
             </div>
             <div className={view === 'map' ? 'hidden lg:block' : ''}>
+              {loading && <p role="status" className="p-16 text-small text-text-secondary">{labels.loading}</p>}
+              <div hidden={loading}>
               <div className="mb-12 flex flex-wrap items-center justify-between gap-8">
                 <p className="text-small text-text-secondary">
                   {fill(labels.mapResults, { shown: units.length, total })}
@@ -613,7 +617,7 @@ export default function SearchResults({
                           ) : null}
                           <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
                           {(unit.bedrooms !== undefined || unit.maxGuests !== undefined) && <p className="mb-8 text-small text-text-secondary">
-                            {[unit.bedrooms !== undefined && labels.bedroomsCount ? formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale) : '', unit.maxGuests !== undefined && labels.guestsCount ? formatPropertyCount(labels.guestsCount, unit.maxGuests, locale) : '', unit.sizeSqm ? `${unit.sizeSqm} m²` : ''].filter(Boolean).join(' · ')}
+                            {[unit.bedrooms !== undefined && labels.bedroomsCount ? formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale) : '', unit.maxGuests !== undefined && labels.guestsCount ? formatPropertyCount(labels.guestsCount, unit.maxGuests, locale) : '', propertyHeadlineArea(unit) ? `${propertyHeadlineArea(unit)} m²` : ''].filter(Boolean).join(' · ')}
                           </p>}
                           {unit.pricing?.stayTotalThb != null && <p className="mb-8 text-small text-text-secondary">{ux.totalStay}: <strong className="text-text-ink">{formatBaht(unit.pricing.stayTotalThb)}</strong></p>}
                           <p className="mb-4 font-display text-title font-semibold tabular-nums text-text-ink">
@@ -650,6 +654,7 @@ export default function SearchResults({
                   </div>
                 </>
               )}
+              </div>
             </div>
 
             <div className={view === 'list' ? 'hidden lg:block' : ''}>

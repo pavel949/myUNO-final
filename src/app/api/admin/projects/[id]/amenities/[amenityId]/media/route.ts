@@ -14,7 +14,11 @@ async function guard(projectId: string, amenityId: string) {
   return projectExperienceAccess(projectId);
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function POST(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   try {
     const access = await guard(params.id, params.amenityId);
     if ('error' in access) return access.error;
@@ -22,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
     if (typeof mediaAssetId !== 'string' || !mediaAssetId) {
       throw createPublicError('mediaAssetId is required', 400);
     }
-    if (!await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin)) {
+    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin))) {
       throw createPublicError('Use a non-encrypted photo you uploaded.', 403);
     }
     await prisma.$transaction(async tx => {
@@ -46,7 +50,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   try {
     const access = await guard(params.id, params.amenityId);
     if ('error' in access) return access.error;
@@ -77,7 +85,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   try {
     const access = await guard(params.id, params.amenityId);
     if ('error' in access) return access.error;

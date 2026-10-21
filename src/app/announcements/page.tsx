@@ -27,11 +27,12 @@ export const dynamic = 'force-dynamic';
  */
 const ORG_AUDIENCES = ['everyone', 'owners', 'residents', 'guests_in_stay'] as const;
 
-export default async function AnnouncementsPage({
-  searchParams,
-}: {
-  searchParams: { projectId?: string };
-}) {
+export default async function AnnouncementsPage(
+  props: {
+    searchParams: Promise<{ projectId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/announcements');

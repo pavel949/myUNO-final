@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { can } from '@/modules/core';
+import { canRecordBookingReceipt } from '@/app/libs/bookingOperatorAccess';
 import { prisma } from '@/lib/prisma';
 import { recordBankTransfer } from '@/modules/finance';
 import { logAudit } from '@/modules/audit';
@@ -13,12 +13,10 @@ import { logAudit } from '@/modules/audit';
  * bank statement. A guest able to mark their own booking paid is not a payment
  * method, it is a free stay.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const identity = await prisma.identity.findUnique({ where: { id: user.identityId } });
-  if (!identity) return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
 
   const booking = await prisma.booking.findUnique({
     where: { id: params.id },
@@ -26,13 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-  if (
-    !(await can({
-      identity,
-      action: 'money:record_costs_on_units',
-      resource: { projectId: booking.projectId, unitId: booking.unitId },
-    }))
-  ) {
+  if (!await canRecordBookingReceipt(prisma, user.identityId, booking)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -46,6 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   try {
     const payment = await recordBankTransfer(prisma, {
+      authorizeBooking: (db, scope) => canRecordBookingReceipt(db, user.identityId, scope),
       purpose: body.purpose === 'stay_balance' ? 'stay_balance' : 'stay',
       bookingId: booking.id,
       payerIdentityId: booking.guestIdentityId,
@@ -66,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return NextResponse.json({ id: payment.id, status: payment.status }, { status: 201 });
   } catch (error) {
+    if ((error as { code?: string })?.code === 'BOOKING_FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
 }

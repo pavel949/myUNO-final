@@ -1,0 +1,38 @@
+[
+  {
+    "jsonb_build_object": {
+      "job_gap": [
+        {
+          "runs": 9,
+          "job_key": "booking_lifecycle",
+          "max_gap_seconds": 17540.472
+        },
+        {
+          "runs": 7,
+          "job_key": "ical_sync",
+          "max_gap_seconds": 17540.573
+        },
+        {
+          "runs": 9,
+          "job_key": "tm30_escalations",
+          "max_gap_seconds": 17540.543
+        }
+      ],
+      "extensions": [
+        {
+          "name": "pg_net",
+          "installed_version": null
+        },
+        {
+          "name": "pg_cron",
+          "installed_version": null
+        },
+        {
+          "name": "supabase_vault",
+          "installed_version": "0.3.1"
+        }
+      ],
+      "public_tables_without_rls": null
+    }
+  }
+]

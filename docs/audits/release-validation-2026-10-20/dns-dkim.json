@@ -1,0 +1,26 @@
+{
+  "source": "https://dns.google/resolve?name=resend._domainkey.send.ignatevestate.com&type=TXT",
+  "result": {
+    "Status": 3,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Question": [
+      {
+        "name": "resend._domainkey.send.ignatevestate.com.",
+        "type": 16
+      }
+    ],
+    "Authority": [
+      {
+        "name": "ignatevestate.com.",
+        "type": 6,
+        "TTL": 1800,
+        "data": "server292.hosting.reg.ru. support.reg.ru. 2025051735 10800 3600 604800 86400"
+      }
+    ],
+    "Comment": "Response from 37.140.192.31."
+  }
+}

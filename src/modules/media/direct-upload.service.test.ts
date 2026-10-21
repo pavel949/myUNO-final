@@ -283,3 +283,28 @@ describe('direct Blob content upload (fake SDK and in-memory DB only)', () => {
   });
 
 });
+
+describe('administrator gallery direct upload authority', () => {
+ it.each(['unit', 'project'])('allows an active administrator to upload to an existing %s without fabricating a contributor grant', async scope => {
+  const h = setup(); h.state().roles = [];
+  const result = await h.service.execute('admin', { ...request, scope, targetId: scope === 'unit' ? request.targetId : 'project' });
+  if (!('intent' in result)) throw new Error('Missing intent');
+  await expect(h.finish(result.intent, 'admin')).resolves.toHaveProperty('mediaAssetId');
+  expect(h.db.unit.update).not.toHaveBeenCalled();
+  expect(h.db.project.update).not.toHaveBeenCalled();
+ });
+ it('rejects a missing target before issuing storage authority', async () => {
+  const h = setup();
+  await expect(h.service.execute('admin', { ...request, targetId: 'missing-unit' })).rejects.toMatchObject({ status: 404 });
+  expect(h.sdk.issueSignedToken).not.toHaveBeenCalled();
+ });
+ it.each(['disabled', 'revoked-admin'])('rechecks administrator authority at finalization: %s', async mode => {
+  const h = setup();
+  const result = await h.service.execute('admin', request);
+  if (!('intent' in result)) throw new Error('Missing intent');
+  const admin = h.state().identities.find((identity: { id: string }) => identity.id === 'admin');
+  if (mode === 'disabled') admin.status = 'disabled'; else admin.isAdmin = false;
+  await expect(h.finish(result.intent, 'admin')).rejects.toMatchObject({ status: 403 });
+  expect(h.db.mediaAsset.create).not.toHaveBeenCalled();
+ });
+});

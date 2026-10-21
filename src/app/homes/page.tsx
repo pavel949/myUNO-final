@@ -31,7 +31,8 @@ const positiveNumber = (value?: string) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 };
 
-export default async function HomesPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function HomesPage(props: { searchParams?: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams;
   const intent: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
   const destination = getDestination();
   const discovery = await discoveryCopy(getRequestLocale());

@@ -1,0 +1,538 @@
+{
+  "testedCommit": null,
+  "headCommit": "1fa0309d7e81f7948d8f58f414809771b604096f",
+  "baseUrl": "http://localhost:3000",
+  "synthetic": true,
+  "browserTimeZone": "Asia/Bangkok",
+  "steps": [
+    {
+      "name": "Draft is private before any founder mutation",
+      "status": "passed"
+    },
+    {
+      "name": "Founder signs in through the real browser form",
+      "status": "passed"
+    },
+    {
+      "name": "Description deep link saves by content ID and survives reload",
+      "status": "passed"
+    },
+    {
+      "name": "Founder saves real nightly tariff, then reloads it",
+      "status": "passed"
+    },
+    {
+      "name": "Publication action confirms persisted live state and public link",
+      "status": "passed"
+    },
+    {
+      "name": "Anonymous guest card shows saved description and exact tariff quote",
+      "status": "passed"
+    },
+    {
+      "name": "Guest signs in and is denied the founder workspace",
+      "status": "passed"
+    },
+    {
+      "name": "Guest books through card → review → consent → cash confirmation",
+      "status": "passed"
+    },
+    {
+      "name": "Founder calendar resolves held night to the same canonical booking",
+      "status": "passed"
+    },
+    {
+      "name": "Cancellation through guest UI releases the dates and calendar hold",
+      "status": "passed"
+    },
+    {
+      "name": "Founder records a manual reservation through the operational desk",
+      "status": "passed"
+    },
+    {
+      "name": "Founder assigns a task and scoped staff starts and completes it",
+      "status": "passed"
+    },
+    {
+      "name": "Founder saves and reloads year-round base plus bounded holiday prices",
+      "status": "passed"
+    },
+    {
+      "name": "Guest selects seasonal dates and books the same 5924 THB quote",
+      "status": "passed"
+    },
+    {
+      "name": "Manual guest signs in; a different guest cannot read this booking",
+      "status": "passed"
+    },
+    {
+      "name": "Operator confirms the manual commitment with payment still outstanding",
+      "status": "passed"
+    },
+    {
+      "name": "A separate deliberate synthetic cash receipt settles the real outstanding balance",
+      "status": "passed"
+    },
+    {
+      "name": "Per-unit mode persists and can reverse its saved value in the same session",
+      "status": "passed"
+    },
+    {
+      "name": "Guest registration preserves review intent and mode changes require fresh consent",
+      "status": "passed"
+    },
+    {
+      "name": "Operator approval opens a real payment hold which expires at its canonical deadline",
+      "status": "passed"
+    },
+    {
+      "name": "Decline and unanswered request expiry both leave the calendar free",
+      "status": "passed"
+    },
+    {
+      "name": "A real protective block disables guest card and direct review until the dates reopen",
+      "status": "passed"
+    },
+    {
+      "name": "A real limited manager sees only their evidenced mandate on desktop and mobile",
+      "status": "passed"
+    },
+    {
+      "name": "Eight independent guest forms contend while founder and limited manager read their calendars",
+      "status": "passed"
+    },
+    {
+      "name": "Other guests and the limited manager cannot read the winning guest booking",
+      "status": "passed"
+    }
+  ],
+  "blockedBrowserOrigins": [],
+  "serverErrors": [],
+  "pageErrors": [],
+  "result": "passed",
+  "manualGuest": {
+    "id": "ad5f5b86-2ca9-4d33-acfc-800df576098c",
+    "contactOnly": true,
+    "roles": 0,
+    "tokens": 0,
+    "registrationNotRequired": true,
+    "syntheticEnrollment": true,
+    "foreignGuestDenied": true
+  },
+  "manualReservation": {
+    "bookingId": "42c3219f-620c-4481-bef2-57096ce613d6",
+    "status": "pending_payment",
+    "totalSatang": 370200,
+    "startDate": "2026-12-11",
+    "endDate": "2026-12-14",
+    "persisted": true,
+    "calendarVerified": true,
+    "formVerified": true,
+    "confirmedUnpaid": true,
+    "outstandingSatang": 370200,
+    "holdExpiresAt": null,
+    "receipt": {
+      "synthetic": true,
+      "paymentId": "5a3bf88e-aaf8-4cb5-8407-f22d6a7475d6",
+      "amountSatang": 370200,
+      "ledgerId": "43f30a62-cfbd-4743-ad80-874e704a7314",
+      "outstandingSatang": 0
+    }
+  },
+  "taskTimeZone": {
+    "spaceTimeZone": "Asia/Bangkok",
+    "enteredLocalTime": "2026-10-22T12:00",
+    "actualDueAt": "2026-10-22T05:00:00.000Z",
+    "expectedDueAt": "2026-10-22T05:00:00.000Z"
+  },
+  "staffTask": {
+    "taskId": "1ed8032e-d28a-4d3b-b3b0-92dadcbe2a94",
+    "staffId": "027cbd5e-f62d-425e-a68d-a8f3d14080cd",
+    "title": "Synthetic shift task f14b9761-ebfe-4073-b0ef-dc701ad1377c",
+    "persisted": true,
+    "status": "ready",
+    "staffFlowVerified": true,
+    "readyAt": "2026-10-20T16:14:47.143Z",
+    "completedAt": "2026-10-20T16:14:47.143Z",
+    "formVerified": true
+  },
+  "seasonalTariff": {
+    "unitId": "37c13492-3452-4ccb-9897-f454fac46c46",
+    "baseSatang": 123400,
+    "holidaySatang": 234500,
+    "startDate": "2026-12-19",
+    "endDate": "2026-12-22",
+    "previewTotalSatang": 592400,
+    "savedAndReloaded": true,
+    "guestQuoteSatang": 592400,
+    "bookingId": "de4b5018-460e-4500-99fb-e148b7a8015a",
+    "bookingTotalSatang": 592400,
+    "calendarVerified": true
+  },
+  "unpaidExpiry": {
+    "synthetic": true,
+    "method": "canonical expireHolds with explicit future cutoff",
+    "cutoff": "2026-10-20T16:46:08.169Z",
+    "bookingId": "42c3219f-620c-4481-bef2-57096ce613d6",
+    "status": "confirmed",
+    "holdExpiresAt": null,
+    "balanceDueSatang": 370200
+  },
+  "bookingModes": {
+    "unitId": "f14b9761-ebfe-4073-b0ef-dc701ad1377c",
+    "savedReversalVerified": true,
+    "requestIds": [
+      "64b1338a-0c22-4b8c-aefc-8a04febdf7ca",
+      "83d2a335-4878-4ee7-9077-dee385f08bd0",
+      "84f18764-5287-4f7b-95a5-7edf58f1e212"
+    ],
+    "registeredGuestId": "ee23845f-056d-4624-ac64-14e05f4a6482",
+    "intentPreserved": true,
+    "requoteConsentVerified": true,
+    "approvalExpiry": {
+      "synthetic": true,
+      "method": "expireHolds",
+      "deadline": "2026-10-21T16:15:21.972Z",
+      "explicitFutureCutoff": "2026-10-21T16:15:22.972Z",
+      "status": "expired",
+      "bookingId": "64b1338a-0c22-4b8c-aefc-8a04febdf7ca"
+    },
+    "unansweredExpiry": {
+      "synthetic": true,
+      "method": "autoDeclineRequests",
+      "deadline": "2026-10-21T16:15:31.720Z",
+      "explicitFutureCutoff": "2026-10-21T16:15:32.720Z",
+      "status": "declined",
+      "bookingId": "84f18764-5287-4f7b-95a5-7edf58f1e212"
+    },
+    "finalInstantModeVerified": true
+  },
+  "protectiveBlock": {
+    "blockId": "f2b96c5f-9607-4b72-a3a0-7c0c83679e7b",
+    "disabledCardAndReview": true,
+    "rejectedCanonicalWrite": 409,
+    "testedViewports": [
+      "1440x900",
+      "390x844"
+    ],
+    "removedThroughUi": true,
+    "newBookings": 0
+  },
+  "tenUsers": {
+    "synthetic": true,
+    "activeRoles": {
+      "founder": 1,
+      "limitedManager": 1,
+      "guests": 8
+    },
+    "viewports": {
+      "desktop": {
+        "width": 1440,
+        "height": 900
+      },
+      "mobile": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    "layouts": [
+      {
+        "name": "limited-manager-1440",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "limited-manager-390",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-8-unit",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-6-unit",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-3-unit",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-7-unit",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-5-unit",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-1-unit",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-2-unit",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-4-unit",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-1-review",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-3-review",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-5-review",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-7-review",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-8-review",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-4-review",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-2-review",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-6-review",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-1-conflict",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-2-conflict",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-8-conflict",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-3-conflict",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-7-conflict",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "guest-4-conflict",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      {
+        "name": "guest-5-conflict",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "founder-desktop-calendar",
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440
+      },
+      {
+        "name": "winning-guest-trip",
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      }
+    ],
+    "responses": [
+      {
+        "guestIndex": 6,
+        "status": 201,
+        "code": null,
+        "bookingId": "3e180866-5f02-4d06-96f5-8913a36d81f8"
+      },
+      {
+        "guestIndex": 1,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 2,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 8,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 3,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 7,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 4,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      },
+      {
+        "guestIndex": 5,
+        "status": 409,
+        "code": "DOUBLE_BOOK",
+        "bookingId": null
+      }
+    ],
+    "lifecycle": [
+      {
+        "role": "denied-manager-page",
+        "unitId": "f14b9761-ebfe-4073-b0ef-dc701ad1377c",
+        "transportStatus": 200,
+        "deniedUi": true
+      },
+      {
+        "role": "denied-manager-page",
+        "unitId": "b8b08eba-25ff-4ff6-8aee-621d1aadef1f",
+        "transportStatus": 200,
+        "deniedUi": true
+      },
+      {
+        "role": "guest-6",
+        "startedMs": 3,
+        "finishedMs": 772
+      },
+      {
+        "role": "founder",
+        "startedMs": 0,
+        "finishedMs": 1204
+      },
+      {
+        "role": "guest-1",
+        "startedMs": 1,
+        "finishedMs": 1230
+      },
+      {
+        "role": "guest-2",
+        "startedMs": 1,
+        "finishedMs": 1263
+      },
+      {
+        "role": "guest-8",
+        "startedMs": 3,
+        "finishedMs": 1282
+      },
+      {
+        "role": "guest-3",
+        "startedMs": 2,
+        "finishedMs": 1326
+      },
+      {
+        "role": "guest-7",
+        "startedMs": 3,
+        "finishedMs": 1340
+      },
+      {
+        "role": "guest-4",
+        "startedMs": 2,
+        "finishedMs": 1395
+      },
+      {
+        "role": "guest-5",
+        "startedMs": 2,
+        "finishedMs": 1398
+      },
+      {
+        "role": "limited-manager",
+        "startedMs": 0,
+        "finishedMs": 1424
+      }
+    ],
+    "managerScope": {
+      "ownUnit": "85735c2e-c3ec-4129-8cc2-68f8543e5470",
+      "deniedUnits": [
+        "f14b9761-ebfe-4073-b0ef-dc701ad1377c",
+        "b8b08eba-25ff-4ff6-8aee-621d1aadef1f"
+      ],
+      "nonAdmin": true,
+      "ownAvailabilityRead": 200,
+      "foreignAvailabilityRead": 403,
+      "foreignManagementPage": "not-found UI; no private editor"
+    },
+    "winner": {
+      "bookingId": "3e180866-5f02-4d06-96f5-8913a36d81f8",
+      "guestId": "8c37c540-7209-4c70-b335-95df9f49fa25",
+      "replayedSameBooking": true,
+      "occupyingBookings": 1,
+      "newPayments": 0
+    },
+    "crossGuestDenied": 7,
+    "managerForeignBookingDenied": true
+  },
+  "finishedAt": "2026-10-20T16:16:18.961Z"
+}

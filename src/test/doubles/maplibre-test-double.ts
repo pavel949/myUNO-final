@@ -35,6 +35,8 @@ export function createMapLibreFake(failControl = false) {
     constructor({ element }: { element: HTMLElement }) { this.element = element; markers.push(this); }
   }
   const api = {
+    setWorkerUrl: vi.fn(),
+    getVersion: () => '6.15.0',
     Map: FakeMap,
     Marker: FakeMarker,
     NavigationControl: class {},

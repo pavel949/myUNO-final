@@ -8,7 +8,10 @@ import NewTicketClient from './new-ticket-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewTicketPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function NewTicketPage(
+  props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     const context = new URLSearchParams();

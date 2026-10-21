@@ -1,0 +1,33 @@
+{
+  "headCommit": "1fa0309d7e81f7948d8f58f414809771b604096f",
+  "baseUrl": "http://localhost:3000",
+  "synthetic": true,
+  "steps": [
+    {
+      "name": "Emergency contacts stay anonymous, mobile and directly callable",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile gallery opens, navigates with keyboard, traps focus and restores trigger",
+      "status": "passed"
+    },
+    {
+      "name": "Standalone customer authenticates without any property role or stay",
+      "status": "passed"
+    },
+    {
+      "name": "Real standalone address order persists canonical scope and money without a payment",
+      "status": "passed"
+    },
+    {
+      "name": "Standalone customer creates and reads support linked to own service order",
+      "status": "passed"
+    }
+  ],
+  "blockedBrowserOrigins": [],
+  "pageErrors": [],
+  "serverErrors": [],
+  "result": "passed",
+  "orderId": "9d430c4c-01f2-4e66-91ed-3a7da6cce9ae",
+  "ticketId": "646e4a4b-bcdd-4af6-b5ec-90b67182177c"
+}

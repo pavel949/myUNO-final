@@ -1,4 +1,11 @@
 /** Explicit production review policy. No client text, secrets or DB errors leave this module. */
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.ts';
+
+/** The build gate must reach the registry through the same route as the running app (src/lib/prisma.ts). */
+export function contentGateDatabaseUrl(env) {
+  return resolveDatabaseUrl(env.DATABASE_URL);
+}
+
 export function isolatedContentBuild(env) {
   if (env.VERCEL_ENV || env.VERCEL_TARGET_ENV) return false;
   if (env.CI !== 'true' && env.MYUNO_BROWSER_ACCEPTANCE !== 'isolated') return false;

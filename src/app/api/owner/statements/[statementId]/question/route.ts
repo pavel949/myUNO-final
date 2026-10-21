@@ -11,10 +11,8 @@ import { findOrCreateThread, sendMessage } from '@/modules/comms';
 import { OWNER_VISIBLE_STATEMENT_STATUSES } from '@/modules/finance';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

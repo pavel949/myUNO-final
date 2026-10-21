@@ -5,6 +5,14 @@ export const PROJECT_REF = 'burcnghheyzbzffzgmjz';
 export const APPROVED_PENDING = new Set([
   '20261015080331_pricing_editor_role',
   '20261015120347_property_capability_delegation',
+  '20261021010000_booking_refund_dispatch_authorization',
+  '20261021140000_sales_offer_desk',
+]);
+
+// Reviewed expand-only release SQL. Any further edit requires another review.
+const REVIEWED_RELEASE_CHECKSUMS = new Map([
+  ['20261021010000_booking_refund_dispatch_authorization', '05b04e97d98c29634d27b5ae55fbfbf8b5c21150d17f5d328e1c481dc586d25a'],
+  ['20261021140000_sales_offer_desk', '96dfc0238962165e14b758f12951520c4759e640267281818c039dda0017b92b'],
 ]);
 
 // Git 8dec5d51 -> fa1b2bff removed five SQL comments only. Production
@@ -80,6 +88,10 @@ export function checkMigrationLedger(files, rows, requireComplete = false) {
   const finished = new Map(rows.filter(row => row.finished_at && !row.rolled_back_at).map(row => [row.migration_name, row]));
   const pending = [];
   for (const file of files) {
+    const reviewedChecksum = REVIEWED_RELEASE_CHECKSUMS.get(file.name);
+    if (reviewedChecksum && !migrationChecksums(file.sql).has(reviewedChecksum)) {
+      throw new Error(`Migration checksum mismatch: ${file.name}`);
+    }
     const applied = finished.get(file.name);
     if (!applied) { pending.push(file.name); continue; }
     const checksums = migrationChecksums(file.sql);

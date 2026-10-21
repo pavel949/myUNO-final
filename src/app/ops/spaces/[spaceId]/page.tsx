@@ -108,7 +108,9 @@ export default async function OperatingSpaceHome(props: { params: Promise<{ spac
     ...(can('manage_housekeeping') ? [[labels['staff.space.housekeeping'], '/ops/housekeeping?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_maintenance') ? [[labels['staff.space.maintenance'], '/ops/maintenance?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_pricing') || can('manage_availability') ? [[labels['staff.space.pricing'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
-    ...(can('manage_team') ? [[labels['staff.space.team'], '/ops/team?spaceId=' + encodeURIComponent(space.id)]] : []),
+    ...(can('manage_team') ? [[labels['staff.space.team'], access.isWorkspaceAdministrator || user.isSuperAdmin
+      ? '/ops/spaces/' + encodeURIComponent(space.id) + '/administration'
+      : '/ops/team?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(access.isAdmin ? [[labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_channels') ? [[labels['staff.space.channels'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id) + '&channel=attention']] : []),
   ];

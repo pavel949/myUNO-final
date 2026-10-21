@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+vi.mock('@/modules/ops/workspace-unit-authority', () => ({ hasWorkspaceAdministratorUnitAccess: async () => false }));
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import {
   canManageBookingGuests,

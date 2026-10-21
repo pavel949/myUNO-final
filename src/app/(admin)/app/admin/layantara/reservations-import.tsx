@@ -8,13 +8,15 @@ import { MoneyAmount } from '@/components/MoneyAmount';
 type Action = 'create' | 'create_cancelled' | 'change' | 'cancel' | 'unchanged' | 'skip';
 type Stay = {
   key: string; ref: string; unitCode: string; guestName: string; channel: string; sourceChannelName: string | null;
-  startDate: string; endDate: string; totalSatang: number; paidSatang: number; action: Action; reason: string | null;
+  startDate: string; endDate: string; totalSatang: number | null; paidSatang: number | null; action: Action; reason: string | null;
   sourcePaymentStatus: string; sourcePaymentAmountRaw: string;
   completeAfterImport: boolean; partyUnknown: boolean; receivableStatus: string | null;
 };
 type Applied = { key: string; status: string; code?: string };
 type Result = {
   mode: 'preview' | 'apply';
+  sourceGroups?: Array<{ ref: string; action: string; reason?: string; quotedTotalSatang: number; placements: Array<{ unitCode: string }> }>;
+  sourceGroupResults?: Array<{ ref: string; status: string; code?: string }>;
   summary: Record<Action, number> & { reservations: number; problems: number };
   problems: Array<{ rowNumber: number; ref: string | null; message: string }>;
   untouchedProtections: Array<{ unitCode: string; startDate: string; endDate: string; reason: string }>;
@@ -38,6 +40,7 @@ const fill = (t: string, v: Record<string, string | number>) =>
 export function ReservationsImport({ labels }: { labels: Record<string, string> }) {
   const [file, setFile] = useState<File | null>(null);
   const [reviewedSource, setReviewedSource] = useState(false);
+  const [currentOnly, setCurrentOnly] = useState(true);
   const [busy, setBusy] = useState<'preview' | 'apply' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -54,6 +57,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
       form.set('file', file);
       form.set('mode', mode);
       if (reviewedSource) form.set('sourceMode', 'reviewed_source');
+      if (currentOnly) form.set('scope', 'current');
       const res = await fetch('/api/admin/layantara/reservations-import', { method: 'POST', body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data) {
@@ -72,7 +76,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
   }
 
   const outcome = new Map((result?.applied ?? []).map(a => [a.key, a]));
-  const writes = result ? result.summary.create + result.summary.create_cancelled + result.summary.change + result.summary.cancel : 0;
+  const writes = result ? result.summary.create + result.summary.create_cancelled + result.summary.change + result.summary.cancel + (result.sourceGroups ?? []).filter(g => g.action === 'create').length : 0;
   const failed = (result?.applied ?? []).filter(a => a.status === 'quarantined');
 
   return (
@@ -84,6 +88,11 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
         <input type="checkbox" checked={reviewedSource} disabled={busy !== null}
           onChange={e => { setReviewedSource(e.target.checked); setResult(null); setError(null); }} />
         {L('admin.layantara_import.reviewed_mode')}
+      </label>
+      <label className="mt-12 flex items-center gap-8 text-small">
+        <input type="checkbox" checked={currentOnly} disabled={busy !== null}
+          onChange={e => { setCurrentOnly(e.target.checked); setResult(null); setError(null); }} />
+        {labels['admin.layantara_import.current_scope'] ?? 'Current and future reservations only (Phuket)'}
       </label>
       <div className="mt-16 flex flex-wrap items-center gap-12">
         <label className="stitch-control inline-flex cursor-pointer items-center gap-8 px-16 py-8 text-small text-text-ink">
@@ -105,6 +114,15 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
         ) : null}
       </div>
 
+      {(result?.sourceGroups?.length ?? 0) > 0 ? <section className="mt-16 space-y-8" aria-label="Imported group reservations">
+        <h3 className="font-semibold">{labels['admin.layantara_import.source_groups'] ?? 'Source groups — amount recorded once, villa amounts unknown'}</h3>
+        {result!.sourceGroups!.map(group => <article key={group.ref} className="rounded-md border border-border-line p-12">
+          <p>{group.ref} · {group.placements.map(p => p.unitCode).join(', ')} · <MoneyAmount satang={group.quotedTotalSatang} /></p>
+          <p>{labels['admin.layantara_import.group_money_pending'] ?? 'Source quote only. No receipt, collection or owner revenue. Per-villa amounts remain unknown.'}</p>
+          {group.reason ? <p>{reason(group.reason)}</p> : null}
+        </article>)}
+        {result?.sourceGroupResults?.some(g => g.status === 'quarantined') ? <p role="alert">{labels['admin.layantara_import.group_partial'] ?? 'Some groups were not imported. Review each result; the transfer is incomplete.'}</p> : null}
+      </section> : null}
       {error ? <p role="alert" className="mt-12 text-small text-state-error">{error}</p> : null}
 
       {result ? (
@@ -184,7 +202,7 @@ export function ReservationsImport({ labels }: { labels: Record<string, string> 
                       <td className="py-8 pr-12">{s.guestName}{s.partyUnknown ? <span className="block text-text-secondary">{L('admin.layantara_import.party_unknown')}</span> : null}</td>
                       <td className="py-8 pr-12">{s.sourceChannelName ?? L('common.channel.' + s.channel)}</td>
                       <td className="py-8 pr-12 tabular-nums"><LocalDate value={s.startDate} /> – <LocalDate value={s.endDate} /></td>
-                      <td className="py-8 pr-12 text-right">{s.reason === 'source_unit_allocation_required' ? L('admin.layantara_import.allocation_required') : <MoneyAmount satang={s.totalSatang} />}</td>
+                      <td className="py-8 pr-12 text-right">{s.totalSatang === null || ['source_unit_allocation_required', 'source_group_allocation_required', 'source_group_placement'].includes(s.reason ?? '') ? L('admin.layantara_import.allocation_required') : <MoneyAmount satang={s.totalSatang} />}</td>
                       <td className="py-8 pr-12 text-right">{s.sourcePaymentStatus || '—'} · {s.sourcePaymentAmountRaw || '—'}{s.receivableStatus ? <span className="block text-text-secondary">{L('admin.layantara_import.source_only')}</span> : null}</td>
                       <td className="py-8">
                         <span className={problem ? 'text-state-warning' : 'text-text-ink'}>

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { grantRole as grantPeopleRole } from './people.service';
 import { isPropertyCapabilityRole } from './property-capability-policy';
 import { revokePropertyCapability } from './property-capability-grants';
+import { protectSuperadministrator } from './administration.service';
 
 interface GrantRoleInput {
   identityId: string;
@@ -34,6 +35,7 @@ export async function grantRole(input: GrantRoleInput) {
   if (input.role === 'content_contributor' || isPropertyCapabilityRole(input.role)) {
     return grantPeopleRole(prisma, input);
   }
+  await protectSuperadministrator(prisma, input.grantedByIdentityId, input.identityId);
 
   const {
     identityId,
@@ -65,7 +67,7 @@ export async function grantRole(input: GrantRoleInput) {
     where: { id: grantedByIdentityId },
   });
 
-  if (!granter || !granter.isAdmin) {
+  if (!granter || granter.status !== 'active' || !granter.isAdmin) {
     throw new Error('Only admins can grant roles');
   }
 
@@ -128,6 +130,8 @@ export async function revokeRole(input: RevokeRoleInput) {
   if (!assignment) {
     throw new Error('Role assignment not found');
   }
+
+  await protectSuperadministrator(prisma, input.actorIdentityId ?? '', identityId);
 
   if (isPropertyCapabilityRole(assignment.role)) {
     if (!input.actorIdentityId) throw new Error('Current actor is required to revoke a property capability');

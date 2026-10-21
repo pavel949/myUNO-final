@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 const { db, record } = vi.hoisted(() => ({ db: {
   identity: { findUnique: vi.fn() }, roleAssignment: { findMany: vi.fn() },
+  unit: { findUnique: vi.fn(async () => ({ id: 'unit', projectId: 'project', status: 'live' })) },
+  operatingSpaceMember: { findMany: vi.fn(async () => []) },
   projectStaffPermission: { findUnique: vi.fn() }, booking: { findUnique: vi.fn() },
 }, record: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({ prisma: db }));

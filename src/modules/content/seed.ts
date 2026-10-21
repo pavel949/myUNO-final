@@ -1,4 +1,5 @@
 import { PRICING_DESK_KEYS } from './pricing-desk.seed';
+import { LEAD_FORM_KEYS } from './lead-form.seed';
 import { SALES_KEYS } from './sales-offer.seed';
 import { PROPERTY_EDITOR_KEYS } from './property-editor.seed';
 import { WORKSPACE_NAVIGATION_KEYS } from './workspace-navigation.seed';
@@ -13,6 +14,7 @@ import { GUEST_AUTH_SUPPORT_KEYS } from './guest-auth-support.seed';
 import { GUEST_SERVICE_CONTEXT_KEYS } from './guest-service-context.seed';
 import { STAY_UX_KEYS } from './stay-ux.seed';
 import { RESERVATION_GUEST_KEYS } from './reservation-guest.seed';
+import { ADMINISTRATION_KEYS } from './administration.seed';
 import { INQUIRY_CONTENT_KEYS } from './inquiry-copy';
 import { PRICING_WORKSPACE_KEYS } from './pricing-workspace.seed';
 import { PRICING_EDITOR_ROLE_KEYS } from './pricing-editor-role.seed';
@@ -76,6 +78,7 @@ const COMMON_KEYS: KeyDef[] = [
   ...GUEST_SERVICE_CONTEXT_KEYS,
   ...STAY_UX_KEYS,
   ...RESERVATION_GUEST_KEYS,
+  ...ADMINISTRATION_KEYS,
   ...SALES_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
@@ -2137,6 +2140,11 @@ const UI_SHELL_KEYS: KeyDef[] = [
   { key: 'staff.ops.mobilization_open', namespace: 'staff', description: 'Ops board: open mobilization checklist link', en: 'Open checklist →', ru: 'Открыть чек-лист →', th: 'เปิดรายการตรวจ →', status: NR },
   { key: 'staff.ops.mobilization_back', namespace: 'staff', description: 'Ops mobilization page: back link', en: '← Ops board', ru: '← Доска ops', th: '← บอร์ด ops', status: NR },
   { key: 'staff.ops.mobilization_link', namespace: 'staff', description: 'Ops board header: mobilization link', en: 'Mobilization →', ru: 'Ввод в эксплуатацию →', th: 'การเตรียมเปิดใช้งาน →', status: NR },
+  { key: 'staff.ops.housekeeping_link', namespace: 'staff', description: 'Ops board: housekeeping workspace selection', en: 'Housekeeping →', ru: 'Уборка →', th: 'งานแม่บ้าน →', status: NR },
+  { key: 'staff.ops.maintenance_link', namespace: 'staff', description: 'Ops board: maintenance workspace selection', en: 'Maintenance →', ru: 'Техобслуживание →', th: 'งานซ่อมบำรุง →', status: NR },
+  { key: 'staff.ops.reservations_link', namespace: 'staff', description: 'Ops board: reservations workspace selection', en: 'Reservations →', ru: 'Бронирования →', th: 'การจอง →', status: NR },
+  { key: 'staff.maintenance.schedule_hint', namespace: 'staff', description: 'Maintenance schedule metric limitation', en: 'Schedule on time is the share of active preventive plans not overdue. It does not certify that a unit is ready for guests.', ru: 'Доля своевременных планов учитывает активные профилактические работы без просрочки. Она не подтверждает готовность объекта к заселению.', th: 'สัดส่วนแผนที่ตรงเวลาคำนวณจากแผนบำรุงรักษาเชิงป้องกันที่ยังใช้งานและไม่เกินกำหนด ไม่ได้ยืนยันว่าที่พักพร้อมรับผู้เข้าพัก', status: NR },
+  { key: 'staff.unified_calendar.attention_only', namespace: 'staff', description: 'Calendar attention filter', en: 'Attention only: conflicts, readiness blockers and channel errors', ru: 'Только требующие внимания: конфликты, препятствия готовности и ошибки каналов', th: 'แสดงเฉพาะรายการที่ต้องดูแล: ข้อมูลขัดแย้ง อุปสรรคความพร้อม และข้อผิดพลาดของช่องทาง', status: NR },
   { key: 'staff.ops.calendar_link', namespace: 'staff', description: 'Ops board header: unit calendars link', en: 'Unit calendars →', ru: 'Календари юнитов →', th: 'ปฏิทินยูนิต →', status: NR },
   { key: 'staff.ops.calendar_index.title', namespace: 'staff', description: 'Ops calendar index page title', en: 'Unit calendars', ru: 'Календари юнитов', th: 'ปฏิทินยูนิต', status: NR },
   { key: 'staff.ops.calendar_index.back', namespace: 'staff', description: 'Ops calendar index back link', en: '← Ops board', ru: '← Доска ops', th: '← บอร์ด ops', status: NR },
@@ -3391,23 +3399,7 @@ const PROJECT_PAGE_KEYS: KeyDef[] = [
   { key: 'project_page.reviews.count', namespace: 'project_page', description: 'Reviews section: count label', en: '{count} reviews', ru: 'Отзывов: {count}', zh: '{count} 条评价', th: '{count} รีวิว', status: NR },
 ];
 
-const LEAD_FORM_KEYS: KeyDef[] = [
-  // Public lead form on audience pages (doc 08 §3, N-29)
-  { key: 'audience.lead.title', namespace: 'audience', description: 'Lead form: section title', en: 'Leave your contact — we reply within a day', ru: 'Оставьте контакт — ответим в течение дня', th: 'ฝากข้อมูลติดต่อ — เราตอบภายในหนึ่งวัน', status: NR },
-  { key: 'audience.lead.name', namespace: 'audience', description: 'Lead form: name field label', en: 'Your name', ru: 'Ваше имя', th: 'ชื่อของคุณ', status: NR },
-  { key: 'audience.lead.contact', namespace: 'audience', description: 'Lead form: contact field label', en: 'How to reach you', ru: 'Как с вами связаться', th: 'ช่องทางติดต่อ', status: NR },
-  { key: 'audience.lead.contact_hint', namespace: 'audience', description: 'Lead form: contact field hint', en: 'Phone, WhatsApp, Telegram, or email — whatever suits you.', ru: 'Телефон, WhatsApp, Telegram или почта — как вам удобно.', th: 'โทรศัพท์ WhatsApp Telegram หรืออีเมล — อะไรก็ได้ที่สะดวก', status: NR },
-  { key: 'audience.lead.message', namespace: 'audience', description: 'Lead form: free-text field label', en: 'Tell us about your situation (optional)', ru: 'Расскажите о вашей ситуации (необязательно)', th: 'เล่าเรื่องของคุณ (ไม่บังคับ)', status: NR },
-  { key: 'audience.lead.consent', namespace: 'audience', description: 'Lead form: PDPA consent line', en: 'I agree that myUNO stores this information to respond to my enquiry.', ru: 'Я согласен(на), что myUNO сохранит эти данные, чтобы ответить на мой запрос.', th: 'ฉันยินยอมให้ myUNO เก็บข้อมูลนี้เพื่อตอบคำถามของฉัน', status: NR },
-  { key: 'audience.lead.consent_required', namespace: 'audience', description: 'Lead form: consent validation message', en: 'Please tick the consent box so we may contact you.', ru: 'Пожалуйста, отметьте согласие, чтобы мы могли с вами связаться.', th: 'โปรดติ๊กยินยอมเพื่อให้เราติดต่อคุณได้', status: NR },
-  { key: 'audience.lead.submit', namespace: 'audience', description: 'Lead form: submit button', en: 'Send', ru: 'Отправить', th: 'ส่ง', status: NR },
-  { key: 'audience.lead.submitting', namespace: 'audience', description: 'Lead form: submit button while sending', en: 'Sending…', ru: 'Отправляем…', th: 'กำลังส่ง…', status: NR },
-  { key: 'audience.lead.success', namespace: 'audience', description: 'Lead form: success state', en: 'Thank you — we received your message and will reply shortly.', ru: 'Спасибо — мы получили ваше сообщение и скоро ответим.', th: 'ขอบคุณ — เราได้รับข้อความแล้วและจะตอบกลับเร็วๆ นี้', status: NR },
-  { key: 'audience.lead.error', namespace: 'audience', description: 'Lead form: error state', en: 'Something went wrong. Please try again, or email us directly.', ru: 'Что-то пошло не так. Попробуйте ещё раз или напишите нам напрямую.', th: 'เกิดข้อผิดพลาด โปรดลองอีกครั้ง หรืออีเมลหาเราโดยตรง', status: NR },
-  // N-29 lead.received → admin (doc 11)
-  { key: 'notify.lead_received.title', namespace: 'notify', description: 'N-29 admin alert title: new public lead', en: 'New lead received', ru: 'Новый лид', th: 'ลีดใหม่', status: NR },
-  { key: 'notify.lead_received.body', namespace: 'notify', description: 'N-29 admin alert body: new public lead', en: 'A visitor left their contact on the {audience} page. Open your inbox to reply.', ru: 'Посетитель оставил контакт на странице {audience}. Откройте входящие, чтобы ответить.', th: 'ผู้เยี่ยมชมทิ้งข้อมูลติดต่อบนหน้า {audience} เปิดกล่องขาเข้าเพื่อตอบกลับ', status: NR },
-];
+
 
 const AUDIENCE_EXPANSION_KEYS: KeyDef[] = [
   // Guests audience page (doc 08 §3, copy adapted from model v3 §5.3)
@@ -4259,6 +4251,9 @@ const ACCOUNT_KEYS: KeyDef[] = [
   { key: 'admin.payouts.reconcile', namespace: 'admin', description: 'Payouts: mark reconciled action', en: 'Mark reconciled', ru: 'Отметить сверенным', th: 'ทำเครื่องหมายว่ากระทบยอดแล้ว', status: NR },
   { key: 'admin.payouts.action', namespace: 'admin', description: 'Payouts: action column', en: 'Action', ru: 'Действие', th: 'การดำเนินการ', status: NR },
 
+  { key: 'admin.layantara.imported_groups', namespace: 'admin', description: 'Imported source group count, allocation unresolved', en: 'Imported source groups · allocation pending', ru: 'Группы из источника · стоимость не распределена', th: 'กลุ่มจากต้นฉบับ · รอจัดสรรราคา', status: NR },
+  { key: 'admin.layantara.imported_placements', namespace: 'admin', description: 'Protected placements are not Booking records', en: 'Protected group placements · not Booking records', ru: 'Защищённые размещения групп · не записи Booking', th: 'วิลล่าที่กันไว้สำหรับกลุ่ม · ไม่ใช่รายการ Booking', status: NR },
+  { key: 'admin.statements.imported_pending', namespace: 'admin', description: 'Imported unallocated quote is not recognized revenue', en: 'Imported group placements have unknown per-villa amounts. Their source quotes are not receipts or recognized revenue. Affected statement periods remain blocked pending reconciliation.', ru: 'Стоимость размещений группы по виллам не распределена. Исходная сумма не является оплатой или признанным доходом. Отчёты за затронутые периоды заблокированы до сверки.', th: 'ยังไม่จัดสรรยอดต่อวิลล่าสำหรับกลุ่มที่นำเข้า ยอดตามต้นฉบับไม่ใช่ใบรับเงินหรือรายได้ที่รับรู้ งวดรายงานที่เกี่ยวข้องถูกระงับจนกว่าจะตรวจสอบ', status: NR },
   // Statements — generate + operator sign-off (Q60 follow-up)
   { key: 'admin.statements.title', namespace: 'admin', description: 'Statements: page title', en: 'Monthly Statements', ru: 'Ежемесячные отчёты', th: 'สเตทเมนต์รายเดือน', status: NR },
   { key: 'admin.statements.empty', namespace: 'admin', description: 'Statements: none yet', en: 'No statements yet.', ru: 'Отчётов пока нет.', th: 'ยังไม่มีสเตทเมนต์', status: NR },

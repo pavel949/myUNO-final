@@ -35,7 +35,7 @@ export default async function OperationalTasksPage(
       const member = access.isAdmin ? null : await prisma.operatingSpaceMember.findUnique({
         where: { operatingSpaceId_identityId: { operatingSpaceId: requestedSpaceId, identityId: user.identityId } }, select: { capabilities: true },
       });
-      const canAssign = access.isAdmin || Boolean(member?.capabilities.includes('assign_tasks'));
+      const canAssign = access.isAdmin || access.isWorkspaceAdministrator || Boolean(member?.capabilities.includes('assign_tasks'));
       taskFormData = await Promise.all([
         prisma.unit.findMany({ where: { id: { in: access.unitIds } }, select: { id: true, name: true, project: { select: { name: true } } }, orderBy: [{ project: { name: 'asc' } }, { name: 'asc' }] }),
         canAssign ? prisma.operatingTeam.findMany({ where: { operatingSpaceId: requestedSpaceId, active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }) : Promise.resolve([]),

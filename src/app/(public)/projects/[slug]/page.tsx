@@ -31,6 +31,11 @@ import { listPublicCommercialHomes } from '@/modules/projects/commercial-discove
 import { LocalDate } from '@/components/LocalDate';
 import { getDestination } from '@/modules/destinations';
 
+const LAYANTARA_VIDEO_ATTRIBUTES = {
+  preload: 'none',
+  poster: '/media/layantara-resort-poster.jpg',
+} as const;
+
 export const dynamic = 'force-dynamic';
 
 // React cache is request-scoped: metadata and page share a read, never a stale
@@ -130,6 +135,8 @@ export default async function ProjectLandingPage(
 
   const labelsPromise = getLabels({
     'project_page.availability.title': 'Check availability',
+    'project_page.hero.primary': 'Explore accommodation',
+    'project_page.hero.secondary': 'Ask about your stay',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
     'project_page.styles.generic_title': 'Property styles',
@@ -366,6 +373,38 @@ export default async function ProjectLandingPage(
           title={project.name}
           subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
         />
+        {project.slug === 'layantara-villas' ? (
+          <div className="mb-24 mt-20 overflow-hidden rounded-lg border border-border-line bg-text-ink">
+            <video
+              className="block aspect-[16/9] w-full object-cover"
+              controls
+              playsInline
+              {...LAYANTARA_VIDEO_ATTRIBUTES}
+              aria-label={`${project.name} resort film`}
+            >
+              <source src="/media/layantara-resort.mp4" type="video/mp4" />
+            </video>
+          </div>
+        ) : null}
+        {editorial.lead ? (
+          <div className="mb-24 mt-16 max-w-3xl">
+            <p className="text-body leading-relaxed text-text-secondary">{editorial.lead}</p>
+            <div className="mt-20 flex flex-wrap gap-12">
+              <Link prefetch={false}
+                href={bookableStayCount > 0 ? '#availability' : project.categories.length > 0 ? '#categories' : '#homes'}
+                className="inline-flex min-h-48 items-center justify-center rounded-md bg-brand-andaman px-24 py-12 text-small font-semibold text-white transition hover:bg-brand-deep"
+              >
+                {bookableStayCount > 0 ? labels['project_page.availability.title'] : labels['project_page.hero.primary']}
+              </Link>
+              <Link prefetch={false}
+                href="#lead-form"
+                className="inline-flex min-h-48 items-center justify-center rounded-md border border-border-line bg-surface-paper px-24 py-12 text-small font-semibold text-brand-andaman transition hover:shadow-card"
+              >
+                {labels['project_page.hero.secondary']}
+              </Link>
+            </div>
+          </div>
+        ) : null}
         {projectPhotos.length > 0 ? (
           <UnitPhotoMosaic galleryLabels={galleryLabels}
             images={projectPhotos}

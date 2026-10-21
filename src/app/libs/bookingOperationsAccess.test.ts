@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { canApproveBookingCandidate, resolveBookingOperationsAccess } from './bookingOperationsAccess';
 const mocks = vi.hoisted(() => ({ mc: vi.fn(), department: vi.fn() }));
+vi.mock('@/modules/ops/workspace-unit-authority', () => ({ hasWorkspaceAdministratorUnitAccess: async () => false }));
 vi.mock('./projectScope', () => ({ hasManagedUnitMcAccess: mocks.mc, hasProjectDepartmentAccess: mocks.department }));
 const user = { identityId: 'operator', isAdmin: false, roles: [] } as unknown as CurrentUser;
 const booking = { projectId: 'resort', unitId: 'villa-a' };

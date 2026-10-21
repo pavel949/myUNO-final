@@ -1,0 +1,43 @@
+{
+  "baseRevision": "aa696a66 plus reviewed local fixes",
+  "environment": "isolated local PostgreSQL and Next dev; synthetic users only",
+  "checks": [
+    {
+      "name": "Manager password login → local profile UI → PATCH → database → Saved",
+      "evidence": "displayName persisted on selected membership only"
+    },
+    {
+      "name": "Local disable leaves global identity and other workspace active",
+      "evidence": "database assertions; local member screenshot"
+    },
+    {
+      "name": "Manager cannot reach another workspace, disable owner or appoint administrators",
+      "evidence": "all three HTTP boundaries returned 403"
+    },
+    {
+      "name": "Owner global profile UI → PATCH → database → Saved",
+      "evidence": "firstName persisted; global editor screenshot"
+    },
+    {
+      "name": "Owner cannot self-disable; malformed action denied",
+      "evidence": "403, 400, exactly one active owner"
+    },
+    {
+      "name": "Invitation reuse → recipient password claim → automatic login → scoped appointment",
+      "evidence": "same identity reused; active invite sends no claim; global flags remain false"
+    },
+    {
+      "name": "Email delivery explicitly unverified",
+      "evidence": "mail transport disabled in isolated environment; emailStatus unavailable"
+    },
+    {
+      "name": "Global block ends session; unblock does not revive old cookie; local role revocation is immediate",
+      "evidence": "401 after block and restore; fresh login succeeds; 403 after local revocation"
+    },
+    {
+      "name": "Shared physical inventory fails closed without displaying false availability",
+      "evidence": "server notFound boundary renders; no unit data (streamed HTTP may be 200)"
+    }
+  ],
+  "pageErrors": []
+}

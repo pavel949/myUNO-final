@@ -2,6 +2,8 @@ import { mayHoldSession } from '@/lib/session-policy';
 import type { PrismaClient } from '@prisma/client';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess, hasProjectDepartmentAccess } from './projectScope';
+import { prisma } from '@/lib/prisma';
+import { hasWorkspaceAdministratorUnitAccess } from '@/modules/ops/workspace-unit-authority';
 
 /** Operational booking permissions, never owner economics or passport access.
  * MC authority requires a current engagement on this exact physical unit.
@@ -13,6 +15,10 @@ export async function resolveBookingOperationsAccess(
   booking: { projectId: string; unitId: string },
   db?: PrismaClient,
 ) {
+  if (await hasWorkspaceAdministratorUnitAccess(db ?? prisma, user.identityId, booking)) {
+    return { canViewStaffQueue: true, canView: true, canManageReservations: true,
+      canManageFrontDesk: true, canSeeFinance: true, canRecordMoney: true };
+  }
   const [isMc, reservations, frontDesk, housekeeping, guestCare, finance] = await Promise.all([
     db ? hasManagedUnitMcAccess(user, booking, db) : hasManagedUnitMcAccess(user, booking),
     ...['reservations', 'front_desk', 'housekeeping', 'guest_care', 'finance'].map(

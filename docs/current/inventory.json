@@ -1,15 +1,15 @@
 {
-  "codeRevision": "89a7d53feba62bdb6b1c89ea5b46bb63559d7df6",
+  "codeRevision": "a7eb9fa7f29b01f47a1bcc1d243f0be3e0f70ffd",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
-    "pages": 176,
-    "handlers": 256,
-    "apiHandlers": 251,
+    "pages": 179,
+    "handlers": 260,
+    "apiHandlers": 255,
     "modules": 22,
-    "tests": 573,
-    "prismaModels": 122,
-    "migrations": 96,
+    "tests": 581,
+    "prismaModels": 124,
+    "migrations": 98,
     "routeCollisions": 0
   },
   "routes": [
@@ -370,6 +370,12 @@
     {
       "path": "/api/admin/people/[identityId]/block",
       "source": "src/app/api/admin/people/[identityId]/block/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/[identityId]/manage",
+      "source": "src/app/api/admin/people/[identityId]/manage/route.ts",
       "kind": "handler",
       "area": "api"
     },
@@ -1190,6 +1196,24 @@
       "area": "api"
     },
     {
+      "path": "/api/ops/spaces/[spaceId]/people",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/spaces/[spaceId]/people/[identityId]",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/[identityId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/spaces/[spaceId]/people/[identityId]/administrator",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/[identityId]/administrator/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
       "path": "/api/ops/tasks",
       "source": "src/app/api/ops/tasks/route.ts",
       "kind": "handler",
@@ -1736,6 +1760,12 @@
       "area": "platform-admin"
     },
     {
+      "path": "/app/admin/people/[identityId]",
+      "source": "src/app/(admin)/app/admin/people/[identityId]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
       "path": "/app/admin/processes",
       "source": "src/app/(admin)/app/admin/processes/page.tsx",
       "kind": "page",
@@ -2006,6 +2036,12 @@
       "area": "public"
     },
     {
+      "path": "/help/choose",
+      "source": "src/app/(public)/help/choose/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
       "path": "/help/emergency",
       "source": "src/app/(public)/help/emergency/page.tsx",
       "kind": "page",
@@ -2260,6 +2296,12 @@
     {
       "path": "/ops/spaces/[spaceId]",
       "source": "src/app/ops/spaces/[spaceId]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/spaces/[spaceId]/administration",
+      "source": "src/app/ops/spaces/[spaceId]/administration/page.tsx",
       "kind": "page",
       "area": "ops"
     },
@@ -2650,13 +2692,13 @@
     },
     {
       "name": "content",
-      "files": 76,
+      "files": 78,
       "testFiles": 9
     },
     {
       "name": "core",
-      "files": 72,
-      "testFiles": 44
+      "files": 76,
+      "testFiles": 46
     },
     {
       "name": "crm",
@@ -2680,8 +2722,8 @@
     },
     {
       "name": "integrations",
-      "files": 31,
-      "testFiles": 14
+      "files": 35,
+      "testFiles": 17
     },
     {
       "name": "media",
@@ -2695,8 +2737,8 @@
     },
     {
       "name": "ops",
-      "files": 36,
-      "testFiles": 19
+      "files": 39,
+      "testFiles": 20
     },
     {
       "name": "projects",
@@ -2761,6 +2803,8 @@
     "ExternalSystem",
     "HomepagePlacement",
     "Identity",
+    "ImportedReservationPlacement",
+    "ImportedReservationSource",
     "IncidentLog",
     "IntegrationAccount",
     "InventoryCategory",
@@ -3033,7 +3077,9 @@
     "prisma/migrations/20261015080331_pricing_editor_role/migration.sql",
     "prisma/migrations/20261015120347_property_capability_delegation/migration.sql",
     "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql",
-    "prisma/migrations/20261021140000_sales_offer_desk/migration.sql"
+    "prisma/migrations/20261021023000_imported_reservation_groups/migration.sql",
+    "prisma/migrations/20261021140000_sales_offer_desk/migration.sql",
+    "prisma/migrations/20261021190000_protected_workspace_administration/migration.sql"
   ],
   "tests": [
     "src/app/(admin)/app/admin/access/workspace-access-client.test.tsx",
@@ -3277,6 +3323,8 @@
     "src/components/instay/ActiveOrdersList.test.tsx",
     "src/components/instay/ServicesRail.test.tsx",
     "src/components/navigation-prefetch.test.ts",
+    "src/components/ops/ImportedReservationGroups.test.tsx",
+    "src/components/ops/ManagedAccountForm.test.tsx",
     "src/components/ops/ManualReservationForm.test.tsx",
     "src/components/ops/OperationalTaskCreateForm.test.tsx",
     "src/components/ops/OperationalTaskQueueClient.timezone.test.tsx",
@@ -3420,9 +3468,11 @@
     "src/modules/content/workspace-navigation.seed.test.ts",
     "src/modules/core/access-enforcement.test.ts",
     "src/modules/core/account.integration.test.ts",
+    "src/modules/core/administration.integration.test.ts",
     "src/modules/core/authority.alias.test.ts",
     "src/modules/core/availability-overrides.integration.test.ts",
     "src/modules/core/availability.service.test.ts",
+    "src/modules/core/booking-occupancy.test.ts",
     "src/modules/core/canonical-calendar-rate.test.ts",
     "src/modules/core/canonical-pricing.integration.test.ts",
     "src/modules/core/claim-concurrency.integration.test.ts",
@@ -3504,9 +3554,12 @@
     "src/modules/integrations/ical-parse.test.ts",
     "src/modules/integrations/ical-sync.integration.test.ts",
     "src/modules/integrations/layantara/adapter.test.ts",
+    "src/modules/integrations/layantara/bounded-workbook.test.ts",
     "src/modules/integrations/layantara/channel-contract.test.ts",
     "src/modules/integrations/layantara/channel-service.integration.test.ts",
+    "src/modules/integrations/layantara/imported-group.integration.test.ts",
     "src/modules/integrations/layantara/protection.service.test.ts",
+    "src/modules/integrations/layantara/reviewed-new-placement.test.ts",
     "src/modules/integrations/layantara/reviewed-workbook.test.ts",
     "src/modules/integrations/layantara/unified-outbox.integration.test.ts",
     "src/modules/integrations/layantara/workbook-import.integration.test.ts",
@@ -3543,6 +3596,7 @@
     "src/modules/ops/operational-task.service.test.ts",
     "src/modules/ops/ops-board-calendar.integration.test.ts",
     "src/modules/ops/ops-board.service.integration.test.ts",
+    "src/modules/ops/pms-automation-rules.test.ts",
     "src/modules/ops/pms-operations-expansion.test.ts",
     "src/modules/ops/reservation-guests.integration.test.ts",
     "src/modules/ops/tm30-address.test.ts",

@@ -187,6 +187,9 @@ const apiRoutes = apiRouteFiles.map(routeOfApi);
  * crawler conventions, and secret-token URLs handed to external tools.
  */
 const API_ENTRY_POINTS = new Set([
+  // Exact-account owner approval tool; deliberately no ambient role-assignment UI.
+  // Bootstrap/owner replacement has no HTTP endpoint. See docs/security/PROTECTED_WORKSPACE_ADMINISTRATION.md.
+  '/api/ops/spaces/[spaceId]/people/[identityId]/administrator',
   // Google redirects the browser here after consent — never an in-app link.
   '/api/auth/callback/google',
   '/api/cron/check-tm30-escalations',

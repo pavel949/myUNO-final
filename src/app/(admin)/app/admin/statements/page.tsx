@@ -6,7 +6,7 @@ import StatementActions from './statement-actions';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStatementsPage() {
-  const [statements, units] = await Promise.all([
+  const [statements, units, unresolvedPlacements] = await Promise.all([
     prisma.ownerStatement.findMany({
       include: {
         owner: { select: { firstName: true, lastName: true } },
@@ -20,10 +20,12 @@ export default async function AdminStatementsPage() {
       select: { id: true, name: true, owner: { select: { firstName: true, lastName: true } } },
       orderBy: { name: 'asc' },
     }),
+    prisma.importedReservationPlacement.count(),
   ]);
 
   const labels = await getLabels({
     'admin.statements.title': 'Monthly Statements',
+    'admin.statements.imported_pending': 'Imported group placements have unknown per-villa amounts. Their source quotes are not receipts or recognized revenue. Affected statement periods remain blocked pending reconciliation.',
     'admin.statements.empty': 'No statements yet.',
     'admin.statements.period': 'Period',
     'admin.statements.owner': 'Owner',
@@ -63,6 +65,7 @@ export default async function AdminStatementsPage() {
   return (
     <div>
       <PageHeading title={labels['admin.statements.title']} />
+      {unresolvedPlacements > 0 ? <p role="status" className="mb-16 text-small text-state-warning">{labels['admin.statements.imported_pending']} ({unresolvedPlacements})</p> : null}
 
       <StatementActions
         units={units.map((u) => ({

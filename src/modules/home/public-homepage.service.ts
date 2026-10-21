@@ -87,7 +87,7 @@ async function readHomepageData(locale: Locale) {
     id: area.id,
     slug: area.slug,
     displayName: areaCopy[area.nameKey] || area.slug,
-    description: area.descriptionKey ? areaCopy[area.descriptionKey] || '' : '',
+    description: area.descriptionKey && areaCopy[area.descriptionKey] !== area.descriptionKey && areaCopy[area.descriptionKey] !== '—' ? areaCopy[area.descriptionKey] || '' : '',
     projectCount: area.projectCount,
     coverUrl: areaCoverById.get(area.id) ?? null,
   }));

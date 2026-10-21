@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { hasWorkspaceAdministratorUnitAccess } from '@/modules/ops/workspace-unit-authority';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess, hasProjectStaffAccess, hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 
@@ -32,7 +33,8 @@ export async function resolveBookingAccess(
   const isOwner = Boolean(
     booking.ownerIdentityId && booking.ownerIdentityId === user.identityId
   );
-  const isStaff = hasProjectStaffAccess(user, booking.projectId);
+  const isStaff = hasProjectStaffAccess(user, booking.projectId) ||
+    await hasWorkspaceAdministratorUnitAccess(prisma, user.identityId, booking);
   const isMc =
     !isStaff &&
     (await hasManagedUnitMcAccess(user, {

@@ -13,6 +13,7 @@ const assignment = {
 };
 function database() {
   const tx = {
+    operatingSpaceMember: { findMany: vi.fn().mockResolvedValue([]) },
     identity: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) =>
       where.id === 'founder' ? { id: 'founder', isAdmin: true, status: 'active' } : { id: where.id, isAdmin: false, status: 'active' }) },
     project: { findUnique: vi.fn().mockResolvedValue({ id: 'complex-a', status: 'active' }) },

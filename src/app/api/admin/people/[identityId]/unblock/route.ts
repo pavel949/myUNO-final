@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { can } from '@/modules/core';
 import { people } from '@/modules/core';
+import { accountSummary, AdministrationError } from '@/modules/core/administration.service';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -28,13 +29,14 @@ export async function POST(_req: NextRequest, props: { params: Promise<{ identit
   try {
     const unblocked = await people.unblockIdentity(prisma, {
       identityId: params.identityId,
+      actorIdentityId: user.identityId,
     });
 
-    return NextResponse.json({ success: true, identity: unblocked });
+    return NextResponse.json({ success: true, identity: accountSummary(unblocked) });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to unblock identity' },
-      { status: 400 }
+      { status: error instanceof AdministrationError ? error.status : 400 }
     );
   }
 }

@@ -304,9 +304,13 @@ export async function removeBlockedDate(
   db: PrismaClient,
   blockedDateId: string
 ): Promise<BlockedDate> {
-  const block = await db.blockedDate.findUnique({ where: { id: blockedDateId } });
+  const block = await db.blockedDate.findUnique({ where: { id: blockedDateId },
+    include: { importedReservationPlacement: { select: { id: true } } } });
   if (!block) {
     throw new Error(`BlockedDate ${blockedDateId} not found`);
+  }
+  if (block.importedReservationPlacement) {
+    throw new Error('IMPORTED_GROUP_PROTECTION_REQUIRES_RECONCILIATION: review the imported source group before changing its villa dates');
   }
   if (block.propertyDealId) {
     throw new Error('SIGNED_LEASE_BLOCK: a signed agreement cannot be unblocked through the manual calendar');

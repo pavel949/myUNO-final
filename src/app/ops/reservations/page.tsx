@@ -12,7 +12,10 @@ import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
 import { formatDate } from '@/lib/date';
 import { getScopedOperationalAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
 import ManualReservationForm from '@/components/ops/ManualReservationForm';
+import { listImportedGroupsForUnits } from '@/modules/integrations/layantara/imported-group.service';
+import ImportedReservationGroups from '@/components/ops/ImportedReservationGroups';
 import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
+import ReservationSummaryCard from '@/components/ops/ReservationSummaryCard';
 
 export const dynamic='force-dynamic';
 
@@ -40,7 +43,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
   const now=new Date();
 
   const registeredGuestIds=await registeredReservationGuestIds(prisma,spaceId,authorizedUnitIds);
-  const [units,guests,groups,bookings]=await Promise.all([
+  const [units,guests,groups,bookings,importedGroups]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds},status:{not:'offboarded'}},
       select:{id:true,name:true,instantBook:true,project:{select:{name:true}}},
@@ -59,7 +62,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
       take:200,
     }),
     prisma.reservationGroup.findMany({
-      where:{operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
+      where:{importedSource:null,operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
       select:{
         id:true,title:true,guestIdentityId:true,notes:true,
         guest:{select:{firstName:true,lastName:true}},
@@ -86,6 +89,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
       orderBy:[{startDate:'asc'},{createdAt:'desc'}],
       take:300,
     }),
+    listImportedGroupsForUnits(prisma,authorizedUnitIds),
   ]);
 
   const locale=getRequestLocale();
@@ -161,6 +165,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
         </div>)}
       </section>
 
+      <ImportedReservationGroups groups={importedGroups} locale={locale} />
       {canManage?<ReservationGroupForm operatingSpaceId={spaceId} guests={guests} labels={labels}/>:null}
       {canManage?<ManualReservationForm operatingSpaceId={spaceId} units={units} guests={guests} groups={groups.map(g=>({id:g.id,title:g.title,guestIdentityId:g.guestIdentityId}))} labels={labels}/>:null}
 
@@ -175,16 +180,22 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
       <section className="overflow-hidden stitch-panel">
         {bookings.map(booking=>{
           const paid=booking.payments.reduce((sum,p)=>sum+p.amountThb,0);
-          return <article key={booking.id} className="grid gap-12 border-b border-border-line p-16 last:border-0 md:grid-cols-6">
-            <div className="md:col-span-2">
-              <p className="font-semibold text-text-ink">{booking.unit.project.name} · {booking.unit.name}</p>
-              <p className="text-small text-text-secondary">{booking.guestIdentity.firstName} {booking.guestIdentity.lastName}</p>
-            </div>
-            <div><p className="text-small text-text-secondary">{enumLabel(labels,'bookingStatus',booking.status)}</p><p>{enumLabel(labels,'bookingChannel',booking.channel)}</p></div>
-            <div><p>{formatDate(booking.startDate,locale)}</p><p className="text-small text-text-secondary">→ {formatDate(booking.endDate,locale)}</p></div>
-            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p>{booking.receivableStatus==='pending_reconciliation'&&<p className="text-small text-state-warning">{labels['reservations.review']}</p>}</div>
-            <div><Link href={'/ops/stays/'+encodeURIComponent(booking.id)} className="text-small font-semibold text-brand-andaman">{labels['reservations.open']}</Link></div>
-          </article>;
+          return <ReservationSummaryCard
+            key={booking.id}
+            bookingId={booking.id}
+            href={'/ops/stays/'+encodeURIComponent(booking.id)+'?'+new URLSearchParams({spaceId})}
+            unitName={booking.unit.name}
+            projectName={booking.unit.project.name}
+            guestName={booking.guestIdentity.firstName+' '+booking.guestIdentity.lastName}
+            statusLabel={enumLabel(labels,'bookingStatus',booking.status)}
+            channelLabel={enumLabel(labels,'bookingChannel',booking.channel)}
+            dateFrom={formatDate(booking.startDate,locale)}
+            dateTo={formatDate(booking.endDate,locale)}
+            totalLabel={'฿'+Math.round(booking.totalThb/100).toLocaleString(UI_LOCALE)}
+            paidLabel={labels['reservations.paid']+' ฿'+Math.round(paid/100).toLocaleString(UI_LOCALE)}
+            reviewLabel={booking.receivableStatus==='pending_reconciliation'?labels['reservations.review']:undefined}
+            openLabel={labels['reservations.open']}
+          />;
         })}
       </section>
 

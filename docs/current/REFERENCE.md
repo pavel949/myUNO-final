@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `4cb60b08e216e1543d983171c0f9ae1271ea2082`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `ef7746877e4c467ba16630aea8e1667ef0396b0c`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -10,7 +10,7 @@
 
 | Объект | Количество |
 |---|---:|
-| pages | 176 |
+| pages | 177 |
 | handlers | 256 |
 | apiHandlers | 251 |
 | modules | 22 |
@@ -106,6 +106,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/guests` | public | [src/app/(public)/guests/page.tsx](<../../src/app/(public)/guests/page.tsx>) |
 | `/guests/access` | public | [src/app/(public)/guests/access/page.tsx](<../../src/app/(public)/guests/access/page.tsx>) |
 | `/help` | public | [src/app/(public)/help/page.tsx](<../../src/app/(public)/help/page.tsx>) |
+| `/help/choose` | public | [src/app/(public)/help/choose/page.tsx](<../../src/app/(public)/help/choose/page.tsx>) |
 | `/help/emergency` | public | [src/app/(public)/help/emergency/page.tsx](<../../src/app/(public)/help/emergency/page.tsx>) |
 | `/homes` | guest-or-shared | [src/app/homes/page.tsx](<../../src/app/homes/page.tsx>) |
 | `/homes/[id]` | guest-or-shared | [src/app/homes/[id]/page.tsx](<../../src/app/homes/[id]/page.tsx>) |
@@ -620,7 +621,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 76; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 77; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -651,6 +652,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/inquiry-copy.ts](<../../src/modules/content/inquiry-copy.ts>) | implementation | `INQUIRY_COPY`, `inquiryLabels`, `INQUIRY_CONTENT_KEYS` |
 | [src/modules/content/launch-readiness.seed.ts](<../../src/modules/content/launch-readiness.seed.ts>) | seed | `LAUNCH_READINESS_KEYS` |
 | [src/modules/content/layantara-operations.seed.ts](<../../src/modules/content/layantara-operations.seed.ts>) | seed | `LAYANTARA_OPERATION_KEYS` |
+| [src/modules/content/lead-form.seed.ts](<../../src/modules/content/lead-form.seed.ts>) | seed | `LEAD_FORM_KEYS`, `LEAD_FORM_LOCALE_DRAFTS` |
 | [src/modules/content/legal-pages.seed.ts](<../../src/modules/content/legal-pages.seed.ts>) | seed | `seedLegalPages` |
 | [src/modules/content/operating-governance.seed.ts](<../../src/modules/content/operating-governance.seed.ts>) | seed | `OPERATING_GOVERNANCE_LABELS`, `OPERATING_GOVERNANCE_KEYS`, `OPERATING_GOVERNANCE_DRAFTS` |
 | [src/modules/content/operating-space.seed.ts](<../../src/modules/content/operating-space.seed.ts>) | seed | `OPERATING_SPACE_KEYS` |

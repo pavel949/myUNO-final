@@ -1,9 +1,9 @@
 {
-  "codeRevision": "4cb60b08e216e1543d983171c0f9ae1271ea2082",
+  "codeRevision": "ef7746877e4c467ba16630aea8e1667ef0396b0c",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
-    "pages": 176,
+    "pages": 177,
     "handlers": 256,
     "apiHandlers": 251,
     "modules": 22,
@@ -2006,6 +2006,12 @@
       "area": "public"
     },
     {
+      "path": "/help/choose",
+      "source": "src/app/(public)/help/choose/page.tsx",
+      "kind": "page",
+      "area": "public"
+    },
+    {
       "path": "/help/emergency",
       "source": "src/app/(public)/help/emergency/page.tsx",
       "kind": "page",
@@ -2650,7 +2656,7 @@
     },
     {
       "name": "content",
-      "files": 76,
+      "files": 77,
       "testFiles": 9
     },
     {

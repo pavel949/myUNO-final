@@ -5,6 +5,7 @@ import Link from '@/components/FeedbackLink';
 import { usePathname } from 'next/navigation';
 import { isStitchWorkspace } from '@/lib/stitch-surface';
 import { Button } from './Button';
+import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { NotificationBell, type BellLabels } from './NotificationBell';
 
@@ -148,7 +149,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
     { href: '/sell', label: labels.sell },
     { href: '/rent-out', label: labels.rentOut },
     { href: '/property/onboard?kind=home', label: labels.addProperty },
-    { href: '/manage', label: labels.manage },
+    { href: '/manage', label: supplierCopy(locale).managementCta },
     { href: user ? '/owner' : '/login?next=/owner', label: labels.owners },
   ];
 
@@ -237,7 +238,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               </summary>
               <div className="absolute left-0 top-full z-50 mt-12 grid min-w-[250px] gap-12 rounded-md border border-border-line bg-surface-paper p-16 shadow-float">
                 {ownerLinks.map((link) => (
-                  <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href)}>
+                  <Link prefetch={false} key={link.href} href={link.href} className={navLinkClass(pathname, link.href, link.href === '/manage' ? 'rounded-md bg-surface-ivory p-12 font-semibold' : '')}>
                     {link.label}
                   </Link>
                 ))}
@@ -355,7 +356,7 @@ export function Navbar({ user, labels, roleLinks, bellLabels, locale, localeOpti
               <Link prefetch={false}
                 key={link.href}
                 href={link.href}
-                className={navLinkClass(pathname, link.href, 'border-b border-border-line py-12')}
+                className={navLinkClass(pathname, link.href, link.href === '/manage' ? 'rounded-md bg-surface-paper p-12 font-semibold' : 'border-b border-border-line py-12')}
                 onClick={closeMenu}
               >
                 {link.label}

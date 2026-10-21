@@ -200,7 +200,8 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
   // authoritative rows used by checkout, availability and unit operations.
   const [bookings, blocks, labels] = await Promise.all([
     prisma.booking.findMany({
-      where: dateWhere,
+      // Checkout does not occupy the first night, but still counts as a departure.
+      where: { ...dateWhere, endDate: { gte: rangeStart } },
       select: {
         id: true, unitId: true, startDate: true, endDate: true,
         status: true, channel: true, holdExpiresAt: true,

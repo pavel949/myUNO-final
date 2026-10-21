@@ -1,7 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
 import { seedConfig } from '@/modules/config';
 import { changeBookingDates } from './booking.service';
+
+// Keep the November/December synthetic stays ahead of the guest date boundary.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-01T00:00:00Z'));
+});
+afterEach(() => vi.useRealTimers());
 
 /**
  * Moving a booking's dates (F-GUEST-9, the general case).

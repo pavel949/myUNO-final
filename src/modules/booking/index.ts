@@ -12,6 +12,7 @@ export {
   declineBookingRequest,
   confirmBooking,
   cancelBooking,
+  cancelBookingAttempt,
   checkInBooking,
   assessCheckIn,
   CheckInBlockedError,

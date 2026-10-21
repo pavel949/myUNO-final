@@ -1,3 +1,4 @@
+import { editVersion, PropertyEditConflict, validatePhysicalFacts } from './edit-validation';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
@@ -38,7 +39,12 @@ interface UpdateUnitInput {
   bedrooms?: number;
   bathrooms?: number;
   maxGuests?: number;
-  sizeSqm?: string | null;
+  sizeSqm?: number | null;
+  usableAreaSqm?: number | null;
+  grossAreaSqm?: number | null;
+  outdoorAreaSqm?: number | null;
+  plotAreaSqm?: number | null;
+  expectedUpdatedAt?: string;
   floor?: string | null;
   structureNodeId?: string | null;
   addressSupplement?: string;
@@ -121,6 +127,7 @@ async function ensureLegacyStayOffering(unitId: string): Promise<void> {
 }
 
 export async function createUnit(input: CreateUnitInput) {
+  validatePhysicalFacts(input as unknown as Record<string, unknown>);
   const {
     projectId,
     ownerIdentityId,
@@ -260,6 +267,8 @@ export async function listUnits(projectId: string, status?: UnitStatus) {
  * Admin/staff-only action.
  */
 export async function updateUnit(input: UpdateUnitInput) {
+  validatePhysicalFacts(input as unknown as Record<string, unknown>);
+  const expectedVersion = editVersion(input.expectedUpdatedAt);
   const {
     unitId,
     name,
@@ -362,7 +371,7 @@ export async function updateUnit(input: UpdateUnitInput) {
   }
 
   const updated = await prisma.unit.update({
-    where: { id: unitId },
+    where: { id: unitId, ...(expectedVersion && { updatedAt: expectedVersion }) },
     data: {
       ...(name !== undefined && { name }),
       ...(unitType !== undefined && { unitType }),
@@ -375,6 +384,8 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(bathrooms !== undefined && { bathrooms }),
       ...(maxGuests !== undefined && { maxGuests }),
       ...(sizeSqm !== undefined && { sizeSqm }),
+      ...Object.fromEntries((['usableAreaSqm', 'grossAreaSqm', 'outdoorAreaSqm', 'plotAreaSqm'] as const).filter(key => input[key] !== undefined).map(key => [key, input[key]])),
+      ...(expectedVersion && { updatedAt: new Date(Math.max(Date.now(), expectedVersion.getTime() + 1)) }),
       ...(floor !== undefined && { floor }),
       ...(structureNodeId !== undefined && { structureNodeId }),
       ...(addressSupplement !== undefined && { addressSupplement }),
@@ -397,6 +408,9 @@ export async function updateUnit(input: UpdateUnitInput) {
       ...(status !== undefined && { status }),
       ...(coverMediaId !== undefined && { coverMediaId }),
     } as any,
+  }).catch(error => {
+    if (expectedVersion && error.code === 'P2025') throw new PropertyEditConflict();
+    throw error;
   });
 
   if (status === 'live') await ensureLegacyStayOffering(unitId);

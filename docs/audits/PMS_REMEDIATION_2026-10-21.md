@@ -18,6 +18,6 @@ A nullable expand-only migration adds `Refund.dispatchAuthorizedAt`. New cancell
 
 ## Validation
 
-The local implementation/validation report at `/workspace/pms-audit/FIXES.md` records exact final commands and counts. Tests use disposable loopback PostgreSQL, synthetic accounts, mocked gateway responses and local Chromium. Original diagnostic findings remain in `/workspace/pms-audit/REPORT.md` and distinguish audited main from the production commit supplied by the parent.
+Final validation: 568 Vitest files / 6,113 tests passed; lint, production TypeScript and isolated production build passed; 60 script-policy tests and 8 agent-guard tests passed. Fresh/existing local migration chains passed (95 migrations). Three Chromium journeys passed against the rebuilt local app: group form failures/repeated submission, calendar departure/refresh, and unsafe refund retry feedback. The local implementation/validation report at `/workspace/pms-audit/FIXES.md` records exact commands and evidence. Tests use disposable loopback PostgreSQL, synthetic accounts, mocked gateway responses and local Chromium. Original diagnostic findings remain in `/workspace/pms-audit/REPORT.md` and distinguish audited main from the production commit supplied by the parent.
 
 Production acceptance, real provider reconciliation and release approval remain separate. Deployment was not performed.

@@ -279,7 +279,7 @@ export default function UnifiedStayCalendar(props: Props) {
             className="rounded-md border border-border-line px-12 py-8 text-small font-semibold disabled:opacity-40">→</button>
         </div>
         <div className="space-y-8">
-          {rows.length===0 ? <p className="p-12 text-small text-text-secondary">{props.labels['staff.unified_calendar.empty']}</p> :
+          {visibleRows.length===0 ? <p className="p-12 text-small text-text-secondary">{props.labels['staff.unified_calendar.empty']}</p> :
             visibleRows.map((unit)=>{
               const cell=(props.cells[unit.id]||[])[mobileIndex];
               if (!cell) return null;

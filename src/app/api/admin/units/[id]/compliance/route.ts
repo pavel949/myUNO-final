@@ -12,7 +12,8 @@ import { logAudit } from '@/modules/audit';
  * requires an explicit `allow` grant so a read permission cannot become a
  * legal-record write capability.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('compliance:manage_compliance_records', {
     requiredAccess: 'read',
     unitId: params.id,
@@ -23,7 +24,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ records });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('compliance:manage_compliance_records', {
     requiredAccess: 'allow',
     unitId: params.id,

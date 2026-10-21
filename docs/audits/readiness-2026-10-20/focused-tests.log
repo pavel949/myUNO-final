@@ -1,0 +1,22 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v1.6.1 /workspace/myUNO-final
+
+ ✓ src/jobs/health.test.ts  (17 tests) 17ms
+ ✓ src/lib/launch-readiness.test.ts  (8 tests) 4ms
+ ✓ src/modules/services/standalone-context.test.ts  (5 tests) 5ms
+ ✓ src/modules/projects/unit-publication-readiness.test.ts  (12 tests) 4ms
+ ✓ src/middleware.test.ts  (11 tests) 11ms
+ ✓ src/lib/launch-readiness.data.test.ts  (4 tests) 2ms
+ ✓ src/modules/integrations/channel-health.test.ts  (3 tests) 2ms
+ ✓ src/lib/money.test.ts  (14 tests) 18ms
+ ✓ src/modules/auth/session.test.ts  (10 tests) 4ms
+ ✓ src/modules/booking/category-quote.test.ts  (2 tests) 1ms
+ ✓ src/middleware.direct-upload.test.ts  (2 tests) 2ms
+ ✓ src/modules/projects/public-responsibility.test.ts  (3 tests) 1ms
+ ✓ src/modules/services/service-order-closure.test.ts  (2 tests) 1ms
+
+ Test Files  13 passed (13)
+      Tests  93 passed (93)
+   Start at  15:25:41
+   Duration  3.41s (transform 1.80s, setup 249ms, collect 2.53s, tests 72ms, environment 0ms, prepare 82ms)

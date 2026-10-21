@@ -4,10 +4,8 @@ import { BuyerSignalStatus } from '@prisma/client';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { transitionBuyerSignal } from '@/modules/analytics';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { signalId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ signalId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

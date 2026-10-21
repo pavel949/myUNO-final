@@ -7,9 +7,13 @@ import {
 } from '@/modules/crm/property-deal.service';
 
 const statuses:PropertyDealStatus[]=['proposed','accepted','signed','closed','cancelled'];
-export async function POST(req:NextRequest,{params}:{
-  params:{opportunityId:string};
-}){
+export async function POST(
+  req:NextRequest,
+  props:{
+    params: Promise<{opportunityId:string}>;
+  }
+) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   try{

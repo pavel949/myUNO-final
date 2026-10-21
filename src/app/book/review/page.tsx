@@ -12,21 +12,22 @@ import { REVIEW_CHECKOUT_DRAFTS } from '@/modules/content/guest-checkout.seed';
 
 export const dynamic = 'force-dynamic';
 
-export default async function BookingReviewPage({
-  searchParams,
-}: {
-  searchParams: {
-    unitId?: string;
-    inventoryCategoryId?: string;
-    categoryId?: string;
-    categoryKey?: string;
-    projectId?: string;
-    startDate?: string;
-    endDate?: string;
-    adults?: string;
-    children?: string;
-  };
-}) {
+export default async function BookingReviewPage(
+  props: {
+    searchParams: Promise<{
+      unitId?: string;
+      inventoryCategoryId?: string;
+      categoryId?: string;
+      categoryKey?: string;
+      projectId?: string;
+      startDate?: string;
+      endDate?: string;
+      adults?: string;
+      children?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const inventoryCategoryId = searchParams.inventoryCategoryId || searchParams.categoryId;
 
   if (

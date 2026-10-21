@@ -14,10 +14,8 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * Amount is ALWAYS the order's server-stored total — never client-sent.
  * Auth: scoped staff/admin or scoped MC member managing the unit.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

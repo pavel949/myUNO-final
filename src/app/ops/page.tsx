@@ -24,12 +24,13 @@ import { checkOutModalLabelDrafts } from '@/lib/checkOutModalLabels';
 export const dynamic = 'force-dynamic';
 
 interface OpsBoardPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
-export default async function OpsBoardPage({ searchParams }: OpsBoardPageProps) {
+export default async function OpsBoardPage(props: OpsBoardPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops');

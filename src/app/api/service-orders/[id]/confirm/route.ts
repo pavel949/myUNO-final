@@ -5,7 +5,8 @@ import { confirmServiceOrder, ServiceOrderClosureError } from '@/modules/service
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('unauthorized', 401);

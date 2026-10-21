@@ -5,10 +5,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { loadTicketForUser } from '@/app/libs/ticketScope';
 
 /** GET /api/tickets/[id] — scoped ticket detail for reporter/assignee/staff/MC/admin. */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

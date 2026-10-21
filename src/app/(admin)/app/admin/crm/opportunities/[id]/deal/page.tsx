@@ -8,7 +8,8 @@ import PropertyDealClient from '@/components/property/PropertyDealClient';
 import { getLabels } from '@/lib/i18n';
 
 export const dynamic='force-dynamic';
-export default async function OpportunityDealPage({params}:{params:{id:string}}){
+export default async function OpportunityDealPage(props:{params: Promise<{id:string}>}) {
+  const params = await props.params;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/app/admin/crm/opportunities/'+params.id+'/deal');
   if(!user.isAdmin)redirect('/');

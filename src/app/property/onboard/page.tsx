@@ -6,7 +6,10 @@ import { prisma } from '@/lib/prisma';
 import PropertySubmissionWizard from './wizard';
 
 export const dynamic = 'force-dynamic';
-export default async function PropertyOnboardPage({ searchParams }: { searchParams?: { projectId?: string; offers?: string; kind?: string; operatingModel?: string; submissionId?: string } }) {
+export default async function PropertyOnboardPage(
+  props: { searchParams?: Promise<{ projectId?: string; offers?: string; kind?: string; operatingModel?: string; submissionId?: string }> }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     const params = new URLSearchParams();

@@ -8,10 +8,8 @@ import { serializeOrder } from '@/app/libs/serviceOrderSerializer';
  * GET /api/service-orders/[id] — one order, for its orderer, a member of the
  * fulfilling provider, staff, or admin. camelCase shape; never the take rate.
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

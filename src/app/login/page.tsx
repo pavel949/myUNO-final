@@ -7,7 +7,8 @@ import { LoginForm } from './login-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LoginPage({ searchParams }: { searchParams?: { next?: string | string[] } }) {
+export default async function LoginPage(props: { searchParams?: Promise<{ next?: string | string[] }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (user) {
     redirect(safeNextPath(typeof searchParams?.next === 'string' ? searchParams.next : null) || '/');

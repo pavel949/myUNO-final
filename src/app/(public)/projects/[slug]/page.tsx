@@ -59,11 +59,12 @@ const readProjectCopy = cache(async (project: NonNullable<Awaited<ReturnType<typ
   };
 });
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const project = await readProject(params.slug, getRequestLocale());
   // notFound() here (not only in the page body) so the response carries a
   // real 404 status — thrown during page streaming it would soft-404 as 200.
@@ -81,12 +82,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProjectLandingPage({
-  params, searchParams = {},
-}: {
-  params: { slug: string };
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
+export default async function ProjectLandingPage(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  }
+) {
+  const searchParams = (await props.searchParams) ?? {};
+  const params = await props.params;
   const project = await readProject(params.slug, getRequestLocale());
   if (!project) notFound();
 
@@ -371,7 +374,6 @@ export default async function ProjectLandingPage({
           />
         ) : null}
       </section>
-
 
       {/* A published Project Space may serve sales or leases without sellable Stay offers. */}
       {bookableStayCount > 0 && <section id="availability" className="mx-auto max-w-content px-20 py-24 md:px-32">

@@ -21,7 +21,11 @@ async function getAmenity(projectId: string, amenityId: string) {
   });
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function GET(
+  _req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const amenity = await getAmenity(params.id, params.amenityId);
@@ -52,7 +56,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string;
   });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function PUT(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const amenity = await getAmenity(params.id, params.amenityId);

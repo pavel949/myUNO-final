@@ -273,3 +273,7 @@ SEO: metadata, canonical/hreflang helpers, sitemap, robots, llms.txt и JSON-LD 
 ## Архитектура цели и факт
 
 Canonical pack описывает развитие системы, в том числе более полные commercial/fulfillment/settlement states и federation. Наличие модели, enum, страницы или описания в canonical не означает законченный сквозной процесс. Точные неподтверждённые места перечислены в матрице; старые release reports являются историческим evidence только для указанного там commit/environment.
+
+## PMS remediation, 2026-10-21 (local branch)
+
+Reservation guest/finance access, cancellation refund durability/recovery, property-local date boundaries and calendar/form correctness were hardened with regressions. See [scope and verification boundaries](../audits/PMS_REMEDIATION_2026-10-21.md). No production deployment or historical data repair is asserted.

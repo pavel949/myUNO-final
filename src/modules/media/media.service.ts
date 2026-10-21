@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { PrismaClient, MediaAssetKind } from '@prisma/client';
 import { mediaStorageCredentials } from './storage-config';
 
@@ -60,8 +61,9 @@ async function putToStorage(
     throw new Error('Durable media storage is not configured');
   }
 
-  // Local-development fallback only.
-  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  // Local-development fallback only. A URL fragment keeps each upload asset
+  // distinct (including uploader ownership) without changing the image bytes.
+  return `data:${mimeType};base64,${buffer.toString('base64')}#media-${randomUUID()}`;
 }
 
 /**

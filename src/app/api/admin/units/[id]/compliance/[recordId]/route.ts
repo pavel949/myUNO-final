@@ -12,8 +12,9 @@ import { requireAction, failed } from '@/app/libs/onboardingGuard';
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; recordId: string } }
+  props: { params: Promise<{ id: string; recordId: string }> }
 ) {
+  const params = await props.params;
   const guard = await requireAction('compliance:manage_compliance_records', {
     requiredAccess: 'allow',
     unitId: params.id,

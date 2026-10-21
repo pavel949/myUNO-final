@@ -10,13 +10,15 @@ function failure(error: unknown) {
     OWNER_EVIDENCE_CONFLICT: 409, OWNER_EVIDENCE_INVALID: 400, OWNER_EVIDENCE_VERSION_REQUIRED: 428 };
   return NextResponse.json({ error: statuses[code] ? code : 'OWNER_EVIDENCE_FAILED' }, { status: statuses[code] ?? 500, headers });
 }
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers });
   try { return NextResponse.json(await readOwnerEvidenceDraft(prisma, params.id, user.identityId), { headers }); }
   catch (error) { return failure(error); }
 }
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers });
   try {

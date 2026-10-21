@@ -132,7 +132,7 @@ describe('premium design-system surface parity', () => {
     expect(portfolio).toContain('requestedOrganizationId');
     expect(legacy).toContain("origin: 'legacy'");
     expect(legacy).toContain('/mc/properties/');
-    expect(editor).toContain('safeMcReturnTo');
+    expect(editor).toContain('unitEditorReturn'); // Destination authorization is regression-tested in property-editor-return.test.ts.
   });
 
   it('keeps list and map search on one canonical search contract', () => {

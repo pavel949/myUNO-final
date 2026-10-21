@@ -4,10 +4,8 @@ import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
 import { transitionOpportunity } from '@/modules/crm';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { opportunityId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ opportunityId: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

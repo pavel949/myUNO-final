@@ -6,10 +6,8 @@ import { reconcilePayout } from '@/modules/finance';
 
 export const dynamic = 'force-dynamic';
 
-export async function PUT(
-  _req: NextRequest,
-  { params }: { params: { payoutId: string } }
-) {
+export async function PUT(_req: NextRequest, props: { params: Promise<{ payoutId: string }> }) {
+  const params = await props.params;
   try {
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;

@@ -38,13 +38,14 @@ interface ServiceDetail {
   };
 }
 
-export default async function ServiceDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { bookingId?: string; projectId?: string; unitId?: string };
-}) {
+export default async function ServiceDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ bookingId?: string; projectId?: string; unitId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { id } = params;
   const bookingId = searchParams.bookingId || null;
   // A guest arrives with a stay. Everyone else — a resident, an owner, an MC
@@ -79,7 +80,7 @@ export default async function ServiceDetailPage({
 
   const standaloneOffer = await getStandaloneServiceOffer(prisma, service.id);
   const standaloneAreas = standaloneOffer ? await prisma.area.findMany({ where: { slug: { in: standaloneOffer.areaKeys }, status: 'live' }, select: { slug: true, nameKey: true }, orderBy: { sort: 'asc' } }) : [];
-  const standalone = standaloneOffer && standaloneAreas.length ? { destinationKey: standaloneOffer.destinationKey, responsibleOrganizationName: standaloneOffer.responsibleOrganizationName ?? '', cancellationWindowHours: Number(await getConfig(prisma, 'service.cancel_window_hours', { fresh: true }) ?? 24), areas: standaloneAreas.map(area => ({ key: area.slug, label: area.slug.replace(/-/g, ' ') })) } : null;
+  const standalone = standaloneOffer && standaloneAreas.length ? { destinationKey: standaloneOffer.destinationKey, responsibleOrganizationName: standaloneOffer.responsibleOrganizationName ?? '', cancellationWindowHours: Number((await getConfig(prisma, 'service.cancel_window_hours', { fresh: true })) ?? 24), areas: standaloneAreas.map(area => ({ key: area.slug, label: area.slug.replace(/-/g, ' ') })) } : null;
 
   const labels = await getLabels({
     'services.standalone.another_address': 'Order for another address',

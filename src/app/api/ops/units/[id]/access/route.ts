@@ -17,14 +17,16 @@ async function authorized(unitId:string) {
 }
 const noStore={'Cache-Control':'private, no-store'};
 /** Access codes are never returned in property search, public listing, or room calendar responses. */
-export async function GET(_request:NextRequest,{params}:{params:{id:string}}){
+export async function GET(_request:NextRequest, props:{params: Promise<{id:string}>}) {
+  const params = await props.params;
   const access=await authorized(params.id);
   if(access.status!==200)return NextResponse.json({error:'Not available'},{status:access.status,headers:noStore});
   const record=await prisma.unitAccessInstruction.findUnique({where:{unitId:params.id},select:{ciphertext:true,updatedAt:true}});
   if(!record)return NextResponse.json({instructions:null},{headers:noStore});
   return NextResponse.json({instructions:JSON.parse(decrypt(record.ciphertext)),updatedAt:record.updatedAt},{headers:noStore});
 }
-export async function PUT(req:NextRequest,{params}:{params:{id:string}}){
+export async function PUT(req:NextRequest, props:{params: Promise<{id:string}>}) {
+  const params = await props.params;
   const access=await authorized(params.id);
   if(access.status!==200)return NextResponse.json({error:'Not available'},{status:access.status,headers:noStore});
   try {

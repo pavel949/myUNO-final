@@ -1399,6 +1399,9 @@ model Refund {
   reason                RefundReason
   status                RefundStatus @default(requested)
   providerRefundId      String?      @map("provider_refund_id")
+  // A new/explicitly reconciled booking request may be dispatched once.
+  // Null on legacy rows: requested alone never proves no provider attempt.
+  dispatchAuthorizedAt  DateTime?    @map("dispatch_authorized_at")
   paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
   initiatedByIdentityId String       @map("initiated_by_identity_id")
 

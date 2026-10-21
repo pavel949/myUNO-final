@@ -11,16 +11,17 @@ import Tm30QueueClient from '@/app/ops/tm30/tm30-client';
 export const dynamic = 'force-dynamic';
 
 interface McTm30PageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
-  };
+  }>;
 }
 
 /**
  * TM30 queue for MC-managed units (doc 03, F-MC-2).
  */
-export default async function McTm30Page({ searchParams }: McTm30PageProps) {
+export default async function McTm30Page(props: McTm30PageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc/tm30');

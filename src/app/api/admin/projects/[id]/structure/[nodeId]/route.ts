@@ -3,14 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
 import { assertAcyclicStructureParent, structureKinds } from '@/modules/projects/structure-kinds';
 
-type Params = { params: { id: string; nodeId: string } };
+type Params = { params: Promise<{ id: string; nodeId: string }> };
 const codePattern = /^[a-z0-9][a-z0-9_-]{0,79}$/;
 
 /**
  * Every write takes the same project lock. Concurrent reparents/deletes must
  * not both validate against a stale hierarchy and create a cycle or orphan.
  */
-export async function PATCH(req: NextRequest, { params }: Params) {
+export async function PATCH(req: NextRequest, props: Params) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
   try {
@@ -72,7 +73,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(_req: NextRequest, props: Params) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
   try {

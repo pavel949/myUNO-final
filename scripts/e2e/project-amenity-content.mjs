@@ -51,10 +51,10 @@ async function step(name, page, work) {
   const entry = { name, status: 'running' }; report.steps.push(entry);
   try {
     await work(); entry.status = 'passed'; console.log(`PASS ${name}`);
-    if (page) await page.screenshot({ path: `browser-results/${stem}-${report.steps.length}.png`, fullPage: true });
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/${stem}-${report.steps.length}.png`, fullPage: true });
   } catch (error) {
     entry.status = 'failed'; entry.error = String(error);
-    if (page) await page.screenshot({ path: `browser-results/${stem}-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
+    if (page) await page.screenshot({ caret: 'initial', path: `browser-results/${stem}-${report.steps.length}-failed.png`, fullPage: true }).catch(() => {});
     throw error;
   } finally { await persist(); }
 }
@@ -419,7 +419,7 @@ try {
     await ru.getByText(EN_SUMMARY, { exact: true }).waitFor();
     await ru.getByText(LOCATION, { exact: true }).waitFor();
     assert.equal(await ru.getByText(RU_SUMMARY, { exact: true }).count(), 0);
-    await ru.screenshot({ path: `browser-results/${stem}-public-russian.png`, fullPage: true });
+    await ru.screenshot({ caret: 'initial', path: `browser-results/${stem}-public-russian.png`, fullPage: true });
   });
   await step('The approved new facility remains hidden and cannot activate native reservations', pp, async () => {
     await pp.goto(`/projects/${project.slug}/amenities`);

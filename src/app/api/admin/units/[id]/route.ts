@@ -1,3 +1,4 @@
+import { PropertyEditConflict } from '@/modules/projects/edit-validation';
 import { hasSelfListingAccess } from '@/app/libs/supplierListingAccess';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { updateUnit, getUnitDetail } from '@/modules/projects';
@@ -20,7 +21,8 @@ async function loadContext(unitId: string) {
   return { user, identity, unit } as const;
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 
@@ -42,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json();
     // Changes to title, publication and commercial authority stay admin-only.
     // Staff may edit factual listing fields; all routes share the canonical updateUnit writer.
-    const allowedFields = ['name', 'unitType', 'categoryKey', 'inventoryCategoryId', 'bedrooms', 'bathrooms', 'maxGuests', 'sizeSqm', 'floor', 'addressSupplement', 'amenityKeys'];
+    const allowedFields = ['name', 'unitType', 'categoryKey', 'inventoryCategoryId', 'bedrooms', 'bathrooms', 'maxGuests', 'sizeSqm', 'usableAreaSqm', 'grossAreaSqm', 'outdoorAreaSqm', 'plotAreaSqm', 'expectedUpdatedAt', 'floor', 'addressSupplement', 'amenityKeys'];
     const changes = Object.fromEntries(Object.entries(body).filter(([key]) => allowedFields.includes(key)));
     if (context.identity.isAdmin) {
       for (const key of ['baseNightlyThb', 'minNights', 'instantBook', 'cancellationPolicyKey', 'status']) {
@@ -58,6 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
     return NextResponse.json(updated);
   } catch (error: any) {
+    if (error instanceof PropertyEditConflict) return NextResponse.json({ error: 'property_edit_conflict', code: 'property_edit_conflict' }, { status: 409 });
     return NextResponse.json(
       { error: error.message || 'Failed to update unit' },
       { status: 400 }
@@ -65,7 +68,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const context = await loadContext(params.id);
   if ('error' in context) return context.error;
 

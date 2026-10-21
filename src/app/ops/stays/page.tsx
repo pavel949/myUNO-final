@@ -13,9 +13,10 @@ import type { StayWorkDepartment } from '@/modules/booking/work-projection';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
 
 export const dynamic='force-dynamic';
-export default async function StayOperationsPage({
-  searchParams,
-}:{searchParams?:{projectId?:string;department?:string;spaceId?:string}}){
+export default async function StayOperationsPage(
+  props:{searchParams?: Promise<{projectId?:string;department?:string;spaceId?:string}>}
+) {
+  const searchParams = await props.searchParams;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays');
   const requestedSpaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';

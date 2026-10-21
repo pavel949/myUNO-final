@@ -12,12 +12,13 @@ import { InStayHomeSpaceClient } from './client';
 export const dynamic = 'force-dynamic';
 
 interface InStayHomeSpacePageProps {
-  params: {
+  params: Promise<{
     bookingId: string;
-  };
+  }>;
 }
 
-export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePageProps) {
+export default async function InStayHomeSpacePage(props: InStayHomeSpacePageProps) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/bookings/${params.bookingId}/home-space`);

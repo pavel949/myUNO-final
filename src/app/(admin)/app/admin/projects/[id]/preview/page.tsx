@@ -16,7 +16,8 @@ import { categoryEditorialKeys, listProjectNearbyPlaces } from '@/modules/projec
 export const dynamic = 'force-dynamic';
 
 /** Private project-space preview. Does not make draft units discoverable/bookable. */
-export default async function ProjectSpacePreview({ params }: { params: { id: string } }) {
+export default async function ProjectSpacePreview(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const viewer = await getCurrentUser();
   if (!viewer) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/preview'));
   const actor = await getProjectExperienceActor(params.id);

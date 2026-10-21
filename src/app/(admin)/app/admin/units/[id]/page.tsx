@@ -30,7 +30,8 @@ export const dynamic = 'force-dynamic';
  * whether this physical unit is actually linked to its sellable category and
  * rate-plan hierarchy rather than silently relying on a legacy category key.
  */
-export default async function UnitOnboardingPage({ params }: { params: { id: string } }) {
+export default async function UnitOnboardingPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireAdminPage();
 
   const unit = await prisma.unit.findUnique({

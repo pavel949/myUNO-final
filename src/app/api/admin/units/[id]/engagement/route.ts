@@ -19,7 +19,8 @@ import { logAudit } from '@/modules/audit';
  * the narrow reading. Widening it to staff_ops is Q42.
  */
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -27,7 +28,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ engagements });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -80,7 +82,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

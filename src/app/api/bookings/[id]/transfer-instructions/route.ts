@@ -13,7 +13,8 @@ import { canViewTransferInstructions, resolveBookingAccess } from '@/app/libs/bo
  * an account number and a matching amount is most of what an invoice-fraud
  * email needs.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -59,9 +60,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   // Initial payment is all-or-nothing. An unexpected captured payment on a
   // still-pending stay needs reconciliation, never a second payment invitation.
-  if (booking.status === 'pending_payment' && await prisma.payment.count({
+  if (booking.status === 'pending_payment' && (await prisma.payment.count({
     where: { bookingId: booking.id, status: 'succeeded' },
-  })) {
+  }))) {
     return NextResponse.json({
       code: 'PAYMENT_RECONCILIATION_REQUIRED',
       error: 'A payment is already recorded and needs review. Contact the property before sending another transfer.',

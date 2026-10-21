@@ -9,7 +9,8 @@ import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectInventoryPage({ params }: { params: { id: string } }) {
+export default async function ProjectInventoryPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/inventory'));
   if (!user.isAdmin) redirect('/');

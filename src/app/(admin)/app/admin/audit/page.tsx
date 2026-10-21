@@ -64,7 +64,8 @@ function preview(data: unknown): string {
   return text.length > 160 ? `${text.slice(0, 160)}…` : text;
 }
 
-export default async function AdminAuditPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function AdminAuditPage(props: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams;
   const page = Number(searchParams.page) || 1;
 
   const [result, facets, labels] = await Promise.all([

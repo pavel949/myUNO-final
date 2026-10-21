@@ -4,7 +4,8 @@ import ThreadClient from './thread-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ThreadPage({ params }: { params: { threadId: string } }) {
+export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
+  const params = await props.params;
   const labels = await getLabels({
     'messages.breadcrumb_home': 'Home',
     'messages.breadcrumb_messages': 'Messages',

@@ -13,7 +13,8 @@ import TariffPreviewClient from '@/app/(admin)/app/admin/units/[id]/tariff-previ
 
 const CURRENT_WORKSPACE = 'pricing';
 export const dynamic = 'force-dynamic';
-export default async function UnitPricingPage({ params }: { params: { unitId: string } }) {
+export default async function UnitPricingPage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/property/pricing/' + params.unitId));
   const access = await assertUnitPricingAccess(prisma, user.identityId, params.unitId).catch(error => {

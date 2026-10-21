@@ -8,7 +8,8 @@ import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectServicesPage({ params }: { params: { id: string } }) {
+export default async function ProjectServicesPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/services'));
   if (!user.isAdmin) redirect('/');

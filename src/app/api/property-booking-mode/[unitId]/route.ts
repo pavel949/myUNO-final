@@ -27,5 +27,11 @@ async function handle(request: Request, unitId: string, apply: boolean) {
       : NextResponse.json({ error: 'Could not update booking mode' }, { status: 500 });
   }
 }
-export async function POST(request: Request, { params }: { params: { unitId: string } }) { return handle(request, params.unitId, false); }
-export async function PUT(request: Request, { params }: { params: { unitId: string } }) { return handle(request, params.unitId, true); }
+export async function POST(request: Request, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
+  return handle(request, params.unitId, false);
+}
+export async function PUT(request: Request, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
+  return handle(request, params.unitId, true);
+}

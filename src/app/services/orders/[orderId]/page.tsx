@@ -80,13 +80,14 @@ interface ServiceOrderDetail {
   }>;
 }
 
-export default async function ServiceOrderDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { orderId: string };
-  searchParams: { paid?: string; placed?: string };
-}) {
+export default async function ServiceOrderDetailPage(
+  props: {
+    params: Promise<{ orderId: string }>;
+    searchParams: Promise<{ paid?: string; placed?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');

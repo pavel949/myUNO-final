@@ -1,0 +1,64 @@
+✔ libpq receives separate connection variables, never a URI as PGDATABASE (1.051336ms)
+✔ backup refuses app principal, foreign projects and restore into production/source (0.468588ms)
+✔ restore skips only existing public schema and bootstraps omitted extensions (1.063635ms)
+(node:1076) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/myUNO-final/src/lib/resolveDatabaseUrl.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/myUNO-final/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ production cannot pass missing, unreachable or unreviewed registries (2.195388ms)
+✔ a production deployment cannot disable review, including a CI-labelled deployment (0.303649ms)
+✔ only disposable local matching test databases may bypass a production compile in CI (0.411886ms)
+✔ development without a database remains usable without claiming content was reviewed (0.214855ms)
+✔ the build gate connects through the same pooled route as the running app (0.917256ms)
+✔ http: checks hostname overrides on URL inputs (5.02375ms)
+✔ http: checks hostname overrides on object inputs (1.778507ms)
+✔ http: accepts effective loopback URL/options and callback overloads (3.38691ms)
+✔ http: get cannot bypass request guard (1.676002ms)
+✔ http: rejects custom transports (1.442372ms)
+✔ https: checks hostname overrides on URL inputs (1.230897ms)
+✔ https: checks hostname overrides on object inputs (1.574191ms)
+✔ https: accepts effective loopback URL/options and callback overloads (1.562855ms)
+✔ https: get cannot bypass request guard (1.633006ms)
+✔ https: rejects custom transports (1.405765ms)
+✔ fetch accepts loopback and blocks external URLs without logging query secrets (1.464609ms)
+✔ fetch refuses automatic redirects and preserves explicitly manual redirects (4.645669ms)
+✔ accepts only the exact dedicated local fixture environment (1.01582ms)
+✔ refuses unsafe MYUNO_BROWSER_ACCEPTANCE (1.178046ms)
+✔ refuses unsafe DATABASE_URL (0.29051ms)
+✔ refuses unsafe DATABASE_URL_TEST (0.174929ms)
+✔ refuses unsafe NEXTAUTH_URL (0.303689ms)
+✔ refuses unsafe NEXTAUTH_SECRET (0.286688ms)
+✔ refuses unsafe RESEND_API_KEY (0.173266ms)
+✔ refuses unsafe BLOB_READ_WRITE_TOKEN (0.12886ms)
+✔ refuses unsafe OMISE_SECRET_KEY (0.206344ms)
+✔ refuses unsafe VERCEL_OIDC_TOKEN (0.221261ms)
+✔ refuses unsafe BLOB_STORE_ID (0.156505ms)
+✔ refuses unsafe SUPABASE_SERVICE_ROLE_KEY (0.120251ms)
+(node:1103) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/myUNO-final/src/lib/resolveDatabaseUrl.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/myUNO-final/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ canonical direct migration uses the runtime session route and preserves encoded credentials (1.950258ms)
+✔ migration validates input before rewriting and refuses a foreign resolver override (0.623967ms)
+✔ an explicit canonical session route also applies to an already-pooled URL without changing credentials (0.354767ms)
+✔ release target refuses foreign project, local DB, transaction pooler and lookalike host (0.359241ms)
+✔ ledger refuses checksum drift, unfinished history and unreviewed pending SQL (1.583197ms)
+✔ equivalent Windows line endings do not rewrite or invalidate history (0.297707ms)
+✔ accepts only the audited historical comment removal without repairing the ledger (0.698667ms)
+✔ release failures expose only allowlisted stages and driver codes (36.49266ms)
+✔ backup endpoint metadata preserves migration credentials and explicit direct routing (0.641162ms)
+(node:1109) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/myUNO-final/src/lib/resolveDatabaseUrl.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/myUNO-final/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ preflight establishes database-enforced READ ONLY before reading migration history (4.015391ms)
+✔ failed READ ONLY setup prevents the ledger query and all later work (1.262838ms)
+✔ unknown Prisma connector failures get fixed categories without URL, SQL or untrusted fields (45.941108ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 450.186089

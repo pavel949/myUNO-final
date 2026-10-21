@@ -1,5 +1,7 @@
+import type { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
-import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasManagedUnitMcAccess, hasProjectStaffAccess, hasProjectDepartmentAccess } from '@/app/libs/projectScope';
 
 /** Minimal booking fields needed for role-scoped access checks (doc 03). */
 export interface BookingScope {
@@ -69,4 +71,18 @@ export function canViewTransferInstructions(flags: BookingAccessFlags): boolean 
 /** Payer or platform admin may confirm a checkout session. */
 export function canAccessPaymentSession(user: CurrentUser, payerIdentityId: string): boolean {
   return user.identityId === payerIdentityId || user.isAdmin;
+}
+
+/** Party documents need a guest relationship or an authorized reservation/front-desk department. */
+export async function canAccessBookingGuestData(
+  user: CurrentUser,
+  booking: BookingScope,
+  db: PrismaClient = prisma,
+): Promise<boolean> {
+  if (booking.guestIdentityId === user.identityId) return true;
+  if (user.isAdmin) return true;
+  const allowed = await Promise.all(['reservations', 'front_desk'].map(
+    department => hasProjectDepartmentAccess(user, booking.projectId, department, db),
+  ));
+  return allowed.some(Boolean);
 }

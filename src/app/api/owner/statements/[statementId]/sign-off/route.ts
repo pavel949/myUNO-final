@@ -22,12 +22,12 @@ export const dynamic = 'force-dynamic'
  * must have passed the admin sign-off gate — an owner cannot sign a draft they
  * are not allowed to read.
  */
-export async function PUT(
-  _req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function PUT(_req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
   try {
+    // Resolve the caller before awaiting params: identity is read in the first
+    // synchronous segment, exactly as before the async-params signature.
     const currentUser = await getCurrentUser()
+    const params = await props.params;
 
     if (!currentUser) {
       return NextResponse.json(

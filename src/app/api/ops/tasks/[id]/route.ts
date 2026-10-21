@@ -9,10 +9,8 @@ const ALLOWED: OperationalTaskStatus[] = [
   'planned', 'assigned', 'in_progress', 'inspected', 'blocked', 'ready', 'cancelled',
 ];
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

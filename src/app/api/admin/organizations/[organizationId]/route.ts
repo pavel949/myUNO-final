@@ -4,10 +4,8 @@ import { people } from '@/modules/core';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { organizationId: string } }
-) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ organizationId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -50,10 +48,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { organizationId: string } }
-) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ organizationId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

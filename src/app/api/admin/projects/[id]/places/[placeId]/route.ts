@@ -18,8 +18,9 @@ function serializePlace(place: any) {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; placeId: string } }
+  props: { params: Promise<{ id: string; placeId: string }> }
 ) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedPlace(params.id, params.placeId);
@@ -70,8 +71,9 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string; placeId: string } }
+  props: { params: Promise<{ id: string; placeId: string }> }
 ) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedPlace(params.id, params.placeId);

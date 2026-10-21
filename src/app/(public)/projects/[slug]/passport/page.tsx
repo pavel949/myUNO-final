@@ -18,7 +18,8 @@ function tone(status: PassportEvidenceStatus) {
   return 'neutral' as const;
 }
 
-export default async function ProjectPassportPage({ params }: { params: { slug: string } }) {
+export default async function ProjectPassportPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const passport = await getPublicProjectPassport(prisma, params.slug);
   if (!passport) notFound();
 

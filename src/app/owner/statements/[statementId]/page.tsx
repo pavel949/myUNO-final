@@ -11,7 +11,7 @@ import { OwnerStatementDetailClient, type StatementDetail } from './client';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: { statementId: string };
+  params: Promise<{ statementId: string }>;
 }
 
 /**
@@ -25,7 +25,8 @@ interface PageProps {
  * the signed-in owner and must have passed the admin sign-off gate. Anything
  * else is a 404, not a rendered page.
  */
-export default async function OwnerStatementDetailPage({ params }: PageProps) {
+export default async function OwnerStatementDetailPage(props: PageProps) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/owner/statements/${params.statementId}`);

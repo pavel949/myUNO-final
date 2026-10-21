@@ -11,12 +11,13 @@ import { OpportunityDetailClient } from '@/app/components/crm/OpportunityDetailC
 export const dynamic = 'force-dynamic';
 
 interface OpportunityDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default async function OpportunityDetailPage({ params }: OpportunityDetailPageProps) {
+export default async function OpportunityDetailPage(props: OpportunityDetailPageProps) {
+  const params = await props.params;
   const user = await getCurrentUser();
 
   if (!user) {

@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
  * Legacy MC unit route retained only for old bookmarks and external links.
  * Canonical management now lives in Property Workspace.
  */
-export default async function MCUnitCompatibilityPage({ params }: { params: { unitId: string } }) {
+export default async function MCUnitCompatibilityPage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/mc/units/${params.unitId}`);

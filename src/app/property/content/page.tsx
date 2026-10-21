@@ -8,7 +8,10 @@ import ContentProposalEditor from './content-client';
 
 const CURRENT_WORKSPACE = 'content';
 export const dynamic = 'force-dynamic';
-export default async function PropertyContentPage({ searchParams }: { searchParams?: { scope?: string; targetId?: string; proposalId?: string } }) {
+export default async function PropertyContentPage(
+  props: { searchParams?: Promise<{ scope?: string; targetId?: string; proposalId?: string }> }
+) {
+  const searchParams = await props.searchParams;
   const initialTarget = (searchParams?.scope === 'unit' || searchParams?.scope === 'project') && typeof searchParams.targetId === 'string' && searchParams.targetId.length > 0
     ? { scope: searchParams.scope as 'unit' | 'project', id: searchParams.targetId } : undefined;
   const params = new URLSearchParams();

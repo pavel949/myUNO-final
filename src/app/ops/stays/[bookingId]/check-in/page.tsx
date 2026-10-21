@@ -9,7 +9,8 @@ import CheckInWizard from './check-in-wizard';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CheckInPage({ params }: { params: { bookingId: string } }) {
+export default async function CheckInPage(props: { params: Promise<{ bookingId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/stays/'+params.bookingId+'/check-in');
 

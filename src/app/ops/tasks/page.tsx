@@ -12,9 +12,10 @@ import { taskCalendarReturnHref } from '@/lib/calendar-navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OperationalTasksPage({
-  searchParams,
-}: { searchParams?: { unitId?: string; mc?: string; spaceId?: string; returnTo?: string | string[] } }) {
+export default async function OperationalTasksPage(
+  props: { searchParams?: Promise<{ unitId?: string; mc?: string; spaceId?: string; returnTo?: string | string[] }> }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/tasks');
 

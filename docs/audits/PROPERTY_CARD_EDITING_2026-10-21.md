@@ -38,4 +38,10 @@ An initial aggregate attempt used a safe but differently named disposable databa
 
 ## Remaining limits
 
-No production Vercel inspection, deployment, Blob upload, real-property mutation, migration/schema change or legal/commercial attestation. Actual Blob provider behavior, external map tiles/geocoding, exhaustive locale quality and non-Chromium traversal behavior remain unverified. White fixture photographs are synthetic PNGs, not evidence of missing real photography. Aggregate and final production-server results are recorded below after completion.
+No production Vercel inspection, deployment, Blob upload, real-property mutation, migration/schema change or legal/commercial attestation. Actual Blob provider behavior, external map tiles/geocoding, exhaustive locale quality and non-Chromium traversal behavior remain unverified. White fixture photographs are synthetic PNGs, not evidence of missing real photography. Final aggregate status is available on PR #317 checks.
+
+## Validation checkpoint
+
+Lint, production TypeScript, production build, repository reference/documentation checks and isolated safety/policy guards passed locally. The local production-server runner also passed all ten scenarios, including fail-closed storage recovery and real browser back cancellation, with no browser runtime errors. The development run separately exercised real identical-file uploads, cover selection, reorder and delete.
+
+The first complete aggregate run passed 6,140 tests with one obsolete source-name parity assertion; that assertion now recognizes the extracted return-target helper. Its corrected focused run passes 44 tests (34 editing/area/scope regressions plus ten existing design parity checks). The complete suite was rerun after correction. See [PR #317](https://github.com/pavel949/myUNO-final/pull/317) for final aggregate and CI results. Local screenshots and raw logs are retained at `/workspace/property-fix-20261021` in the task environment, not uploaded to Library.

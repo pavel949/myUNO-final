@@ -241,7 +241,9 @@ try {
     }
   );
   await step(
-    'Repeated identical PNG uploads, cover, reorder and delete read back publicly',
+    report.mode === 'production'
+      ? 'Missing production storage fails closed and refreshes the gallery'
+      : 'Repeated identical PNG uploads, cover, reorder and delete read back publicly',
     async () => {
       await page.goto(edit);
       const before = await (await page.request.get(path + '/media')).json();

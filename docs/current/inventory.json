@@ -1,15 +1,15 @@
 {
-  "codeRevision": "98b0b1234ca0e4619da130c41796b49e3e32f28e",
+  "codeRevision": "1a50b261fe089ef95c7f3dd929a32d78ec318e89",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
-    "pages": 177,
-    "handlers": 256,
-    "apiHandlers": 251,
+    "pages": 179,
+    "handlers": 260,
+    "apiHandlers": 255,
     "modules": 22,
-    "tests": 579,
+    "tests": 581,
     "prismaModels": 124,
-    "migrations": 97,
+    "migrations": 98,
     "routeCollisions": 0
   },
   "routes": [
@@ -370,6 +370,12 @@
     {
       "path": "/api/admin/people/[identityId]/block",
       "source": "src/app/api/admin/people/[identityId]/block/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/people/[identityId]/manage",
+      "source": "src/app/api/admin/people/[identityId]/manage/route.ts",
       "kind": "handler",
       "area": "api"
     },
@@ -1190,6 +1196,24 @@
       "area": "api"
     },
     {
+      "path": "/api/ops/spaces/[spaceId]/people",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/spaces/[spaceId]/people/[identityId]",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/[identityId]/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/spaces/[spaceId]/people/[identityId]/administrator",
+      "source": "src/app/api/ops/spaces/[spaceId]/people/[identityId]/administrator/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
       "path": "/api/ops/tasks",
       "source": "src/app/api/ops/tasks/route.ts",
       "kind": "handler",
@@ -1736,6 +1760,12 @@
       "area": "platform-admin"
     },
     {
+      "path": "/app/admin/people/[identityId]",
+      "source": "src/app/(admin)/app/admin/people/[identityId]/page.tsx",
+      "kind": "page",
+      "area": "platform-admin"
+    },
+    {
       "path": "/app/admin/processes",
       "source": "src/app/(admin)/app/admin/processes/page.tsx",
       "kind": "page",
@@ -2270,6 +2300,12 @@
       "area": "ops"
     },
     {
+      "path": "/ops/spaces/[spaceId]/administration",
+      "source": "src/app/ops/spaces/[spaceId]/administration/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
       "path": "/ops/stays",
       "source": "src/app/ops/stays/page.tsx",
       "kind": "page",
@@ -2656,13 +2692,13 @@
     },
     {
       "name": "content",
-      "files": 77,
+      "files": 78,
       "testFiles": 9
     },
     {
       "name": "core",
-      "files": 73,
-      "testFiles": 45
+      "files": 76,
+      "testFiles": 46
     },
     {
       "name": "crm",
@@ -2701,7 +2737,7 @@
     },
     {
       "name": "ops",
-      "files": 38,
+      "files": 39,
       "testFiles": 20
     },
     {
@@ -3042,7 +3078,8 @@
     "prisma/migrations/20261015120347_property_capability_delegation/migration.sql",
     "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql",
     "prisma/migrations/20261021023000_imported_reservation_groups/migration.sql",
-    "prisma/migrations/20261021140000_sales_offer_desk/migration.sql"
+    "prisma/migrations/20261021140000_sales_offer_desk/migration.sql",
+    "prisma/migrations/20261021190000_protected_workspace_administration/migration.sql"
   ],
   "tests": [
     "src/app/(admin)/app/admin/access/workspace-access-client.test.tsx",
@@ -3287,6 +3324,7 @@
     "src/components/instay/ServicesRail.test.tsx",
     "src/components/navigation-prefetch.test.ts",
     "src/components/ops/ImportedReservationGroups.test.tsx",
+    "src/components/ops/ManagedAccountForm.test.tsx",
     "src/components/ops/ManualReservationForm.test.tsx",
     "src/components/ops/OperationalTaskCreateForm.test.tsx",
     "src/components/ops/OperationalTaskQueueClient.timezone.test.tsx",
@@ -3430,6 +3468,7 @@
     "src/modules/content/workspace-navigation.seed.test.ts",
     "src/modules/core/access-enforcement.test.ts",
     "src/modules/core/account.integration.test.ts",
+    "src/modules/core/administration.integration.test.ts",
     "src/modules/core/authority.alias.test.ts",
     "src/modules/core/availability-overrides.integration.test.ts",
     "src/modules/core/availability.service.test.ts",

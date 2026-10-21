@@ -127,4 +127,26 @@ describe('reviewed historical group source and canonical protected placements', 
     expect(await counts()).toEqual(before); expect(await db.ownerStatement.count()).toBe(1);
   });
 
+  it('lets nonblocking decline finish while another writer holds the unit lock', async () => {
+    const f=await fixture(); await applyWorkbookImport(db,f.plan,{actorIdentityId:f.actor.id,now});
+    const request=await db.booking.create({data:{unitId:f.units[0].id,projectId:f.project.id,guestIdentityId:f.actor.id,
+      bookingType:'guest_stay',channel:'direct',status:'requested',startDate:new Date('2027-02-01'),
+      endDate:new Date('2027-02-03'),adults:1,children:0,totalThb:10000}});
+    let release!:()=>void, held!:()=>void;
+    const gate=new Promise<void>(resolve=>{release=resolve;});
+    const ready=new Promise<void>(resolve=>{held=resolve;});
+    const holder=db.$transaction(async tx=>{
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${f.units[0].id}))`;
+      held();await gate;
+    },{timeout:10000});
+    await ready;
+    try {
+      await db.$transaction(async tx=>{
+        await tx.$executeRawUnsafe("SET LOCAL lock_timeout = '500ms'");
+        await tx.booking.update({where:{id:request.id},data:{status:'declined'}});
+      });
+    } finally { release();await holder; }
+    expect((await db.booking.findUniqueOrThrow({where:{id:request.id}})).status).toBe('declined');
+  });
+
 });

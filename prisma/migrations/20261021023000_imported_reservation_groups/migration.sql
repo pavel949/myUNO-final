@@ -102,11 +102,14 @@ BEGIN
  IF NEW.reservation_group_id IS NOT NULL AND EXISTS(SELECT 1 FROM imported_reservation_source WHERE reservation_group_id=NEW.reservation_group_id) THEN
    RAISE EXCEPTION 'IMPORTED_GROUP_ALLOCATION_REQUIRED' USING ERRCODE='23514';
  END IF;
+ -- Nonblocking exits must not invert canonical unit-before-booking lock order.
+ IF NEW.status IN ('confirmed','checked_in','pending_payment') THEN
  PERFORM pg_advisory_xact_lock(hashtext(NEW.unit_id));
- IF NEW.status IN ('confirmed','checked_in','pending_payment') AND EXISTS(
+ IF EXISTS(
    SELECT 1 FROM imported_reservation_placement p JOIN blocked_date b ON b.id=p.blocked_date_id
    WHERE p.unit_id=NEW.unit_id AND b.start_date<NEW.end_date AND b.end_date>NEW.start_date
  ) THEN RAISE EXCEPTION 'IMPORTED_GROUP_DATES_PROTECTED' USING ERRCODE='23514'; END IF;
+ END IF;
  RETURN NEW;
 END $$;
 CREATE TRIGGER booking_imported_group_guard BEFORE INSERT OR UPDATE OF reservation_group_id,unit_id,start_date,end_date,status ON booking

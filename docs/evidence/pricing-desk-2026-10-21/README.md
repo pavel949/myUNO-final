@@ -33,7 +33,7 @@ Apply this additive migration before deploying code that reads the column, throu
 - Chromium, real local Next.js + PostgreSQL: matrix category save, preservation of monthly prices, date-range category save, exact canonical-board source/price parity, and return unit/date context passed. 0 uncaught browser JavaScript errors. No document overflow at 390px. Primary date apply action visible in the initial 1440×1024 desktop viewport.
 - [Matrix](matrix.png), [calendar with selection](calendar.png), [mobile calendar/form](mobile.png). These contain explicitly local demonstration data, not production inventory.
 - Next development overlay reports the existing shared `getRequestLocale` synchronous `cookies()` compatibility warning from `src/lib/i18n.ts`, invoked by the unchanged root layout. It is not a pricing runtime exception; no application change was made to hide it.
-- Full `npm run build`: stopped before Next compilation by the existing content gate (`production_bypass_refused`) under local development configuration. The gate was not bypassed or relaxed. Production build/deploy/runtime acceptance remains unverified.
+- Full `npm run build` after integration with `d9f9673f`: passed using the existing explicit isolated CI mode, with equal DATABASE_URL/DATABASE_URL_TEST pointing to the local test database. This exercises the production compiler, lint/type validation and 84 static pages. Real production content-review/deploy/runtime acceptance remains unverified; no production gate was relaxed.
 - General `tsc` includes existing test/doc-fixture errors outside this task; production tsconfig is the repository's configured build check and passed.
 
 ## Remaining rollout work

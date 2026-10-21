@@ -4,7 +4,7 @@ The user explicitly requested production migration and publication. The code was
 
 The pricing migration is now included in the existing protected migration policy, pinned to SHA-256 `2e4c95a17b5318716b4cf3d1554c079277167a67518e2985a090026c3b76c414`. This permits only the exact additive SQL; target validation, exact-main CI, backup/restore and financial parity gates are unchanged. It does not itself execute a migration.
 
-After integration: 155 focused/regression tests passed; 14 migration policy/preflight checks passed; complete repository ESLint and production-tsconfig typecheck passed. The migration chain was applied to isolated local development/test databases only.
+After integration: 155 focused/regression tests passed; 14 migration policy/preflight checks passed; complete repository ESLint, production-tsconfig typecheck and full isolated production compilation passed. The full build used the existing explicit CI/test-database isolation mode; it does not prove production registry review or production deployment readiness. The migration chain was applied to isolated local development/test databases only.
 
 ## Verified publication-target mismatch
 

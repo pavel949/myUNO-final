@@ -1,5 +1,5 @@
 {
-  "codeRevision": "46f04a32b04fca66ec4c3134eea7685656822020",
+  "codeRevision": "e1e8fe4e3f5c41722ad54e1894da6057b401706b",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,7 +7,7 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 571,
+    "tests": 572,
     "prismaModels": 118,
     "migrations": 95,
     "routeCollisions": 0
@@ -2595,8 +2595,8 @@
     },
     {
       "name": "core",
-      "files": 72,
-      "testFiles": 44
+      "files": 73,
+      "testFiles": 45
     },
     {
       "name": "crm",
@@ -3353,6 +3353,7 @@
     "src/modules/core/authority.alias.test.ts",
     "src/modules/core/availability-overrides.integration.test.ts",
     "src/modules/core/availability.service.test.ts",
+    "src/modules/core/booking-occupancy.test.ts",
     "src/modules/core/canonical-calendar-rate.test.ts",
     "src/modules/core/canonical-pricing.integration.test.ts",
     "src/modules/core/claim-concurrency.integration.test.ts",

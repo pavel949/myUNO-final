@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46f04a32b04fca66ec4c3134eea7685656822020`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `e1e8fe4e3f5c41722ad54e1894da6057b401706b`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 571 |
+| tests | 572 |
 | prismaModels | 118 |
 | migrations | 95 |
 | routeCollisions | 0 |
@@ -684,7 +684,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### core
 
-Файлов: 72; тестовых файлов: 44. [Описание](../../src/modules/core/README.md).
+Файлов: 73; тестовых файлов: 45. [Описание](../../src/modules/core/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -6579,6 +6579,7 @@ model RateLimitBucket {
 - [src/modules/core/authority.alias.test.ts](<../../src/modules/core/authority.alias.test.ts>)
 - [src/modules/core/availability-overrides.integration.test.ts](<../../src/modules/core/availability-overrides.integration.test.ts>)
 - [src/modules/core/availability.service.test.ts](<../../src/modules/core/availability.service.test.ts>)
+- [src/modules/core/booking-occupancy.test.ts](<../../src/modules/core/booking-occupancy.test.ts>)
 - [src/modules/core/canonical-calendar-rate.test.ts](<../../src/modules/core/canonical-calendar-rate.test.ts>)
 - [src/modules/core/canonical-pricing.integration.test.ts](<../../src/modules/core/canonical-pricing.integration.test.ts>)
 - [src/modules/core/claim-concurrency.integration.test.ts](<../../src/modules/core/claim-concurrency.integration.test.ts>)

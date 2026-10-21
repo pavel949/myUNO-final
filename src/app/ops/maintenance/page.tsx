@@ -24,6 +24,7 @@ export default async function MaintenanceWorkspace(props:{searchParams?: Promise
 
 
   const labels=await getLabels({
+    'staff.maintenance.schedule_hint':'Schedule on time is the share of active preventive plans not overdue. It does not certify that a unit is ready for guests.',
     'staff.maintenance.title':'Maintenance',
     'staff.maintenance.recurring_unavailable':'New recurring plans are unavailable while scheduled scope and assignment checks are being completed. Use manual tasks for daily work.',
     'staff.maintenance.subtitle':'Open work and recurring preventive plans in this operating space.',
@@ -84,7 +85,7 @@ export default async function MaintenanceWorkspace(props:{searchParams?: Promise
         <p className="mt-4 text-small text-text-secondary">{metric.detail}</p>
       </article>)}
     </section>
-    <p className="text-small text-text-secondary">Schedule on time is the share of active preventive plans not overdue. It does not certify that a unit is ready for guests.</p>
+    <p className="text-small text-text-secondary">{labels['staff.maintenance.schedule_hint']}</p>
     <p className="stitch-panel p-16 text-small text-text-secondary">{labels['staff.maintenance.recurring_unavailable']}</p>
     <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.open']}</h2><div className="mt-12 grid gap-12 md:grid-cols-2 xl:grid-cols-3">{tasks.map(task=><article key={task.id} className="stitch-panel p-16"><div className="flex items-start justify-between gap-8"><p className="text-small font-semibold text-brand-andaman">{task.unit.project.name}</p><OpsStatusPill tone={opsStateTone(task.status)}>{task.status.replace(/_/g,' ')}</OpsStatusPill></div><h3 className="mt-4 font-display text-heading-3 font-semibold"><Link href={'/ops/tasks?' + new URLSearchParams({ spaceId, unitId: task.unit.id }) + '#task-' + encodeURIComponent(task.id)} className="text-brand-andaman hover:underline">{task.title||task.taskType.replace(/_/g,' ')}</Link></h3><p className="mt-8 text-small text-text-secondary font-tabular">{task.unit.name} · {task.dueAt.toISOString().slice(0,16).replace('T',' ')}</p></article>)}</div></section>
     <section><h2 className="font-display text-heading-2 font-semibold">{labels['staff.maintenance.preventive']}</h2><div className="stitch-panel mt-12 overflow-hidden">{plans.map(plan=><article key={plan.id} className="grid gap-8 border-b border-border-line p-16 transition last:border-0 hover:bg-surface-ivory md:grid-cols-4"><div><p className="font-semibold">{plan.title}</p><p className="text-small text-text-secondary">{plan.unit?plan.unit.project.name+' · '+plan.unit.name:'All scoped homes'}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.frequency']}</p><p className="font-tabular">{plan.frequencyDays} {labels['staff.maintenance.days']}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.next_due']}</p><p className="font-tabular">{plan.nextDueAt.toISOString().slice(0,10)}</p></div><div><p className="text-small text-text-secondary">{labels['staff.maintenance.assigned']}</p><p>{plan.assignedTeam?.name||[plan.assignee?.firstName,plan.assignee?.lastName].filter(Boolean).join(' ')||'—'}</p></div></article>)}</div></section>

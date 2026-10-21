@@ -203,7 +203,7 @@ export default function UnifiedStayCalendar(props: Props) {
       <label className="inline-flex items-center gap-8 text-small font-semibold text-text-ink">
         <input type="checkbox" checked={attentionOnly} onChange={event=>setAttentionOnly(event.target.checked)}
           className="h-16 w-16 accent-brand-andaman" />
-        Attention only: conflicts, readiness blockers and channel errors
+        {props.labels['staff.unified_calendar.attention_only']}
       </label>
       <section aria-label="Calendar filters" className="stitch-panel p-16 md:p-24">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 xl:grid-cols-4">

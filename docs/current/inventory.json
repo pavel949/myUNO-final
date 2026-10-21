@@ -1,5 +1,5 @@
 {
-  "codeRevision": "89a7d53feba62bdb6b1c89ea5b46bb63559d7df6",
+  "codeRevision": "f513f26ffd14c9a5579f93065033c4c1a1a58445",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,7 +7,7 @@
     "handlers": 256,
     "apiHandlers": 251,
     "modules": 22,
-    "tests": 573,
+    "tests": 575,
     "prismaModels": 122,
     "migrations": 96,
     "routeCollisions": 0
@@ -2655,8 +2655,8 @@
     },
     {
       "name": "core",
-      "files": 72,
-      "testFiles": 44
+      "files": 73,
+      "testFiles": 45
     },
     {
       "name": "crm",
@@ -2695,8 +2695,8 @@
     },
     {
       "name": "ops",
-      "files": 36,
-      "testFiles": 19
+      "files": 38,
+      "testFiles": 20
     },
     {
       "name": "projects",
@@ -3423,6 +3423,7 @@
     "src/modules/core/authority.alias.test.ts",
     "src/modules/core/availability-overrides.integration.test.ts",
     "src/modules/core/availability.service.test.ts",
+    "src/modules/core/booking-occupancy.test.ts",
     "src/modules/core/canonical-calendar-rate.test.ts",
     "src/modules/core/canonical-pricing.integration.test.ts",
     "src/modules/core/claim-concurrency.integration.test.ts",
@@ -3543,6 +3544,7 @@
     "src/modules/ops/operational-task.service.test.ts",
     "src/modules/ops/ops-board-calendar.integration.test.ts",
     "src/modules/ops/ops-board.service.integration.test.ts",
+    "src/modules/ops/pms-automation-rules.test.ts",
     "src/modules/ops/pms-operations-expansion.test.ts",
     "src/modules/ops/reservation-guests.integration.test.ts",
     "src/modules/ops/tm30-address.test.ts",

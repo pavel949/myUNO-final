@@ -130,6 +130,8 @@ export default async function ProjectLandingPage(
 
   const labelsPromise = getLabels({
     'project_page.availability.title': 'Check availability',
+    'project_page.hero.primary': 'Explore accommodation',
+    'project_page.hero.secondary': 'Ask about your stay'
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
     'project_page.styles.generic_title': 'Property styles',
@@ -366,6 +368,25 @@ export default async function ProjectLandingPage(
           title={project.name}
           subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
         />
+        {editorial.lead ? (
+          <div className="mb-24 mt-16 max-w-3xl">
+            <p className="text-body leading-relaxed text-text-secondary">{editorial.lead}</p>
+            <div className="mt-20 flex flex-wrap gap-12">
+              <Link prefetch={false}
+                href={bookableStayCount > 0 ? '#availability' : project.categories.length > 0 ? '#categories' : '#homes'}
+                className="inline-flex min-h-48 items-center justify-center rounded-md bg-brand-andaman px-24 py-12 text-small font-semibold text-white transition hover:bg-brand-deep"
+              >
+                {bookableStayCount > 0 ? labels['project_page.availability.title'] : labels['project_page.hero.primary']}
+              </Link>
+              <Link prefetch={false}
+                href="#lead-form"
+                className="inline-flex min-h-48 items-center justify-center rounded-md border border-border-line bg-surface-paper px-24 py-12 text-small font-semibold text-brand-andaman transition hover:shadow-card"
+              >
+                {labels['project_page.hero.secondary']}
+              </Link>
+            </div>
+          </div>
+        ) : null}
         {projectPhotos.length > 0 ? (
           <UnitPhotoMosaic galleryLabels={galleryLabels}
             images={projectPhotos}

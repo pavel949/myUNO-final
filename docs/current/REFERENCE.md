@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46f04a32b04fca66ec4c3134eea7685656822020`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `89a7d53feba62bdb6b1c89ea5b46bb63559d7df6`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -10,13 +10,13 @@
 
 | Объект | Количество |
 |---|---:|
-| pages | 174 |
-| handlers | 248 |
-| apiHandlers | 245 |
-| modules | 21 |
-| tests | 571 |
-| prismaModels | 118 |
-| migrations | 95 |
+| pages | 176 |
+| handlers | 256 |
+| apiHandlers | 251 |
+| modules | 22 |
+| tests | 573 |
+| prismaModels | 122 |
+| migrations | 96 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -144,6 +144,8 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/ops/refunds` | ops | [src/app/ops/refunds/page.tsx](<../../src/app/ops/refunds/page.tsx>) |
 | `/ops/requests` | ops | [src/app/ops/requests/page.tsx](<../../src/app/ops/requests/page.tsx>) |
 | `/ops/reservations` | ops | [src/app/ops/reservations/page.tsx](<../../src/app/ops/reservations/page.tsx>) |
+| `/ops/sales` | ops | [src/app/ops/sales/page.tsx](<../../src/app/ops/sales/page.tsx>) |
+| `/ops/sales/[id]` | ops | [src/app/ops/sales/[id]/page.tsx](<../../src/app/ops/sales/[id]/page.tsx>) |
 | `/ops/spaces` | ops | [src/app/ops/spaces/page.tsx](<../../src/app/ops/spaces/page.tsx>) |
 | `/ops/spaces/[spaceId]` | ops | [src/app/ops/spaces/[spaceId]/page.tsx](<../../src/app/ops/spaces/[spaceId]/page.tsx>) |
 | `/ops/stays` | ops | [src/app/ops/stays/page.tsx](<../../src/app/ops/stays/page.tsx>) |
@@ -394,6 +396,11 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/ops/reservation-groups` | POST | [src/app/api/ops/reservation-groups/route.ts](<../../src/app/api/ops/reservation-groups/route.ts>) |
 | `/api/ops/reservation-guests` | POST | [src/app/api/ops/reservation-guests/route.ts](<../../src/app/api/ops/reservation-guests/route.ts>) |
 | `/api/ops/reservations` | POST | [src/app/api/ops/reservations/route.ts](<../../src/app/api/ops/reservations/route.ts>) |
+| `/api/ops/sales-offers` | POST | [src/app/api/ops/sales-offers/route.ts](<../../src/app/api/ops/sales-offers/route.ts>) |
+| `/api/ops/sales-offers/[id]/preview` | POST | [src/app/api/ops/sales-offers/[id]/preview/route.ts](<../../src/app/api/ops/sales-offers/[id]/preview/route.ts>) |
+| `/api/ops/sales-offers/[id]/request` | POST | [src/app/api/ops/sales-offers/[id]/request/route.ts](<../../src/app/api/ops/sales-offers/[id]/request/route.ts>) |
+| `/api/ops/sales-offers/[id]/shares` | POST, DELETE | [src/app/api/ops/sales-offers/[id]/shares/route.ts](<../../src/app/api/ops/sales-offers/[id]/shares/route.ts>) |
+| `/api/ops/sales-offers/search` | POST | [src/app/api/ops/sales-offers/search/route.ts](<../../src/app/api/ops/sales-offers/search/route.ts>) |
 | `/api/ops/tasks` | POST | [src/app/api/ops/tasks/route.ts](<../../src/app/api/ops/tasks/route.ts>) |
 | `/api/ops/tasks/[id]` | PATCH | [src/app/api/ops/tasks/[id]/route.ts](<../../src/app/api/ops/tasks/[id]/route.ts>) |
 | `/api/ops/team` | GET, POST, DELETE | [src/app/api/ops/team/route.ts](<../../src/app/api/ops/team/route.ts>) |
@@ -415,6 +422,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/property-content-proposals/target` | GET | [src/app/api/property-content-proposals/target/route.ts](<../../src/app/api/property-content-proposals/target/route.ts>) |
 | `/api/property-creation` | GET, POST, PATCH | [src/app/api/property-creation/route.ts](<../../src/app/api/property-creation/route.ts>) |
 | `/api/property-submissions` | GET, POST, PATCH | [src/app/api/property-submissions/route.ts](<../../src/app/api/property-submissions/route.ts>) |
+| `/api/proposals/view` | POST | [src/app/api/proposals/view/route.ts](<../../src/app/api/proposals/view/route.ts>) |
 | `/api/provider/me` | GET | [src/app/api/provider/me/route.ts](<../../src/app/api/provider/me/route.ts>) |
 | `/api/provider/orders` | GET | [src/app/api/provider/orders/route.ts](<../../src/app/api/provider/orders/route.ts>) |
 | `/api/provider/remittances` | GET | [src/app/api/provider/remittances/route.ts](<../../src/app/api/provider/remittances/route.ts>) |
@@ -456,6 +464,8 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/units/[unitId]/pricing-rules/[ruleId]` | DELETE | [src/app/api/units/[unitId]/pricing-rules/[ruleId]/route.ts](<../../src/app/api/units/[unitId]/pricing-rules/[ruleId]/route.ts>) |
 | `/api/webhooks/opn` | POST | [src/app/api/webhooks/opn/route.ts](<../../src/app/api/webhooks/opn/route.ts>) |
 | `/llms.txt` | GET | [src/app/llms.txt/route.ts](<../../src/app/llms.txt/route.ts>) |
+| `/proposal` | GET | [src/app/proposal/route.ts](<../../src/app/proposal/route.ts>) |
+| `/sales-preview/[id]` | GET | [src/app/sales-preview/[id]/route.ts](<../../src/app/sales-preview/[id]/route.ts>) |
 
 ## Все модули: runtime, exports и тесты
 
@@ -610,7 +620,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 75; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 76; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -669,6 +679,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/reservation-desk.seed.ts](<../../src/modules/content/reservation-desk.seed.ts>) | seed | `RESERVATION_DESK_KEYS` |
 | [src/modules/content/reservation-guest.seed.ts](<../../src/modules/content/reservation-guest.seed.ts>) | seed | `RESERVATION_GUEST_LABELS`, `RESERVATION_GUEST_DRAFTS`, `RESERVATION_GUEST_KEYS` |
 | [src/modules/content/role-dashboards.seed.ts](<../../src/modules/content/role-dashboards.seed.ts>) | seed | `ROLE_DASHBOARD_KEYS` |
+| [src/modules/content/sales-offer.seed.ts](<../../src/modules/content/sales-offer.seed.ts>) | seed | `SALES_LABELS`, `SALES_DRAFTS`, `SALES_KEYS`, `salesDefaults` |
 | [src/modules/content/seed.ts](<../../src/modules/content/seed.ts>) | seed | `seedContent` |
 | [src/modules/content/session-security.seed.ts](<../../src/modules/content/session-security.seed.ts>) | seed | `SESSION_SECURITY_KEYS` |
 | [src/modules/content/sleeping-space.seed.ts](<../../src/modules/content/sleeping-space.seed.ts>) | seed | `SLEEPING_SPACE_KEYS`, `sleepingSpaceLabelsForLocale`, `SLEEPING_SPACE_LOCALE_DRAFTS` |
@@ -926,6 +937,22 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/projects/unit-marketing-title.ts](<../../src/modules/projects/unit-marketing-title.ts>) | implementation | `resolveUnitMarketingTitleKey` |
 | [src/modules/projects/unit-publication-readiness.ts](<../../src/modules/projects/unit-publication-readiness.ts>) | implementation | `getUnitPublicationReadiness` |
 | [src/modules/projects/units.ts](<../../src/modules/projects/units.ts>) | implementation | `createUnit`, `getUnit`, `listUnits`, `updateUnit`, `confirmPermittedUse`, `getUnitDetail` |
+
+<a id="module-sales-offers"></a>
+
+### sales-offers
+
+Файлов: 10; тестовых файлов: 2. [Описание](../../src/modules/sales-offers/README.md).
+
+| Исходник | Вид | Named declarations |
+|---|---|---|
+| [src/modules/sales-offers/contracts.ts](<../../src/modules/sales-offers/contracts.ts>) | implementation | `OfferError`, `parseStay` |
+| [src/modules/sales-offers/http.ts](<../../src/modules/sales-offers/http.ts>) | implementation | `offerResponse`, `offerFailure` |
+| [src/modules/sales-offers/offer.service.ts](<../../src/modules/sales-offers/offer.service.ts>) | implementation | `quoteOption`, `searchOffers`, `createOffer`, `readOffer`, `guestProjection`, `sanitizeOption`, `revalidateOffer`, `requestOfferBooking` |
+| [src/modules/sales-offers/presentation.ts](<../../src/modules/sales-offers/presentation.ts>) | implementation | `offerMoney`, `offerText`, `priceRows` |
+| [src/modules/sales-offers/public-shell.ts](<../../src/modules/sales-offers/public-shell.ts>) | implementation | `proposalShell` |
+| [src/modules/sales-offers/share.service.ts](<../../src/modules/sales-offers/share.service.ts>) | implementation | `issueOfferShare`, `revokeOfferShare`, `viewOfferShare` |
+| [src/modules/sales-offers/tariff-provenance.ts](<../../src/modules/sales-offers/tariff-provenance.ts>) | implementation | `SALES_PRICING_CONTRACT`, `stableHash`, `tariffFingerprint` |
 
 <a id="module-services"></a>
 
@@ -2308,6 +2335,9 @@ enum JobRunOutcome {
 
 ```prisma
 model Identity {
+  salesValidations SalesTariffValidation[]
+  salesOffers SalesOffer[]
+  salesOfferShares SalesOfferShare[]
   reservationGroupsAsGuest   ReservationGroup[] @relation("reservationGroupGuest")
   reservationGroupsCreated   ReservationGroup[] @relation("reservationGroupCreator")
   preventiveMaintenancePlansAssigned PreventiveMaintenancePlan[] @relation("preventivePlanAssignee")
@@ -2592,6 +2622,8 @@ model Project {
 
 ```prisma
 model Unit {
+  salesValidations SalesTariffValidation[]
+  salesOfferOptions SalesOfferOption[]
   /// Stable public marketing title; null retains the legacy description-derived key.
   marketingTitleKey String? @map("marketing_title_key")
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
@@ -5842,6 +5874,7 @@ model UnitAccessInstruction {
 
 ```prisma
 model OperatingSpace {
+  salesOffers SalesOffer[]
   reservationGroups ReservationGroup[]
   operationalTasks OperationalTask[]
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
@@ -6007,6 +6040,96 @@ model RateLimitBucket {
 }
 ```
 
+### model SalesTariffValidation
+
+```prisma
+model SalesTariffValidation {
+  id String @id @default(uuid())
+  unitId String @map("unit_id")
+  fingerprint String
+  ruleVersion String @map("rule_version")
+  evidenceRef String @map("evidence_ref")
+  reviewedByIdentityId String @map("reviewed_by_identity_id")
+  validFrom DateTime @map("valid_from") @db.Date
+  validThrough DateTime @map("valid_through") @db.Date
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  currency String
+  createdAt DateTime @default(now()) @map("created_at")
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  reviewer Identity @relation(fields: [reviewedByIdentityId], references: [id], onDelete: Restrict)
+  options SalesOfferOption[]
+  @@index([unitId, fingerprint])
+  @@index([reviewedByIdentityId])
+  @@map("sales_tariff_validation")
+}
+```
+
+### model SalesOffer
+
+```prisma
+model SalesOffer {
+  id String @id @default(uuid())
+  seriesId String @map("series_id")
+  version Int
+  operatingSpaceId String @map("operating_space_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  locale String
+  clientNote String @map("client_note")
+  salespersonName String @map("salesperson_name")
+  options SalesOfferOption[]
+  shares SalesOfferShare[]
+  space OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Restrict)
+  salesperson Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  @@unique([seriesId, version])
+  @@index([operatingSpaceId, createdAt])
+  @@index([createdByIdentityId])
+  @@map("sales_offer")
+}
+```
+
+### model SalesOfferOption
+
+```prisma
+model SalesOfferOption {
+  id String @id @default(uuid())
+  offerId String @map("offer_id")
+  position Int
+  unitId String @map("unit_id")
+  validationId String? @map("validation_id")
+  fingerprint String
+  snapshot Json @db.JsonB
+  offer SalesOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  validation SalesTariffValidation? @relation(fields: [validationId], references: [id], onDelete: Restrict)
+  @@unique([offerId, position])
+  @@index([unitId])
+  @@index([validationId])
+  @@map("sales_offer_option")
+}
+```
+
+### model SalesOfferShare
+
+```prisma
+model SalesOfferShare {
+  id String @id @default(uuid())
+  offerId String @map("offer_id")
+  tokenHash String @unique @map("token_hash")
+  createdByIdentityId String @map("created_by_identity_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  offer SalesOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  creator Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  @@index([offerId])
+  @@index([createdByIdentityId])
+  @@map("sales_offer_share")
+}
+```
+
 ## Все миграции
 
 Наличие файла не доказывает production application. Не править исторические SQL; apply/reconcile отдельно.
@@ -6106,6 +6229,7 @@ model RateLimitBucket {
 - [prisma/migrations/20261015080331_pricing_editor_role/migration.sql](<../../prisma/migrations/20261015080331_pricing_editor_role/migration.sql>)
 - [prisma/migrations/20261015120347_property_capability_delegation/migration.sql](<../../prisma/migrations/20261015120347_property_capability_delegation/migration.sql>)
 - [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
+- [prisma/migrations/20261021140000_sales_offer_desk/migration.sql](<../../prisma/migrations/20261021140000_sales_offer_desk/migration.sql>)
 
 <a id="environment"></a>
 
@@ -6129,8 +6253,9 @@ model RateLimitBucket {
 | `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
-| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
 | `CHROMIUM_EXECUTABLE_PATH` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
+| `CHROMIUM_PATH` | [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>) |
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
@@ -6158,7 +6283,7 @@ model RateLimitBucket {
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/login/google-login-button.tsx](<../../src/app/login/google-login-button.tsx>), [src/app/login/login-form.tsx](<../../src/app/login/login-form.tsx>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_MYUNO_DESTINATION` | [src/modules/destinations/index.ts](<../../src/modules/destinations/index.ts>) |
 | `NEXT_PUBLIC_VERCEL_BLOB_API_URL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
-| `NEXTAUTH_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
+| `NEXTAUTH_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>), [.env.example](<../../.env.example>) |
 | `NEXTAUTH_URL` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/api/auth/claim/generate-link/route.ts](<../../src/app/api/auth/claim/generate-link/route.ts>), [src/app/api/auth/guest-access/route.ts](<../../src/app/api/auth/guest-access/route.ts>), [src/app/libs/bookingCancelled.ts](<../../src/app/libs/bookingCancelled.ts>), [src/app/libs/bookingConfirmed.ts](<../../src/app/libs/bookingConfirmed.ts>), [src/lib/seo.ts](<../../src/lib/seo.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>), [src/modules/booking/lifecycle.jobs.ts](<../../src/modules/booking/lifecycle.jobs.ts>), [src/modules/booking/notify-modified.ts](<../../src/modules/booking/notify-modified.ts>), [src/modules/booking/notify-request-reminder.ts](<../../src/modules/booking/notify-request-reminder.ts>), [src/modules/booking/notify-requested.ts](<../../src/modules/booking/notify-requested.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/projects/notify-owner-stay.ts](<../../src/modules/projects/notify-owner-stay.ts>), [src/modules/services/notify-order-reminder.ts](<../../src/modules/services/notify-order-reminder.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `NODE_ENV` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/app/global-error.tsx](<../../src/app/global-error.tsx>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [src/middleware.ts](<../../src/middleware.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/content/content.hook.ts](<../../src/modules/content/content.hook.ts>), [src/modules/content/content.service.ts](<../../src/modules/content/content.service.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
 | `OMISE_PUBLIC_KEY` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
@@ -6175,7 +6300,7 @@ model RateLimitBucket {
 | `RESEND_API_KEY` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `SCHEDULER_MODE` | [src/jobs/registry.ts](<../../src/jobs/registry.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `SCRATCH_DATABASE_URL` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
-| `SESSION_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [.env.example](<../../.env.example>) |
+| `SESSION_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>), [.env.example](<../../.env.example>) |
 | `SUPABASE_PROJECT_REF` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `UNIFIED_BOOKING_INTAKE_ENABLED` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
 | `UNIFIED_CHANNEL_ENVIRONMENT` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
@@ -6748,6 +6873,8 @@ model RateLimitBucket {
 - [src/modules/projects/unit-project-coherence.integration.test.ts](<../../src/modules/projects/unit-project-coherence.integration.test.ts>)
 - [src/modules/projects/unit-publication-readiness.test.ts](<../../src/modules/projects/unit-publication-readiness.test.ts>)
 - [src/modules/projects/units.integration.test.ts](<../../src/modules/projects/units.integration.test.ts>)
+- [src/modules/sales-offers/http.integration.test.ts](<../../src/modules/sales-offers/http.integration.test.ts>)
+- [src/modules/sales-offers/offer.integration.test.ts](<../../src/modules/sales-offers/offer.integration.test.ts>)
 - [src/modules/services/notify-order-reminder.integration.test.ts](<../../src/modules/services/notify-order-reminder.integration.test.ts>)
 - [src/modules/services/project-service-offer.test.ts](<../../src/modules/services/project-service-offer.test.ts>)
 - [src/modules/services/provider.service.integration.test.ts](<../../src/modules/services/provider.service.integration.test.ts>)

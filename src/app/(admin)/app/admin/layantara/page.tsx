@@ -26,7 +26,7 @@ const IMPORT_LABELS = {
   "admin.layantara_import.party_unknown": "Party size not provided",
   "admin.layantara_import.allocation_required": "Allocation required",
   "admin.layantara_import.source_only": "Source report only \u00b7 reconciliation pending",
-  "admin.layantara_import.body_reviewed": "Preview without saving. Reviewed source mode converts only explicitly reviewed protection blocks into confirmed bookings. Source payment labels do not create receipts; collection is paused pending reconciliation. Unallocated multi-villa and cancelled stays remain deferred.",
+  "admin.layantara_import.body_reviewed": "Preview without saving. Reviewed source mode converts only explicitly reviewed protection blocks into confirmed bookings. Source payment labels do not create receipts; collection is paused pending reconciliation. Reviewed groups retain one source quote and protected villa placements; per-villa amounts remain unknown and financial actions unavailable. Cancelled stays remain deferred.",
   "admin.layantara_import.reason.source_status_deferred": "Source status is deferred; existing protection preserved",
   "admin.layantara_import.reason.source_unit_allocation_required": "Per-villa sold amount is not verified; no allocation invented",
   "admin.layantara_import.reason.source_review_missing": "No reviewed source entry; stay deferred",
@@ -113,7 +113,7 @@ export default async function LayantaraOperationsPage() {
 
   // Only aggregates are shown here: no guest names, passport, finance details or
   // secret source payloads are exposed to browser clients.
-  const [audit, sourceStates, specifications, mapped, blockers, unitCount, categoryCount, bookings, project, labels, importLabels, sourceSystem] =
+  const [audit, sourceStates, specifications, mapped, blockers, unitCount, categoryCount, bookings, importedGroups, importedPlacements, project, labels, importLabels, sourceSystem] =
     await Promise.all([
       // The source snapshot schema exists only where the import ran.
       prisma.$queryRaw<SourceAudit[]>`SELECT source_table, source_count, copied_count, verified FROM layantara_copy.import_audit ORDER BY source_table`.catch(() => [] as SourceAudit[]),
@@ -124,6 +124,8 @@ export default async function LayantaraOperationsPage() {
       scoped(id => prisma.unit.count({where:{projectId:id}}), 0),
       scoped(id => prisma.inventoryCategory.count({where:{projectId:id}}), 0),
       scoped(id => prisma.booking.count({where:{projectId:id}}), 0),
+      scoped(id => prisma.importedReservationSource.count({where:{projectId:id}}), 0),
+      scoped(id => prisma.importedReservationPlacement.count({where:{source:{projectId:id}}}), 0),
       scoped(id => prisma.project.findUnique({where:{id},select:{name:true,status:true}}), null),
       getLabels({
         'admin.layantara.title':'Layan Tara Villas · operations',
@@ -133,7 +135,9 @@ export default async function LayantaraOperationsPage() {
         'admin.layantara.units':'Physical villas',
         'admin.layantara.mappings':'Verified identity mappings',
         'admin.layantara.protection':'Protective occupancy blocks',
-        'admin.layantara.canonical':'Canonical bookings',
+        'admin.layantara.canonical':'Canonical Booking records',
+        'admin.layantara.imported_groups':'Imported source groups · allocation pending',
+        'admin.layantara.imported_placements':'Protected group placements · not Booking records',
         'admin.layantara.snapshots':'Source reconciliation',
         'admin.layantara.verified':'Verified records',
         'admin.layantara.source_occupancy':'Occupancy sources',
@@ -164,6 +168,8 @@ export default async function LayantaraOperationsPage() {
     [labels['admin.layantara.mappings'],mapped],
     [labels['admin.layantara.protection'],blockers],
     [labels['admin.layantara.canonical'],bookings],
+    [labels['admin.layantara.imported_groups'],importedGroups],
+    [labels['admin.layantara.imported_placements'],importedPlacements],
     [labels['admin.layantara.verified'],approved + ' / ' + audit.length],
   ];
   return <main className="space-y-24">

@@ -80,7 +80,7 @@ describe('Layantara reservations workbook import', () => {
   });
 
   const safeRows = rows.filter(row => !['RES-0001', 'RES-0005'].includes(row.ref))
-    .map(row => ({ ...row, payment: 'Unpaid', paid: 0 }));
+    .map(row => ({ ...row, payment: 'Unpaid', paid: 0, adults: row.adults ?? 2, children: row.children ?? 0 }));
   const snapshot = async () => ({
     identities: await db.identity.findMany({ orderBy: { id: 'asc' } }),
     systems: await db.externalSystem.findMany({ orderBy: { id: 'asc' } }),
@@ -279,6 +279,47 @@ describe('Layantara reservations workbook import', () => {
     expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
   });
 
+  it('imports a reviewed new placement without deleting protection or inventing party/payment facts', async () => {
+    const { parsed, block, manifest } = await reviewedPlan();
+    await db.blockedDate.delete({ where: { id: block.id } }); // isolated synthetic DB only
+    manifest.entries[0].block = null;
+    parsed.rows[0].operationalDetails = { notes: 'Synthetic late arrival', contact: 'synthetic@example.test' };
+    manifest.entries[0].operationalDetails = parsed.rows[0].operationalDetails;
+    const { evidenceDigest } = await import('./reviewed-workbook');
+    manifest.entries[0].rowDigest = evidenceDigest({ row: parsed.rows[0], source: parsed.sourcePayments[0] });
+    await db.externalSystem.update({ where: { id: systemId }, data: { config: {
+      bookingAuthority: 'myuno', cutoverVerified: true, reviewedWorkbookImport: manifest,
+    } } });
+    const plan = await planWorkbookImport(db, parsed, TODAY, { reviewedSource: true, currentOnly: true });
+    expect(plan.applyBlockers).toEqual([]);
+    const result = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
+    expect(result.applied[0].status).toBe('processed');
+    const booking = await db.booking.findUniqueOrThrow({ where: { id: result.applied[0].bookingId! } });
+    expect(booking).toMatchObject({ adults: 0, children: 0, partyDetailsStatus: 'source_unknown',
+      receivableStatus: 'pending_reconciliation', internalNote: 'Synthetic late arrival' });
+    expect(booking.priceBreakdown).toMatchObject({ sourceOperationalEvidence: { contact: 'synthetic@example.test' } });
+    expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
+    const replay = await planWorkbookImport(db, parsed, TODAY, { reviewedSource: true, currentOnly: true });
+    expect((await applyWorkbookImport(db, replay, { actorIdentityId: admin, now: TODAY })).applied[0].status).toBe('duplicate');
+    expect(await db.booking.count()).toBe(1);
+  });
+
+  it('does not consume a protection inserted after a reviewed empty-calendar preview', async () => {
+    const { parsed, block, manifest } = await reviewedPlan();
+    await db.blockedDate.delete({ where: { id: block.id } }); // isolated synthetic DB only
+    manifest.entries[0].block = null;
+    await db.externalSystem.update({ where: { id: systemId }, data: { config: {
+      bookingAuthority: 'myuno', cutoverVerified: true, reviewedWorkbookImport: manifest,
+    } } });
+    const plan = await planWorkbookImport(db, parsed, TODAY, { reviewedSource: true });
+    const late = await db.blockedDate.create({ data: { unitId: a10, startDate: new Date('2026-11-06'),
+      endDate: new Date('2026-11-14'), reason: 'maintenance', note: 'Synthetic concurrent operator edit' } });
+    const result = await applyWorkbookImport(db, plan, { actorIdentityId: admin, now: TODAY });
+    expect(result.applied[0]).toMatchObject({ status: 'quarantined', code: 'workbook_review_block_changed' });
+    expect(await db.blockedDate.findUnique({ where: { id: late.id } })).not.toBeNull();
+    expect(await db.booking.count()).toBe(0);
+  });
+
   it('rejects wrong workbook bytes and mutated source facts without writes', async () => {
     const { parsed } = await reviewedPlan();
     const before = await snapshot();
@@ -353,6 +394,27 @@ describe('Layantara reservations workbook import', () => {
       partyDetailsStatus: expected, adults, children, receivableStatus: 'pending_reconciliation',
     });
     expect(await db.payment.count()).toBe(0); expect(await db.ledgerEntry.count()).toBe(0);
+  });
+
+  it.each(['preview','apply'])('v3 single protection preserves concurrent note changes during %s', async phase => {
+    const { parsed,block,manifest }=await reviewedPlan();
+    manifest.version=3;manifest.sourceSnapshot={spreadsheetId:'synthetic-sheet',modifiedAt:'2026-10-21T00:00:00Z',capturedAt:'2026-10-21T00:01:00Z',timezone:'Asia/Bangkok'};
+    manifest.entries[0].block={...manifest.entries[0].block!,note:block.note,updatedAt:block.updatedAt.toISOString()};
+    await db.externalSystem.update({where:{id:systemId},data:{config:JSON.parse(JSON.stringify({bookingAuthority:'myuno',cutoverVerified:true,reviewedWorkbookImport:manifest}))}});
+    const plan=await planWorkbookImport(db,parsed,TODAY,{reviewedSource:true});
+    await db.blockedDate.update({where:{id:block.id},data:{note:'Synthetic concurrent operator note'}});
+    if(phase==='preview')expect((await planWorkbookImport(db,parsed,TODAY,{reviewedSource:true})).applyBlockers)
+      .toContainEqual(expect.objectContaining({message:'source_review_block_changed'}));
+    else expect((await applyWorkbookImport(db,plan,{actorIdentityId:admin,now:TODAY})).applied[0])
+      .toMatchObject({status:'quarantined',code:'workbook_review_block_changed'});
+    expect(await db.booking.count()).toBe(0);expect((await db.blockedDate.findUniqueOrThrow({where:{id:block.id}})).note).toBe('Synthetic concurrent operator note');
+  });
+  it('quarantines a legacy mixed-case booking mapping instead of creating a second source booking', async () => {
+    const {parsed}=await reviewedPlan();
+    await db.externalMapping.create({data:{external_system_id:systemId,entity_type:'booking',external_id:'Res-0001',internal_id:'synthetic-alias-booking'}});
+    const plan=await planWorkbookImport(db,parsed,TODAY,{reviewedSource:true});
+    expect(plan.applyBlockers).toContainEqual(expect.objectContaining({message:'source_reference_alias_requires_review'}));
+    expect(await db.booking.count()).toBe(0);
   });
 
 });

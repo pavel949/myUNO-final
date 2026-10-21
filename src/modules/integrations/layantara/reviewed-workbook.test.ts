@@ -57,3 +57,34 @@ describe('server-reviewed source manifest', () => {
   });
 
 });
+
+describe('reviewed new reservation without historical protection', () => {
+  it('requires explicit null and binds operational evidence to the review digest', () => {
+    const m = { ...manifest, entries: [{ ...entry, block: null,
+      operationalDetails: { contact: 'synthetic@example.test', notes: 'Synthetic arrival request', breakfast: 'Included' } }] };
+    const context = { ...review, manifestDigest: evidenceDigest(m) };
+    expect(reviewedEntryForEvent({ reviewedWorkbookImport: m }, context, event).entry.block).toBeNull();
+    const changed = { ...m, entries: [{ ...m.entries[0], operationalDetails: { notes: 'Changed after review' } }] };
+    expect(() => reviewedEntryForEvent({ reviewedWorkbookImport: changed }, context, event)).toThrow();
+    const omitted = { ...m, entries: [{ ...m.entries[0], block: undefined }] };
+    expect(() => readReviewedWorkbook({ reviewedWorkbookImport: omitted }, m.workbookSha256)).toThrow();
+  });
+  it('rejects unbounded and unknown operational evidence fields', () => {
+    for (const details of [{ notes: 'x'.repeat(4001) }, { credential: 'not an allowed field' }]) {
+      expect(() => readReviewedWorkbook({ reviewedWorkbookImport: { ...manifest,
+        entries: [{ ...entry, operationalDetails: details }] } }, manifest.workbookSha256)).toThrow();
+    }
+  });
+});
+
+describe('source-bound review v2', () => {
+  it('requires a source timestamp and exact before-state for an existing protection', () => {
+    const m = { ...manifest, version: 2 as const };
+    expect(() => readReviewedWorkbook({ reviewedWorkbookImport: m }, m.workbookSha256)).toThrow();
+    const sourced = { ...m, sourceSnapshot: { spreadsheetId: 'synthetic-sheet', modifiedAt: '2026-10-21T00:00:00Z',
+      capturedAt: '2026-10-21T00:01:00Z', timezone: 'Asia/Bangkok' as const } };
+    expect(() => readReviewedWorkbook({ reviewedWorkbookImport: sourced }, m.workbookSha256)).toThrow();
+    const complete = { ...sourced, entries: [{ ...entry, block: { ...entry.block!, note: 'Synthetic source protection', updatedAt: '2026-10-20T00:00:00Z' } }] };
+    expect(readReviewedWorkbook({ reviewedWorkbookImport: complete }, m.workbookSha256)).toEqual(complete);
+  });
+});

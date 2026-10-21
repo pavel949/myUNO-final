@@ -21,7 +21,7 @@ export function buildReservationsWorkbook(rows: Array<Record<string, string | nu
         'Booking ID': r.ref, 'Channel / ช่องทาง': r.channel, 'Guest name / ชื่อลูกค้า': r.guest,
         'Check-in': serial(String(r.checkIn)), 'Check-out': serial(String(r.checkOut)), 'Rooms / ห้อง': r.rooms,
         'Revenue / รายได้': r.revenue, 'Booking status': r.status, 'Payment status': r.payment ?? 'Unpaid',
-        'Amount paid': r.paid ?? 0, 'Adults / ผู้ใหญ่': r.adults ?? null, 'Children / เด็ก': r.children ?? null,
+        'Amount paid': r.paid ?? 0, 'Contact': r.contact ?? null, 'Notes': r.notes ?? null, 'Adults / ผู้ใหญ่': r.adults ?? null, 'Children / เด็ก': r.children ?? null,
       };
       return `<row r="${n + 3}">${headers.map((h, i) => cell(letters[i] + (n + 3), values[h] ?? null)).join('')}</row>`;
     }),

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { buildReservationsWorkbook } from '@/test/xlsx-fixture';
 import { zipSync, strToU8 } from 'fflate';
 vi.mock('@/modules/booking', () => ({ createReservationGroup: vi.fn() }));
 vi.mock('./channel-service', () => ({ applyChannelEvent: vi.fn() }));
@@ -32,4 +33,18 @@ describe('operator workbook evidence parsing', () => {
   it('does not turn an unknown sold total into a zero-priced stay', () => {
     expect(parseReservationsWorkbook(workbook({}, '')).problems).toContainEqual({ rowNumber:2,ref:'SYNTH-1',message:'revenue' });
   });
+  const sourceRow = { ref:'Res-9001',channel:'Direct',guest:'Synthetic Guest',checkIn:'2026-12-18',checkOut:'2026-12-21',rooms:'B22',revenue:100,status:'Confirmed',payment:'Unpaid',paid:'' };
+  it('canonicalizes only RES numeric IDs and keeps raw alias and blank payment evidence', () => {
+    const parsed=parseReservationsWorkbook(buildReservationsWorkbook([sourceRow]));
+    expect(parsed.rows[0]).toMatchObject({ref:'RES-9001',operationalDetails:{sourceReferenceRaw:'Res-9001'}});
+    expect(parsed.sourcePayments[0]).toMatchObject({ref:'RES-9001',amountPaidRaw:'',amountPaidSatang:null});
+    const other=parseReservationsWorkbook(buildReservationsWorkbook([{...sourceRow,ref:'Partner-Abc'}]));
+    expect(other.rows[0].ref).toBe('Partner-Abc');
+  });
+  it('holds duplicate aliases instead of creating two case-variant source identities', () => {
+    const parsed=parseReservationsWorkbook(buildReservationsWorkbook([sourceRow,{...sourceRow,ref:'RES-9001'}]));
+    expect(parsed.rows).toHaveLength(0);
+    expect(parsed.problems).toContainEqual(expect.objectContaining({ref:'RES-9001',message:'duplicate_ref'}));
+  });
+
 });

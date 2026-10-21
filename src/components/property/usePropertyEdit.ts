@@ -59,6 +59,7 @@ export function usePropertyEdit(copy: PropertyEditorCopy, initialVersion: string
   const router = useRouter();
   const dirty = useUnsavedProperty(copy);
   const pending = useRef(false);
+  const editCount = useRef(0);
   const version = useRef(initialVersion);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -66,6 +67,7 @@ export function usePropertyEdit(copy: PropertyEditorCopy, initialVersion: string
   const save = async (path: string, method: string, body: object) => {
     if (pending.current || conflict) return false;
     pending.current = true;
+    const submittedEditCount = editCount.current;
     setBusy(true);
     setMessage('');
     try {
@@ -82,8 +84,8 @@ export function usePropertyEdit(copy: PropertyEditorCopy, initialVersion: string
       }
       if (!response.ok) throw new Error('save_failed');
       version.current = payload.updatedAt;
-      dirty.current = false;
-      setMessage(editorLabel(copy, 'saved'));
+      dirty.current = editCount.current !== submittedEditCount;
+      setMessage(editorLabel(copy, dirty.current ? 'saved_pending' : 'saved'));
       router.refresh();
       return true;
     } catch {
@@ -108,6 +110,7 @@ export function usePropertyEdit(copy: PropertyEditorCopy, initialVersion: string
     reload,
     changed: () => {
       dirty.current = true;
+      editCount.current += 1;
     },
   };
 }

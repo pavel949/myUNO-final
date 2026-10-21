@@ -49,6 +49,26 @@ describe('property edit recovery', () => {
       })
     );
   });
+  it('keeps edits typed during a save dirty after submitted values commit', async () => {
+    let done!: (value: unknown) => void;
+    fetcher.mockReturnValue(new Promise((resolve) => (done = resolve)));
+    render(<ManagedUnitEditor unit={unit} copy={copy} />);
+    fireEvent.input(screen.getByLabelText('Name'), { target: { value: 'Submitted' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Save changes' }).closest('form')!);
+    fireEvent.input(screen.getByLabelText('Name'), { target: { value: 'Newer unsaved text' } });
+    await act(async () =>
+      done({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...unit, updatedAt: '2026-10-21T02:00:00.000Z' }),
+      })
+    );
+    expect(screen.getByLabelText('Name')).toHaveValue('Newer unsaved text');
+    const unload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+    expect(screen.getByRole('status')).toHaveTextContent('Newer edits are not saved yet');
+  });
   it('retains input on conflict and blocks stale retries until explicit reload', async () => {
     fetcher.mockResolvedValue({
       ok: false,

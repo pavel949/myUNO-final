@@ -165,6 +165,37 @@ try {
       }
     }
   );
+  await step(
+    'Edits typed during a pending save remain unsaved until explicitly submitted',
+    async () => {
+      await page.goto(edit);
+      const form = page.locator('form').first();
+      await page.route('**' + path, async (route) => {
+        if (route.request().method() === 'PUT')
+          await new Promise((resolve) => setTimeout(resolve, 600));
+        await route.continue();
+      });
+      await form.locator('[name=name]').fill('Synthetic Submitted Name');
+      const response = page.waitForResponse(
+        (r) => new URL(r.url()).pathname === path && r.request().method() === 'PUT'
+      );
+      await form.getByRole('button', { name: 'Save changes', exact: true }).click();
+      await form.locator('[name=name]').fill('Synthetic Newer Name');
+      assert.equal((await response).status(), 200);
+      await form
+        .getByRole('status')
+        .filter({ hasText: 'Newer edits are not saved yet.' })
+        .waitFor();
+      assert.equal(await form.locator('[name=name]').inputValue(), 'Synthetic Newer Name');
+      assert.equal(
+        (await db.unit.findUniqueOrThrow({ where: { id: original.id } })).name,
+        'Synthetic Submitted Name'
+      );
+      await page.unroute('**' + path);
+      await form.locator('[name=name]').fill('Synthetic Edited Villa');
+      await save(form, path, 'PUT');
+    }
+  );
   await step('Unsaved back navigation can be cancelled', async () => {
     await page.goto(edit);
     await page.locator('form').first().locator('[name=name]').fill('Unsaved stays here');

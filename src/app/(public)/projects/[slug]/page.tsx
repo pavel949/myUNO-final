@@ -131,7 +131,7 @@ export default async function ProjectLandingPage(
   const labelsPromise = getLabels({
     'project_page.availability.title': 'Check availability',
     'project_page.hero.primary': 'Explore accommodation',
-    'project_page.hero.secondary': 'Ask about your stay'
+    'project_page.hero.secondary': 'Ask about your stay',
     'project_page.gallery.count': '{count} photos of the residence',
     'project_page.gallery.view_all': 'View all photos',
     'project_page.styles.generic_title': 'Property styles',

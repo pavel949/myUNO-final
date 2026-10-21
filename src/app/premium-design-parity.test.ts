@@ -68,7 +68,8 @@ describe('premium design-system surface parity', () => {
     expect(home).toContain('href="/manage"');
     expect(home).toContain("landing.hp.offers.kicker");
     expect(home).toContain("landing.hp.areas.title");
-    expect(home).toContain('href="/desks"');
+    expect(home).toContain('href="/help/choose"');
+    expect(source('src/components/Navbar.tsx')).toContain("href: '/desks'");
     expect(home).not.toContain('bg-white');
   });
 

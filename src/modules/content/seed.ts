@@ -1,3 +1,4 @@
+import { LEAD_FORM_KEYS } from './lead-form.seed';
 import { SALES_KEYS } from './sales-offer.seed';
 import { PROPERTY_EDITOR_KEYS } from './property-editor.seed';
 import { WORKSPACE_NAVIGATION_KEYS } from './workspace-navigation.seed';
@@ -3390,23 +3391,7 @@ const PROJECT_PAGE_KEYS: KeyDef[] = [
   { key: 'project_page.reviews.count', namespace: 'project_page', description: 'Reviews section: count label', en: '{count} reviews', ru: 'Отзывов: {count}', zh: '{count} 条评价', th: '{count} รีวิว', status: NR },
 ];
 
-const LEAD_FORM_KEYS: KeyDef[] = [
-  // Public lead form on audience pages (doc 08 §3, N-29)
-  { key: 'audience.lead.title', namespace: 'audience', description: 'Lead form: section title', en: 'Leave your contact — we reply within a day', ru: 'Оставьте контакт — ответим в течение дня', th: 'ฝากข้อมูลติดต่อ — เราตอบภายในหนึ่งวัน', status: NR },
-  { key: 'audience.lead.name', namespace: 'audience', description: 'Lead form: name field label', en: 'Your name', ru: 'Ваше имя', th: 'ชื่อของคุณ', status: NR },
-  { key: 'audience.lead.contact', namespace: 'audience', description: 'Lead form: contact field label', en: 'How to reach you', ru: 'Как с вами связаться', th: 'ช่องทางติดต่อ', status: NR },
-  { key: 'audience.lead.contact_hint', namespace: 'audience', description: 'Lead form: contact field hint', en: 'Phone, WhatsApp, Telegram, or email — whatever suits you.', ru: 'Телефон, WhatsApp, Telegram или почта — как вам удобно.', th: 'โทรศัพท์ WhatsApp Telegram หรืออีเมล — อะไรก็ได้ที่สะดวก', status: NR },
-  { key: 'audience.lead.message', namespace: 'audience', description: 'Lead form: free-text field label', en: 'Tell us about your situation (optional)', ru: 'Расскажите о вашей ситуации (необязательно)', th: 'เล่าเรื่องของคุณ (ไม่บังคับ)', status: NR },
-  { key: 'audience.lead.consent', namespace: 'audience', description: 'Lead form: PDPA consent line', en: 'I agree that myUNO stores this information to respond to my enquiry.', ru: 'Я согласен(на), что myUNO сохранит эти данные, чтобы ответить на мой запрос.', th: 'ฉันยินยอมให้ myUNO เก็บข้อมูลนี้เพื่อตอบคำถามของฉัน', status: NR },
-  { key: 'audience.lead.consent_required', namespace: 'audience', description: 'Lead form: consent validation message', en: 'Please tick the consent box so we may contact you.', ru: 'Пожалуйста, отметьте согласие, чтобы мы могли с вами связаться.', th: 'โปรดติ๊กยินยอมเพื่อให้เราติดต่อคุณได้', status: NR },
-  { key: 'audience.lead.submit', namespace: 'audience', description: 'Lead form: submit button', en: 'Send', ru: 'Отправить', th: 'ส่ง', status: NR },
-  { key: 'audience.lead.submitting', namespace: 'audience', description: 'Lead form: submit button while sending', en: 'Sending…', ru: 'Отправляем…', th: 'กำลังส่ง…', status: NR },
-  { key: 'audience.lead.success', namespace: 'audience', description: 'Lead form: success state', en: 'Thank you — we received your message and will reply shortly.', ru: 'Спасибо — мы получили ваше сообщение и скоро ответим.', th: 'ขอบคุณ — เราได้รับข้อความแล้วและจะตอบกลับเร็วๆ นี้', status: NR },
-  { key: 'audience.lead.error', namespace: 'audience', description: 'Lead form: error state', en: 'Something went wrong. Please try again, or email us directly.', ru: 'Что-то пошло не так. Попробуйте ещё раз или напишите нам напрямую.', th: 'เกิดข้อผิดพลาด โปรดลองอีกครั้ง หรืออีเมลหาเราโดยตรง', status: NR },
-  // N-29 lead.received → admin (doc 11)
-  { key: 'notify.lead_received.title', namespace: 'notify', description: 'N-29 admin alert title: new public lead', en: 'New lead received', ru: 'Новый лид', th: 'ลีดใหม่', status: NR },
-  { key: 'notify.lead_received.body', namespace: 'notify', description: 'N-29 admin alert body: new public lead', en: 'A visitor left their contact on the {audience} page. Open your inbox to reply.', ru: 'Посетитель оставил контакт на странице {audience}. Откройте входящие, чтобы ответить.', th: 'ผู้เยี่ยมชมทิ้งข้อมูลติดต่อบนหน้า {audience} เปิดกล่องขาเข้าเพื่อตอบกลับ', status: NR },
-];
+
 
 const AUDIENCE_EXPANSION_KEYS: KeyDef[] = [
   // Guests audience page (doc 08 §3, copy adapted from model v3 §5.3)

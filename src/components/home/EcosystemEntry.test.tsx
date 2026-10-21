@@ -41,7 +41,7 @@ describe('homepage ecosystem place links', () => {
     render(<EcosystemEntry places={[]} copy={copy} />);
     const routes = { stay: '/search', monthly: '/homes?intent=rent', buy: '/homes?intent=buy', move: '/relocation', services: '/services', owner: '/owners', partner: '/partners' };
     for (const [key, href] of Object.entries(routes)) {
-      const title = screen.getByText(copy[`route.${key}.title`]);
+      const title = screen.getByRole('link', { name: new RegExp(copy[`route.${key}.title`]) });
       expect(title.closest('a')).toHaveAttribute('href', href);
     }
   });

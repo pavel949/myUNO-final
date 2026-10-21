@@ -1,4 +1,22 @@
-# Homepage reference reconciliation / owner acquisition
+# Incremental homepage guidance / owner acquisition
+
+## Final approved scope
+
+The owner paused wholesale redesign and then approved four bounded improvements: clearer existing owner management entry; compact holiday/relocation/purchase scenarios; one help-with-choice inquiry; and factual area content where supported. This branch implements that incremental scope, not the attached HTML design. The earlier reference-transfer limitation below is historical context, not a blocker to these incremental changes.
+
+- `EcosystemEntry` retains its real search and all seven routes: the existing holiday (`/search`), relocation (`/relocation`), purchase (`/homes?intent=buy`) links become three compact scenarios. Monthly, services, owners and partners remain quieter links. No speculative query parameters are added; existing parameter builders are unchanged.
+- Existing management acquisition remains `/manage`, now with localized highlighted navigation, dedicated homepage panel, and “How it works” link/three-step explanation. No parallel management form or owner-dashboard prerequisite.
+- Homepage help becomes one CTA to `/help/choose`, using `LeadFormSection` and `/api/leads`. A labeled rental/purchase selector sends existing renters/buyers audiences to canonical CRM classifications; owner management is explicitly linked separately. Anonymous requests receive honest contact-based follow-up.
+- Existing area cards and descriptions are retained. Unresolved translation keys and placeholder dashes are suppressed. No unsupported suitability, school, proximity, price or amenity copy is added. Further editorial enrichment needs verified content; no production content was changed.
+- Registered guidance/form draft copy covers EN/RU/TH/ZH. Existing lead seeds are extracted into `lead-form.seed.ts` so forms use the same locale drafts as the seed registry. Unsupported response-time promises are removed from those drafts. Existing CMS values still win and may need editorial review; no automatic approval/writeback.
+
+Final validation: 49 tests across seven files pass (LeadForm 8; Navbar 5; EcosystemEntry 8; connected homepage 6; content-key registry 2; inquiry handler loop 13; lead service integration 7). These include error-field retention, lost-ack retry IDs, anonymous access, real CRM/thread persistence, consent rejection, duplicate retry protection, purchase/rental/management classification and staff inbox reads. Full lint, production TypeScript and diff checks pass. Build stops at the unchanged production content-review gate (`production_bypass_refused`); no bypass attempted.
+
+System Chromium browser checks: homepage 200/no overflow at 320/390/768/1440/1920. `/help/choose` no overflow at all five widths in RU/EN/TH/ZH. Screenshots inspected for RU/TH mobile and scenario desktop; local screenshot files: `/tmp/choice-ru-320.png`, `/tmp/choice-th-390.png`, `/tmp/choice-home-top.png`. Mobile owner menu/form and management CTA journey tested. Choice journey tested through homepage link, purchase selection, simulated 503 preserving brief, and real local retry 200/confirmed receipt. A prior browser run overlapped integration database resets and returned 500; rerun after reset completion passed. Do not run destructive test resets concurrently with browser fixture submissions.
+
+Correct public target is `https://my-uno-final.vercel.app/`; one read-only browser attempt failed `ERR_TUNNEL_CONNECTION_FAILED`, so deployed appearance/SHA is unverified. `myuno.app` is a separate project and supplies no evidence here. Local imagery fetching failed DNS and the isolated content registry lacks unrelated header/footer translations; screenshots are layout evidence, not a production visual comparison.
+
+Changed surfaces: `src/app/(public)/page.tsx`, `manage/page.tsx`, new `help/choose/page.tsx`, `lead-form-section.tsx`; components Navbar, LeadForm, EcosystemEntry; content inquiry-copy, homepage-v4.seed, new lead-form.seed and seed registration; public-homepage.service area description guard; three updated test files and this report. No schema/migration changes, production submissions, external communications, Library writes, merge or deployment. Rollback is reverting the branch commits; canonical inquiry writer and existing URLs are retained.
 
 Base: `5497f1ed` (main, includes #319). #318 Project Space and #320 release coordination remain separate; no merge or deployment performed.
 

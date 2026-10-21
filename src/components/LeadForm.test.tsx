@@ -136,3 +136,18 @@ describe('inquiry acknowledgement retries', () => {
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).requestId).toBe(JSON.parse(fetchMock.mock.calls[1][1].body).requestId);
   });
 });
+
+describe('help choosing a home', () => {
+  it('keeps the authored brief when switching to purchase and sends the buyer intent', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<LeadForm audience="renters" audienceChoice={{ label: 'Your goal', rent: 'Rent', buy: 'Buy' }} sourceMedium="homepage_choice" labels={labels} />);
+    fillInquiry();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'A home for my family' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Your goal' }), { target: { value: 'buyers' } });
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue('A home for my family');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Received');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ audience: 'buyers', sourceMedium: 'homepage_choice', message: 'A home for my family' });
+  });
+});

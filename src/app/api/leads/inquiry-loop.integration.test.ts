@@ -291,9 +291,9 @@ describe('public management acquisition', () => {
     await signIn(null);
   });
 
-  it('persists an anonymous owner brief once and exposes it to staff without granting visitor thread access', async () => {
+  it.each([['owners', 'owner_management', 'management'], ['renters', 'homepage_choice', 'rental'], ['buyers', 'homepage_choice', 'purchase']])('persists a %s brief once and exposes it to staff without granting visitor thread access', async (audience, sourceMedium, expectedType) => {
     const admin = await createIdentity({ isAdmin: true });
-    const payload = { audience: 'owners', name: 'Owner fixture', contact: 'owner@example.test', message: 'Management inquiry: villa in Phuket', consent: true, sourceMedium: 'owner_management', requestId: 'management-fixture-20261021' };
+    const payload = { audience, name: 'Inquiry fixture', contact: 'owner@example.test', message: 'Management inquiry: villa in Phuket', consent: true, sourceMedium, requestId: 'management-fixture-20261021' };
     const invalid = await submitInquiry(request('/api/leads', { ...payload, consent: false }));
     expect(invalid.status).toBe(400);
     expect(await db.thread.count()).toBe(0);
@@ -304,7 +304,7 @@ describe('public management acquisition', () => {
     expect(await db.thread.count()).toBe(1);
     expect(await db.crmOpportunity.count()).toBe(1);
     const opportunity = await db.crmOpportunity.findFirstOrThrow();
-    expect(opportunity.type).toBe('management');
+    expect(opportunity.type).toBe(expectedType);
     const thread = await db.thread.findFirstOrThrow();
     await signIn(admin.id);
     const staffInbox = await inbox();

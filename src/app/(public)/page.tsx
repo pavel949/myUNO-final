@@ -1,3 +1,5 @@
+import { HOMEPAGE_V4_KEYS } from '@/modules/content/homepage-v4.seed';
+import { INQUIRY_COPY } from '@/modules/content/inquiry-copy';
 import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -58,7 +60,7 @@ export default async function LandingPage(
     destination: activeDestination.key,
   }).catch(() => null);
 
-  const [labels, homepageData] = await Promise.all([
+  const [labels, homepageData, , guidance] = await Promise.all([
     getLabels({
       'landing.search.check_in': 'Check-in',
       'landing.search.check_out': 'Check-out',
@@ -82,13 +84,13 @@ export default async function LandingPage(
       'landing.hp.ecosystem.placeholder': "Villa, flowers, school, area or service…",
       'landing.hp.ecosystem.submit': "Search",
       'landing.hp.ecosystem.matches': "Matching places",
-      'landing.hp.ecosystem.route.stay.title': "Book a stay",
+      'landing.hp.ecosystem.route.stay.title': "Come for a holiday",
       'landing.hp.ecosystem.route.stay.detail': "Villas and apartments",
       'landing.hp.ecosystem.route.monthly.title': "Rent long-term",
       'landing.hp.ecosystem.route.monthly.detail': "Homes for living",
       'landing.hp.ecosystem.route.buy.title': "Buy property",
       'landing.hp.ecosystem.route.buy.detail': "Properties for sale",
-      'landing.hp.ecosystem.route.move.title': "Relocate",
+      'landing.hp.ecosystem.route.move.title': "Move to Phuket",
       'landing.hp.ecosystem.route.move.detail': "Homes and moving support",
       'landing.hp.ecosystem.route.services.title': "Find services",
       'landing.hp.ecosystem.route.services.detail': "For everyday life and holidays",
@@ -215,9 +217,10 @@ export default async function LandingPage(
       'landing.hp.help.help': 'Help centre',
       'landing.hp.help.desks': 'Language desks',
       'landing.hp.help.trust': 'How we verify information',
-    }),
+    }, locale, Object.fromEntries(HOMEPAGE_V4_KEYS.filter(item => item.key.startsWith('landing.hp.ecosystem.')).map(item => [item.key, { en: item.en, ru: item.ru, th: item.th, zh: item.zh }]))),
     getPublicHomepageData(locale),
     pageView,
+    getLabels(Object.fromEntries(Object.entries(INQUIRY_COPY).map(([key, copy]) => [key, copy.en])), locale, INQUIRY_COPY),
   ]);
 
   const { projects, commercialHomes, services, stayUnits, areas, placeAreas, placeUnits } = homepageData;
@@ -688,6 +691,7 @@ export default async function LandingPage(
             <PublicAnalyticsLink href="/manage" eventKey={ownerGoalEvent} dimensions={{ destination: activeDestination.key, locale, source: 'homepage_owners', intent: 'manage' }} className="mt-24 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
               {management.managementCta} →
             </PublicAnalyticsLink>
+            <Link prefetch={false} href="/manage#process" className="mt-12 flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">{guidance['audience.management.how']} →</Link>
           </div>
 
           <div className="mt-32 grid gap-24 border-t border-border-line pt-24 md:grid-cols-2">
@@ -755,15 +759,11 @@ export default async function LandingPage(
         <div className="mx-auto flex max-w-content flex-col justify-between gap-24 px-20 md:flex-row md:items-center md:px-32">
           <div className="max-w-xl">
             <h2 id="help-heading" className="font-display text-display font-semibold text-text-ink">
-              {labels['landing.hp.help.title']}
+              {guidance['audience.choice.title']}
             </h2>
-            <p className="mt-8 text-body text-text-secondary">{labels['landing.hp.help.body']}</p>
+            <p className="mt-8 text-body text-text-secondary">{guidance['audience.choice.body']}</p>
           </div>
-          <div className="flex flex-wrap gap-x-24 gap-y-12 text-body font-semibold text-brand-andaman">
-            <Link prefetch={false} href="/help" className="min-h-44 hover:underline">{labels['landing.hp.help.help']} →</Link>
-            <Link prefetch={false} href="/desks" className="min-h-44 hover:underline">{labels['landing.hp.help.desks']} →</Link>
-            <Link prefetch={false} href="/trust" className="min-h-44 hover:underline">{labels['landing.hp.help.trust']} →</Link>
-          </div>
+          <Link prefetch={false} href="/help/choose" className="inline-flex min-h-48 shrink-0 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">{guidance['audience.choice.cta']} →</Link>
         </div>
       </section>
     </main>

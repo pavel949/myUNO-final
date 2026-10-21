@@ -139,6 +139,7 @@ test('reviewed release SQL is pinned and unreviewed migrations remain rejected',
     '20261021010000_booking_refund_dispatch_authorization',
     '20261021023000_imported_reservation_groups',
     '20261021140000_sales_offer_desk',
+    '20261021190000_protected_workspace_administration',
   ];
   const files = names.map(name => ({ name, sql: readFileSync(new URL(`../prisma/migrations/${name}/migration.sql`, import.meta.url)) }));
   assert.deepEqual(checkMigrationLedger(files, []), names);

@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46952ba0752158ba40a1ec63262726b36d3d34f0`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `a7eb9fa7f29b01f47a1bcc1d243f0be3e0f70ffd`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -10,13 +10,13 @@
 
 | Объект | Количество |
 |---|---:|
-| pages | 177 |
-| handlers | 256 |
-| apiHandlers | 251 |
+| pages | 179 |
+| handlers | 260 |
+| apiHandlers | 255 |
 | modules | 22 |
-| tests | 579 |
+| tests | 581 |
 | prismaModels | 124 |
-| migrations | 97 |
+| migrations | 98 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -61,6 +61,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/app/admin/organizations` | platform-admin | [src/app/(admin)/app/admin/organizations/page.tsx](<../../src/app/(admin)/app/admin/organizations/page.tsx>) |
 | `/app/admin/payouts` | platform-admin | [src/app/(admin)/app/admin/payouts/page.tsx](<../../src/app/(admin)/app/admin/payouts/page.tsx>) |
 | `/app/admin/people` | platform-admin | [src/app/(admin)/app/admin/people/page.tsx](<../../src/app/(admin)/app/admin/people/page.tsx>) |
+| `/app/admin/people/[identityId]` | platform-admin | [src/app/(admin)/app/admin/people/[identityId]/page.tsx](<../../src/app/(admin)/app/admin/people/[identityId]/page.tsx>) |
 | `/app/admin/processes` | platform-admin | [src/app/(admin)/app/admin/processes/page.tsx](<../../src/app/(admin)/app/admin/processes/page.tsx>) |
 | `/app/admin/projects` | platform-admin | [src/app/(admin)/app/admin/projects/page.tsx](<../../src/app/(admin)/app/admin/projects/page.tsx>) |
 | `/app/admin/projects/[id]` | platform-admin | [src/app/(admin)/app/admin/projects/[id]/page.tsx](<../../src/app/(admin)/app/admin/projects/[id]/page.tsx>) |
@@ -149,6 +150,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/ops/sales/[id]` | ops | [src/app/ops/sales/[id]/page.tsx](<../../src/app/ops/sales/[id]/page.tsx>) |
 | `/ops/spaces` | ops | [src/app/ops/spaces/page.tsx](<../../src/app/ops/spaces/page.tsx>) |
 | `/ops/spaces/[spaceId]` | ops | [src/app/ops/spaces/[spaceId]/page.tsx](<../../src/app/ops/spaces/[spaceId]/page.tsx>) |
+| `/ops/spaces/[spaceId]/administration` | ops | [src/app/ops/spaces/[spaceId]/administration/page.tsx](<../../src/app/ops/spaces/[spaceId]/administration/page.tsx>) |
 | `/ops/stays` | ops | [src/app/ops/stays/page.tsx](<../../src/app/ops/stays/page.tsx>) |
 | `/ops/stays/[bookingId]` | ops | [src/app/ops/stays/[bookingId]/page.tsx](<../../src/app/ops/stays/[bookingId]/page.tsx>) |
 | `/ops/stays/[bookingId]/check-in` | ops | [src/app/ops/stays/[bookingId]/check-in/page.tsx](<../../src/app/ops/stays/[bookingId]/check-in/page.tsx>) |
@@ -266,6 +268,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/admin/payouts/provider` | POST | [src/app/api/admin/payouts/provider/route.ts](<../../src/app/api/admin/payouts/provider/route.ts>) |
 | `/api/admin/payouts/provider/preview` | GET | [src/app/api/admin/payouts/provider/preview/route.ts](<../../src/app/api/admin/payouts/provider/preview/route.ts>) |
 | `/api/admin/people/[identityId]/block` | POST | [src/app/api/admin/people/[identityId]/block/route.ts](<../../src/app/api/admin/people/[identityId]/block/route.ts>) |
+| `/api/admin/people/[identityId]/manage` | GET, PATCH | [src/app/api/admin/people/[identityId]/manage/route.ts](<../../src/app/api/admin/people/[identityId]/manage/route.ts>) |
 | `/api/admin/people/[identityId]/roles` | GET | [src/app/api/admin/people/[identityId]/roles/route.ts](<../../src/app/api/admin/people/[identityId]/roles/route.ts>) |
 | `/api/admin/people/[identityId]/unblock` | POST | [src/app/api/admin/people/[identityId]/unblock/route.ts](<../../src/app/api/admin/people/[identityId]/unblock/route.ts>) |
 | `/api/admin/people/invite` | POST | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>) |
@@ -402,6 +405,9 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/ops/sales-offers/[id]/request` | POST | [src/app/api/ops/sales-offers/[id]/request/route.ts](<../../src/app/api/ops/sales-offers/[id]/request/route.ts>) |
 | `/api/ops/sales-offers/[id]/shares` | POST, DELETE | [src/app/api/ops/sales-offers/[id]/shares/route.ts](<../../src/app/api/ops/sales-offers/[id]/shares/route.ts>) |
 | `/api/ops/sales-offers/search` | POST | [src/app/api/ops/sales-offers/search/route.ts](<../../src/app/api/ops/sales-offers/search/route.ts>) |
+| `/api/ops/spaces/[spaceId]/people` | GET | [src/app/api/ops/spaces/[spaceId]/people/route.ts](<../../src/app/api/ops/spaces/[spaceId]/people/route.ts>) |
+| `/api/ops/spaces/[spaceId]/people/[identityId]` | PATCH | [src/app/api/ops/spaces/[spaceId]/people/[identityId]/route.ts](<../../src/app/api/ops/spaces/[spaceId]/people/[identityId]/route.ts>) |
+| `/api/ops/spaces/[spaceId]/people/[identityId]/administrator` | PUT | [src/app/api/ops/spaces/[spaceId]/people/[identityId]/administrator/route.ts](<../../src/app/api/ops/spaces/[spaceId]/people/[identityId]/administrator/route.ts>) |
 | `/api/ops/tasks` | POST | [src/app/api/ops/tasks/route.ts](<../../src/app/api/ops/tasks/route.ts>) |
 | `/api/ops/tasks/[id]` | PATCH | [src/app/api/ops/tasks/[id]/route.ts](<../../src/app/api/ops/tasks/[id]/route.ts>) |
 | `/api/ops/team` | GET, POST, DELETE | [src/app/api/ops/team/route.ts](<../../src/app/api/ops/team/route.ts>) |
@@ -621,11 +627,12 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 77; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 78; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
 | [src/modules/content/admin360.seed.ts](<../../src/modules/content/admin360.seed.ts>) | seed | `CANONICAL_ADMIN_360_KEYS` |
+| [src/modules/content/administration.seed.ts](<../../src/modules/content/administration.seed.ts>) | seed | `ADMINISTRATION_DEFAULTS`, `ADMINISTRATION_DRAFTS`, `ADMINISTRATION_KEYS` |
 | [src/modules/content/audience-faq.seed.ts](<../../src/modules/content/audience-faq.seed.ts>) | seed | `seedAudienceFAQs` |
 | [src/modules/content/booking-mode-reliability.seed.ts](<../../src/modules/content/booking-mode-reliability.seed.ts>) | seed | `BOOKING_MODE_RELIABILITY_KEYS`, `BOOKING_MODE_RELIABILITY_DRAFTS` |
 | [src/modules/content/booking-steps.seed.ts](<../../src/modules/content/booking-steps.seed.ts>) | seed | `BOOKING_STEPS_KEYS`, `BOOKING_STEPS_DRAFTS` |
@@ -697,11 +704,13 @@ Exports перечислены синтаксически, без вывода �
 
 ### core
 
-Файлов: 73; тестовых файлов: 45. [Описание](../../src/modules/core/README.md).
+Файлов: 76; тестовых файлов: 46. [Описание](../../src/modules/core/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
 | [src/modules/core/account.service.ts](<../../src/modules/core/account.service.ts>) | implementation | `SUPPORTED_LOCALES`, `getAccountProfile`, `updateAccountProfile`, `changeAccountPassword`, `getNotificationSettings`, `UNMUTABLE_TYPES`, `setNotificationPreference`, `revokeAllSessions` |
+| [src/modules/core/administration-labels.ts](<../../src/modules/core/administration-labels.ts>) | implementation | `getAdministrationLabels` |
+| [src/modules/core/administration.service.ts](<../../src/modules/core/administration.service.ts>) | implementation | `AdministrationError`, `lockAdministration`, `accountSummary`, `administrativeActor`, `protectSuperadministrator`, `platformAccountAuthority`, `managePlatformAccount`, `setSuperAdministrator`, `workspaceAdministrator`, `setWorkspaceAdministrator`, `manageWorkspaceAccount` |
 | [src/modules/core/availability.service.ts](<../../src/modules/core/availability.service.ts>) | implementation | `getApplicableSeason`, `isActiveHold`, `checkAvailability`, `getUnitBlockedDates`, `createManualBlock`, `removeBlockedDate`, `getUnitPricingRules`, `createPricingRule`, `removePricingRule` |
 | [src/modules/core/booking-occupancy.ts](<../../src/modules/core/booking-occupancy.ts>) | implementation | `lockBookingInventory`, `initialStayConfirmationIssue`, `isActiveBookingHold`, `blockingBookingConditions`, `DEFAULT_MANUAL_HOLD_MINUTES`, `paymentHoldExpiry` |
 | [src/modules/core/canonical-pricing.service.ts](<../../src/modules/core/canonical-pricing.service.ts>) | implementation | `computeCanonicalPriceBreakdown`, `computeCanonicalCalendarRates` |
@@ -869,7 +878,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### ops
 
-Файлов: 38; тестовых файлов: 20. [Описание](../../src/modules/ops/README.md).
+Файлов: 39; тестовых файлов: 20. [Описание](../../src/modules/ops/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -878,7 +887,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/ops/guest-pii.ts](<../../src/modules/ops/guest-pii.ts>) | implementation | `isEncrypted`, `encryptPii`, `safeDecrypt`, `encryptGuestPii` |
 | [src/modules/ops/index.ts](<../../src/modules/ops/index.ts>) | barrel | см. исходник |
 | [src/modules/ops/operating-creation-capabilities.ts](<../../src/modules/ops/operating-creation-capabilities.ts>) | implementation | `OPERATING_CREATION_CAPABILITIES`, `isOperatingCreationCapability` |
-| [src/modules/ops/operating-space-access.service.ts](<../../src/modules/ops/operating-space-access.service.ts>) | implementation | `TASK_DEPARTMENTS`, `OperatingAccessError`, `getOperationalActor`, `getLegacyOperationalUnitIds`, `getScopedOperationalAccess`, `assertOperationalTaskAccess`, `operationalTaskVisibility`, `validOperatingCapabilities`, `eligibleOrganizationUnits`, `getOperatingSpaceOverviewAccess`, `assertOperationalTeamAssignment`, `assertOperationalTaskMediaAccess` |
+| [src/modules/ops/operating-space-access.service.ts](<../../src/modules/ops/operating-space-access.service.ts>) | implementation | `TASK_DEPARTMENTS`, `OperatingAccessError`, `isolatedWorkspaceAdministratorUnitIds`, `getOperationalActor`, `getLegacyOperationalUnitIds`, `getScopedOperationalAccess`, `assertOperationalTaskAccess`, `operationalTaskVisibility`, `validOperatingCapabilities`, `eligibleOrganizationUnits`, `getOperatingSpaceOverviewAccess`, `assertOperationalTeamAssignment`, `assertOperationalTaskMediaAccess` |
 | [src/modules/ops/operating-space-capabilities.ts](<../../src/modules/ops/operating-space-capabilities.ts>) | implementation | `GOVERNED_DAILY_CAPABILITIES`, `CAPABILITY_DEPARTMENTS` |
 | [src/modules/ops/operating-space-capability-policy.ts](<../../src/modules/ops/operating-space-capability-policy.ts>) | implementation | `OPERATING_SPACE_CAPABILITIES` |
 | [src/modules/ops/operating-space-governance.service.ts](<../../src/modules/ops/operating-space-governance.service.ts>) | implementation | `requireGovernanceFounder`, `createGovernedOperatingSpace`, `updateGovernedOperatingScope`, `updateGovernedOperatingMember` |
@@ -890,6 +899,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/ops/tm30-address.ts](<../../src/modules/ops/tm30-address.ts>) | implementation | `TM30_IMMIGRATION_PORTAL_URL`, `buildTm30AddressBlock` |
 | [src/modules/ops/tm30-filing.service.ts](<../../src/modules/ops/tm30-filing.service.ts>) | implementation | `createTm30Filing`, `markTm30FilingFiled`, `markTm30FilingFailed`, `getTm30Queue`, `logTm30PassportAccess`, `checkTm30Escalations`, `createConditionReport`, `getConditionReport` |
 | [src/modules/ops/verification.service.ts](<../../src/modules/ops/verification.service.ts>) | implementation | `capturePassportData`, `markVerificationFailed`, `decryptPassportNumber`, `checkVerificationDeadlines` |
+| [src/modules/ops/workspace-unit-authority.ts](<../../src/modules/ops/workspace-unit-authority.ts>) | implementation | `hasWorkspaceAdministratorUnitAccess` |
 
 <a id="module-projects"></a>
 
@@ -1128,6 +1138,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/ops/CheckInConditionReportModal.tsx](<../../src/components/ops/CheckInConditionReportModal.tsx>)
 - [src/components/ops/CheckOutConditionReportModal.tsx](<../../src/components/ops/CheckOutConditionReportModal.tsx>)
 - [src/components/ops/ImportedReservationGroups.tsx](<../../src/components/ops/ImportedReservationGroups.tsx>)
+- [src/components/ops/ManagedAccountForm.tsx](<../../src/components/ops/ManagedAccountForm.tsx>)
 - [src/components/ops/ManualReservationForm.tsx](<../../src/components/ops/ManualReservationForm.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.tsx](<../../src/components/ops/OperationalTaskCreateForm.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.tsx](<../../src/components/ops/OperationalTaskQueueClient.tsx>)
@@ -2370,6 +2381,8 @@ model Identity {
   avatarMediaId   String?        @map("avatar_media_id")
   status          IdentityStatus @default(active)
   isAdmin         Boolean        @default(false) @map("is_admin")
+  /// Protected platform authority. Assigned explicitly, never inferred from email or seeds.
+  isSuperAdmin    Boolean        @default(false) @map("is_super_admin")
   notesInternal   String?        @map("notes_internal")
   mergedIntoId    String?        @map("merged_into_id")
 
@@ -5944,6 +5957,9 @@ model OperatingSpaceMember {
   identityId       String   @map("identity_id")
   capabilities     String[] @default([])
   active           Boolean  @default(true)
+  /// Local administrative authority; never mapped to Identity.isAdmin.
+  isAdministrator  Boolean  @default(false) @map("is_administrator")
+  displayName      String?  @map("display_name")
 
   operatingSpace OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Cascade)
   identity       Identity       @relation(fields: [identityId], references: [id], onDelete: Cascade)
@@ -6288,6 +6304,7 @@ model ImportedReservationPlacement {
 - [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
 - [prisma/migrations/20261021023000_imported_reservation_groups/migration.sql](<../../prisma/migrations/20261021023000_imported_reservation_groups/migration.sql>)
 - [prisma/migrations/20261021140000_sales_offer_desk/migration.sql](<../../prisma/migrations/20261021140000_sales_offer_desk/migration.sql>)
+- [prisma/migrations/20261021190000_protected_workspace_administration/migration.sql](<../../prisma/migrations/20261021190000_protected_workspace_administration/migration.sql>)
 
 <a id="environment"></a>
 
@@ -6312,6 +6329,7 @@ model ImportedReservationPlacement {
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
 | `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `CHROMIUM_EXECUTABLE` | [scripts/security/local-browser-journey.mjs](<../../scripts/security/local-browser-journey.mjs>) |
 | `CHROMIUM_EXECUTABLE_PATH` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
 | `CHROMIUM_PATH` | [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>) |
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
@@ -6319,8 +6337,8 @@ model ImportedReservationPlacement {
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>), [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
-| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
-| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/security/local-browser-fixture.ts](<../../scripts/security/local-browser-fixture.ts>), [scripts/security/local-browser-journey.mjs](<../../scripts/security/local-browser-journey.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/security/local-browser-fixture.ts](<../../scripts/security/local-browser-fixture.ts>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `GITHUB_OUTPUT` | [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
@@ -6617,6 +6635,7 @@ model ImportedReservationPlacement {
 - [src/components/instay/ServicesRail.test.tsx](<../../src/components/instay/ServicesRail.test.tsx>)
 - [src/components/navigation-prefetch.test.ts](<../../src/components/navigation-prefetch.test.ts>)
 - [src/components/ops/ImportedReservationGroups.test.tsx](<../../src/components/ops/ImportedReservationGroups.test.tsx>)
+- [src/components/ops/ManagedAccountForm.test.tsx](<../../src/components/ops/ManagedAccountForm.test.tsx>)
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)
@@ -6760,6 +6779,7 @@ model ImportedReservationPlacement {
 - [src/modules/content/workspace-navigation.seed.test.ts](<../../src/modules/content/workspace-navigation.seed.test.ts>)
 - [src/modules/core/access-enforcement.test.ts](<../../src/modules/core/access-enforcement.test.ts>)
 - [src/modules/core/account.integration.test.ts](<../../src/modules/core/account.integration.test.ts>)
+- [src/modules/core/administration.integration.test.ts](<../../src/modules/core/administration.integration.test.ts>)
 - [src/modules/core/authority.alias.test.ts](<../../src/modules/core/authority.alias.test.ts>)
 - [src/modules/core/availability-overrides.integration.test.ts](<../../src/modules/core/availability-overrides.integration.test.ts>)
 - [src/modules/core/availability.service.test.ts](<../../src/modules/core/availability.service.test.ts>)

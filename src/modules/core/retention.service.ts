@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { AdministrationError, lockAdministration } from './administration.service';
 import { getConfig } from '@/modules/config';
 
 /**
@@ -349,7 +350,9 @@ export async function requestIdentityDeletion(
   db: PrismaClient,
   identityId: string
 ): Promise<void> {
-  const identity = await db.identity.findUnique({
+  await db.$transaction(async tx => {
+  await lockAdministration(tx);
+  const identity = await tx.identity.findUnique({
     where: { id: identityId },
   });
 
@@ -357,9 +360,11 @@ export async function requestIdentityDeletion(
     throw new Error(`Identity ${identityId} not found`);
   }
 
+  if (identity.isSuperAdmin) throw new AdministrationError('The sole superadministrator cannot request self-deletion');
+
   // Mark for deletion with the dedicated status — never 'merged', which
   // means a duplicate folded into another identity (doc 02 §2.1).
-  await db.identity.update({
+  await tx.identity.update({
     where: { id: identityId },
     data: {
       status: 'deletion_requested',
@@ -367,7 +372,7 @@ export async function requestIdentityDeletion(
   });
 
   // Audit log the deletion request
-  await db.auditLog.create({
+  await tx.auditLog.create({
     data: {
       action: 'identity_deletion_requested',
       entityType: 'identity',
@@ -378,5 +383,6 @@ export async function requestIdentityDeletion(
         deletionScheduledFor: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       } as any,
     },
+  });
   });
 }

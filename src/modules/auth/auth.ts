@@ -152,6 +152,10 @@ export async function login(input: LoginInput) {
     throw createAuthError('identity_blocked', 'This account has been blocked', 403);
   }
 
+  if (identity.status !== 'active') {
+    throw createAuthError('identity_inactive', 'An active account is required', 403);
+  }
+
   if (!identity.hashedPassword) {
     throw createAuthError(
       'no_password',

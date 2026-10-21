@@ -195,14 +195,15 @@ describe('People & roles service', () => {
         email: 'test@example.com',
       });
 
-      const blocked = await blockIdentity(prisma, { identityId: user.id });
+      const blocked = await blockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id });
 
       expect(blocked.status).toBe('blocked');
     });
 
     it('rejects blocking non-existent identity', async () => {
+      const admin = await createIdentity({ isAdmin: true });
       await expect(
-        blockIdentity(prisma, { identityId: 'non-existent' })
+        blockIdentity(prisma, { identityId: 'non-existent', actorIdentityId: admin.id })
       ).rejects.toThrow('not found');
     });
   });
@@ -217,12 +218,13 @@ describe('People & roles service', () => {
         status: 'blocked',
       });
 
-      const unblocked = await unblockIdentity(prisma, { identityId: user.id });
+      const unblocked = await unblockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id });
 
       expect(unblocked.status).toBe('active');
     });
 
     it('rejects unblocking a non-blocked identity', async () => {
+      const admin = await createIdentity({ isAdmin: true });
       const user = await createIdentity({
         firstName: 'Test',
         lastName: 'User',
@@ -230,7 +232,7 @@ describe('People & roles service', () => {
       });
 
       await expect(
-        unblockIdentity(prisma, { identityId: user.id })
+        unblockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id })
       ).rejects.toThrow('not blocked');
     });
   });
@@ -449,7 +451,7 @@ describe('People & roles service', () => {
       expect(roles[0].status).toBe('active');
 
       // Block the identity
-      const blocked = await blockIdentity(prisma, { identityId: user.id });
+      const blocked = await blockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id });
       expect(blocked.status).toBe('blocked');
 
       // Verify blocked status persists
@@ -466,11 +468,11 @@ describe('People & roles service', () => {
       });
 
       // Block the identity
-      const blocked = await blockIdentity(prisma, { identityId: user.id });
+      const blocked = await blockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id });
       expect(blocked.status).toBe('blocked');
 
       // Unblock
-      const unblocked = await unblockIdentity(prisma, { identityId: user.id });
+      const unblocked = await unblockIdentity(prisma, { identityId: user.id, actorIdentityId: admin.id });
       expect(unblocked.status).toBe('active');
 
       // Verify restoration

@@ -113,7 +113,7 @@ export async function requireAdmin(already?: { identityId: string }): Promise<Gu
     identity = loaded.identity;
   }
 
-  if (!identity.isAdmin) {
+  if (identity.status !== 'active' || !identity.isAdmin) {
     return { ok: false, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 

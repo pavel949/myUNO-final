@@ -1,0 +1,316 @@
+src/modules/sales-offers/offer.service.ts:191:  if (!option || !await canUseReservationGuest(db, guestId, offer.operatingSpaceId, access.unitIds, access.isAdmin)) throw new OfferError('FORBIDDEN', 403);
+src/modules/projects/owner-evidence.service.ts:10:  const actor = await db.identity.findUnique({ where: { id: actorIdentityId }, select: { isAdmin: true, status: true } });
+src/modules/projects/owner-evidence.service.ts:11:  if (!actor?.isAdmin || actor.status !== 'active') throw new Error('OWNER_EVIDENCE_FORBIDDEN');
+src/modules/integrations/ical-import.ts:196:      where: { isAdmin: true, status: 'active' },
+src/modules/booking/guest-review.service.ts:69:    select: { isAdmin: true },
+src/modules/booking/guest-review.service.ts:71:  if (author?.isAdmin) {
+src/modules/ops/reservation-guests.service.ts:19:export async function canUseReservationGuest(db: Db, guestId: string, spaceId: string, unitIds: string[], isAdmin: boolean) {
+src/modules/ops/reservation-guests.service.ts:20:  if (isAdmin) return true;
+src/modules/ops/reservation-guests.service.ts:62:      !await canUseReservationGuest(tx, guest.id, spaceId, access.unitIds, access.isAdmin))) {
+src/modules/ops/operating-space-governance.service.ts:12:  if (!actor.isAdmin) throw new OperatingAccessError('Founder access required');
+src/modules/ops/operating-space-access.service.ts:39:    id: true, status: true, isAdmin: true,
+src/modules/ops/operating-space-access.service.ts:55:  if (actor.isAdmin) return (await db.unit.findMany({ where: candidate, select: { id: true } })).map(u => u.id);
+src/modules/ops/operating-space-access.service.ts:92:  if (!actor.isAdmin) {
+src/modules/ops/operating-space-access.service.ts:111:  // Never label local authority isAdmin: downstream callers use that flag to bypass global checks.
+src/modules/ops/operating-space-access.service.ts:112:  return { space, unitIds, isAdmin: actor.isAdmin, isWorkspaceAdministrator };
+src/modules/ops/operating-space-access.service.ts:131:  if (actor.isAdmin) return {};
+src/modules/ops/operating-space-access.service.ts:172:  const membership = actor.isAdmin ? null : await db.operatingSpaceMember.findUnique({
+src/modules/ops/operating-space-access.service.ts:176:  if (!actor.isAdmin && !membership?.active) throw new OperatingAccessError('Operating space membership required');
+src/modules/ops/operating-space-access.service.ts:178:  const capabilities = actor.isAdmin || membership?.isAdministrator ? dailyCapabilities :
+src/modules/ops/operating-space-access.service.ts:183:  if (actor.isAdmin) {
+src/modules/ops/operating-space-access.service.ts:187:    if (!access.isAdmin) throw new OperatingAccessError('Authority changed; reload the workspace');
+src/modules/ops/operating-space-access.service.ts:189:      space: access.space, unitIds: access.unitIds, isAdmin: true,
+src/modules/ops/operating-space-access.service.ts:202:  if (!space || (!actor.isAdmin && !unitIds.length)) throw new OperatingAccessError('No effective workspace access');
+src/modules/ops/operating-space-access.service.ts:203:  return { space, unitIds, byCapability, isAdmin: actor.isAdmin, isWorkspaceAdministrator: Boolean(membership?.isAdministrator) };
+src/modules/ops/operating-space-access.service.ts:230:      ...(actor.isAdmin ? [
+src/modules/finance/manual-cost.service.ts:164:    throw actor.isAdmin
+src/modules/onboarding/submission-unit-access.ts:8:  user: { identityId: string; isAdmin: boolean },
+src/modules/onboarding/submission-unit-access.ts:13:  if (user.isAdmin) return base;
+src/modules/finance/finance.service.ts:951:    where: { isAdmin: true, status: 'active' },
+src/modules/finance/expense-receipt.service.ts:100:    !(isAuthor || actor.isAdmin)
+src/modules/onboarding/employee-creation.test-support.ts:8:    identities: [{ id: 'author', status: 'active', isAdmin: false }, { id: 'reviewer', status: 'active', isAdmin: true }, { id: 'other', status: 'active', isAdmin: false }],
+src/modules/finance/expense-access.ts:55:  if (identity.isAdmin) return true;
+src/modules/onboarding/employee-creation.service.ts:134:  const reviewer = await tx.identity.findUnique({ where: { id: reviewerId }, select: { status: true, isAdmin: true } });
+src/modules/onboarding/employee-creation.service.ts:135:  if (!reviewer || reviewer.status !== 'active' || !reviewer.isAdmin) return denied();
+src/modules/onboarding/employee-creation.service.ts:152:    const reviewer = await tx.identity.findUnique({ where: { id: reviewerIdentityId }, select: { status: true, isAdmin: true } });
+src/modules/onboarding/employee-creation.service.ts:153:    if (!reviewer || reviewer.status !== 'active' || !reviewer.isAdmin) return denied();
+src/modules/onboarding/content-proposal.service.ts:93:  const actor = await tx.identity.findUnique({ where: { id }, select: { id: true, status: true, isAdmin: true } });
+src/modules/onboarding/content-proposal.service.ts:94:  if (!actor || actor.status !== 'active' || (admin && !actor.isAdmin)) return fail(403, 'Forbidden.');
+src/modules/onboarding/content-proposal.service.ts:474:        const grants = actor.isAdmin ? [] : await tx.roleAssignment.findMany({
+src/modules/onboarding/content-proposal.service.ts:485:        const createdTargets = actor.isAdmin ? [] : await listEmployeeCreatedTargetsTx(tx, actorId);
+src/modules/onboarding/content-proposal.service.ts:490:          ...(!actor.isAdmin ? { identityId: actorId, OR: targets.map(target => ({ projectId: target.projectId, unitId: target.scope === 'unit' ? target.id : null })) } : {}) },
+src/modules/onboarding/content-proposal.service.ts:494:            if (!actor.isAdmin && !targets.some(target => target.scope === data.scope && target.id === data.targetId && target.projectId === data.projectId)) return [];
+src/modules/onboarding/content-proposal.service.ts:516:        if (!actor.isAdmin && row.identityId !== actorId) return fail(404, 'Proposal not found.');
+src/modules/onboarding/content-proposal.service.ts:518:        if (!actor.isAdmin) {
+src/modules/onboarding/content-proposal.service.ts:533:        const author = actor.isAdmin ? await tx.identity.findUnique({ where: { id: row.identityId },
+src/modules/onboarding/content-proposal.service.test-support.ts:11:    identities: [{ id: 'author', status: 'active', isAdmin: false }, { id: 'other', status: 'active', isAdmin: false }, { id: 'admin', status: 'active', isAdmin: true }],
+src/modules/media/direct-upload.service.ts:116:  const actor = await tx.identity.findUnique({ where: { id: actorId }, select: { status: true, isAdmin: true } });
+src/modules/media/direct-upload.service.ts:117:  if (actor?.status !== 'active' || !actor.isAdmin) return authorizeContentTargetTx(tx, actorId, scope, id, true);
+src/modules/core/administration.service.ts:19:  email: person.email, status: person.status, isAdmin: person.isAdmin,
+src/modules/core/administration.service.ts:39:  if (!actor.isAdmin) throw new AdministrationError('Platform administration required');
+src/modules/core/administration.service.ts:111:    if (!actor.isSuperAdmin || !actor.isAdmin) throw new AdministrationError('Protected superadministrator required');
+src/modules/core/administration.service.ts:130:  if (actor.isSuperAdmin && actor.isAdmin) return { actor, space };
+src/modules/core/administration.service.ts:147:    if (enabled && (target.status !== 'active' || !target.hashedPassword || target.isAdmin || target.isSuperAdmin))
+src/modules/core/administration.service.ts:188:    if ((target.isAdmin || target.isSuperAdmin || member.isAdministrator) && !actor.isSuperAdmin)
+src/modules/analytics/buyer-interest.service.ts:66:    where: { isAdmin: true, status: 'active' },
+src/modules/core/tariff-editor.ts:249:    if (adminOnly && !access.isAdmin) throw new PricingAccessError('Administrator tariff authority required');
+src/modules/core/landing.ts:16:  isAdmin: boolean;
+src/modules/core/landing.ts:79:  if (context.isAdmin) {
+src/modules/core/landing.ts:117:  if (context.isAdmin) {
+src/modules/core/seed.ts:39:      isAdmin: true,
+src/modules/core/roles.ts:70:  if (!granter || granter.status !== 'active' || !granter.isAdmin) {
+src/modules/core/retention.service.ts:185:    isAdmin: identity.isAdmin,
+src/lib/workspace-navigation-server.ts:29:    id: true, status: true, isAdmin: true,
+src/lib/workspace-navigation-server.ts:41:    db.project.findMany({ where: actor.isAdmin ? {} : { id: { in: projectIds } }, select: { id: true, name: true } }),
+src/lib/workspace-navigation-server.ts:51:      ...(actor.isAdmin ? {} : { members: { some: { identityId: actor.id, active: true } } }),
+src/lib/workspace-navigation-server.ts:60:  const calendarIds = actor.isAdmin ? [...realProjects] : staffIds.filter(id =>
+src/lib/workspace-navigation-server.ts:62:  const operationalUnits = actor.isAdmin || staffIds.length ? await db.unit.findMany({
+src/lib/workspace-navigation-server.ts:63:    where: { status: { not: 'offboarded' }, ...(actor.isAdmin ? {} : { projectId: { in: staffIds } }) },
+src/lib/workspace-navigation-server.ts:89:  if (actor.isAdmin || staffIds.length) propertyOptions.unshift(option('ops', 'ops', '/ops', {
+src/lib/workspace-navigation-server.ts:90:    projectIds: actor.isAdmin ? [...realProjects] : staffIds, unitIds: operationalUnits.map(unit => unit.id),
+src/lib/workspace-navigation-server.ts:92:    propertiesHref: propertyOptions.length || actor.isAdmin ? '/ops/spaces' : '/ops',
+src/lib/workspace-navigation-server.ts:144:  const personalLinks = availableSurfaces({ isAdmin: false, roles: personalRoles, activeBookingId }).map(surface => ({
+src/lib/workspace-navigation-server.ts:152:  const preferred = resolveLanding({ isAdmin: false, roles: safeRoleTypes });
+src/lib/workspace-navigation-server.ts:155:    controlPlane: actor.isAdmin ? { href: '/app/admin', labelKey: 'workspace.option.admin' } : null };
+src/modules/core/property-workspaces.ts:8:  const actor = await db.identity.findUnique({ where: { id: identityId }, select: { status: true, isAdmin: true } });
+src/modules/core/property-workspaces.ts:10:  if (actor.isAdmin) return ['content', 'pricing', 'booking-mode', 'access'];
+src/lib/session.ts:13:  isAdmin: boolean;
+src/lib/session.ts:83:      isAdmin: identity.isAdmin,
+src/modules/core/property-capability-grants.ts:74:    const parent = access.actor.isAdmin ? null : access.grants.find(grant =>
+src/modules/core/property-capability-grants.ts:76:    if (access.actor.isAdmin && input.parentGrantId != null)
+src/modules/core/property-capability-grants.ts:78:    if (!access.actor.isAdmin && (!parent || input.canDelegate === true || input.identityId === actorIdentityId))
+src/modules/core/property-capability-grants.ts:88:      canDelegate: access.actor.isAdmin && input.canDelegate === true, parentGrantId: parent?.id ?? null,
+src/modules/core/property-capability-grants.ts:133:    if (!access.actor.isAdmin && !access.grants.some(grant => grant.canDelegate &&
+src/modules/core/property-capability-directory.ts:9:    if (access.actor.isAdmin) return { administrator: true, grants: [], assignments: [] };
+src/modules/core/property-capability-access.ts:27:    select: { id: true, status: true, isAdmin: true } });
+src/modules/core/property-capability-access.ts:33:  let candidates = actor.isAdmin ? [] : await loadGrants();
+src/modules/core/property-capability-access.ts:43:    candidates = actor.isAdmin ? [] : await loadGrants();
+src/modules/core/property-capability-access.ts:66:  if (!access.actor.isAdmin && (unit.status === 'offboarded' || !access.grants.some(grant =>
+src/modules/core/property-capability-access.ts:74:  if (!actor.isAdmin && !grants.length) return [];
+src/modules/core/property-capability-access.ts:76:    ...(actor.isAdmin ? {} : { OR: grants.map(grant => grant.scopeType === 'project'
+src/modules/core/pricing-access.ts:8:  return { actorIdentityId: actor.id, isAdmin: actor.isAdmin, unit };
+src/modules/core/permissions.ts:84: * Note: 'admin' is not included here because admin access is handled via Identity.isAdmin flag,
+src/modules/core/permissions.ts:345:      if (access.actor.isAdmin) return true;
+src/modules/core/permissions.ts:365:  if (identity.isAdmin) {
+src/modules/core/people.service.ts:207:      select: { isAdmin: true, status: true },
+src/modules/core/people.service.ts:209:    if (!granter?.isAdmin || granter.status !== 'active') {
+src/modules/core/layantara.seed.ts:176:  const admin = await db.identity.findFirst({ where: { isAdmin: true } });
+src/modules/content/legal-pages.seed.ts:332:        isAdmin: true,
+src/modules/content/seed.ts:4787:        isAdmin: true,
+src/modules/content/audience-faq.seed.ts:473:        isAdmin: true,
+src/modules/content/project-editorial.seed.ts:122:  const editor = await db.identity.findFirst({ where: { isAdmin: true }, select: { id: true } });
+src/components/Navbar.tsx:24:  isAdmin: boolean;
+src/modules/comms/ticket.service.ts:388:    const identity = await db.identity.findUnique({ where: { id: identityId }, select: { status: true, isAdmin: true } });
+src/modules/comms/ticket.service.ts:389:    canView = identity?.status === 'active' && (Boolean(identity.isAdmin) ||
+src/modules/comms/statement-thread-access.ts:14:    where: { status: 'active', OR: [{ id: statement.ownerIdentityId }, { isAdmin: true }] },
+src/modules/comms/statement-thread-access.ts:15:    select: { id: true, isAdmin: true },
+src/modules/comms/statement-thread-access.ts:44:        { isAdmin: true },
+src/modules/comms/statement-thread-access.ts:49:      ] }, select: { id: true, isAdmin: true },
+src/modules/comms/statement-thread-access.ts:52:      if (!identity.isAdmin && !(await standaloneTicketAuthority(db, ticket, identity.id)).canManage) continue;
+src/modules/comms/statement-thread-access.ts:55:        create: { threadId: thread.id, identityId: identity.id, participantRole: identity.isAdmin ? 'admin' : 'staff_ops' },
+src/modules/comms/statement-thread-access.ts:64:    include: { identity: { select: { id: true, firstName: true, lastName: true, status: true, isAdmin: true } } },
+src/modules/comms/statement-thread-access.ts:69:      if (participant.identity.isAdmin || participant.identityId === ticket.raisedByIdentityId) return true;
+src/modules/comms/statement-thread-access.ts:78:          participant.participantRole === 'admin' && participant.identity.isAdmin)));
+src/modules/comms/inquiry-thread-access.ts:45:      OR: [{ isAdmin: true }, ...(projectId ? [{ roleAssignments: { some: scope } }] : [])],
+src/modules/comms/inquiry-thread-access.ts:51:    if (identity.isAdmin) {
+src/modules/comms/inquiry-thread-access.ts:78:      isAdmin: false, roles: identity.roleAssignments,
+src/modules/comms/inquiry-thread-access.ts:170:  if (identity.isAdmin) {
+src/modules/comms/booking-thread-access.ts:38:          { isAdmin: true },
+src/modules/comms/booking-thread-access.ts:61:    if (identity.isAdmin) {
+src/modules/comms/booking-thread-access.ts:92:      isAdmin: false, roles: identity.roleAssignments,
+src/modules/comms/announcement.service.ts:41:  isAdmin: boolean
+src/modules/comms/announcement.service.ts:43:  if (isAdmin) return { postedAs: 'myuno', organizationId: null };
+src/modules/comms/announcement.service.ts:91:  isAdmin: boolean
+src/modules/comms/announcement.service.ts:93:  if (isAdmin) {
+src/modules/comms/announcement.service.ts:204:  isAdmin = false
+src/modules/comms/announcement.service.ts:219:  if (!creator && !isAdmin) {
+src/modules/comms/announcement.service.ts:281:  isAdmin: boolean
+src/modules/comms/announcement.service.ts:293:    isAdmin || (announcement.createdByIdentityId === identityId && announcement.organizationId);
+src/app/libs/ticketScope.ts:31:    (ticket.projectId !== null || standalone.canView || user.isAdmin);
+src/app/libs/ticketScope.ts:49:  const isAdmin = user.isAdmin;
+src/app/libs/ticketScope.ts:51:  const canView = isReporter || isAssignee || isStaff || isManagedMc || isUnitOwner || isAdmin || standalone.canView;
+src/app/libs/ticketScope.ts:52:  const canManage = isStaff || isManagedMc || isAdmin || standalone.canManage;
+src/app/libs/ticketScope.ts:58:  return { ticket, canManage, isAssignee, isReporter, isStaff, isManagedMc, isUnitOwner, isAdmin };
+src/app/libs/serviceOrderGuards.ts:41:  const isAdmin = user.isAdmin;
+src/app/libs/serviceOrderGuards.ts:43:  if (!isOrderer && !isProviderMember && !isStaff && !isManagedMc && !isAdmin) {
+src/app/libs/serviceOrderGuards.ts:47:  return { order, isOrderer, isProviderMember, isStaff, isManagedMc, isAdmin };
+src/app/libs/requireAdminPage.ts:11:  if (!user.isAdmin) redirect('/');
+src/app/libs/projectScope.ts:69:  if (user.isAdmin) {
+src/app/libs/projectScope.ts:98:  if (user.isAdmin) {
+src/app/libs/projectScope.ts:118:  if (user.isAdmin || hasProjectStaffAccess(user, input.projectId)) {
+src/app/libs/projectScope.ts:129:  if (user.isAdmin) {
+src/app/libs/projectScope.ts:159:  if (user.isAdmin) return true;
+src/app/libs/projectScope.ts:175:  if (user.isAdmin) {
+src/app/libs/projectExperienceGuard.ts:13:  if (user.isAdmin) return user;
+src/app/libs/projectExperienceGuard.ts:40:  if (user.isAdmin) return { user } as const;
+src/app/libs/projectExperienceGuard.ts:54:  if (user.isAdmin) return user;
+src/app/libs/opsProjectContext.ts:11:  isAdmin: boolean;
+src/app/libs/opsProjectContext.ts:24:  const isAdmin = user.isAdmin;
+src/app/libs/opsProjectContext.ts:30:  if (isAdmin) {
+src/app/libs/opsProjectContext.ts:35:      isAdmin: true,
+src/app/libs/opsProjectContext.ts:44:      isAdmin: false,
+src/app/libs/opsProjectContext.ts:52:    isAdmin: false,
+src/app/libs/opsProjectContext.ts:80:  const projectIds = context.isAdmin
+src/app/libs/opsProjectContext.ts:101:  if (context.isAdmin && !activeProjectId) {
+src/app/libs/opsProjectContext.ts:115:  if (context.isAdmin) {
+src/app/libs/onboardingGuard.ts:116:  if (identity.status !== 'active' || !identity.isAdmin) {
+src/app/libs/managedMediaGuard.ts:25:  if (!user.isAdmin && !staff && !mc && !selfListing) {
+src/app/libs/managedMediaGuard.ts:31:export async function assertPublicPhoto(mediaAssetId: unknown, actorId: string, isAdmin: boolean) {
+src/app/libs/managedMediaGuard.ts:35:      ...(!isAdmin ? { uploadedByIdentityId: actorId } : {}) },
+src/app/libs/bookingOperatorAccess.ts:20:    lastName: identity.lastName, isAdmin: identity.isAdmin, roles: identity.roleAssignments,
+src/app/libs/bookingOperationsAccess.ts:52:    lastName: identity.lastName, isAdmin: identity.isAdmin, roles: identity.roleAssignments,
+src/app/libs/bookingAccess.ts:75:  return user.identityId === payerIdentityId || user.isAdmin;
+src/app/libs/bookingAccess.ts:85:  if (user.isAdmin) return true;
+src/app/layout.tsx:158:                  isAdmin: user.isAdmin,
+src/app/app/page.tsx:63:    isAdmin: user.isAdmin,
+src/app/api/tickets/route.ts:103:    if (!raisedByRole && user.isAdmin) {
+src/app/api/tickets/[id]/assign/route.ts:34:          isAdmin: true,
+src/app/api/tickets/[id]/assign/route.ts:43:        assignee?.isAdmin ||
+src/app/api/threads/route.ts:130:        where: { isAdmin: true, status: 'active' },
+src/app/juristic/page.tsx:65:  if (memberships.length === 0 && !user.isAdmin) {
+src/app/api/service-orders/route.ts:132:    const hasScopedRole = user.isAdmin || user.roles.some(
+src/app/api/service-orders/route.ts:153:      ordererRole: (user.isAdmin ? 'staff_ops' : (user.roles[0]?.role || 'guest')) as RoleType,
+src/app/api/service-orders/[id]/record-cash-payment/route.ts:25:    const { order, isStaff, isManagedMc, isAdmin } = await loadOrderForUser(params.id, user);
+src/app/api/service-orders/[id]/record-cash-payment/route.ts:26:    if (!isStaff && !isManagedMc && !isAdmin) {
+src/app/api/service-orders/[id]/fulfil/route.ts:21:    const { order, isProviderMember, isAdmin } = await loadOrderForUser(params.id, user);
+src/app/api/service-orders/[id]/fulfil/route.ts:22:    if (!isProviderMember && !isAdmin) {
+src/app/api/service-orders/[id]/decline/route.ts:21:    const { order, isProviderMember, isAdmin } = await loadOrderForUser(params.id, user);
+src/app/api/service-orders/[id]/decline/route.ts:22:    if (!isProviderMember && !isAdmin) {
+src/app/property/onboard/page.tsx:28:    where: user.isAdmin ? { status: { not: 'archived' } } : { OR: [{ status: 'live' }, { id: { in: scopedIds }, status: 'draft' }] }, orderBy: { name: 'asc' },
+src/app/api/service-orders/[id]/cancel/route.ts:22:    const { order, isOrderer, isStaff, isManagedMc, isAdmin } = await loadOrderForUser(
+src/app/api/service-orders/[id]/cancel/route.ts:26:    if (!isOrderer && !isStaff && !isManagedMc && !isAdmin) {
+src/app/api/service-orders/[id]/accept/route.ts:20:    const { order, isProviderMember, isAdmin } = await loadOrderForUser(params.id, user);
+src/app/api/service-orders/[id]/accept/route.ts:21:    if (!isProviderMember && !isAdmin) {
+src/app/api/disputes/route.ts:47:      user.roles.find((r) => r.role === defaultRole)?.role ?? (user.isAdmin ? 'staff_ops' : defaultRole);
+src/app/api/refunds/[id]/settle/route.ts:50:    } else if (!user.isAdmin) {
+src/app/api/property-submissions/route.ts:73:    const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+src/app/api/property-submissions/route.ts:118:      const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+src/app/api/property-submissions/route.ts:160:      const privateAccess = project?.status === 'draft' && (access.user.isAdmin || Boolean(
+src/app/property/content/page.tsx:28:      where: { id: user.identityId }, select: { status: true, isAdmin: true },
+src/app/property/content/page.tsx:30:    if (actor?.status === 'active' && actor.isAdmin) redirect('/app/admin/projects');
+src/app/property/access/page.tsx:15:  const actor = await prisma.identity.findUnique({ where: { id: user.identityId }, select: { status: true, isAdmin: true } });
+src/app/property/access/page.tsx:16:  if (actor?.status === 'active' && actor.isAdmin) redirect('/app/admin/people');
+src/app/api/project-amenity-reservations/[id]/route.ts:17:      privileged: user.isAdmin,
+src/app/api/project-amenities/[amenityId]/reservations/route.ts:44:      privileged: user.isAdmin,
+src/app/api/project-amenities/[amenityId]/reservations/route.ts:45:      source: user.isAdmin ? 'admin' : 'guest',
+src/app/api/buyer-signals/[signalId]/transition/route.ts:15:    const isAdmin = await prisma.identity.findUnique({
+src/app/api/buyer-signals/[signalId]/transition/route.ts:17:      select: { isAdmin: true },
+src/app/api/buyer-signals/[signalId]/transition/route.ts:20:    if (!isAdmin?.isAdmin) {
+src/app/api/ops/team/route.ts:23:    where: { id: user.identityId }, select: { id: true, isAdmin: true, status: true },
+src/app/api/ops/team/route.ts:28:  if (!identity.isAdmin) {
+src/app/api/ops/team/route.ts:50:    canRevoke: Boolean(auth.identity!.isAdmin),
+src/app/api/ops/team/route.ts:59:  if (!auth.identity!.isAdmin) return NextResponse.json({ error: 'Use your authorized portfolio team to delegate access' }, { status: 403 });
+src/app/api/ops/team/route.ts:93:  if (!auth.identity!.isAdmin) return NextResponse.json({ error: 'Use your authorized portfolio team to delegate access' }, { status: 403 });
+src/app/api/ops/team/route.ts:103:  if (!auth.identity!.isAdmin && assignment.grantedByIdentityId !== auth.identity!.id) {
+src/app/api/ops/tasks/route.ts:45:      if (!actor.isAdmin && !body.operatingSpaceId) {
+src/app/api/ops/reservations/route.ts:71:    if (!await canUseReservationGuest(prisma, guest.id, body.operatingSpaceId, access.unitIds, access.isAdmin)) {
+src/app/api/ops/reservation-groups/route.ts:28:        if (!await canUseReservationGuest(tx, body.guestIdentityId!, body.operatingSpaceId!, access.unitIds, access.isAdmin)) {
+src/app/api/ops/projects/[id]/facts/route.ts:14:  if (!user.isAdmin && !assigned) return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const;
+src/app/api/ops/preventive-maintenance/route.ts:18:      operatingSpaceId: spaceId, OR: [{ unitId: { in: access.unitIds } }, ...(access.isAdmin ? [{ unitId: null }] : [])],
+src/app/api/auth/me/route.ts:14:    isAdmin: user.isAdmin,
+src/app/api/ops/calendar/changes/route.ts:18:  if(!user.isAdmin&&!projectIds.length)return NextResponse.json({error:'forbidden'},{status:403});
+src/app/api/ops/calendar/changes/route.ts:21:      where:user.isAdmin?{}:{project_id:{in:projectIds}},
+src/app/api/messages/[messageId]/flag-as-purchase/route.ts:17:      select: { isAdmin: true },
+src/app/api/messages/[messageId]/flag-as-purchase/route.ts:27:    const isStaff = identity?.isAdmin || roles.length > 0;
+src/app/api/announcements/route.ts:69:    authority = await resolvePostingAuthority(prisma, user.identityId, projectId, identity.isAdmin);
+src/app/api/announcements/[id]/publish/route.ts:53:    await publishAnnouncement(prisma, params.id, auth.user!.identityId, auth.identity!.isAdmin);
+src/app/api/announcements/[id]/publish/route.ts:85:      auth.identity!.isAdmin
+src/app/mc/portfolio/page.tsx:20:  if (!scopes.length && !staffProjectIds.length && !user.isAdmin) redirect('/');
+src/app/mc/portfolio/page.tsx:45:    (user.isAdmin || staffProjectIds.includes(requestedProjectId))
+src/app/ops/units/[unitId]/edit/page.tsx:58:  if (!user.isAdmin && !staff && !mc && !selfListing) notFound();
+src/app/ops/units/[unitId]/edit/page.tsx:61:  const rooms = user.isAdmin
+src/app/ops/units/[unitId]/edit/page.tsx:75:    admin: user.isAdmin,
+src/app/ops/units/[unitId]/edit/page.tsx:99:        {user.isAdmin ? (
+src/app/mc/properties/[unitId]/page.tsx:89:    (user.isAdmin || allowedOrganizationIds.includes(engagement.managementOrgId as string))
+src/app/ops/tm30/page.tsx:35:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/ops/tm30/page.tsx:47:    opsContext.isAdmin && !validActiveProjectId
+src/app/ops/new-unit/page.tsx:12:  if (!user.isAdmin) redirect('/property/create?kind=unit&from=operations');
+src/app/ops/new-unit/page.tsx:18:  if (!user.isAdmin && !projectIds.length) redirect('/');
+src/app/ops/new-unit/page.tsx:20:    where: user.isAdmin ? {} : { id: { in: projectIds } },
+src/app/ops/mobilization/page.tsx:46:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/mc/units/[unitId]/page.tsx:38:      ...(!user.isAdmin ? { managementOrgId: { in: organizationIds } } : {}),
+src/app/ops/mobilization/[unitId]/page.tsx:37:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/api/admin/units/route.ts:14:  if (!identity.isAdmin) return NextResponse.json({
+src/app/api/admin/units/route.ts:68:  const mcOnly = !identity.isAdmin && !(await prisma.roleAssignment.findFirst({
+src/app/ops/maintenance/page.tsx:49:      where:{operatingSpaceId:spaceId,OR:[{unitId:{in:authorizedUnitIds}},...(access.isAdmin?[{unitId:null}]:[])]},
+src/app/ops/requests/page.tsx:41:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/ops/layout.tsx:37:  const hasStaffScope = Boolean(user && (user.isAdmin || getStaffProjectIds(user).length));
+src/app/ops/refunds/page.tsx:20:  if (!context.isAdmin && context.staffProjectIds.length === 0) redirect('/');
+src/app/api/admin/units/[id]/tariff/route.ts:21:    const snapshot = await readTariffEditorSnapshot(prisma, params.id, guard.isAdmin);
+src/app/api/admin/units/[id]/tariff/route.ts:38:  if (!guard.isAdmin && body?.scope === 'category')
+src/app/api/admin/units/[id]/tariff/route.ts:41:  if (body.scope === 'category' && !guard.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+src/app/api/admin/units/[id]/tariff/route.ts:63:    const saved = guard.isAdmin
+src/app/ops/team/page.tsx:14:    where: { id: user.identityId }, select: { isAdmin: true, status: true },
+src/app/ops/team/page.tsx:17:  const grants = identity.isAdmin ? [] : await prisma.roleAssignment.findMany({
+src/app/ops/team/page.tsx:22:    where: identity.isAdmin ? {} : { id: { in: grants.map(g => g.projectId!).filter(Boolean) } },
+src/app/ops/team/page.tsx:50:      {identity.isAdmin && <Link href="/app/admin/people" className="mt-16 inline-block text-brand-andaman underline">{labels['ops.team.advanced']}</Link>}
+src/app/api/admin/units/[id]/route.ts:39:  if (!context.identity.isAdmin && !selfListing && !hasStaff && (!isMc || !(await hasManagedUnitMcAccess(context.user, { projectId: context.unit.projectId, unitId: params.id })))) {
+src/app/api/admin/units/[id]/route.ts:49:    if (context.identity.isAdmin) {
+src/app/api/admin/units/[id]/route.ts:87:  if (!context.identity.isAdmin && !hasStaff && !isOwner &&
+src/app/ops/tasks/page.tsx:32:      if (explicitMcMode && !access.isAdmin) access.unitIds = await getLegacyOperationalUnitIds(prisma, user.identityId, TASK_DEPARTMENTS, access.unitIds, access.space.organizationId, true);
+src/app/ops/tasks/page.tsx:35:      const member = access.isAdmin ? null : await prisma.operatingSpaceMember.findUnique({
+src/app/ops/tasks/page.tsx:38:      const canAssign = access.isAdmin || access.isWorkspaceAdministrator || Boolean(member?.capabilities.includes('assign_tasks'));
+src/app/ops/costs/page.tsx:35:  if (!opsContext.isAdmin && opsContext.staffProjectIds.length === 0) {
+src/app/ops/costs/page.tsx:47:    : opsContext.isAdmin
+src/app/ops/costs/page.tsx:63:        : opsContext.isAdmin
+src/app/api/admin/units/[id]/media/route.ts:35:    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin)))
+src/app/ops/stays/page.tsx:23:  const spaceMembership=requestedSpaceId&&!user.isAdmin
+src/app/ops/stays/page.tsx:25:  if(requestedSpaceId&&!user.isAdmin&&!spaceMembership?.active)redirect('/ops/spaces');
+src/app/ops/stays/page.tsx:28:  if(!user.isAdmin&&!staffIds.length)redirect('/');
+src/app/ops/stays/page.tsx:30:    where:user.isAdmin?{}:{id:{in:staffIds}},
+src/app/ops/stays/page.tsx:35:  const departmentGrants=user.isAdmin?[]:await prisma.projectStaffPermission.findMany({
+src/app/ops/stays/page.tsx:40:  const allowedDepartments:StayWorkDepartment[]=user.isAdmin?stayWorkDepartments:
+src/app/ops/stays/page.tsx:48:      ...(projectId?{projectId}:user.isAdmin?{}:{projectId:{in:staffIds}}),
+src/app/ops/stays/page.tsx:71:  },today)).filter(item=>allowedDepartments.includes(item.department) && (user.isAdmin || !projectDepartments.has(bookingProjects.get(item.bookingId)||'') || projectDepartments.get(bookingProjects.get(item.bookingId)||'')?.includes(item.department)));
+src/app/ops/claims/page.tsx:36:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/ops/claims/page.tsx:47:    : opsContext.isAdmin
+src/app/ops/calendar/page.tsx:16:  if (!user.isAdmin && !getStaffProjectIds(user).length) redirect('/');
+src/app/ops/calendar/board/page.tsx:46:  const mcMode = !user.isAdmin && (
+src/app/ops/calendar/board/page.tsx:79:  const projectWhere = user.isAdmin ? {} : localAdministrator && !mcMode
+src/app/ops/calendar/board/page.tsx:107:      ? user.isAdmin || (localAdministrator && !mcMode)
+src/app/ops/calendar/board/page.tsx:114:        : !user.isAdmin
+src/app/ops/projects/[id]/edit/page.tsx:28:  if (!user.isAdmin && !assigned) notFound();
+src/app/ops/page.tsx:43:  const isStaff = opsContext.isAdmin || opsContext.staffProjectIds.length > 0;
+src/app/ops/night-audit/page.tsx:26:    where: user.isAdmin ? undefined : { id: { in: staffProjectIds } },
+src/app/ops/night-audit/page.tsx:210:          {user.isAdmin ? (
+src/app/messages/[threadId]/thread-client.tsx:105:          Boolean(data.isAdmin) ||
+src/app/api/admin/statements/[statementId]/sign-off/route.ts:80:    if (body.actor === 'owner' && !currentUser.isAdmin && !isOwnerOfStatement) {
+src/app/ops/reservations/page.tsx:57:          ...(access.isAdmin ? [{roleAssignments:{some:{role:{in:['guest' as const,'resident' as const,'buyer' as const]},status:'active' as const}}},{bookingsAsGuest:{some:{}}}] : [{bookingsAsGuest:{some:{unitId:{in:authorizedUnitIds}}}}]),
+src/app/ops/reservations/page.tsx:65:      where:{importedSource:null,operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
+src/app/ops/spaces/page.tsx:22:      ...(actor.isAdmin ? {} : { members: { some: { identityId: user.identityId, active: true } } }),
+src/app/ops/spaces/page.tsx:30:      if (!access.isAdmin && viewCapability && !access.byCapability[viewCapability]?.length) return null;
+src/app/ops/spaces/page.tsx:31:      const members = access.isAdmin ? await prisma.operatingSpaceMember.count({ where: { operatingSpaceId: candidate.id, active: true } }) : null;
+src/app/ops/spaces/page.tsx:39:  if (!actor.isAdmin && !spaces.length) redirect('/ops');
+src/app/ops/spaces/[spaceId]/administration/page.tsx:19:    orderBy: { id: 'asc' }, include: { identity: { select: { firstName: true, lastName: true, isAdmin: true, isSuperAdmin: true } } } });
+src/app/ops/spaces/[spaceId]/administration/page.tsx:27:      canManage={actor.isSuperAdmin || !(member.identity.isAdmin || member.identity.isSuperAdmin || member.isAdministrator)}
+src/app/ops/spaces/[spaceId]/page.tsx:22:  const can = (capability: OperatingSpaceCapability) => access.isAdmin || Boolean(access.byCapability[capability]?.length);
+src/app/ops/spaces/[spaceId]/page.tsx:114:    ...(access.isAdmin ? [[labels['staff.space.finance'], '/app/admin/ledger?spaceId=' + encodeURIComponent(space.id)]] : []),
+src/app/announcements/page.tsx:43:  if (user.isAdmin) {
+src/app/actions/getIntegrationHealth.ts:31:  const isAdmin = await prisma.identity.findUnique({
+src/app/actions/getIntegrationHealth.ts:33:    select: { isAdmin: true },
+src/app/actions/getIntegrationHealth.ts:36:  if (!isAdmin?.isAdmin) {
+src/app/actions/getAdminSignals.ts:36:  const isAdmin = await prisma.identity.findUnique({
+src/app/actions/getAdminSignals.ts:38:    select: { isAdmin: true },
+src/app/actions/getAdminSignals.ts:41:  if (!isAdmin?.isAdmin) {
+src/app/api/admin/projects/[id]/media/route.ts:35:    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin)))
+src/app/api/admin/projects/[id]/amenities/[amenityId]/media/route.ts:29:    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin))) {
+src/app/api/admin/people/search/route.ts:45:      isAdmin: i.isAdmin,
+src/app/api/admin/categories/[id]/media/route.ts:54:    if (!(await assertPublicPhoto(mediaAssetId, access.user.identityId, access.user.isAdmin))) {
+src/app/(admin)/app/admin/property-content-proposals/page.tsx:12:  if (!user.isAdmin) redirect('/');
+src/app/(admin)/app/admin/layout.tsx:22:  if (!user.isAdmin) {
+src/app/(admin)/app/admin/signals/page.tsx:23:  const isAdmin = await prisma.identity.findUnique({
+src/app/(admin)/app/admin/signals/page.tsx:25:    select: { isAdmin: true },
+src/app/(admin)/app/admin/signals/page.tsx:28:  if (!isAdmin?.isAdmin) {
+src/app/(admin)/app/admin/layantara/page.tsx:109:  if (!user.isAdmin) redirect('/');
+src/app/(admin)/app/admin/projects/[id]/services/page.tsx:15:  if (!user.isAdmin) redirect('/');
+src/app/(admin)/app/admin/projects/[id]/preview/page.tsx:114:    <div className="mx-auto max-w-6xl px-24 pt-24"><ProjectWorkspaceNav projectId={project.id} active={'preview'} contentOnly={!actor.isAdmin} /></div>
+src/app/(admin)/app/admin/projects/[id]/media/page.tsx:60:    <ProjectWorkspaceNav projectId={project.id} active={'media'} contentOnly={!actor.isAdmin} />
+src/app/(admin)/app/admin/integrations/page.tsx:19:    select: { isAdmin: true },
+src/app/(admin)/app/admin/integrations/page.tsx:22:  if (!identity?.isAdmin) {
+src/app/(admin)/app/admin/projects/[id]/inventory/page.tsx:16:  if (!user.isAdmin) redirect('/');
+src/app/(admin)/app/admin/projects/[id]/experience/page.tsx:65:    <ProjectWorkspaceNav projectId={project.id} active={'experience'} contentOnly={!actor.isAdmin} />
+src/app/(admin)/app/admin/projects/[id]/amenities/[amenityId]/reservations/page.tsx:48:    <ProjectWorkspaceNav projectId={amenity.project.id} active={'experience'} contentOnly={!actor.isAdmin} />
+src/app/(admin)/app/admin/crm/opportunities/[id]/page.tsx:27:  if (!user.isAdmin) {
+src/app/(admin)/app/admin/crm/opportunities/[id]/deal/page.tsx:15:  if(!user.isAdmin)redirect('/');
+src/modules/integrations/layantara/imported-group.service.ts:25:    const actor = await tx.identity.findUnique({ where: { id: input.actorIdentityId }, select: { isAdmin: true, status: true } });
+src/modules/integrations/layantara/imported-group.service.ts:26:    if (!actor?.isAdmin || actor.status !== 'active') throw new Error('IMPORTED_GROUP_ADMIN_REQUIRED');

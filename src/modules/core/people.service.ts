@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { validateRoleAssignmentScope } from './role-assignment-policy';
 import { isPropertyCapabilityRole } from './property-capability-policy';
 import { grantPropertyCapability, revokePropertyCapability } from './property-capability-grants';
+import { managePlatformAccount, protectSuperadministrator } from './administration.service';
 
 interface SearchIdentitiesInput {
   query?: string;
@@ -33,10 +34,12 @@ interface RevokeRoleInput {
 
 interface BlockIdentityInput {
   identityId: string;
+  actorIdentityId: string;
 }
 
 interface UnblockIdentityInput {
   identityId: string;
+  actorIdentityId: string;
 }
 
 interface CreateOrganizationInput {
@@ -187,6 +190,7 @@ export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promis
   const { identityId, role, scopeType, projectId, unitId, organizationId, providerId, grantedByIdentityId } = input;
 
   validateRoleAssignmentScope(input);
+  await protectSuperadministrator(db, grantedByIdentityId, identityId);
   if (isPropertyCapabilityRole(role)) {
     const result = await grantPropertyCapability(db, grantedByIdentityId, {
       identityId, role, scopeType, projectId, unitId,
@@ -196,14 +200,14 @@ export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promis
     return result.grant;
   }
 
-  // Restricted employee grants must not piggyback on operational invitation paths.
-  if (role === 'content_contributor') {
+  // Generic roles are global control-plane writes; local administrators cannot use this service as a shortcut.
+  {
     const granter = await db.identity.findUnique({
       where: { id: grantedByIdentityId },
       select: { isAdmin: true, status: true },
     });
     if (!granter?.isAdmin || granter.status !== 'active') {
-      throw new Error('Only active admins can grant content contributor roles');
+      throw new Error('Only active admins can grant roles');
     }
   }
 
@@ -299,6 +303,7 @@ export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promis
 export async function revokeRole(db: PrismaClient, input: RevokeRoleInput): Promise<RoleAssignment> {
   const { roleAssignmentId } = input;
   const assignment = await db.roleAssignment.findUnique({ where: { id: roleAssignmentId } });
+  if (assignment) await protectSuperadministrator(db, input.actorIdentityId ?? '', assignment.identityId);
   if (assignment && isPropertyCapabilityRole(assignment.role)) {
     if (!input.actorIdentityId) throw new Error('Current actor is required to revoke a property capability');
     return (await revokePropertyCapability(db, input.actorIdentityId, roleAssignmentId)).grant;
@@ -319,38 +324,14 @@ export async function revokeRole(db: PrismaClient, input: RevokeRoleInput): Prom
  * Block an identity (they lose all access)
  */
 export async function blockIdentity(db: PrismaClient, input: BlockIdentityInput): Promise<Identity> {
-  const { identityId } = input;
-
-  const identity = await db.identity.findUnique({ where: { id: identityId } });
-  if (!identity) {
-    throw new Error(`Identity ${identityId} not found`);
-  }
-
-  return db.identity.update({
-    where: { id: identityId },
-    data: { status: 'blocked' },
-  });
+  return managePlatformAccount(db, input.actorIdentityId, input.identityId, { action: 'block' });
 }
 
 /**
  * Unblock an identity
  */
 export async function unblockIdentity(db: PrismaClient, input: UnblockIdentityInput): Promise<Identity> {
-  const { identityId } = input;
-
-  const identity = await db.identity.findUnique({ where: { id: identityId } });
-  if (!identity) {
-    throw new Error(`Identity ${identityId} not found`);
-  }
-
-  if (identity.status !== 'blocked') {
-    throw new Error(`Identity ${identityId} is not blocked`);
-  }
-
-  return db.identity.update({
-    where: { id: identityId },
-    data: { status: 'active' },
-  });
+  return managePlatformAccount(db, input.actorIdentityId, input.identityId, { action: 'unblock' });
 }
 
 /**

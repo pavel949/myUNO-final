@@ -11,6 +11,7 @@ export interface CurrentUser {
   firstName: string;
   lastName: string;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
   roles: {
     role: string;
     projectId: string | null;
@@ -80,6 +81,7 @@ export const getSessionUser = cache(async (): Promise<CurrentUser | null> => {
       firstName: identity.firstName,
       lastName: identity.lastName,
       isAdmin: identity.isAdmin,
+      isSuperAdmin: identity.isSuperAdmin,
       roles: identity.roleAssignments,
     };
   } catch {

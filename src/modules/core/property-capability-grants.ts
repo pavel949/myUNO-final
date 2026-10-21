@@ -1,4 +1,5 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
+import { protectSuperadministrator } from './administration.service';
 import { PropertyCapabilityError, readPropertyCapabilityAccess } from './property-capability-access';
 import { capabilityExpiryWithin, capabilityScopeContains, isPropertyCapabilityRole, validCapabilityScope,
   type PropertyCapabilityGrant, type PropertyCapabilityRole } from './property-capability-policy';
@@ -58,6 +59,7 @@ const auditShape = (grant: PropertyCapabilityGrant) => ({
 export async function grantPropertyCapability(db: PrismaClient, actorIdentityId: string, raw: unknown) {
   const input = parsePropertyCapabilityGrant(raw);
   return db.$transaction(async tx => {
+    await protectSuperadministrator(tx, actorIdentityId, input.identityId);
     const unitId = input.scopeType === 'unit' ? input.unitId! : null;
     if (unitId) {
       await tx.$queryRaw`SELECT id FROM unit WHERE id = ${unitId} FOR SHARE`;
@@ -126,6 +128,7 @@ export async function revokePropertyCapability(db: PrismaClient, actorIdentityId
   return db.$transaction(async tx => {
     const current = await tx.roleAssignment.findUnique({ where: { id: roleAssignmentId } });
     if (!current || !isPropertyCapabilityRole(current.role)) throw new PropertyCapabilityError('Assignment not found', 404);
+    await protectSuperadministrator(tx, actorIdentityId, current.identityId);
     const access = await readPropertyCapabilityAccess(tx, actorIdentityId, current.role, true);
     if (!access.actor.isAdmin && !access.grants.some(grant => grant.canDelegate &&
       grant.parentGrantId === null && current.parentGrantId === grant.id && current.grantedByIdentityId === actorIdentityId))

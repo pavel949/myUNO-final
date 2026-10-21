@@ -3,6 +3,7 @@ import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { people } from '@/modules/core';
+import { protectSuperadministrator } from '@/modules/core/administration.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invite the person through People & Roles first; an active account is required' }, { status: 404 });
   }
   if (target.id === auth.identity!.id) return NextResponse.json({ error: 'Cannot assign yourself' }, { status: 403 });
+  try { await protectSuperadministrator(prisma, auth.identity!.id, target.id); }
+  catch { return NextResponse.json({ error: 'Protected administrative account' }, { status: 403 }); }
   const assignment = await prisma.$transaction(async tx => {
     const granted = await people.grantRole(tx as PrismaClient, {
       identityId: target.id, role: 'onsite_host', scopeType: 'project', projectId,
@@ -95,6 +98,8 @@ export async function DELETE(req: NextRequest) {
     select: { id: true, identityId: true, grantedByIdentityId: true },
   });
   if (!assignment) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  try { await protectSuperadministrator(prisma, auth.identity!.id, assignment.identityId); }
+  catch { return NextResponse.json({ error: 'Protected administrative account' }, { status: 403 }); }
   if (!auth.identity!.isAdmin && assignment.grantedByIdentityId !== auth.identity!.id) {
     return NextResponse.json({ error: 'Only the original delegating manager or an admin may revoke this grant' }, { status: 403 });
   }

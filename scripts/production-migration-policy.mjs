@@ -8,10 +8,12 @@ export const APPROVED_PENDING = new Set([
   '20261021010000_booking_refund_dispatch_authorization',
   '20261021023000_imported_reservation_groups',
   '20261021140000_sales_offer_desk',
+  '20261021190000_protected_workspace_administration',
 ]);
 
 // Reviewed expand-only release SQL. Any further edit requires another review.
 const REVIEWED_RELEASE_CHECKSUMS = new Map([
+  ['20261021190000_protected_workspace_administration', '5d67013f4d2f393f6785334a7c577a5984ca4e54315d0ceb5ed4ea0234bc93ef'],
   ['20261021023000_imported_reservation_groups', '0585d9741c7a086946dc2e2058f180cc8880d906023bdd2406bbeb9bca0d10e7'],
   ['20261021010000_booking_refund_dispatch_authorization', '05b04e97d98c29634d27b5ae55fbfbf8b5c21150d17f5d328e1c481dc586d25a'],
   ['20261021140000_sales_offer_desk', '96dfc0238962165e14b758f12951520c4759e640267281818c039dda0017b92b'],

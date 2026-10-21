@@ -15,6 +15,7 @@ import { updateGovernedOperatingMember } from './operating-space-governance.serv
 function fixture() {
   const space = { id: 'space-a', organizationId: 'org-a', status: 'active', updatedAt: new Date('2026-10-15T00:00:00.000Z') };
   const tx = {
+    $executeRaw: vi.fn(async () => 1),
     operatingSpace: { findUnique: vi.fn(async () => space), updateMany: vi.fn(async () => ({ count: 1 })) },
     organization: { findUnique: vi.fn(async () => ({ status: 'active' })) },
     identity: { findUnique: vi.fn(async () => ({ id: 'employee', status: 'active' })) },

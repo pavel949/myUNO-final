@@ -12,6 +12,7 @@ const assignment = (over = {}) => ({ id: 'grant', unit: { projectId: 'p1' }, par
   scopeType: 'unit', projectId: 'p1', unitId: 'a', organizationId: null, providerId: null, ...over });
 function fixture(assignments = [assignment()], actor = { id: 'editor', status: 'active', isAdmin: false }) {
   const db = { identity: { findUnique: vi.fn(async () => actor) },
+    operatingSpaceMember: { findMany: vi.fn(async () => []) },
     roleAssignment: { findMany: vi.fn(async ({ where }) => assignments.filter(a => a.status === where.status && (!where.role || a.role === where.role))) },
     unit: { findUnique: vi.fn(async ({ where }) => units.find(u => u.id === where.id) ?? null),
       findMany: vi.fn(async ({ where }) => units.filter(u => !where.OR || where.OR.some((scope: { id?: string; projectId: string }) =>

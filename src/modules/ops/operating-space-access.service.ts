@@ -12,6 +12,27 @@ export class OperatingAccessError extends Error {
   constructor(message: string, public readonly status = 403) { super(message); }
 }
 
+/**
+ * Local administrators cannot safely inherit unit-only legacy booking readers
+ * across workspace boundaries. Omit the entire ambiguous physical unit rather
+ * than hide foreign occupancy and incorrectly present it as available.
+ * Foreign historical group bindings remain blocked until explicitly reconciled.
+ */
+export async function isolatedWorkspaceAdministratorUnitIds(db: Db, spaceId: string, unitIds: string[], now = new Date()) {
+  if (!unitIds.length) return [];
+  const rows = await db.unit.findMany({ where: { id: { in: unitIds },
+    operatingSpaces: { none: { operatingSpaceId: { not: spaceId }, active: true,
+      startsOn: { lte: now }, OR: [{ endsOn: null }, { endsOn: { gt: now } }],
+      operatingSpace: { status: 'active', organization: { status: 'active' } },
+    } },
+    bookings: { none: { reservationGroup: { operatingSpaceId: { not: null }, NOT: { operatingSpaceId: spaceId } } } },
+    importedReservationPlacements: { none: { source: { reservationGroup: {
+      operatingSpaceId: { not: null }, NOT: { operatingSpaceId: spaceId },
+    } } } },
+  }, select: { id: true } });
+  return rows.map(row => row.id);
+}
+
 /** Every invocation reads current identity and grants; cookies supply only identityId. */
 export async function getOperationalActor(db: Db, identityId: string) {
   const actor = await db.identity.findUnique({ where: { id: identityId }, select: {
@@ -67,14 +88,16 @@ export async function getScopedOperationalAccess(
   if (!space || space.status !== 'active' || space.organization.status !== 'active') {
     throw new OperatingAccessError('Operating space is not active');
   }
+  let isWorkspaceAdministrator = false;
   if (!actor.isAdmin) {
     const membership = await db.operatingSpaceMember.findUnique({
       where: { operatingSpaceId_identityId: { operatingSpaceId: spaceId, identityId } },
-      select: { active: true, capabilities: true },
+      select: { active: true, capabilities: true, isAdministrator: true },
     });
-    if (!membership?.active || !membership.capabilities.includes(capability)) {
+    if (!membership?.active || (!membership.isAdministrator && !membership.capabilities.includes(capability))) {
       throw new OperatingAccessError('Operating space capability required');
     }
+    isWorkspaceAdministrator = membership.isAdministrator;
   }
   const now = new Date();
   const attached = await db.operatingSpaceUnit.findMany({ where: {
@@ -82,8 +105,11 @@ export async function getScopedOperationalAccess(
     OR: [{ endsOn: null }, { endsOn: { gt: now } }],
   }, select: { unitId: true } });
   const eligible = new Set((await eligibleOrganizationUnits(db, space.organizationId, now)).map(u => u.id));
-  const unitIds = await getLegacyOperationalUnitIds(db, identityId, departments, attached.map(u => u.unitId).filter(id => eligible.has(id)), space.organizationId);
-  return { space, unitIds, isAdmin: actor.isAdmin };
+  const candidateIds = attached.map(u => u.unitId).filter(id => eligible.has(id));
+  const unitIds = isWorkspaceAdministrator ? await isolatedWorkspaceAdministratorUnitIds(db, spaceId, candidateIds, now) :
+    await getLegacyOperationalUnitIds(db, identityId, departments, candidateIds, space.organizationId);
+  // Never label local authority isAdmin: downstream callers use that flag to bypass global checks.
+  return { space, unitIds, isAdmin: actor.isAdmin, isWorkspaceAdministrator };
 }
 
 export async function assertOperationalTaskAccess(
@@ -105,7 +131,7 @@ export async function operationalTaskVisibility(db: Db, identityId: string): Pro
   if (actor.isAdmin) return {};
   const legacy = await getLegacyOperationalUnitIds(db, identityId, TASK_DEPARTMENTS);
   const memberships = await db.operatingSpaceMember.findMany({ where: {
-    identityId, active: true, capabilities: { has: 'manage_tasks' },
+    identityId, active: true, OR: [{ capabilities: { has: 'manage_tasks' } }, { isAdministrator: true }],
     operatingSpace: { status: 'active', organization: { status: 'active' } },
   }, select: { operatingSpaceId: true } });
   const scopes: Prisma.OperationalTaskWhereInput[] = [{ operatingSpaceId: null, unitId: { in: legacy } }];
@@ -145,11 +171,11 @@ export async function getOperatingSpaceOverviewAccess(db: Db, identityId: string
   const actor = await getOperationalActor(db, identityId);
   const membership = actor.isAdmin ? null : await db.operatingSpaceMember.findUnique({
     where: { operatingSpaceId_identityId: { operatingSpaceId: spaceId, identityId } },
-    select: { active: true, capabilities: true },
+    select: { active: true, capabilities: true, isAdministrator: true },
   });
   if (!actor.isAdmin && !membership?.active) throw new OperatingAccessError('Operating space membership required');
   const dailyCapabilities = OPERATING_SPACE_CAPABILITIES.filter(cap => !isOperatingCreationCapability(cap));
-  const capabilities = actor.isAdmin ? dailyCapabilities :
+  const capabilities = actor.isAdmin || membership?.isAdministrator ? dailyCapabilities :
     dailyCapabilities.filter(cap => membership!.capabilities.includes(cap));
   // Admin scope is independent of department. Resolve the canonical intersection
   // once, rather than repeating the same database reads for all 13 capabilities
@@ -161,6 +187,7 @@ export async function getOperatingSpaceOverviewAccess(db: Db, identityId: string
     if (!access.isAdmin) throw new OperatingAccessError('Authority changed; reload the workspace');
     return {
       space: access.space, unitIds: access.unitIds, isAdmin: true,
+      isWorkspaceAdministrator: false,
       byCapability: Object.fromEntries(dailyCapabilities.map(capability => [capability, [...access.unitIds]])) as Partial<Record<OperatingSpaceCapability, string[]>>,
     };
   }
@@ -173,7 +200,7 @@ export async function getOperatingSpaceOverviewAccess(db: Db, identityId: string
   }
   const unitIds = [...new Set(Object.values(byCapability).flat())];
   if (!space || (!actor.isAdmin && !unitIds.length)) throw new OperatingAccessError('No effective workspace access');
-  return { space, unitIds, byCapability, isAdmin: actor.isAdmin };
+  return { space, unitIds, byCapability, isAdmin: actor.isAdmin, isWorkspaceAdministrator: Boolean(membership?.isAdministrator) };
 }
 
 /** Team assignment never treats membership of an arbitrary team as unit authority. */

@@ -76,7 +76,15 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs
+      - run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs scripts/production-connection-diagnostics.test.mjs
+      - name: Metadata-only connection and DNS comparison
+        if: ${{ inputs.preflight_only }}
+        env:
+          READONLY_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
+          MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}
+        run: node scripts/production-connection-diagnostics.mjs
       - name: Read-only canonical connection and migration ledger
         env:
           # The proven backup principal already has SELECT on the ledger.

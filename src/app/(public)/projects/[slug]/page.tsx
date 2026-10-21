@@ -31,6 +31,11 @@ import { listPublicCommercialHomes } from '@/modules/projects/commercial-discove
 import { LocalDate } from '@/components/LocalDate';
 import { getDestination } from '@/modules/destinations';
 
+const LAYANTARA_VIDEO_ATTRIBUTES = {
+  preload: 'none',
+  poster: '/media/layantara-resort-poster.jpg',
+} as const;
+
 export const dynamic = 'force-dynamic';
 
 // React cache is request-scoped: metadata and page share a read, never a stale
@@ -374,8 +379,7 @@ export default async function ProjectLandingPage(
               className="block aspect-[16/9] w-full object-cover"
               controls
               playsInline
-              preload="none"
-              poster="/media/layantara-resort-poster.jpg"
+              {...LAYANTARA_VIDEO_ATTRIBUTES}
               aria-label={`${project.name} resort film`}
             >
               <source src="/media/layantara-resort.mp4" type="video/mp4" />

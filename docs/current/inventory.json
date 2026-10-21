@@ -1,5 +1,5 @@
 {
-  "codeRevision": "46f04a32b04fca66ec4c3134eea7685656822020",
+  "codeRevision": "4965d2f80136fa7c4f8a63b059e2d40ffa94faec",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,7 +7,7 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 571,
+    "tests": 572,
     "prismaModels": 118,
     "migrations": 95,
     "routeCollisions": 0
@@ -2635,8 +2635,8 @@
     },
     {
       "name": "ops",
-      "files": 36,
-      "testFiles": 19
+      "files": 38,
+      "testFiles": 20
     },
     {
       "name": "projects",
@@ -3473,6 +3473,7 @@
     "src/modules/ops/operational-task.service.test.ts",
     "src/modules/ops/ops-board-calendar.integration.test.ts",
     "src/modules/ops/ops-board.service.integration.test.ts",
+    "src/modules/ops/pms-automation-rules.test.ts",
     "src/modules/ops/pms-operations-expansion.test.ts",
     "src/modules/ops/reservation-guests.integration.test.ts",
     "src/modules/ops/tm30-address.test.ts",

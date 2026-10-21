@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46f04a32b04fca66ec4c3134eea7685656822020`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `4965d2f80136fa7c4f8a63b059e2d40ffa94faec`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 571 |
+| tests | 572 |
 | prismaModels | 118 |
 | migrations | 95 |
 | routeCollisions | 0 |
@@ -855,7 +855,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### ops
 
-Файлов: 36; тестовых файлов: 19. [Описание](../../src/modules/ops/README.md).
+Файлов: 38; тестовых файлов: 20. [Описание](../../src/modules/ops/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -871,6 +871,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/ops/operating-space.service.ts](<../../src/modules/ops/operating-space.service.ts>) | implementation | `listOperatingSpacesForIdentity`, `getOperatingSpaceUnitIds`, `getOperatingSpaceMembership`, `hasOperatingSpaceCapability`, `assertOperatingSpaceCapability` |
 | [src/modules/ops/operational-task.service.ts](<../../src/modules/ops/operational-task.service.ts>) | implementation | `ensureTurnoverTasksForCheckout`, `assertUnitReadyForCheckIn`, `transitionOperationalTask`, `getUnitReadinessMap`, `listOperationalTasks`, `createOperationalTask`, `createPreventiveMaintenancePlan`, `generateDuePreventiveMaintenanceTasks` |
 | [src/modules/ops/ops-board.service.ts](<../../src/modules/ops/ops-board.service.ts>) | implementation | `getOpsBoard`, `getOpsMobilizationQueue`, `getOpsBookingRequests` |
+| [src/modules/ops/pms-automation-rules.ts](<../../src/modules/ops/pms-automation-rules.ts>) | implementation | `suggestPmsActions` |
 | [src/modules/ops/reservation-guests.service.ts](<../../src/modules/ops/reservation-guests.service.ts>) | implementation | `RESERVATION_DEPARTMENTS`, `RESERVATION_GUEST_SELECT`, `registeredReservationGuestIds`, `canUseReservationGuest`, `registerReservationGuest` |
 | [src/modules/ops/tm30-address.ts](<../../src/modules/ops/tm30-address.ts>) | implementation | `TM30_IMMIGRATION_PORTAL_URL`, `buildTm30AddressBlock` |
 | [src/modules/ops/tm30-filing.service.ts](<../../src/modules/ops/tm30-filing.service.ts>) | implementation | `createTm30Filing`, `markTm30FilingFiled`, `markTm30FilingFailed`, `getTm30Queue`, `logTm30PassportAccess`, `checkTm30Escalations`, `createConditionReport`, `getConditionReport` |
@@ -1103,6 +1104,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/ops/OpsStatusPill.tsx](<../../src/components/ops/OpsStatusPill.tsx>)
 - [src/components/ops/PreventiveMaintenanceForm.tsx](<../../src/components/ops/PreventiveMaintenanceForm.tsx>)
 - [src/components/ops/ReservationGroupForm.tsx](<../../src/components/ops/ReservationGroupForm.tsx>)
+- [src/components/ops/ReservationSummaryCard.tsx](<../../src/components/ops/ReservationSummaryCard.tsx>)
 - [src/components/ops/StayActions.tsx](<../../src/components/ops/StayActions.tsx>)
 - [src/components/ops/Tm30FilingDetailDrawer.tsx](<../../src/components/ops/Tm30FilingDetailDrawer.tsx>)
 - [src/components/ops/UnifiedStayCalendar.tsx](<../../src/components/ops/UnifiedStayCalendar.tsx>)
@@ -6699,6 +6701,7 @@ model RateLimitBucket {
 - [src/modules/ops/operational-task.service.test.ts](<../../src/modules/ops/operational-task.service.test.ts>)
 - [src/modules/ops/ops-board-calendar.integration.test.ts](<../../src/modules/ops/ops-board-calendar.integration.test.ts>)
 - [src/modules/ops/ops-board.service.integration.test.ts](<../../src/modules/ops/ops-board.service.integration.test.ts>)
+- [src/modules/ops/pms-automation-rules.test.ts](<../../src/modules/ops/pms-automation-rules.test.ts>)
 - [src/modules/ops/pms-operations-expansion.test.ts](<../../src/modules/ops/pms-operations-expansion.test.ts>)
 - [src/modules/ops/reservation-guests.integration.test.ts](<../../src/modules/ops/reservation-guests.integration.test.ts>)
 - [src/modules/ops/tm30-address.test.ts](<../../src/modules/ops/tm30-address.test.ts>)

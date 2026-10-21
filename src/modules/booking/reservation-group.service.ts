@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 export async function createReservationGroup(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: {
     guestIdentityId: string;
     createdByIdentityId?: string | null;
@@ -14,7 +14,7 @@ export async function createReservationGroup(
     authorizeScope?: (tx: Prisma.TransactionClient) => Promise<string[]>;
   },
 ) {
-  return db.$transaction(async (tx) => {
+  const write = async (tx: Prisma.TransactionClient) => {
     const authorizedUnitIds = input.authorizeScope ? await input.authorizeScope(tx) : undefined;
     const guest = await tx.identity.findUnique({
       where: { id: input.guestIdentityId },
@@ -88,7 +88,8 @@ export async function createReservationGroup(
         },
       },
     });
-  });
+  };
+  return '$transaction' in db ? db.$transaction(write) : write(db);
 }
 
 export async function attachBookingToReservationGroup(

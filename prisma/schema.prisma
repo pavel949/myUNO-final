@@ -1028,6 +1028,7 @@ model Project {
   area                  Area?                     @relation(fields: [areaId], references: [id], onDelete: SetNull)
   coverMedia            MediaAsset?               @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   masterplanMedia       MediaAsset?               @relation(name: "projectMasterplan", fields: [masterplanMediaId], references: [id], onDelete: SetNull)
+  importedReservationSources ImportedReservationSource[]
   units                 Unit[]
   structureNodes        ProjectStructureNode[]
   roleAssignments       RoleAssignment[]          @relation("projectScope")
@@ -1132,6 +1133,7 @@ model Unit {
   ratePlans                    RatePlan[]
   engagements                  UnitEngagement[]
   roleAssignments              RoleAssignment[]              @relation("unitScope")
+  importedReservationPlacements ImportedReservationPlacement[]
   blockedDates                 BlockedDate[]
   pricingRules                 PricingRule[]
   bookings                     Booking[]
@@ -1180,6 +1182,7 @@ model BlockedDate {
   // Relations
   unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  importedReservationPlacement ImportedReservationPlacement?
   propertyDeal PropertyDeal? @relation(fields: [propertyDealId], references: [id], onDelete: Restrict)
 
   @@index([unitId, startDate, endDate])
@@ -1206,6 +1209,7 @@ model PricingRule {
 }
 
 model ReservationGroup {
+  importedSource ImportedReservationSource?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -3805,6 +3809,7 @@ model ExternalSystem {
   status       String @default("active")
   config       Json   @default("{}") @db.JsonB
 
+  importedReservationSources ImportedReservationSource[]
   mappings    ExternalMapping[]
   inbox       ExternalEventInbox[]
   checkpoints ExternalAggregateCheckpoint[]
@@ -4194,4 +4199,46 @@ model SalesOfferShare {
   @@index([offerId])
   @@index([createdByIdentityId])
   @@map("sales_offer_share")
+}
+
+
+/// Historical imported group quote; evidence is not a receipt or collectible balance.
+model ImportedReservationSource {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  externalSystemId String @map("external_system_id")
+  sourceReference String @map("source_reference")
+  reservationGroupId String @unique @map("reservation_group_id")
+  projectId String @map("project_id")
+  sourceRowDigest String @map("source_row_digest") @db.VarChar(64)
+  workbookSha256 String @map("workbook_sha256") @db.VarChar(64)
+  quotedTotalThb Int @map("quoted_total_thb")
+  currency String @default("THB")
+  sourcePaymentStatus String @map("source_payment_status")
+  reportedPaidThb Int? @map("reported_paid_thb")
+  adults Int?
+  children Int?
+  sourceEvidence Json @map("source_evidence") @db.JsonB
+  externalSystem ExternalSystem @relation(fields:[externalSystemId], references:[id], onDelete:Restrict)
+  reservationGroup ReservationGroup @relation(fields:[reservationGroupId], references:[id], onDelete:Restrict)
+  project Project @relation(fields:[projectId], references:[id], onDelete:Restrict)
+  placements ImportedReservationPlacement[]
+  @@unique([externalSystemId,sourceReference])
+  @@map("imported_reservation_source")
+}
+
+/// Canonical operational placement backed by the existing BlockedDate authority.
+/// Null is unknown per-villa allocation, never a zero-valued Booking.
+model ImportedReservationPlacement {
+  id String @id @default(uuid())
+  sourceId String @map("source_id")
+  unitId String @map("unit_id")
+  blockedDateId String @unique @map("blocked_date_id")
+  sourceUnitCode String @map("source_unit_code")
+  allocatedTotalThb Int? @map("allocated_total_thb")
+  source ImportedReservationSource @relation(fields:[sourceId], references:[id], onDelete:Restrict)
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Restrict)
+  blockedDate BlockedDate @relation(fields:[blockedDateId], references:[id], onDelete:Restrict)
+  @@unique([sourceId,unitId])
+  @@map("imported_reservation_placement")
 }

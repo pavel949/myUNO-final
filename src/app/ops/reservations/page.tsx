@@ -12,6 +12,8 @@ import { enumLabel, enumLabelDefaults } from '@/lib/enum-labels';
 import { formatDate } from '@/lib/date';
 import { getScopedOperationalAccess, OperatingAccessError } from '@/modules/ops/operating-space-access.service';
 import ManualReservationForm from '@/components/ops/ManualReservationForm';
+import { listImportedGroupsForUnits } from '@/modules/integrations/layantara/imported-group.service';
+import ImportedReservationGroups from '@/components/ops/ImportedReservationGroups';
 import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
 import ReservationSummaryCard from '@/components/ops/ReservationSummaryCard';
 
@@ -41,7 +43,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
   const now=new Date();
 
   const registeredGuestIds=await registeredReservationGuestIds(prisma,spaceId,authorizedUnitIds);
-  const [units,guests,groups,bookings]=await Promise.all([
+  const [units,guests,groups,bookings,importedGroups]=await Promise.all([
     prisma.unit.findMany({
       where:{id:{in:authorizedUnitIds},status:{not:'offboarded'}},
       select:{id:true,name:true,instantBook:true,project:{select:{name:true}}},
@@ -60,7 +62,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
       take:200,
     }),
     prisma.reservationGroup.findMany({
-      where:{operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
+      where:{importedSource:null,operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
       select:{
         id:true,title:true,guestIdentityId:true,notes:true,
         guest:{select:{firstName:true,lastName:true}},
@@ -87,6 +89,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
       orderBy:[{startDate:'asc'},{createdAt:'desc'}],
       take:300,
     }),
+    listImportedGroupsForUnits(prisma,authorizedUnitIds),
   ]);
 
   const locale=getRequestLocale();
@@ -162,6 +165,7 @@ export default async function ReservationDesk(props:{searchParams?: Promise<{spa
         </div>)}
       </section>
 
+      <ImportedReservationGroups groups={importedGroups} locale={locale} />
       {canManage?<ReservationGroupForm operatingSpaceId={spaceId} guests={guests} labels={labels}/>:null}
       {canManage?<ManualReservationForm operatingSpaceId={spaceId} units={units} guests={guests} groups={groups.map(g=>({id:g.id,title:g.title,guestIdentityId:g.guestIdentityId}))} labels={labels}/>:null}
 

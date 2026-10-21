@@ -18,12 +18,14 @@ function serializePlan(plan: ImportPlan, mode: 'preview' | 'apply') {
     const stays = plan.stays.map(s => ({
       key: s.key, ref: s.ref, unitCode: s.unitCode, guestName: s.guestName, channel: s.channel,
       sourceChannelName: s.sourceChannelName ?? null, startDate: s.startDate, endDate: s.endDate,
-      totalSatang: s.totalSatang, paidSatang: s.paidSatang, action: s.action, reason: s.reason ?? null,
+      sourceReservationTotalSatang: s.key !== s.ref ? null : s.sourceReservationTotalSatang,
+      totalSatang: s.key !== s.ref ? null : s.totalSatang, paidSatang: s.key !== s.ref || !s.sourcePaymentAmountRaw?.trim() ? null : s.paidSatang, action: s.action, reason: s.reason ?? null,
       sourcePaymentStatus: s.sourcePaymentStatus, sourcePaymentAmountRaw: s.sourcePaymentAmountRaw,
       completeAfterImport: s.completeAfterImport, partyUnknown: s.partyUnknown,
       receivableStatus: s.review ? 'pending_reconciliation' : null,
     }));
-    return { mode, summary: plan.summary, problems: plan.problems, applyBlockers: plan.applyBlockers, untouchedProtections: plan.untouchedProtections, stays };
+    const sourceGroups = (plan.sourceGroups ?? []).map(g => ({ ref: g.ref, action: g.action, reason: g.reason, quotedTotalSatang: g.entry.totalSatang, allocation: 'unknown', placements: g.entry.placements.map(p => ({ unitCode: p.unitCode })) }));
+    return { mode, sourceGroups, summary: plan.summary, problems: plan.problems, applyBlockers: plan.applyBlockers, untouchedProtections: plan.untouchedProtections, stays };
 }
 
 /**
@@ -46,11 +48,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const parsed = parseReservationsWorkbook(new Uint8Array(await file.arrayBuffer()));
-    const plan = await planWorkbookImport(prisma, parsed, new Date(), { reviewedSource: form?.get('sourceMode') === 'reviewed_source' });
+    const plan = await planWorkbookImport(prisma, parsed, new Date(), { reviewedSource: form?.get('sourceMode') === 'reviewed_source', ...(form?.get('scope') === 'current' ? { currentOnly: true } : {}) });
     const body = serializePlan(plan, mode);
     if (mode === 'preview') return NextResponse.json(body);
     const result = await applyWorkbookImport(prisma, plan, { actorIdentityId: guard.actorIdentityId });
-    return NextResponse.json({ ...body, applied: result.applied, groups: result.groups, completed: result.completed });
+    return NextResponse.json({ ...body, applied: result.applied, groups: result.groups, completed: result.completed, sourceGroupResults: result.sourceGroupResults });
   } catch (error) {
     if (error instanceof WorkbookReconciliationRequired) {
       return NextResponse.json({ ...serializePlan(error.plan, 'preview'), error: error.message }, { status: 422 });

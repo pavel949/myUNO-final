@@ -160,8 +160,8 @@ export async function applyChannelEvent(
       const start=day(e.startDate),end=day(e.endDate);
       if(await hasBookingConflict(tx,unit.id,start,end,bookingId??undefined))
         return quarantine('inventory_conflict');
-      const ref=reviewed?.entry.block.externalRef ?? (e.occupancyId?'layantara:occupancy:'+e.occupancyId:null);
-      if(reviewed) await tx.$queryRaw`SELECT id FROM blocked_date WHERE id = ${reviewed.entry.block.id} FOR UPDATE`;
+      const ref=reviewed?.entry.block?.externalRef ?? (e.occupancyId?'layantara:occupancy:'+e.occupancyId:null);
+      if(reviewed?.entry.block) await tx.$queryRaw`SELECT id FROM blocked_date WHERE id = ${reviewed.entry.block.id} FOR UPDATE`;
       const blocks=await tx.blockedDate.findMany({where:{
         unitId:unit.id,startDate:{lt:end},endDate:{gt:start},
       }});
@@ -170,10 +170,18 @@ export async function applyChannelEvent(
       // preview. Never consume one based on an inferred occupancyId.
       if(operatingRecord&&blocks.length&&!reviewed)
         return quarantine('workbook_occupancy_reconciliation_required');
-      if(reviewed && ((!bookingId && blocks.length!==1) || blocks.some(b=>
-        b.id!==reviewed.entry.block.id || b.externalRef!==reviewed.entry.block.externalRef || b.reason!==reviewed.entry.block.reason ||
-        (reviewed.entry.block.externalRef===null && b.note!==reviewed.entry.block.note))))
-        return quarantine('workbook_review_block_changed');
+      if(reviewed) {
+        const expected = reviewed.entry.block;
+        // Null consumes nothing. A newly added protection must still stop apply
+        // under the same unit lock, even if preview previously saw no block.
+        if(expected === null ? blocks.length !== 0 :
+          ((!bookingId && blocks.length !== 1) || blocks.some(b =>
+            b.id !== expected.id || b.externalRef !== expected.externalRef || b.reason !== expected.reason ||
+            (expected.externalRef === null && b.note !== expected.note) ||
+            (reviewed.manifest.version >= 2 && (b.note !== expected.note ||
+              b.updatedAt.toISOString() !== new Date(expected.updatedAt!).toISOString())))))
+          return quarantine('workbook_review_block_changed');
+      }
       if(blocks.some(b=>(!reviewed&&(!ref||b.externalRef!==ref))||
          b.startDate.getTime()!==start.getTime()||b.endDate.getTime()!==end.getTime()))
         return quarantine('unreconciled_inventory_block');
@@ -257,6 +265,7 @@ export async function applyChannelEvent(
           externalRef:externalKey(environment,e.externalBookingId),
           status:'confirmed',startDate:start,endDate:end,adults:e.adults,children:e.children,
           totalThb:e.totalSatang,balanceDueThb:e.totalSatang,
+          ...(reviewed?.entry.operationalDetails?.notes ? { internalNote: reviewed.entry.operationalDetails.notes } : {}),
           ...(reviewed?{receivableStatus:'pending_reconciliation' as const,
             partyDetailsStatus:reviewed.entry.adults===null||reviewed.entry.children===null
               ? 'source_unknown' as const : 'known' as const}:{}),
@@ -265,6 +274,7 @@ export async function applyChannelEvent(
             ...(e.sourceChannelName?{sourceChannelName:e.sourceChannelName}:{}),
             ...(operatingRecord?{importedFrom:'operator_workbook'}:{}),
             ...(reviewed?{
+              sourceOperationalEvidence:{...reviewed.entry.operationalDetails,provenance:reviewed.manifest.provenance},
               sourcePaymentEvidence:{rawStatus:reviewed.entry.rawStatus,
                 reportedPaidSatang:reviewed.entry.reportedPaidSatang,provenance:reviewed.manifest.provenance},
               sourcePartyEvidence:{adults:reviewed.entry.adults,children:reviewed.entry.children,

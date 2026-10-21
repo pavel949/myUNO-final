@@ -1,5 +1,5 @@
 {
-  "codeRevision": "ef7746877e4c467ba16630aea8e1667ef0396b0c",
+  "codeRevision": "98b0b1234ca0e4619da130c41796b49e3e32f28e",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,9 +7,9 @@
     "handlers": 256,
     "apiHandlers": 251,
     "modules": 22,
-    "tests": 575,
-    "prismaModels": 122,
-    "migrations": 96,
+    "tests": 579,
+    "prismaModels": 124,
+    "migrations": 97,
     "routeCollisions": 0
   },
   "routes": [
@@ -2686,8 +2686,8 @@
     },
     {
       "name": "integrations",
-      "files": 31,
-      "testFiles": 14
+      "files": 35,
+      "testFiles": 17
     },
     {
       "name": "media",
@@ -2767,6 +2767,8 @@
     "ExternalSystem",
     "HomepagePlacement",
     "Identity",
+    "ImportedReservationPlacement",
+    "ImportedReservationSource",
     "IncidentLog",
     "IntegrationAccount",
     "InventoryCategory",
@@ -3039,6 +3041,7 @@
     "prisma/migrations/20261015080331_pricing_editor_role/migration.sql",
     "prisma/migrations/20261015120347_property_capability_delegation/migration.sql",
     "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql",
+    "prisma/migrations/20261021023000_imported_reservation_groups/migration.sql",
     "prisma/migrations/20261021140000_sales_offer_desk/migration.sql"
   ],
   "tests": [
@@ -3283,6 +3286,7 @@
     "src/components/instay/ActiveOrdersList.test.tsx",
     "src/components/instay/ServicesRail.test.tsx",
     "src/components/navigation-prefetch.test.ts",
+    "src/components/ops/ImportedReservationGroups.test.tsx",
     "src/components/ops/ManualReservationForm.test.tsx",
     "src/components/ops/OperationalTaskCreateForm.test.tsx",
     "src/components/ops/OperationalTaskQueueClient.timezone.test.tsx",
@@ -3511,9 +3515,12 @@
     "src/modules/integrations/ical-parse.test.ts",
     "src/modules/integrations/ical-sync.integration.test.ts",
     "src/modules/integrations/layantara/adapter.test.ts",
+    "src/modules/integrations/layantara/bounded-workbook.test.ts",
     "src/modules/integrations/layantara/channel-contract.test.ts",
     "src/modules/integrations/layantara/channel-service.integration.test.ts",
+    "src/modules/integrations/layantara/imported-group.integration.test.ts",
     "src/modules/integrations/layantara/protection.service.test.ts",
+    "src/modules/integrations/layantara/reviewed-new-placement.test.ts",
     "src/modules/integrations/layantara/reviewed-workbook.test.ts",
     "src/modules/integrations/layantara/unified-outbox.integration.test.ts",
     "src/modules/integrations/layantara/workbook-import.integration.test.ts",

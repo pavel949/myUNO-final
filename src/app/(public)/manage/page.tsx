@@ -3,6 +3,7 @@ import { getRequestLocale } from '@/lib/i18n';
 import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import { LeadFormSection } from '@/app/(public)/lead-form-section';
 import { getDestination } from '@/modules/destinations';
+const managementInquirySource = 'owner_management';
 const leadAudience = 'owners' as const;
 const destination = getDestination();
 export const metadata = { title: `Property management in ${destination.name} | myUNO` };
@@ -15,6 +16,6 @@ export default async function ManagePage() {
       <div className="mt-24 flex flex-wrap gap-12"><Link href="#lead-form" className="rounded-lg bg-brand-andaman px-24 py-12 text-white">{copy.request} →</Link><Link href="/rent-out" className="rounded-lg border border-border-line px-24 py-12">{copy.onlyList}</Link></div>
       <p className="mt-24 max-w-3xl text-small text-text-secondary">{copy.requestBody}</p>
     </section>
-    <LeadFormSection audience={leadAudience} initialMessage={copy.managementMessage} />
+    <LeadFormSection audience={leadAudience} initialMessage={copy.managementMessage} sourceMedium={managementInquirySource} />
   </main>;
 }

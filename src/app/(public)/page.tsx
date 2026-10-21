@@ -1,3 +1,4 @@
+import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -48,6 +49,7 @@ export default async function LandingPage(
 ) {
   const searchParams = await props.searchParams;
   const locale = getRequestLocale();
+  const management = supplierCopy(locale);
   const activeDestination = getDestination();
   const initialIntent = parseHomeIntent(searchParams?.intent);
 
@@ -325,7 +327,6 @@ export default async function LandingPage(
     { href: '/sell', key: 'sell' },
     { href: '/rent-out', key: 'rent' },
     { href: '/property/onboard?kind=home', key: 'self' },
-    { href: '/manage', key: 'manage' },
   ] as const;
 
   const sectionHead = 'mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end';
@@ -653,8 +654,8 @@ export default async function LandingPage(
           </h2>
           <p className="mt-12 max-w-2xl text-body text-text-secondary">{labels['landing.hp.owners.body']}</p>
 
-          <div className="mt-32 grid gap-16 md:grid-cols-2 lg:grid-cols-4">
-            {ownerGoals.map((goal, index) => (
+          <div className="mt-32 grid gap-16 md:grid-cols-3">
+            {ownerGoals.map((goal) => (
               <PublicAnalyticsLink
                 key={goal.key}
                 href={goal.href}
@@ -665,23 +666,28 @@ export default async function LandingPage(
                   source: 'homepage_owners',
                   intent: goal.key,
                 }}
-                className={`group flex min-h-[240px] flex-col justify-between rounded-lg p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
-                  index === 3
-                    ? 'bg-brand-andaman text-surface-ivory'
-                    : 'border border-border-line bg-surface-ivory text-text-ink'
-                }`}
+                className="group flex min-h-[240px] flex-col justify-between rounded-lg border border-border-line bg-surface-ivory p-24 text-text-ink transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
               >
                 <div>
                   <h3 className="font-display text-title font-semibold">{L(`landing.hp.owners.${goal.key}.title`)}</h3>
-                  <p className={`mt-12 text-body ${index === 3 ? 'text-surface-ivory/80' : 'text-text-secondary'}`}>
+                  <p className="mt-12 text-body text-text-secondary">
                     {L(`landing.hp.owners.${goal.key}.body`)}
                   </p>
                 </div>
-                <span className={`mt-24 font-semibold ${index === 3 ? 'text-surface-ivory' : 'text-brand-andaman'}`}>
+                <span className="mt-24 font-semibold text-brand-andaman">
                   {L(`landing.hp.owners.${goal.key}.cta`)} →
                 </span>
               </PublicAnalyticsLink>
             ))}
+          </div>
+
+          <div className="mt-32 rounded-lg border border-border-line bg-surface-ivory p-24 md:p-32" aria-labelledby="management-heading">
+            <h3 id="management-heading" className="font-display text-heading-2 font-semibold text-text-ink">{management.managementTitle}</h3>
+            <p className="mt-12 max-w-3xl text-body text-text-secondary">{management.managementBody}</p>
+            <p className="mt-12 max-w-3xl text-small text-text-secondary">{management.requestBody}</p>
+            <PublicAnalyticsLink href="/manage" eventKey={ownerGoalEvent} dimensions={{ destination: activeDestination.key, locale, source: 'homepage_owners', intent: 'manage' }} className="mt-24 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+              {management.managementCta} →
+            </PublicAnalyticsLink>
           </div>
 
           <div className="mt-32 grid gap-24 border-t border-border-line pt-24 md:grid-cols-2">

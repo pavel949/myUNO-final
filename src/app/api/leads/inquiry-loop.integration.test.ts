@@ -282,3 +282,36 @@ describe('reply read acknowledgement watermark', () => {
     expect((await getUnreadCounts(db, f.guest.id))[threadId] ?? 0).toBe(0);
   });
 });
+
+describe('public management acquisition', () => {
+  beforeEach(async () => {
+    await resetDb();
+    getCurrentUserMock.mockReset();
+    vi.mocked(createNotification).mockClear();
+    await signIn(null);
+  });
+
+  it('persists an anonymous owner brief once and exposes it to staff without granting visitor thread access', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    const payload = { audience: 'owners', name: 'Owner fixture', contact: 'owner@example.test', message: 'Management inquiry: villa in Phuket', consent: true, sourceMedium: 'owner_management', requestId: 'management-fixture-20261021' };
+    const invalid = await submitInquiry(request('/api/leads', { ...payload, consent: false }));
+    expect(invalid.status).toBe(400);
+    expect(await db.thread.count()).toBe(0);
+    const first = await submitInquiry(request('/api/leads', payload));
+    expect(await first.json()).toEqual({ ok: true });
+    const retry = await submitInquiry(request('/api/leads', payload));
+    expect(await retry.json()).toEqual({ ok: true });
+    expect(await db.thread.count()).toBe(1);
+    expect(await db.crmOpportunity.count()).toBe(1);
+    const opportunity = await db.crmOpportunity.findFirstOrThrow();
+    expect(opportunity.type).toBe('management');
+    const thread = await db.thread.findFirstOrThrow();
+    await signIn(admin.id);
+    const staffInbox = await inbox();
+    expect((await staffInbox.json()).threads.map((item: { id: string }) => item.id)).toContain(thread.id);
+    const staffRead = await readThread(request(`/api/threads/${thread.id}`), { params: { threadId: thread.id } });
+    expect(staffRead.status).toBe(200);
+    expect((await staffRead.json()).thread.messages[0].body).toContain(payload.message);
+    expect(vi.mocked(createNotification)).toHaveBeenCalledTimes(1);
+  });
+});

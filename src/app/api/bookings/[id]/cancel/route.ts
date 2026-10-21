@@ -81,8 +81,10 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
         await processRequestedCardRefund(prisma, refund.id).catch(() => null);
       }
     }
-    const issuedRefundThb = refunds.filter(refund => (result.replayed || result.refundIds.includes(refund.id)) && ['requested', 'processing', 'succeeded'].includes(refund.status))
-      .reduce((sum, refund) => sum + refund.amountThb, 0);
+    // These fields describe current outstanding liability, including on replay
+    // after settlement; an already paid refund must not exceed that balance.
+    const issuedRefundThb = Math.min(refundAmountThb, refunds.filter(refund => (result.replayed || result.refundIds.includes(refund.id)) && ['requested', 'processing', 'succeeded'].includes(refund.status))
+      .reduce((sum, refund) => sum + refund.amountThb, 0));
     const refundsCreated = result.refundIds.length;
     if (!result.replayed) await notifyBookingCancelled(prisma, bookingId, refundAmountThb).catch(() => null);
 

@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { db, resetDb, createIdentity, createProject, createUnit, createBooking } from '@/test/util';
+import { settleManualRefund } from '@/modules/finance';
 import { getCancellationQuote } from '@/modules/booking/cancellation-quote';
 const mocks = vi.hoisted(() => ({ user: vi.fn(), dispatch: vi.fn() }));
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: mocks.user }));
@@ -59,6 +60,15 @@ describe('durable cancellation refunds', () => {
     expect(await db.booking.findUniqueOrThrow({ where: { id: f.booking.id } })).toMatchObject({ status: 'cancelled' });
     expect(await db.refund.count()).toBe(1);
     expect((await f.send()).status).toBe(200); expect(await db.refund.count()).toBe(1);
+  });
+  it('reports a consistent zero outstanding balance when replayed after refund settlement', async () => {
+    const f = await fixture(); expect((await f.send()).status).toBe(200);
+    const refund = await db.refund.findFirstOrThrow();
+    await settleManualRefund(db, { refundId: refund.id, paidBackByIdentityId: refund.initiatedByIdentityId });
+    const response = await f.send(); expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ refund: { amountThb: 0, issuedThb: 0, pendingThb: 0, recordsCreated: 0 } });
+    expect(await db.refund.count()).toBe(1);
+    expect(await db.ledgerEntry.count({ where: { refundId: refund.id, entryType: 'refund_out' } })).toBe(1);
   });
   it('keeps a durable requested card refund when dispatch fails after commit', async () => {
     const f = await fixture('card_provider'); mocks.dispatch.mockRejectedValue(new Error('Synthetic dispatcher outage'));

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   db,
   resetDb,
@@ -14,11 +14,14 @@ import { changeBookingDates } from './booking.service';
 
 describe('notifyBookingModified (N-11)', () => {
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'));
     await resetDb();
     await seedConfig(db);
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
     await resetDb();
   });
 

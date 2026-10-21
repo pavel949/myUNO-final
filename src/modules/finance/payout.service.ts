@@ -1,6 +1,8 @@
 import { PrismaClient, Payout } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { satangToBaht } from '@/lib/money';
+import { lockBookingInventory } from '@/modules/core/booking-occupancy';
+import { processRequestedCardRefund } from './finance.service';
 
 export type PayoutPeriodCadence = 'weekly' | 'biweekly' | 'monthly';
 
@@ -342,42 +344,73 @@ export async function resolveFailedRefund(
   refundId: string,
   action: 'retry' | 'write_off'
 ) {
-  const refundRecord = await db.refund.findUnique({ where: { id: refundId } });
-  if (!refundRecord) {
-    throw new Error('Refund not found');
-  }
+  const result = await db.$transaction(async tx => {
+    const snapshot = await tx.refund.findUnique({ where: { id: refundId } });
+    if (!snapshot) throw new Error('Refund not found');
+    const source = await tx.payment.findUniqueOrThrow({ where: { id: snapshot.paymentId } });
+    if (source.bookingId) await lockBookingInventory(tx, source.bookingId);
+    if (source.serviceOrderId) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${source.serviceOrderId}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${source.id}))`;
+    await tx.$queryRaw`SELECT id FROM refund WHERE id = ${refundId} FOR UPDATE`;
+    const current = await tx.refund.findUniqueOrThrow({ where: { id: refundId }, include: { payment: { include: { booking: true } } } });
+    const conflict = (message: string) => Object.assign(new Error(message), { code: 'REFUND_RESOLUTION_CONFLICT' });
 
-  if (action === 'write_off') {
-    const payment = await db.payment.findUnique({
-      where: { id: refundRecord.paymentId },
-      include: { booking: true },
-    });
+    if (action === 'write_off' && current.status === 'written_off') return current;
+    if (action === 'retry' && current.status === 'requested' && current.method === 'card_provider' &&
+        current.payment.bookingId && !current.dispatchAuthorizedAt) {
+      throw conflict('The previous provider refund outcome must be reconciled before retrying');
+    }
+    // A repeated retry observes the durable claim; never reset settled money.
+    if (action === 'retry' && ['requested', 'processing', 'succeeded'].includes(current.status)) return current;
+    if (current.status !== 'failed') throw conflict('Only a failed refund can be resolved');
 
-    if (payment?.booking) {
-      await db.ledgerEntry.create({
-        data: {
-          entryType: 'adjustment',
-          amountThb: -refundRecord.amountThb,
-          unitId: payment.booking.unitId,
-          description: `Failed refund write-off: ${refundRecord.reason}`,
-          refundId,
-          occurredOn: new Date(),
-        },
-      });
+    if (action === 'write_off') {
+      if (current.payment.booking) {
+        await tx.ledgerEntry.create({ data: {
+          entryType: 'adjustment', amountThb: -current.amountThb,
+          unitId: current.payment.booking.unitId,
+          description: `Failed refund write-off: ${current.reason}`,
+          refundId, occurredOn: new Date(),
+        } });
+      }
+      // Administrative closure does not claim that money reached the guest.
+      return tx.refund.update({ where: { id: refundId }, data: { status: 'written_off' } });
     }
 
-    // A write-off clears this item from the provider-retry queue but must
-    // never masquerade as money returned to the guest. The booking refund
-    // liability therefore remains outstanding for finance to resolve.
-    return db.refund.update({
-      where: { id: refundId },
-      data: { status: 'written_off' },
+    if (current.payment.status !== 'succeeded') throw conflict('Only a succeeded payment can be refunded');
+    // Failed attempts release capacity. Another request may have reserved or
+    // returned this money in the meantime, so recheck under the source lock.
+    const reserved = await tx.refund.aggregate({
+      where: { paymentId: current.paymentId, id: { not: current.id },
+        status: { in: ['requested', 'processing', 'succeeded'] } },
+      _sum: { amountThb: true },
     });
-  }
+    const remaining = current.payment.amountThb - (reserved._sum.amountThb ?? 0);
+    if (current.amountThb <= 0 || current.amountThb > remaining) {
+      throw conflict('Refund exceeds the remaining payment refund capacity');
+    }
 
-  // 'retry' — reset to requested and let the payment seam handle it.
-  return db.refund.update({
-    where: { id: refundId },
-    data: { status: 'requested' },
+    // Older booking refunds marked transport exceptions failed. Without a
+    // provider refund ID, absence of a response cannot prove no money moved.
+    const receiptQuarantined = current.payment.reconciliationReason &&
+      !['SERVICE_REFUND_REVIEW_REQUIRED', 'SERVICE_REFUND_PROVIDER_UNAVAILABLE'].includes(current.payment.reconciliationReason);
+    if (current.method === 'card_provider' && (receiptQuarantined ||
+        (current.payment.provider !== 'mock' && !current.providerRefundId))) {
+      throw conflict('The previous provider refund outcome must be reconciled before retrying');
+    }
+    if (current.payment.reconciliationReason === 'SERVICE_REFUND_REVIEW_REQUIRED') {
+      await tx.payment.update({ where: { id: current.paymentId }, data: { reconciliationReason: null } });
+    }
+    return tx.refund.update({ where: { id: refundId }, data: { status: 'requested', providerRefundId: null,
+      ...(current.method === 'card_provider' && current.payment.bookingId ? { dispatchAuthorizedAt: new Date() } : {}),
+    } });
   });
+
+  // Dispatch after commit. The dispatcher atomically claims requested work,
+  // so repeated/concurrent HTTP retries cannot issue the same refund twice.
+  if (action === 'retry' && result.method === 'card_provider' && result.status === 'requested') {
+    await processRequestedCardRefund(db, result.id);
+    return db.refund.findUniqueOrThrow({ where: { id: result.id } });
+  }
+  return result;
 }

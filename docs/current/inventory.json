@@ -1,5 +1,5 @@
 {
-  "codeRevision": "e37d1ac6a4054a3be81f122c432281126c2813e8",
+  "codeRevision": "46f04a32b04fca66ec4c3134eea7685656822020",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,9 +7,9 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 556,
+    "tests": 571,
     "prismaModels": 118,
-    "migrations": 94,
+    "migrations": 95,
     "routeCollisions": 0
   },
   "routes": [
@@ -2565,8 +2565,8 @@
     },
     {
       "name": "booking",
-      "files": 59,
-      "testFiles": 36
+      "files": 60,
+      "testFiles": 37
     },
     {
       "name": "browse",
@@ -2590,7 +2590,7 @@
     },
     {
       "name": "content",
-      "files": 74,
+      "files": 75,
       "testFiles": 9
     },
     {
@@ -2610,8 +2610,8 @@
     },
     {
       "name": "finance",
-      "files": 45,
-      "testFiles": 22
+      "files": 50,
+      "testFiles": 25
     },
     {
       "name": "home",
@@ -2640,8 +2640,8 @@
     },
     {
       "name": "projects",
-      "files": 84,
-      "testFiles": 42
+      "files": 86,
+      "testFiles": 43
     },
     {
       "name": "services",
@@ -2962,7 +2962,8 @@
     "prisma/migrations/20261015070000_standalone_service_support/migration.sql",
     "prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql",
     "prisma/migrations/20261015080331_pricing_editor_role/migration.sql",
-    "prisma/migrations/20261015120347_property_capability_delegation/migration.sql"
+    "prisma/migrations/20261015120347_property_capability_delegation/migration.sql",
+    "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql"
   ],
   "tests": [
     "src/app/(admin)/app/admin/access/workspace-access-client.test.tsx",
@@ -3033,11 +3034,14 @@
     "src/app/api/bookings/[id]/bookings-id.integration.test.ts",
     "src/app/api/bookings/[id]/cancel/cancel.integration.test.ts",
     "src/app/api/bookings/[id]/cancel/payment-race.integration.test.ts",
+    "src/app/api/bookings/[id]/cancel/recovery.integration.test.ts",
     "src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts",
     "src/app/api/bookings/[id]/confirm-unpaid/confirm-unpaid.integration.test.ts",
+    "src/app/api/bookings/[id]/guests/authorization.test.ts",
     "src/app/api/bookings/[id]/modify/modify.integration.test.ts",
     "src/app/api/bookings/[id]/ops-authorization.integration.test.ts",
     "src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts",
+    "src/app/api/bookings/[id]/record-transfer/authorization.test.ts",
     "src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts",
     "src/app/api/bookings/[id]/verify-passports/route.integration.test.ts",
     "src/app/api/bookings/acceptance.integration.test.ts",
@@ -3059,6 +3063,7 @@
     "src/app/api/ledger/record-cost/record-cost.integration.test.ts",
     "src/app/api/mc/fee-report/fee-report.integration.test.ts",
     "src/app/api/media/upload/route.test.ts",
+    "src/app/api/ops/reservation-groups/route.integration.test.ts",
     "src/app/api/ops/team/route.integration.test.ts",
     "src/app/api/owner/statements/[statementId]/question/route.integration.test.ts",
     "src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts",
@@ -3113,6 +3118,7 @@
     "src/app/layout-fonts.test.ts",
     "src/app/libs/bookingAccess.test.ts",
     "src/app/libs/bookingConfirmed.integration.test.ts",
+    "src/app/libs/bookingGuestDataAccess.test.ts",
     "src/app/libs/bookingOperationsAccess.test.ts",
     "src/app/libs/projectScope.integration.test.ts",
     "src/app/libs/projectScope.null-project.test.ts",
@@ -3124,6 +3130,7 @@
     "src/app/login/guest-return-pages.test.tsx",
     "src/app/messages/[threadId]/thread-client.test.tsx",
     "src/app/money-display-boundary.test.ts",
+    "src/app/ops/calendar/board/page.boundary.test.tsx",
     "src/app/ops/calendar/board/page.integration.test.tsx",
     "src/app/ops/costs/record-cost-client.date.test.tsx",
     "src/app/ops/costs/record-cost-client.test.tsx",
@@ -3203,6 +3210,7 @@
     "src/components/ops/ManualReservationForm.test.tsx",
     "src/components/ops/OperationalTaskCreateForm.test.tsx",
     "src/components/ops/OperationalTaskQueueClient.timezone.test.tsx",
+    "src/components/ops/ReservationGroupForm.test.tsx",
     "src/components/ops/StayActions.unpaid.test.tsx",
     "src/components/ops/UnifiedStayCalendar.test.tsx",
     "src/components/primitives.test.tsx",
@@ -3212,6 +3220,7 @@
     "src/components/property/ScopedGalleryEditor.test.tsx",
     "src/components/property/ShareStayOffer.test.tsx",
     "src/components/property/SimilarAvailableHomes.test.tsx",
+    "src/components/property/property-editing.test.tsx",
     "src/components/search/SearchResultsMap.lifecycle.test.tsx",
     "src/components/stitch/ApplicationFrame.test.tsx",
     "src/components/stitch/McWorkspaceShell.test.tsx",
@@ -3238,7 +3247,9 @@
     "src/lib/place-search.test.ts",
     "src/lib/plus-code.test.ts",
     "src/lib/pms-navigation.test.ts",
+    "src/lib/property-area.test.ts",
     "src/lib/property-count.test.ts",
+    "src/lib/property-editor-return.test.ts",
     "src/lib/resolveDatabaseUrl.test.ts",
     "src/lib/safe-next-path.test.ts",
     "src/lib/seo.test.ts",
@@ -3279,6 +3290,7 @@
     "src/modules/booking/double-booking.concurrency.integration.test.ts",
     "src/modules/booking/expiry-winning-transition.integration.test.ts",
     "src/modules/booking/extension-safety.integration.test.ts",
+    "src/modules/booking/guest-date-boundaries.integration.test.ts",
     "src/modules/booking/guest-journey-context.test.ts",
     "src/modules/booking/guest-review.integration.test.ts",
     "src/modules/booking/home-space.integration.test.ts",
@@ -3388,6 +3400,7 @@
     "src/modules/crm/property-deal.service.integration.test.ts",
     "src/modules/crm/public-lead.integration.test.ts",
     "src/modules/destinations/index.test.ts",
+    "src/modules/finance/bank-transfer-authorization.integration.test.ts",
     "src/modules/finance/bank-transfer.integration.test.ts",
     "src/modules/finance/create-checkout-opn.integration.test.ts",
     "src/modules/finance/deposit-claims.integration.test.ts",
@@ -3406,6 +3419,8 @@
     "src/modules/finance/providers/opn.test.ts",
     "src/modules/finance/providers/provider-seam.test.ts",
     "src/modules/finance/receivable-review.integration.test.ts",
+    "src/modules/finance/refund-recovery.test.ts",
+    "src/modules/finance/refund-resolution.integration.test.ts",
     "src/modules/finance/requested-service-refund.test.ts",
     "src/modules/finance/statement-expense.test.ts",
     "src/modules/finance/statement-snapshot.integration.test.ts",
@@ -3488,6 +3503,7 @@
     "src/modules/projects/projects.integration.test.ts",
     "src/modules/projects/property-booking-mode.integration.test.ts",
     "src/modules/projects/property-booking-mode.test.ts",
+    "src/modules/projects/property-editing.integration.test.ts",
     "src/modules/projects/property-readiness.offering.integration.test.ts",
     "src/modules/projects/public-booking-signals.test.ts",
     "src/modules/projects/public-discovery.test.ts",

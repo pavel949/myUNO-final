@@ -1,4 +1,5 @@
 'use client';
+import { propertyHeadlineArea } from '@/lib/property-area';
 
 
 import { formatPropertyCount } from '@/lib/property-count';
@@ -25,6 +26,7 @@ interface Unit {
   bathrooms?: number;
   maxGuests?: number;
   sizeSqm?: number | null;
+  grossAreaSqm?: number | string | null;
   pricing?: { stayTotalThb: number | null };
   description?: string;
   projectId?: string;
@@ -615,7 +617,7 @@ export default function SearchResults({
                           ) : null}
                           <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
                           {(unit.bedrooms !== undefined || unit.maxGuests !== undefined) && <p className="mb-8 text-small text-text-secondary">
-                            {[unit.bedrooms !== undefined && labels.bedroomsCount ? formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale) : '', unit.maxGuests !== undefined && labels.guestsCount ? formatPropertyCount(labels.guestsCount, unit.maxGuests, locale) : '', unit.sizeSqm ? `${unit.sizeSqm} m²` : ''].filter(Boolean).join(' · ')}
+                            {[unit.bedrooms !== undefined && labels.bedroomsCount ? formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale) : '', unit.maxGuests !== undefined && labels.guestsCount ? formatPropertyCount(labels.guestsCount, unit.maxGuests, locale) : '', propertyHeadlineArea(unit) ? `${propertyHeadlineArea(unit)} m²` : ''].filter(Boolean).join(' · ')}
                           </p>}
                           {unit.pricing?.stayTotalThb != null && <p className="mb-8 text-small text-text-secondary">{ux.totalStay}: <strong className="text-text-ink">{formatBaht(unit.pricing.stayTotalThb)}</strong></p>}
                           <p className="mb-4 font-display text-title font-semibold tabular-nums text-text-ink">

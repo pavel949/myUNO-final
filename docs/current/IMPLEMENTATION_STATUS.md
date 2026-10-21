@@ -1,5 +1,7 @@
 # Реализованное, незавершённое и проверки
 
+> Follow-up 2026-10-20: [release validation evidence](../audits/release-validation-2026-10-20/RELEASE_EVIDENCE.md) records fresh read-only production schema/content/job facts, 6,055 passing local tests, isolated Chromium acceptance and recovery rehearsal. Release, scheduler activation and real email delivery remain blocked; the operational changes are prepared for review, not deployed.
+
 Дата 2026-10-16; application codeRevision `c61412e71801e345fb7d3cde0168a6631b0b4932`, ops main53634204 после PR294–297. Exact codeRevision указан в REFERENCE; production acceptance оценивается отдельно. Метод: inventory всех pages/handlers/modules/schema/migrations/tests, чтение domain services, guards, adapters, jobs и deployment files. Это сверка кода и документации, не эксплуатационная приёмка.
 
 ## Как читать статус
@@ -112,7 +114,9 @@ Next.js 14.2.35 → 15.5.28 (закрыты advisory уровня critical/high,
 
 Известное ограничение React 19.2 (Next 15.5): ложная ошибка гидратации #418 на идентичном дереве, когда Flight-узел страницы лежит прямо в дочерних элементах DOM-тега при поэтапной гидратации ([react/react#37584](https://github.com/react/react/issues/37584), исправлено в React 19.3.0, в 19.2 не бэкпортируется). `ApplicationFrame` оборачивает контент страницы в `ContentSlot` (отдельный fiber); обходной путь убрать при переходе на Next с React ≥ 19.3. Локальные изолированные прогоны `founder-publication-booking` на production-сборке: без обхода 8–14 ошибок #418 за прогон, с обходом 0 в трёх прогонах подряд (25/25 шагов). Не покрыт исходящий баг [react/react#37321](https://github.com/react/react/issues/37321) (редкая гонка при холодной загрузке с кэшированными чанками).
 
-## 2026-10-19: read-only сверка production после слияния #312/#313
+## Historical observation: 2026-10-19 production after #312/#313
+
+This dated snapshot is retained as historical evidence only. Its pending-migration and deployment identifiers are superseded: read-only verification on 2026-10-21 found both October 15 migrations applied on October 18, and the alias serving deployment `dpl_7MnyfYxJU8fYz7xT4fpaWz5jXdd5` at the same `8bb999a6` source. The refund authorization migration remains pending; current release status requires fresh verification.
 
 Только чтение (Vercel, Resend, история GitHub Actions); production не менялся, миграции и deploy не запускались.
 
@@ -121,3 +125,10 @@ Next.js 14.2.35 → 15.5.28 (закрыты advisory уровня critical/high,
 - **Scheduler.** GitHub `*/5` фактически срабатывает редко: за 24 часа до 2026-10-19 11:24 UTC зафиксировано 9 scheduled-запусков вместо 288, максимальный интервал ≈5,5 ч, все success. Vercel Hobby допускает cron не чаще раза в сутки (см. комментарий в `scheduler.yml`). Заявленная частота 5 минут (hold expiry, TM30, iCal) не достигнута; `SCHEDULER_MODE=external` ставить нельзя. Варианты: платный план Vercel с `*/5` в `vercel.json` либо внешний бесплатный триггер (например, Cloudflare Workers Cron) на `/api/cron/run-frequent` с `CRON_SECRET`; выбор и расходы — решение основателя.
 - **Dependabot.** #307 и #308 (patch-группы): `ci` красный на текущем `main`, причина в логах job не установлена; #310/#311 (vitest 1.6 → 5.0.5, major) красные и по `ci`, и по браузерной приёмке — не принимать без отдельной миграции test-инфраструктуры. #309 (maplibre 6.14.0) устарел после #313.
 - **Внешние checks `myunoapp`.** Красные checks с этим именем — сторонняя интеграция GitHub, не относящаяся к платформе deployment; Vercel — единственная платформа. Интеграцию нужно отключить в её собственном проекте.
+## PMS remediation, 2026-10-21 (local branch)
+
+Reservation guest/finance access, cancellation refund durability/recovery, property-local date boundaries and calendar/form correctness were hardened with regressions. See [scope and verification boundaries](../audits/PMS_REMEDIATION_2026-10-21.md). No production deployment or historical data repair is asserted.
+
+## Property-card editing, 2026-10-21 (local branch)
+
+PMS project-facts saves use descriptive fields without legacy facility arrays. Unit writers validate physical facts; the PMS unit/project forms submit optimistic versions and retain failed/conflicting edits. Editors expose distinct area measurements, protect unsaved navigation and localize controls. Administrators can maintain documentary sleeping spaces/beds from the PMS editor using the existing admin guard; staff permissions and physical capacity are unchanged. Gallery uploads retain distinct asset ownership and refresh partial results after failure. See [verification and remaining boundaries](../audits/PROPERTY_CARD_EDITING_2026-10-21.md). No production deployment, migration or property-data repair is asserted.

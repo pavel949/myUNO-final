@@ -79,6 +79,9 @@ jobs:
       - run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs
       - name: Read-only canonical connection and migration ledger
         env:
+          # The proven backup principal already has SELECT on the ledger.
+          # DDL still uses the separate migration credential in the migrate job.
+          READONLY_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
           MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}

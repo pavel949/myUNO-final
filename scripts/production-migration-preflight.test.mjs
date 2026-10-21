@@ -1,8 +1,29 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { inspectReadonlyMigrationLedger } from './production-migration-preflight.mjs';
+import { inspectReadonlyMigrationLedger, readonlyPreflightConnection } from './production-migration-preflight.mjs';
 import { migrationFailureCategory, migrationFailureSummary } from './production-migration-policy.mjs';
+
+test('preflight selects the restricted canonical backup reader without copying writer credentials', () => {
+  const env = {
+    READONLY_DATABASE_URL: 'postgresql://backup_reader.burcnghheyzbzffzgmjz:reader-only@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=disable',
+    DATABASE_URL: 'postgresql://invalid-writer:never-used@foreign.example/postgres',
+  };
+  const result = new URL(readonlyPreflightConnection(env));
+  assert.equal(result.username, 'backup_reader.burcnghheyzbzffzgmjz');
+  assert.equal(result.password, 'reader-only');
+  assert.equal(result.searchParams.get('sslmode'), 'require');
+  assert.equal(result.searchParams.get('connection_limit'), '1');
+  for (const invalid of [
+    env.READONLY_DATABASE_URL.replace('burcnghheyzbzffzgmjz', 'otherproject'),
+    env.READONLY_DATABASE_URL.replace('backup_reader.burcnghheyzbzffzgmjz', 'postgres.burcnghheyzbzffzgmjz'),
+    env.READONLY_DATABASE_URL.replace(':5432', ':6543'),
+    env.READONLY_DATABASE_URL + '&schema=private',
+    env.READONLY_DATABASE_URL + '&SCHEMA=private',
+    env.READONLY_DATABASE_URL + '&schema=',
+    env.READONLY_DATABASE_URL + '&pgbouncer=true',
+  ]) assert.throws(() => readonlyPreflightConnection({ READONLY_DATABASE_URL: invalid }));
+});
 
 test('preflight establishes database-enforced READ ONLY before reading migration history', async () => {
   const files = [{ name: 'baseline', sql: Buffer.from('SELECT 1;') }];

@@ -21,3 +21,6 @@ Thumbs.db
 tsconfig.tsbuildinfo
 .claude/settings.local.json
 .claude/worktrees/
+
+# Disposable recovery rehearsal output
+recovery-results/

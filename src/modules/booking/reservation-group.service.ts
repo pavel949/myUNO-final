@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 export async function createReservationGroup(
   db: PrismaClient,
@@ -10,44 +10,51 @@ export async function createReservationGroup(
     currency?: string;
     notes?: string | null;
     bookingIds?: string[];
+    /** Command callers resolve current effective authority in this transaction. */
+    authorizeScope?: (tx: Prisma.TransactionClient) => Promise<string[]>;
   },
 ) {
-  const guest = await db.identity.findUnique({
-    where: { id: input.guestIdentityId },
-    select: { id: true },
-  });
-  if (!guest) throw new Error('RESERVATION_GROUP_GUEST_NOT_FOUND');
-
-  const bookingIds = Array.from(new Set(input.bookingIds ?? []));
-  if (bookingIds.length) {
-    const bookings = await db.booking.findMany({
-      where: { id: { in: bookingIds } },
-      select: { id: true, guestIdentityId: true, reservationGroupId: true, unitId: true },
+  return db.$transaction(async (tx) => {
+    const authorizedUnitIds = input.authorizeScope ? await input.authorizeScope(tx) : undefined;
+    const guest = await tx.identity.findUnique({
+      where: { id: input.guestIdentityId },
+      select: { id: true },
     });
-    if (bookings.length !== bookingIds.length) throw new Error('RESERVATION_GROUP_BOOKING_NOT_FOUND');
-    if (bookings.some((booking) => booking.guestIdentityId !== input.guestIdentityId)) {
-      throw new Error('RESERVATION_GROUP_GUEST_MISMATCH');
-    }
-    if (bookings.some((booking) => booking.reservationGroupId)) {
-      throw new Error('RESERVATION_GROUP_BOOKING_ALREADY_GROUPED');
-    }
-    if (input.operatingSpaceId) {
-      const unitIds = bookings.map((booking) => booking.unitId);
-      const scopedCount = await db.operatingSpaceUnit.count({
-        where: {
-          operatingSpaceId: input.operatingSpaceId,
-          unitId: { in: unitIds },
-          active: true,
-          OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
-        },
+    if (!guest) throw new Error('RESERVATION_GROUP_GUEST_NOT_FOUND');
+
+    const bookingIds = Array.from(new Set(input.bookingIds ?? []));
+    if (bookingIds.length) {
+      const bookings = await tx.booking.findMany({
+        where: { id: { in: bookingIds } },
+        select: { id: true, guestIdentityId: true, reservationGroupId: true, unitId: true },
       });
-      if (scopedCount !== new Set(unitIds).size) {
-        throw new Error('RESERVATION_GROUP_BOOKING_OUTSIDE_SPACE');
+      if (bookings.length !== bookingIds.length) throw new Error('RESERVATION_GROUP_BOOKING_NOT_FOUND');
+      if (authorizedUnitIds && bookings.some(booking => !authorizedUnitIds.includes(booking.unitId))) {
+        throw new Error('RESERVATION_GROUP_BOOKING_OUTSIDE_SCOPE');
+      }
+      if (bookings.some((booking) => booking.guestIdentityId !== input.guestIdentityId)) {
+        throw new Error('RESERVATION_GROUP_GUEST_MISMATCH');
+      }
+      if (bookings.some((booking) => booking.reservationGroupId)) {
+        throw new Error('RESERVATION_GROUP_BOOKING_ALREADY_GROUPED');
+      }
+      if (input.operatingSpaceId) {
+        const unitIds = bookings.map((booking) => booking.unitId);
+        const scopedCount = await tx.operatingSpaceUnit.count({
+          where: {
+            operatingSpaceId: input.operatingSpaceId,
+            unitId: { in: unitIds },
+            active: true,
+            startsOn: { lte: new Date() },
+            OR: [{ endsOn: null }, { endsOn: { gt: new Date() } }],
+          },
+        });
+        if (scopedCount !== new Set(unitIds).size) {
+          throw new Error('RESERVATION_GROUP_BOOKING_OUTSIDE_SPACE');
+        }
       }
     }
-  }
 
-  return db.$transaction(async (tx) => {
     const group = await tx.reservationGroup.create({
       data: {
         guestIdentityId: input.guestIdentityId,

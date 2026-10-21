@@ -79,12 +79,17 @@ export default function ReconciliationClient({ labels }: { labels: Record<string
   const handleResolveRefund = async (refundId: string, action: 'retry' | 'write_off') => {
     try {
       setResolving(refundId);
-      await fetch(`/api/admin/finance/refunds/${refundId}/resolve`, {
+      const response = await fetch(`/api/admin/finance/refunds/${refundId}/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error || labels['finance.reconciliation.error_title']);
       setData(await loadData());
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : labels['finance.reconciliation.error_title']);
     } finally {
       setResolving(null);
     }

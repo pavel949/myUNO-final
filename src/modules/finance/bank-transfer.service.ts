@@ -120,6 +120,7 @@ export interface RecordBankTransferInput {
   confirmedByIdentityId: string;
   /** The bank's own reference for the credit, so the entry can be traced. */
   bankReference: string;
+  authorizeBooking?: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
 }
 
 /**
@@ -157,6 +158,9 @@ export async function recordBankTransfer(
       if (locked) assertStayReceivableCollectible(locked);
       booking = locked;
       if (!booking) throw new Error('Booking not found');
+      if (input.authorizeBooking && !await input.authorizeBooking(tx as PrismaClient, booking)) {
+        throw Object.assign(new Error('Booking authority changed'), { code: 'BOOKING_FORBIDDEN' });
+      }
       if (booking.guestIdentityId !== input.payerIdentityId) throw new Error('Payer does not match booking');
 
       if (input.purpose === 'stay') {

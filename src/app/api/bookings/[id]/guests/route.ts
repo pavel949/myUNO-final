@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData, createTm30Filing, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { canAccessBookingGuestData } from '@/app/libs/bookingAccess';
 
 async function authorize(bookingId: string) {
   const user = await getCurrentUser();
@@ -27,13 +27,13 @@ async function authorize(bookingId: string) {
   if (!bookingRow) {
     throw createPublicError('not found', 404);
   }
-  const access = await resolveBookingAccess(user, {
+  const allowed = await canAccessBookingGuestData(user, {
     guestIdentityId: bookingRow.guestIdentityId,
     projectId: bookingRow.projectId,
     unitId: bookingRow.unitId,
     ownerIdentityId: bookingRow.unit?.ownerIdentityId,
   });
-  if (!canManageBookingGuests(access)) {
+  if (!allowed) {
     throw createPublicError('not found', 404);
   }
   const booking = {

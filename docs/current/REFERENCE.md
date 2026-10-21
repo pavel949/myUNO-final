@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `e37d1ac6a4054a3be81f122c432281126c2813e8`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `ef080ca107da8c638601af68bedec5ce2140b204`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,9 +14,9 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 556 |
+| tests | 567 |
 | prismaModels | 118 |
-| migrations | 94 |
+| migrations | 95 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -511,11 +511,11 @@ Exports перечислены синтаксически, без вывода �
 
 ### booking
 
-Файлов: 59; тестовых файлов: 36. [Описание](../../src/modules/booking/README.md).
+Файлов: 60; тестовых файлов: 37. [Описание](../../src/modules/booking/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
-| [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>) | implementation | `SAFE_IDENTITY_SELECT`, `findBookingByCreationIntent`, `findAvailableUnitsForCategory`, `resolveUnitForCategory`, `createBooking`, `createBookingAttempt`, `approveBookingRequest`, `declineBookingRequest`, `confirmBooking`, `cancelBooking`, `CheckInBlockedError`, `assessCheckIn`, `checkInBooking`, `checkOutBooking`, `completeBooking`, `requestExtension`, `changeBookingDates`, `markNoShow`, `expireHolds`, `autoDeclineRequests`, `getBooking`, `getUnitBookings`, `getGuestBookings` |
+| [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>) | implementation | `SAFE_IDENTITY_SELECT`, `findBookingByCreationIntent`, `findAvailableUnitsForCategory`, `resolveUnitForCategory`, `createBooking`, `createBookingAttempt`, `approveBookingRequest`, `declineBookingRequest`, `confirmBooking`, `cancelBooking`, `cancelBookingAttempt`, `CheckInBlockedError`, `assessCheckIn`, `checkInBooking`, `checkOutBooking`, `completeBooking`, `requestExtension`, `changeBookingDates`, `markNoShow`, `expireHolds`, `autoDeclineRequests`, `getBooking`, `getUnitBookings`, `getGuestBookings` |
 | [src/modules/booking/calendar-projection.ts](<../../src/modules/booking/calendar-projection.ts>) | implementation | `validCalendarDay`, `shiftCalendarDay`, `calendarDays`, `bangkokCalendarDay`, `coversCalendarDay`, `projectCalendarCell`, `projectCalendar` |
 | [src/modules/booking/cancellation-quote.ts](<../../src/modules/booking/cancellation-quote.ts>) | implementation | `getCancellationQuote`, `parseCancellationQuote`, `cancellationQuotesMatch` |
 | [src/modules/booking/cancellation.ts](<../../src/modules/booking/cancellation.ts>) | implementation | `computeRefundPercentage`, `computeRefundAmount`, `resolveCancellationPolicy`, `resolveStayCancellationPolicy`, `DEFAULT_POLICIES`, `sourceSeasonCancellationPolicy`, `resolveStayCancellationPolicyForDates` |
@@ -745,11 +745,12 @@ Exports перечислены синтаксически, без вывода �
 
 ### finance
 
-Файлов: 45; тестовых файлов: 22. [Описание](../../src/modules/finance/README.md).
+Файлов: 50; тестовых файлов: 25. [Описание](../../src/modules/finance/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
 | [src/modules/finance/bank-transfer.service.ts](<../../src/modules/finance/bank-transfer.service.ts>) | implementation | `transferReference`, `getTransferInstructions`, `recordBankTransfer` |
+| [src/modules/finance/cancellation-refunds.ts](<../../src/modules/finance/cancellation-refunds.ts>) | implementation | `reserveCancellationRefunds` |
 | [src/modules/finance/deposits.service.ts](<../../src/modules/finance/deposits.service.ts>) | implementation | `getActiveDepositClaimForGuest`, `disputeDepositClaim`, `scheduleDepositPreauth`, `scheduleDepositPreauthIfConfigured`, `ensureDepositPreauthOnStayConfirmed`, `voidDepositPreauthIfClean`, `captureDepositPreauthOnClaim`, `releaseDepositPreauthOnDispute`, `fileDepositClaim`, `getClaimsAwaitingResolution`, `getStaysOpenToClaim`, `approveClaim`, `rejectClaim`, `releaseExpiredDepositPreauths` |
 | [src/modules/finance/expense-access.ts](<../../src/modules/finance/expense-access.ts>) | implementation | `canWriteUnitExpenses`, `resolveReceiptReader` |
 | [src/modules/finance/expense-receipt-file.ts](<../../src/modules/finance/expense-receipt-file.ts>) | implementation | `MAX_RECEIPT_BYTES`, `RECEIPT_MIME_TYPES`, `RECEIPT_EXTENSIONS`, `ReceiptFileError`, `ReceiptIntegrityError`, `isReceiptMime`, `sniffReceiptType`, `validateReceiptFile`, `sealReceipt`, `openReceipt` |
@@ -766,6 +767,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>) | barrel | `PaymentProviderUnavailableError`, `getPaymentProvider`, `getProviderConfig` |
 | [src/modules/finance/providers/opn.ts](<../../src/modules/finance/providers/opn.ts>) | implementation | `OpnConfigurationError`, `OpnApiError`, `createOpnProvider` |
 | [src/modules/finance/providers/types.ts](<../../src/modules/finance/providers/types.ts>) | implementation | см. исходник |
+| [src/modules/finance/refund-recovery.ts](<../../src/modules/finance/refund-recovery.ts>) | implementation | `recoverRequestedBookingRefunds` |
 | [src/modules/finance/remittance.service.ts](<../../src/modules/finance/remittance.service.ts>) | implementation | `resolveProviderPayoutPeriod`, `getProviderRemittancesView`, `computeProviderRemittance` |
 | [src/modules/finance/statement-expense.ts](<../../src/modules/finance/statement-expense.ts>) | implementation | `OPERATING_EXPENSE_ENTRY_TYPES`, `NON_EXPENSE_STATEMENT_ENTRY_TYPES`, `isReversalRow`, `isStatementLedgerRow`, `operatingExpenseContribution`, `sumOperatingExpenses`, `sumByType`, `buildLedgerLines` |
 | [src/modules/finance/statement-signoff.service.ts](<../../src/modules/finance/statement-signoff.service.ts>) | implementation | `OWNER_VISIBLE_STATEMENT_STATUSES`, `isOwnerVisibleStatementStatus`, `SIGNABLE_STATEMENT_STATUSES`, `isSignableStatementStatus`, `StatementSignOffError`, `getStatementSignOffState`, `hasSignedOff`, `recordStatementSignOff` |
@@ -2955,6 +2957,9 @@ model Refund {
   reason                RefundReason
   status                RefundStatus @default(requested)
   providerRefundId      String?      @map("provider_refund_id")
+  // A new/explicitly reconciled booking request may be dispatched once.
+  // Null on legacy rows: requested alone never proves no provider attempt.
+  dispatchAuthorizedAt  DateTime?    @map("dispatch_authorized_at")
   paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
   initiatedByIdentityId String       @map("initiated_by_identity_id")
 
@@ -6094,6 +6099,7 @@ model RateLimitBucket {
 - [prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql](<../../prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql>)
 - [prisma/migrations/20261015080331_pricing_editor_role/migration.sql](<../../prisma/migrations/20261015080331_pricing_editor_role/migration.sql>)
 - [prisma/migrations/20261015120347_property_capability_delegation/migration.sql](<../../prisma/migrations/20261015120347_property_capability_delegation/migration.sql>)
+- [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
 
 <a id="environment"></a>
 
@@ -6246,11 +6252,14 @@ model RateLimitBucket {
 - [src/app/api/bookings/[id]/bookings-id.integration.test.ts](<../../src/app/api/bookings/[id]/bookings-id.integration.test.ts>)
 - [src/app/api/bookings/[id]/cancel/cancel.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/cancel.integration.test.ts>)
 - [src/app/api/bookings/[id]/cancel/payment-race.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/payment-race.integration.test.ts>)
+- [src/app/api/bookings/[id]/cancel/recovery.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/recovery.integration.test.ts>)
 - [src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts](<../../src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts>)
 - [src/app/api/bookings/[id]/confirm-unpaid/confirm-unpaid.integration.test.ts](<../../src/app/api/bookings/[id]/confirm-unpaid/confirm-unpaid.integration.test.ts>)
+- [src/app/api/bookings/[id]/guests/authorization.test.ts](<../../src/app/api/bookings/[id]/guests/authorization.test.ts>)
 - [src/app/api/bookings/[id]/modify/modify.integration.test.ts](<../../src/app/api/bookings/[id]/modify/modify.integration.test.ts>)
 - [src/app/api/bookings/[id]/ops-authorization.integration.test.ts](<../../src/app/api/bookings/[id]/ops-authorization.integration.test.ts>)
 - [src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts](<../../src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts>)
+- [src/app/api/bookings/[id]/record-transfer/authorization.test.ts](<../../src/app/api/bookings/[id]/record-transfer/authorization.test.ts>)
 - [src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts](<../../src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts>)
 - [src/app/api/bookings/[id]/verify-passports/route.integration.test.ts](<../../src/app/api/bookings/[id]/verify-passports/route.integration.test.ts>)
 - [src/app/api/bookings/acceptance.integration.test.ts](<../../src/app/api/bookings/acceptance.integration.test.ts>)
@@ -6272,6 +6281,7 @@ model RateLimitBucket {
 - [src/app/api/ledger/record-cost/record-cost.integration.test.ts](<../../src/app/api/ledger/record-cost/record-cost.integration.test.ts>)
 - [src/app/api/mc/fee-report/fee-report.integration.test.ts](<../../src/app/api/mc/fee-report/fee-report.integration.test.ts>)
 - [src/app/api/media/upload/route.test.ts](<../../src/app/api/media/upload/route.test.ts>)
+- [src/app/api/ops/reservation-groups/route.integration.test.ts](<../../src/app/api/ops/reservation-groups/route.integration.test.ts>)
 - [src/app/api/ops/team/route.integration.test.ts](<../../src/app/api/ops/team/route.integration.test.ts>)
 - [src/app/api/owner/statements/[statementId]/question/route.integration.test.ts](<../../src/app/api/owner/statements/[statementId]/question/route.integration.test.ts>)
 - [src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts](<../../src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts>)
@@ -6326,6 +6336,7 @@ model RateLimitBucket {
 - [src/app/layout-fonts.test.ts](<../../src/app/layout-fonts.test.ts>)
 - [src/app/libs/bookingAccess.test.ts](<../../src/app/libs/bookingAccess.test.ts>)
 - [src/app/libs/bookingConfirmed.integration.test.ts](<../../src/app/libs/bookingConfirmed.integration.test.ts>)
+- [src/app/libs/bookingGuestDataAccess.test.ts](<../../src/app/libs/bookingGuestDataAccess.test.ts>)
 - [src/app/libs/bookingOperationsAccess.test.ts](<../../src/app/libs/bookingOperationsAccess.test.ts>)
 - [src/app/libs/projectScope.integration.test.ts](<../../src/app/libs/projectScope.integration.test.ts>)
 - [src/app/libs/projectScope.null-project.test.ts](<../../src/app/libs/projectScope.null-project.test.ts>)
@@ -6337,6 +6348,7 @@ model RateLimitBucket {
 - [src/app/login/guest-return-pages.test.tsx](<../../src/app/login/guest-return-pages.test.tsx>)
 - [src/app/messages/[threadId]/thread-client.test.tsx](<../../src/app/messages/[threadId]/thread-client.test.tsx>)
 - [src/app/money-display-boundary.test.ts](<../../src/app/money-display-boundary.test.ts>)
+- [src/app/ops/calendar/board/page.boundary.test.tsx](<../../src/app/ops/calendar/board/page.boundary.test.tsx>)
 - [src/app/ops/calendar/board/page.integration.test.tsx](<../../src/app/ops/calendar/board/page.integration.test.tsx>)
 - [src/app/ops/costs/record-cost-client.date.test.tsx](<../../src/app/ops/costs/record-cost-client.date.test.tsx>)
 - [src/app/ops/costs/record-cost-client.test.tsx](<../../src/app/ops/costs/record-cost-client.test.tsx>)
@@ -6416,6 +6428,7 @@ model RateLimitBucket {
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)
+- [src/components/ops/ReservationGroupForm.test.tsx](<../../src/components/ops/ReservationGroupForm.test.tsx>)
 - [src/components/ops/StayActions.unpaid.test.tsx](<../../src/components/ops/StayActions.unpaid.test.tsx>)
 - [src/components/ops/UnifiedStayCalendar.test.tsx](<../../src/components/ops/UnifiedStayCalendar.test.tsx>)
 - [src/components/primitives.test.tsx](<../../src/components/primitives.test.tsx>)
@@ -6492,6 +6505,7 @@ model RateLimitBucket {
 - [src/modules/booking/double-booking.concurrency.integration.test.ts](<../../src/modules/booking/double-booking.concurrency.integration.test.ts>)
 - [src/modules/booking/expiry-winning-transition.integration.test.ts](<../../src/modules/booking/expiry-winning-transition.integration.test.ts>)
 - [src/modules/booking/extension-safety.integration.test.ts](<../../src/modules/booking/extension-safety.integration.test.ts>)
+- [src/modules/booking/guest-date-boundaries.integration.test.ts](<../../src/modules/booking/guest-date-boundaries.integration.test.ts>)
 - [src/modules/booking/guest-journey-context.test.ts](<../../src/modules/booking/guest-journey-context.test.ts>)
 - [src/modules/booking/guest-review.integration.test.ts](<../../src/modules/booking/guest-review.integration.test.ts>)
 - [src/modules/booking/home-space.integration.test.ts](<../../src/modules/booking/home-space.integration.test.ts>)
@@ -6601,6 +6615,7 @@ model RateLimitBucket {
 - [src/modules/crm/property-deal.service.integration.test.ts](<../../src/modules/crm/property-deal.service.integration.test.ts>)
 - [src/modules/crm/public-lead.integration.test.ts](<../../src/modules/crm/public-lead.integration.test.ts>)
 - [src/modules/destinations/index.test.ts](<../../src/modules/destinations/index.test.ts>)
+- [src/modules/finance/bank-transfer-authorization.integration.test.ts](<../../src/modules/finance/bank-transfer-authorization.integration.test.ts>)
 - [src/modules/finance/bank-transfer.integration.test.ts](<../../src/modules/finance/bank-transfer.integration.test.ts>)
 - [src/modules/finance/create-checkout-opn.integration.test.ts](<../../src/modules/finance/create-checkout-opn.integration.test.ts>)
 - [src/modules/finance/deposit-claims.integration.test.ts](<../../src/modules/finance/deposit-claims.integration.test.ts>)
@@ -6619,6 +6634,8 @@ model RateLimitBucket {
 - [src/modules/finance/providers/opn.test.ts](<../../src/modules/finance/providers/opn.test.ts>)
 - [src/modules/finance/providers/provider-seam.test.ts](<../../src/modules/finance/providers/provider-seam.test.ts>)
 - [src/modules/finance/receivable-review.integration.test.ts](<../../src/modules/finance/receivable-review.integration.test.ts>)
+- [src/modules/finance/refund-recovery.test.ts](<../../src/modules/finance/refund-recovery.test.ts>)
+- [src/modules/finance/refund-resolution.integration.test.ts](<../../src/modules/finance/refund-resolution.integration.test.ts>)
 - [src/modules/finance/requested-service-refund.test.ts](<../../src/modules/finance/requested-service-refund.test.ts>)
 - [src/modules/finance/statement-expense.test.ts](<../../src/modules/finance/statement-expense.test.ts>)
 - [src/modules/finance/statement-snapshot.integration.test.ts](<../../src/modules/finance/statement-snapshot.integration.test.ts>)

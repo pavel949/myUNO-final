@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { LEAD_FORM_LOCALE_DRAFTS } from '@/modules/content/lead-form.seed';
 import { INQUIRY_COPY, inquiryLabels } from '@/modules/content/inquiry-copy';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { LeadForm } from '@/components/LeadForm';
@@ -9,7 +10,7 @@ import { getDestination } from '@/modules/destinations';
  * shared `audience.lead.*` content keys and mounts the client form.
  */
 export async function LeadFormSection({
-  audience, initialMessage, projectId, unitId, contextLabel, sourceMedium,
+  audience, initialMessage, projectId, unitId, contextLabel, sourceMedium, chooseAudience,
 }: {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
   initialMessage?: string;
@@ -17,6 +18,7 @@ export async function LeadFormSection({
   unitId?: string;
   contextLabel?: string;
   sourceMedium?: string;
+  chooseAudience?: boolean;
 }) {
   const user = await getCurrentUser();
   const locale = getRequestLocale();
@@ -35,7 +37,7 @@ export async function LeadFormSection({
     'audience.lead.submitting': 'Sending…',
     'audience.lead.success': 'Thank you. We have received your message.',
     'audience.lead.error': 'Something went wrong. Please try again, or email us directly.',
-  }, locale, INQUIRY_COPY);
+  }, locale, { ...LEAD_FORM_LOCALE_DRAFTS, ...INQUIRY_COPY });
 
   return (
     <section id="lead-form" className="bg-surface-ivory py-64 px-24">
@@ -43,6 +45,7 @@ export async function LeadFormSection({
         <LeadForm
           key={sourceMedium || 'general'}
           audience={audience}
+          audienceChoice={chooseAudience ? { label: labels['audience.choice.topic'], rent: labels['audience.choice.rent'], buy: labels['audience.choice.buy'] } : undefined}
           initialMessage={initialMessage}
           initialName={user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : undefined}
           initialContact={user?.email ?? undefined}

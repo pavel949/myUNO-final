@@ -27,6 +27,7 @@ export interface LeadFormLabels {
 
 interface LeadFormProps {
   audience: 'owners' | 'developers' | 'buyers' | 'renters' | 'mc';
+  audienceChoice?: { label: string; rent: string; buy: string };
   initialMessage?: string;
   initialName?: string;
   initialContact?: string;
@@ -42,7 +43,8 @@ interface LeadFormProps {
  * Public lead form (doc 08 §3): name, contact, free-text context, consent.
  * Posts to /api/leads; includes an invisible honeypot field for bots.
  */
-export function LeadForm({ audience, labels, initialMessage = '', initialName = '', initialContact = '', projectId, unitId, contextLabel, sourceMedium, analytics }: LeadFormProps) {
+export function LeadForm({ audience: initialAudience, audienceChoice, labels, initialMessage = '', initialName = '', initialContact = '', projectId, unitId, contextLabel, sourceMedium, analytics }: LeadFormProps) {
+  const [audience, setAudience] = useState(initialAudience);
   const [name, setName] = useState(initialName);
   const [contact, setContact] = useState(initialContact);
   const [message, setMessage] = useState(initialMessage);
@@ -129,6 +131,13 @@ export function LeadForm({ audience, labels, initialMessage = '', initialName = 
         <p className="font-semibold text-text-ink">{contextLabel}</p>
       </div>}
 
+      {audienceChoice && <label className="flex flex-col gap-8 text-small text-text-secondary">
+        {audienceChoice.label}
+        <select value={audience} disabled={state === 'submitting'} onChange={event => setAudience(event.target.value as 'renters' | 'buyers')} className="min-h-48 rounded-lg border border-border-line bg-surface-paper px-12 text-text-ink">
+          <option value="renters">{audienceChoice.rent}</option>
+          <option value="buyers">{audienceChoice.buy}</option>
+        </select>
+      </label>}
       <Input
         label={labels.name}
         required

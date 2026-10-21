@@ -1,3 +1,6 @@
+import { HOMEPAGE_V4_KEYS } from '@/modules/content/homepage-v4.seed';
+import { INQUIRY_COPY } from '@/modules/content/inquiry-copy';
+import { supplierCopy } from '@/modules/onboarding/supplier-copy';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -48,6 +51,7 @@ export default async function LandingPage(
 ) {
   const searchParams = await props.searchParams;
   const locale = getRequestLocale();
+  const management = supplierCopy(locale);
   const activeDestination = getDestination();
   const initialIntent = parseHomeIntent(searchParams?.intent);
 
@@ -56,7 +60,7 @@ export default async function LandingPage(
     destination: activeDestination.key,
   }).catch(() => null);
 
-  const [labels, homepageData] = await Promise.all([
+  const [labels, homepageData, , guidance] = await Promise.all([
     getLabels({
       'landing.search.check_in': 'Check-in',
       'landing.search.check_out': 'Check-out',
@@ -80,13 +84,13 @@ export default async function LandingPage(
       'landing.hp.ecosystem.placeholder': "Villa, flowers, school, area or service…",
       'landing.hp.ecosystem.submit': "Search",
       'landing.hp.ecosystem.matches': "Matching places",
-      'landing.hp.ecosystem.route.stay.title': "Book a stay",
+      'landing.hp.ecosystem.route.stay.title': "Come for a holiday",
       'landing.hp.ecosystem.route.stay.detail': "Villas and apartments",
       'landing.hp.ecosystem.route.monthly.title': "Rent long-term",
       'landing.hp.ecosystem.route.monthly.detail': "Homes for living",
       'landing.hp.ecosystem.route.buy.title': "Buy property",
       'landing.hp.ecosystem.route.buy.detail': "Properties for sale",
-      'landing.hp.ecosystem.route.move.title': "Relocate",
+      'landing.hp.ecosystem.route.move.title': "Move to Phuket",
       'landing.hp.ecosystem.route.move.detail': "Homes and moving support",
       'landing.hp.ecosystem.route.services.title': "Find services",
       'landing.hp.ecosystem.route.services.detail': "For everyday life and holidays",
@@ -213,9 +217,10 @@ export default async function LandingPage(
       'landing.hp.help.help': 'Help centre',
       'landing.hp.help.desks': 'Language desks',
       'landing.hp.help.trust': 'How we verify information',
-    }),
+    }, locale, Object.fromEntries(HOMEPAGE_V4_KEYS.filter(item => item.key.startsWith('landing.hp.ecosystem.')).map(item => [item.key, { en: item.en, ru: item.ru, th: item.th, zh: item.zh }]))),
     getPublicHomepageData(locale),
     pageView,
+    getLabels(Object.fromEntries(Object.entries(INQUIRY_COPY).map(([key, copy]) => [key, copy.en])), locale, INQUIRY_COPY),
   ]);
 
   const { projects, commercialHomes, services, stayUnits, areas, placeAreas, placeUnits } = homepageData;
@@ -325,7 +330,6 @@ export default async function LandingPage(
     { href: '/sell', key: 'sell' },
     { href: '/rent-out', key: 'rent' },
     { href: '/property/onboard?kind=home', key: 'self' },
-    { href: '/manage', key: 'manage' },
   ] as const;
 
   const sectionHead = 'mb-32 flex flex-col justify-between gap-16 md:mb-40 md:flex-row md:items-end';
@@ -653,8 +657,8 @@ export default async function LandingPage(
           </h2>
           <p className="mt-12 max-w-2xl text-body text-text-secondary">{labels['landing.hp.owners.body']}</p>
 
-          <div className="mt-32 grid gap-16 md:grid-cols-2 lg:grid-cols-4">
-            {ownerGoals.map((goal, index) => (
+          <div className="mt-32 grid gap-16 md:grid-cols-3">
+            {ownerGoals.map((goal) => (
               <PublicAnalyticsLink
                 key={goal.key}
                 href={goal.href}
@@ -665,23 +669,29 @@ export default async function LandingPage(
                   source: 'homepage_owners',
                   intent: goal.key,
                 }}
-                className={`group flex min-h-[240px] flex-col justify-between rounded-lg p-24 transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman ${
-                  index === 3
-                    ? 'bg-brand-andaman text-surface-ivory'
-                    : 'border border-border-line bg-surface-ivory text-text-ink'
-                }`}
+                className="group flex min-h-[240px] flex-col justify-between rounded-lg border border-border-line bg-surface-ivory p-24 text-text-ink transition-shadow duration-structural hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman"
               >
                 <div>
                   <h3 className="font-display text-title font-semibold">{L(`landing.hp.owners.${goal.key}.title`)}</h3>
-                  <p className={`mt-12 text-body ${index === 3 ? 'text-surface-ivory/80' : 'text-text-secondary'}`}>
+                  <p className="mt-12 text-body text-text-secondary">
                     {L(`landing.hp.owners.${goal.key}.body`)}
                   </p>
                 </div>
-                <span className={`mt-24 font-semibold ${index === 3 ? 'text-surface-ivory' : 'text-brand-andaman'}`}>
+                <span className="mt-24 font-semibold text-brand-andaman">
                   {L(`landing.hp.owners.${goal.key}.cta`)} →
                 </span>
               </PublicAnalyticsLink>
             ))}
+          </div>
+
+          <div className="mt-32 rounded-lg border border-border-line bg-surface-ivory p-24 md:p-32" aria-labelledby="management-heading">
+            <h3 id="management-heading" className="font-display text-heading-2 font-semibold text-text-ink">{management.managementTitle}</h3>
+            <p className="mt-12 max-w-3xl text-body text-text-secondary">{management.managementBody}</p>
+            <p className="mt-12 max-w-3xl text-small text-text-secondary">{management.requestBody}</p>
+            <PublicAnalyticsLink href="/manage" eventKey={ownerGoalEvent} dimensions={{ destination: activeDestination.key, locale, source: 'homepage_owners', intent: 'manage' }} className="mt-24 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">
+              {management.managementCta} →
+            </PublicAnalyticsLink>
+            <Link prefetch={false} href="/manage#process" className="mt-12 flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">{guidance['audience.management.how']} →</Link>
           </div>
 
           <div className="mt-32 grid gap-24 border-t border-border-line pt-24 md:grid-cols-2">
@@ -749,15 +759,11 @@ export default async function LandingPage(
         <div className="mx-auto flex max-w-content flex-col justify-between gap-24 px-20 md:flex-row md:items-center md:px-32">
           <div className="max-w-xl">
             <h2 id="help-heading" className="font-display text-display font-semibold text-text-ink">
-              {labels['landing.hp.help.title']}
+              {guidance['audience.choice.title']}
             </h2>
-            <p className="mt-8 text-body text-text-secondary">{labels['landing.hp.help.body']}</p>
+            <p className="mt-8 text-body text-text-secondary">{guidance['audience.choice.body']}</p>
           </div>
-          <div className="flex flex-wrap gap-x-24 gap-y-12 text-body font-semibold text-brand-andaman">
-            <Link prefetch={false} href="/help" className="min-h-44 hover:underline">{labels['landing.hp.help.help']} →</Link>
-            <Link prefetch={false} href="/desks" className="min-h-44 hover:underline">{labels['landing.hp.help.desks']} →</Link>
-            <Link prefetch={false} href="/trust" className="min-h-44 hover:underline">{labels['landing.hp.help.trust']} →</Link>
-          </div>
+          <Link prefetch={false} href="/help/choose" className="inline-flex min-h-48 shrink-0 items-center rounded-lg bg-brand-andaman px-24 py-12 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">{guidance['audience.choice.cta']} →</Link>
         </div>
       </section>
     </main>

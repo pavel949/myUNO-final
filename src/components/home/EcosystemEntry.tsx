@@ -9,13 +9,14 @@ type RouteKey = 'stay' | 'monthly' | 'buy' | 'move' | 'services' | 'owner' | 'pa
 
 export function EcosystemEntry({ places, copy }: { places: PlaceOption[]; copy: Record<string, string> }) {
   const router = useRouter();
-  
+
   const [query, setQuery] = useState('');
   const routeConfig: { key: RouteKey; href: string }[] = [
     { key: 'stay', href: '/search' },
-    { key: 'monthly', href: '/homes?intent=rent' },
-    { key: 'buy', href: '/homes?intent=buy' },
+
     { key: 'move', href: '/relocation' },
+    { key: 'buy', href: '/homes?intent=buy' },
+    { key: 'monthly', href: '/homes?intent=rent' },
     { key: 'services', href: '/services' },
     { key: 'owner', href: '/owners' },
     { key: 'partner', href: '/partners' },
@@ -60,11 +61,14 @@ export function EcosystemEntry({ places, copy }: { places: PlaceOption[]; copy: 
       {matches.length > 0 && <div className="mt-8 flex flex-wrap gap-8" aria-label={copy.matches}>
         {matches.map((place) => <Link prefetch={false} key={place.kind + ':' + place.id} className="rounded-lg border border-border-line px-12 py-8 text-small text-brand-andaman" href={place.kind === 'unit' ? '/units/' + encodeURIComponent(place.id) : place.kind === 'project' ? place.slug ? '/projects/' + encodeURIComponent(place.slug) : '/search?projectId=' + encodeURIComponent(place.id) : place.slug ? '/search?areaSlug=' + encodeURIComponent(place.slug) : '/search'}>{place.name}</Link>)}
       </div>}
-      <div className="mt-20 grid grid-cols-2 gap-8 md:grid-cols-3">
-        {routes.map((route) => <Link prefetch={false} key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
+      <div className="mt-20 grid gap-8 sm:grid-cols-3">
+        {routes.slice(0, 3).map((route) => <Link prefetch={false} key={route.key} href={route.href} className="group flex min-w-0 flex-col rounded-lg border border-border-line bg-surface-ivory p-12 transition-colors hover:border-brand-andaman focus-visible:outline-2 focus-visible:outline-brand-andaman sm:p-16">
           <div className="flex min-w-0 items-start justify-between gap-4"><span className="min-w-0 break-normal hyphens-none [overflow-wrap:normal] [word-break:normal] text-small font-semibold leading-snug text-text-ink sm:text-body">{route.title}</span><span aria-hidden="true" className="shrink-0 text-brand-andaman">→</span></div>
           <p className="mt-8 hidden text-small leading-relaxed text-text-secondary sm:block">{route.detail}</p>
         </Link>)}
+      </div>
+      <div className="mt-12 flex flex-wrap gap-x-20 gap-y-8">
+        {routes.slice(3).map(route => <Link prefetch={false} key={route.key} href={route.href} className="inline-flex min-h-44 items-center text-small font-semibold text-brand-andaman hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-andaman">{route.title} →</Link>)}
       </div>
     </section>
   );

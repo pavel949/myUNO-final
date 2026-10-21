@@ -49,20 +49,26 @@ const labels = {
   myUno: 'My UNO',
 };
 
-function renderNavbar() {
+function renderNavbar(locale = 'en') {
   return render(
     <Navbar
       user={{ firstName: 'Pavel', isAdmin: false, roles: ['owner'] }}
       labels={labels}
       roleLinks={[{ href: '/owner', label: 'Owner dashboard' }]}
       bellLabels={{ aria: 'Notifications', empty: 'Empty', markAll: 'Mark all' }}
-      locale="en"
+      locale={locale}
       localeOptions={{ en: 'EN', ru: 'RU', th: 'TH', zh: 'ZH' }}
     />
   );
 }
 
 describe('Navbar', () => {
+  it.each([['ru', 'Передать объект в управление'], ['zh', '委托房产管理']])('keeps the %s management CTA public in the mobile menu', (locale, label) => {
+    renderNavbar(locale);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    for (const link of screen.getAllByRole('link', { name: label })) expect(link).toHaveAttribute('href', '/manage');
+  });
+
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue('/trips');
   });

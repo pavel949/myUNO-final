@@ -56,54 +56,56 @@ function RoomForm({
         if (saved && !room) onAdded?.();
       }}
     >
-      <label className="block text-small">
-        {l('room_type')}
-        <select
-          className="my-8 block w-full rounded-md border p-12"
-          name="spaceType"
-          defaultValue={room?.spaceType || 'bedroom'}
-        >
-          <option value="bedroom">{l('bedroom')}</option>
-          <option value="living_room">{l('living_room')}</option>
-        </select>
-      </label>
-      <label className="block text-small">
-        {l('room_name')}
-        <input
-          className="my-8 block w-full rounded-md border p-12"
-          name="name"
-          maxLength={200}
-          defaultValue={room?.name || ''}
-        />
-      </label>
-      <label className="block text-small">
-        {l('room_order')}
-        <input
-          name="sortOrder"
-          type="number"
-          min="0"
-          step="1"
-          required
-          defaultValue={room?.sortOrder ?? 0}
-          className="my-8 block w-full rounded-md border p-12"
-        />
-      </label>
-      <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
-        {SLEEPING_BED_TYPES.map((type) => (
-          <label key={type} className="text-small">
-            {l(type)}
-            <input
-              name={type}
-              type="number"
-              min="0"
-              step="1"
-              required
-              className="my-8 block w-full rounded-md border p-12"
-              defaultValue={room?.beds.find((bed) => bed.bedType === type)?.count ?? 0}
-            />
-          </label>
-        ))}
-      </div>
+      <fieldset disabled={!room && state.busy} className="min-w-0">
+        <label className="block text-small">
+          {l('room_type')}
+          <select
+            className="my-8 block w-full rounded-md border p-12"
+            name="spaceType"
+            defaultValue={room?.spaceType || 'bedroom'}
+          >
+            <option value="bedroom">{l('bedroom')}</option>
+            <option value="living_room">{l('living_room')}</option>
+          </select>
+        </label>
+        <label className="block text-small">
+          {l('room_name')}
+          <input
+            className="my-8 block w-full rounded-md border p-12"
+            name="name"
+            maxLength={200}
+            defaultValue={room?.name || ''}
+          />
+        </label>
+        <label className="block text-small">
+          {l('room_order')}
+          <input
+            name="sortOrder"
+            type="number"
+            min="0"
+            step="1"
+            required
+            defaultValue={room?.sortOrder ?? 0}
+            className="my-8 block w-full rounded-md border p-12"
+          />
+        </label>
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
+          {SLEEPING_BED_TYPES.map((type) => (
+            <label key={type} className="text-small">
+              {l(type)}
+              <input
+                name={type}
+                type="number"
+                min="0"
+                step="1"
+                required
+                className="my-8 block w-full rounded-md border p-12"
+                defaultValue={room?.beds.find((bed) => bed.bedType === type)?.count ?? 0}
+              />
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="mt-12 flex flex-wrap gap-12">
         <button
           type="submit"

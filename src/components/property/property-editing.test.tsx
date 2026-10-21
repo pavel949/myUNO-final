@@ -1,3 +1,5 @@
+import userEvent from '@testing-library/user-event';
+import ManagedSleepingSpaces from './ManagedSleepingSpaces';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ManagedUnitEditor from '@/app/ops/units/[unitId]/edit/managed-unit-editor';
@@ -68,6 +70,47 @@ describe('property edit recovery', () => {
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(true);
     expect(screen.getByRole('status')).toHaveTextContent('Newer edits are not saved yet');
+  });
+  it('does not discard additional typing when a new room create completes', async () => {
+    let done!: (value: unknown) => void;
+    fetcher.mockReturnValue(new Promise((resolve) => (done = resolve)));
+    const user = userEvent.setup();
+    render(<ManagedSleepingSpaces unitId="unit" rooms={[]} copy={copy} />);
+    await user.click(screen.getByRole('button', { name: 'Add sleeping space' }));
+    const name = screen.getByLabelText('Internal room name (optional)');
+    await user.type(name, 'Submitted room');
+    await user.clear(screen.getByLabelText('Single bed'));
+    await user.type(screen.getByLabelText('Single bed'), '1');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(name).toBeDisabled();
+    expect(screen.getByLabelText('Space type')).toBeDisabled();
+    expect(screen.getByLabelText('Single bed')).toBeDisabled();
+    await user.type(name, ' NEW');
+    const lastAcceptedName = (name as HTMLInputElement).value;
+    await act(async () =>
+      done({
+        ok: true,
+        status: 201,
+        json: async () => ({ id: 'created', updatedAt: unit.updatedAt }),
+      })
+    );
+    expect(screen.getByRole('button', { name: 'Add sleeping space' })).toBeInTheDocument();
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).name).toBe(lastAcceptedName);
+  });
+  it('unlocks the new-room fields after a failed create and retains entered facts', async () => {
+    fetcher.mockResolvedValue({ ok: false, status: 500, json: async () => ({ error: 'failure' }) });
+    const user = userEvent.setup();
+    render(<ManagedSleepingSpaces unitId="unit" rooms={[]} copy={copy} />);
+    await user.click(screen.getByRole('button', { name: 'Add sleeping space' }));
+    await user.type(screen.getByLabelText('Internal room name (optional)'), 'Retry room');
+    await user.clear(screen.getByLabelText('Single bed'));
+    await user.type(screen.getByLabelText('Single bed'), '1');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByText(/Could not save/);
+    expect(screen.getByLabelText('Internal room name (optional)')).toBeEnabled();
+    expect(screen.getByLabelText('Internal room name (optional)')).toHaveValue('Retry room');
+    expect(screen.getByLabelText('Single bed')).toHaveValue(1);
+    expect(screen.queryByRole('button', { name: 'Add sleeping space' })).not.toBeInTheDocument();
   });
   it('retains input on conflict and blocks stale retries until explicit reload', async () => {
     fetcher.mockResolvedValue({

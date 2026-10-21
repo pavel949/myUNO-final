@@ -228,8 +228,22 @@ try {
       const response = page.waitForResponse(
         (r) => r.url().endsWith('/property-details') && r.request().method() === 'POST'
       );
+      await page.route('**' + path + '/property-details', async (route) => {
+        if (
+          route.request().method() === 'POST' &&
+          route.request().postDataJSON().action === 'sleeping_space'
+        )
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+        await route.continue();
+      });
       await form.getByRole('button', { name: 'Save changes', exact: true }).click();
+      for (const input of await form.locator('input,select').all())
+        assert.equal(await input.isDisabled(), true);
+      await page.screenshot({ path: out + '/new-room-pending.png', fullPage: true });
+      await page.keyboard.type(' NEW');
+      assert.equal(await form.locator('[name=name]').inputValue(), 'Synthetic documentary room');
       const created = await response;
+      await page.unroute('**' + path + '/property-details');
       assert.equal(created.status(), 201);
       addedRoom = await created.json();
       await page.reload();

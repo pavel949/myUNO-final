@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `b046eca55aa52dbbb83194e9ac0f619ff8f5a215`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `917fc2c6872184fb6002099c4e98f12162befcd1`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 

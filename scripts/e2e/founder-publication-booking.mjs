@@ -280,8 +280,14 @@ try {
         && await form.getByLabel('Check-in', { exact: true }).inputValue() === ''
         && await form.getByPlaceholder('Notes', { exact: true }).inputValue() === '';
     }, 'Reservation committed, but the manual form stayed busy or failed to reset');
-    const row = fp.locator('article').filter({ has: fp.locator(`a[href="/ops/stays/${reservation.id}"]`) });
+    const expectedStayHref = `/ops/stays/${reservation.id}?${new URLSearchParams({ spaceId: fixture.operatingSpaceId })}`;
+    const stayLink = fp.locator(`a[href="${expectedStayHref}"]`);
+    const row = fp.locator('article').filter({ has: stayLink });
     await row.waitFor();
+    assert.equal(await stayLink.count(), 1);
+    const stayUrl = new URL(await stayLink.getAttribute('href'), fp.url());
+    assert.equal(stayUrl.pathname, `/ops/stays/${reservation.id}`);
+    assert.equal(stayUrl.searchParams.get('spaceId'), fixture.operatingSpaceId);
     assert.match(await row.innerText(), /Manual Guest/);
     assert.equal(await db.booking.count({ where: { unitId: fixture.unitId, channel: 'manual' } }), 1);
     report.manualReservation.formVerified = true;

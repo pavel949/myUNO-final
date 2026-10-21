@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import {
   db,
@@ -35,6 +35,9 @@ describe('POST /api/bookings/[id]/modify', () => {
   let unitId: string;
 
   beforeEach(async () => {
+    // These commercial scenarios use August/September synthetic stays.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-08-10T00:00:00Z'));
     await resetDb();
     guest = await createIdentity({ firstName: 'Guest' });
     const project = await createProject({ status: 'live' });
@@ -43,6 +46,8 @@ describe('POST /api/bookings/[id]/modify', () => {
     const unit = await createUnit({ projectId, baseNightlyThb: 1000, minNights: 1 });
     unitId = unit.id;
   });
+
+  afterEach(() => vi.useRealTimers());
 
   const asUser = (identityId: string) => ({
     identityId,

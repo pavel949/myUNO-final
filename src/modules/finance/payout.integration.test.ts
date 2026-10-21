@@ -214,7 +214,7 @@ describe('Payouts & Reconciliation (T-031)', () => {
       // Resolve it via the same function the admin route calls.
       await resolveFailedRefund(db, failedRefund.id, 'retry');
 
-      // 'retry' resets status to 'requested', so it no longer reads as failed.
+      // Retry dispatches its durable request, so it no longer reads as failed.
       data = await getReconciliationData(db);
       expect(data.failedRefunds.some((r) => r.id === failedRefund.id)).toBe(false);
     });

@@ -10,7 +10,7 @@ import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { calendarDayIn, toCalendarDay, DEFAULT_TIME_ZONE } from '@/lib/date';
-import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
+import { ensureDepositPreauthOnStayConfirmed, reserveCancellationRefunds } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
@@ -877,11 +877,20 @@ export async function cancelBooking(
   db: PrismaClient,
   input: CancelBookingInput
 ) {
+  return (await cancelBookingAttempt(db, input)).booking;
+}
+
+/** Cancellation and its durable refund work commit together. */
+export async function cancelBookingAttempt(db: PrismaClient, input: CancelBookingInput) {
   const { bookingId, cancelledByIdentityId, reason } = input;
 
-  const cancelled = await db.$transaction(async tx => {
+  const result = await db.$transaction(async tx => {
     const booking = await lockBookingInventory(tx, bookingId);
     if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if (booking.status === 'cancelled' && input.cancellationQuote?.bookingId === bookingId &&
+        booking.cancelledByIdentityId === cancelledByIdentityId) {
+      return { booking, replayed: true, refundIds: [] as string[] };
+    }
     if ((input.expectedUpdatedAt && booking.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) ||
         (input.expectedStatus && booking.status !== input.expectedStatus)) {
       throw Object.assign(new Error('Booking changed while cancellation was being prepared. Review the updated payment and refund before cancelling again.'), {
@@ -901,12 +910,16 @@ export async function cancelBooking(
     // Requested stays may be withdrawn without reserving or returning money.
     const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
     if (!cancellableStatuses.includes(booking.status)) throw new Error(`Cannot cancel booking with status ${booking.status}`);
-    return tx.booking.update({ where: { id: bookingId }, data: {
+    const cancelled = await tx.booking.update({ where: { id: bookingId }, data: {
       status: 'cancelled', cancelledAt: new Date(), cancelledByIdentityId,
       cancellationReason: reason, refundAccruedThb: refundAmountThb,
       holdExpiresAt: null, requestExpiresAt: null,
     } });
+    const refundIds = await reserveCancellationRefunds(tx, { bookingId, amountSatang: refundAmountThb, initiatedByIdentityId: cancelledByIdentityId });
+    return { booking: cancelled, replayed: false, refundIds };
   });
+  if (result.replayed) return result;
+  const cancelled = result.booking;
 
   // Track analytics event
   const nights = Math.ceil(
@@ -922,7 +935,7 @@ export async function cancelBooking(
     refundThb: cancelled.refundAccruedThb,
   }).catch(() => null);
 
-  return cancelled;
+  return result;
 }
 
 /**
@@ -1401,7 +1414,7 @@ export async function changeBookingDates(
     throw new Error('A stay needs at least one adult');
   }
 
-  if (endDate <= startDate) {
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime()) || endDate <= startDate) {
     throw new Error('The new end date must be after the new start date');
   }
 
@@ -1464,6 +1477,20 @@ export async function changeBookingDates(
     // filing was made from.
     if (booking.status === 'checked_in' && startDate.getTime() !== booking.startDate.getTime()) {
       throw new Error('A stay that has begun can change its departure, not its arrival');
+    }
+
+    // Guest date changes cannot create historical occupancy. Stored stay dates
+    // are calendar days, while "today" belongs to the property's timezone.
+    // Source-party reconciliation above changes facts only, not historical dates.
+    const project = await tx.project.findUniqueOrThrow({
+      where: { id: booking.projectId }, select: { timezone: true },
+    });
+    const today = calendarDayIn(new Date(), project.timezone ?? DEFAULT_TIME_ZONE);
+    if ((booking.status !== 'checked_in' && toCalendarDay(startDate) < today) ||
+        (booking.status === 'checked_in' && toCalendarDay(endDate) <= today)) {
+      throw Object.assign(new Error(booking.status === 'checked_in'
+        ? 'Departure must be after today at the property'
+        : 'Arrival cannot be before today at the property'), { code: 'BOOKING_DATES_IN_PAST' });
     }
 
     // Excluding itself: the booking's own current nights are not a conflict with

@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Guest={id:string;firstName:string;lastName:string;email:string|null};
@@ -11,9 +11,14 @@ export default function ReservationGroupForm({
   const router=useRouter();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const saving=useRef(false);
   async function submit(event:FormEvent<HTMLFormElement>){
-    event.preventDefault();setBusy(true);setError('');
-    const data=new FormData(event.currentTarget);
+    event.preventDefault();
+    if(saving.current)return;
+    saving.current=true;setBusy(true);setError('');
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    try {
     const response=await fetch('/api/ops/reservation-groups',{
       method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({
@@ -24,8 +29,14 @@ export default function ReservationGroupForm({
       }),
     });
     const body=await response.json();
-    if(!response.ok){setError(body.error||labels['reservations.group_failed']);setBusy(false);return;}
-    event.currentTarget.reset();setBusy(false);router.refresh();
+    if(!response.ok){setError(body?.error||labels['reservations.group_failed']);return;}
+    if(!body?.group?.id)throw new Error('Missing saved reservation group');
+    form.reset();router.refresh();
+    }catch{
+      setError(labels['reservations.group_failed']);
+    }finally{
+      saving.current=false;setBusy(false);
+    }
   }
   return <form onSubmit={submit} className="grid gap-12 stitch-panel p-16 md:grid-cols-4">
     <input required name="title" placeholder={labels['reservations.group_title']} className="h-44 rounded-md border border-border-line px-12"/>

@@ -76,7 +76,12 @@ export default function UnifiedStayCalendar(props: Props) {
   const locale = useLocale();
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<{unitId:string; date:string; cell:CalendarCell}|null>(null);
+  const [selection, setSelected] = useState<{unitId:string; date:string}|null>(null);
+  // Keep only the selected coordinates; refreshes must use current occupancy.
+  const selectedIndex = selection ? props.days.indexOf(selection.date) : -1;
+  const selectedCell = selection && selectedIndex >= 0
+    ? props.cells[selection.unitId]?.[selectedIndex] : undefined;
+  const selected = selection && selectedCell ? { ...selection, cell: selectedCell } : null;
   const [mobileDate, setMobileDate] = useState(
     props.days.includes(props.today) ? props.today : (props.days[0] || props.start)
   );
@@ -138,7 +143,7 @@ export default function UnifiedStayCalendar(props: Props) {
   const mobileIndex = Math.max(0, props.days.indexOf(mobileDate));
   let booked=0, available=0, holds=0, conflicts=0;
   for (const unit of rows) for (const cell of props.cells[unit.id] || []) {
-    if (cell.state==='free' && unit.sellable) available++;
+    if ((cell.state==='free'||cell.state==='request') && unit.sellable) available++;
     if (cell.state==='confirmed'||cell.state==='in_house'||cell.state==='external') booked++;
     if (cell.state==='hold') holds++;
     if (cell.state==='conflict') conflicts++;
@@ -276,7 +281,7 @@ export default function UnifiedStayCalendar(props: Props) {
                 : stateLabel[cell.state];
               const rate=props.rates[unit.id]?.byDate[mobileDate];
               return <button key={unit.id} type="button"
-                onClick={()=>setSelected({unitId:unit.id,date:mobileDate,cell})}
+                onClick={()=>setSelected({unitId:unit.id,date:mobileDate})}
                 className="flex w-full items-center justify-between gap-12 rounded-md border border-border-line bg-surface-ivory p-12 text-left">
                 <span>
                   <span className="block font-semibold text-text-ink">{unit.name}</span>
@@ -335,7 +340,7 @@ export default function UnifiedStayCalendar(props: Props) {
                       <button type="button"
                         aria-label={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
                         title={unit.name+' · '+day+' · '+occupancy+' · '+rateLabel}
-                        onClick={()=>setSelected({unitId:unit.id,date:day,cell})}
+                        onClick={()=>setSelected({unitId:unit.id,date:day})}
                         className={'h-48 w-full rounded-md text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-andaman '+(!unit.sellable&&cell.state==='free'?'bg-surface-sand text-text-secondary':stateClass[cell.state])}>
                         <span className="block">{!unit.sellable&&cell.state==='free'?'—':shortLabel[cell.state]}</span>
                         <span className="block text-[9px] font-medium font-tabular opacity-80">{rate ? '฿'+Math.round(rate.nightlyThb/100).toLocaleString(UI_LOCALE) : '—'}</span>

@@ -1,4 +1,5 @@
 'use client';
+import { propertyHeadlineArea } from '@/lib/property-area';
 
 import { discoveryContext } from '@/lib/discovery-navigation';
 import { SimilarAvailableHomes } from '@/components/property/SimilarAvailableHomes';
@@ -359,9 +360,9 @@ export default function UnitDetailClient({
                 <Chip variant="neutral">
                   {formatPropertyCount(labels.minNightsCount, unit.minNights || 1, locale)}
                 </Chip>
-                {(unit.grossAreaSqm || unit.sizeSqm) ? (
+                {propertyHeadlineArea(unit) ? (
                   <Chip variant="neutral">
-                    {String(unit.grossAreaSqm || unit.sizeSqm)} {labels.sizeUnit}
+                    {String(propertyHeadlineArea(unit))} {labels.sizeUnit}
                   </Chip>
                 ) : null}
                 {unit.floor ? <Chip variant="neutral">{fill(labels.floor, { value: unit.floor })}</Chip> : null}

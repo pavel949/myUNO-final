@@ -1,0 +1,13 @@
+{
+  "sourceSha": "1fa0309d7e81f7948d8f58f414809771b604096f",
+  "synthetic": true,
+  "tablesCompared": 120,
+  "tableRowDigestParity": true,
+  "restoreElapsedMs": 3365,
+  "totalElapsedMs": 3415,
+  "confirmedPaymentReplay": "no duplicate",
+  "outageRefundReconciliation": "succeeded once",
+  "transport": "mock Opn only",
+  "result": "passed",
+  "scope": "Disposable application DB. Excludes real gateway, Blob files, deployed app/config and measured production RTO/RPO."
+}

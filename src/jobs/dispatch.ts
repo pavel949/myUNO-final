@@ -24,6 +24,7 @@ import { getConfig } from '@/modules/config';
 import { JOB_KEYS } from './registry';
 import { runRegisteredJob } from './record';
 import { releaseExpiredDepositPreauths } from '@/modules/finance';
+import { recoverRequestedBookingRefunds } from '@/modules/finance/refund-recovery';
 
 export type JobDispatchResult = Record<string, string>;
 
@@ -40,10 +41,11 @@ export async function runBookingLifecycleJob(db: PrismaClient) {
       const declined = await autoDeclineRequests(db);
       const reminded = await remindUnansweredRequests(db);
       const deliveries = await flushPendingNotificationDeliveries(db);
-      return { expired, declined, reminded, deliveries };
+      const refunds = await recoverRequestedBookingRefunds(db);
+      return { expired, declined, reminded, deliveries, refunds };
     },
     (r) =>
-      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders, ${r.deliveries.sent} deliveries sent, ${r.deliveries.failed} failed, ${r.deliveries.deferred} deferred`
+      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders, ${r.deliveries.sent} deliveries sent, ${r.deliveries.failed} failed, ${r.deliveries.deferred} deferred, ${r.refunds.processed} refund requests processed, ${r.refunds.deferred} refunds deferred`
   );
 }
 

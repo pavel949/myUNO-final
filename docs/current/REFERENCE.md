@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `e37d1ac6a4054a3be81f122c432281126c2813e8`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46f04a32b04fca66ec4c3134eea7685656822020`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,9 +14,9 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 556 |
+| tests | 571 |
 | prismaModels | 118 |
-| migrations | 94 |
+| migrations | 95 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -511,11 +511,11 @@ Exports перечислены синтаксически, без вывода �
 
 ### booking
 
-Файлов: 59; тестовых файлов: 36. [Описание](../../src/modules/booking/README.md).
+Файлов: 60; тестовых файлов: 37. [Описание](../../src/modules/booking/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
-| [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>) | implementation | `SAFE_IDENTITY_SELECT`, `findBookingByCreationIntent`, `findAvailableUnitsForCategory`, `resolveUnitForCategory`, `createBooking`, `createBookingAttempt`, `approveBookingRequest`, `declineBookingRequest`, `confirmBooking`, `cancelBooking`, `CheckInBlockedError`, `assessCheckIn`, `checkInBooking`, `checkOutBooking`, `completeBooking`, `requestExtension`, `changeBookingDates`, `markNoShow`, `expireHolds`, `autoDeclineRequests`, `getBooking`, `getUnitBookings`, `getGuestBookings` |
+| [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>) | implementation | `SAFE_IDENTITY_SELECT`, `findBookingByCreationIntent`, `findAvailableUnitsForCategory`, `resolveUnitForCategory`, `createBooking`, `createBookingAttempt`, `approveBookingRequest`, `declineBookingRequest`, `confirmBooking`, `cancelBooking`, `cancelBookingAttempt`, `CheckInBlockedError`, `assessCheckIn`, `checkInBooking`, `checkOutBooking`, `completeBooking`, `requestExtension`, `changeBookingDates`, `markNoShow`, `expireHolds`, `autoDeclineRequests`, `getBooking`, `getUnitBookings`, `getGuestBookings` |
 | [src/modules/booking/calendar-projection.ts](<../../src/modules/booking/calendar-projection.ts>) | implementation | `validCalendarDay`, `shiftCalendarDay`, `calendarDays`, `bangkokCalendarDay`, `coversCalendarDay`, `projectCalendarCell`, `projectCalendar` |
 | [src/modules/booking/cancellation-quote.ts](<../../src/modules/booking/cancellation-quote.ts>) | implementation | `getCancellationQuote`, `parseCancellationQuote`, `cancellationQuotesMatch` |
 | [src/modules/booking/cancellation.ts](<../../src/modules/booking/cancellation.ts>) | implementation | `computeRefundPercentage`, `computeRefundAmount`, `resolveCancellationPolicy`, `resolveStayCancellationPolicy`, `DEFAULT_POLICIES`, `sourceSeasonCancellationPolicy`, `resolveStayCancellationPolicyForDates` |
@@ -610,7 +610,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 74; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 75; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -658,6 +658,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/property-booking-mode.seed.ts](<../../src/modules/content/property-booking-mode.seed.ts>) | seed | `PROPERTY_BOOKING_MODE_KEYS`, `PROPERTY_BOOKING_MODE_LABELS`, `PROPERTY_BOOKING_MODE_DRAFTS` |
 | [src/modules/content/property-category-ui-drafts.ts](<../../src/modules/content/property-category-ui-drafts.ts>) | implementation | `PROPERTY_CATEGORY_UI_DRAFTS` |
 | [src/modules/content/property-delegation.seed.ts](<../../src/modules/content/property-delegation.seed.ts>) | seed | `PROPERTY_DELEGATION_KEYS`, `PROPERTY_DELEGATION_LABELS`, `PROPERTY_DELEGATION_DRAFTS` |
+| [src/modules/content/property-editor.seed.ts](<../../src/modules/content/property-editor.seed.ts>) | seed | `PROPERTY_EDITOR_KEYS`, `PROPERTY_EDITOR_DEFAULTS`, `PROPERTY_EDITOR_DRAFTS`, `editorLabel` |
 | [src/modules/content/property-facts.seed.ts](<../../src/modules/content/property-facts.seed.ts>) | seed | `PROPERTY_FACT_KEYS` |
 | [src/modules/content/property-listings.seed.ts](<../../src/modules/content/property-listings.seed.ts>) | seed | `PROPERTY_LISTINGS_KEYS`, `PROPERTY_LISTINGS_LOCALE_DRAFTS` |
 | [src/modules/content/property-onboarding.seed.ts](<../../src/modules/content/property-onboarding.seed.ts>) | seed | `PROPERTY_ONBOARDING_KEYS`, `PROPERTY_ONBOARDING_LOCALE_DRAFTS` |
@@ -745,11 +746,12 @@ Exports перечислены синтаксически, без вывода �
 
 ### finance
 
-Файлов: 45; тестовых файлов: 22. [Описание](../../src/modules/finance/README.md).
+Файлов: 50; тестовых файлов: 25. [Описание](../../src/modules/finance/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
 | [src/modules/finance/bank-transfer.service.ts](<../../src/modules/finance/bank-transfer.service.ts>) | implementation | `transferReference`, `getTransferInstructions`, `recordBankTransfer` |
+| [src/modules/finance/cancellation-refunds.ts](<../../src/modules/finance/cancellation-refunds.ts>) | implementation | `reserveCancellationRefunds` |
 | [src/modules/finance/deposits.service.ts](<../../src/modules/finance/deposits.service.ts>) | implementation | `getActiveDepositClaimForGuest`, `disputeDepositClaim`, `scheduleDepositPreauth`, `scheduleDepositPreauthIfConfigured`, `ensureDepositPreauthOnStayConfirmed`, `voidDepositPreauthIfClean`, `captureDepositPreauthOnClaim`, `releaseDepositPreauthOnDispute`, `fileDepositClaim`, `getClaimsAwaitingResolution`, `getStaysOpenToClaim`, `approveClaim`, `rejectClaim`, `releaseExpiredDepositPreauths` |
 | [src/modules/finance/expense-access.ts](<../../src/modules/finance/expense-access.ts>) | implementation | `canWriteUnitExpenses`, `resolveReceiptReader` |
 | [src/modules/finance/expense-receipt-file.ts](<../../src/modules/finance/expense-receipt-file.ts>) | implementation | `MAX_RECEIPT_BYTES`, `RECEIPT_MIME_TYPES`, `RECEIPT_EXTENSIONS`, `ReceiptFileError`, `ReceiptIntegrityError`, `isReceiptMime`, `sniffReceiptType`, `validateReceiptFile`, `sealReceipt`, `openReceipt` |
@@ -766,6 +768,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>) | barrel | `PaymentProviderUnavailableError`, `getPaymentProvider`, `getProviderConfig` |
 | [src/modules/finance/providers/opn.ts](<../../src/modules/finance/providers/opn.ts>) | implementation | `OpnConfigurationError`, `OpnApiError`, `createOpnProvider` |
 | [src/modules/finance/providers/types.ts](<../../src/modules/finance/providers/types.ts>) | implementation | см. исходник |
+| [src/modules/finance/refund-recovery.ts](<../../src/modules/finance/refund-recovery.ts>) | implementation | `recoverRequestedBookingRefunds` |
 | [src/modules/finance/remittance.service.ts](<../../src/modules/finance/remittance.service.ts>) | implementation | `resolveProviderPayoutPeriod`, `getProviderRemittancesView`, `computeProviderRemittance` |
 | [src/modules/finance/statement-expense.ts](<../../src/modules/finance/statement-expense.ts>) | implementation | `OPERATING_EXPENSE_ENTRY_TYPES`, `NON_EXPENSE_STATEMENT_ENTRY_TYPES`, `isReversalRow`, `isStatementLedgerRow`, `operatingExpenseContribution`, `sumOperatingExpenses`, `sumByType`, `buildLedgerLines` |
 | [src/modules/finance/statement-signoff.service.ts](<../../src/modules/finance/statement-signoff.service.ts>) | implementation | `OWNER_VISIBLE_STATEMENT_STATUSES`, `isOwnerVisibleStatementStatus`, `SIGNABLE_STATEMENT_STATUSES`, `isSignableStatementStatus`, `StatementSignOffError`, `getStatementSignOffState`, `hasSignedOff`, `recordStatementSignOff` |
@@ -877,7 +880,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### projects
 
-Файлов: 84; тестовых файлов: 42. [Описание](../../src/modules/projects/README.md).
+Файлов: 86; тестовых файлов: 43. [Описание](../../src/modules/projects/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -885,6 +888,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/projects/amenity-usage.ts](<../../src/modules/projects/amenity-usage.ts>) | implementation | `amenityRecord`, `singleAmenityHours`, `hasSimpleAmenityHours`, `amenityLinesInput`, `parseAmenityLines`, `amenityHoursFromForm`, `amenityUsageLines`, `amenityLeadTime`, `amenityLeadTimeFromForm` |
 | [src/modules/projects/area.service.ts](<../../src/modules/projects/area.service.ts>) | implementation | `listAreas`, `collectDescendantIds`, `buildAreaTree`, `wouldFormCycle`, `createArea`, `updateArea`, `resolveAreaLabelKey`, `getAreaForBrowse`, `listBrowsableAreas`, `getAreaPerformance`, `getPortfolioByArea` |
 | [src/modules/projects/commercial-discovery.ts](<../../src/modules/projects/commercial-discovery.ts>) | implementation | `publicOfferingPriceThb`, `eligiblePublicHomeIntents`, `listPublicCommercialHomes`, `getPublicCommercialHomeById` |
+| [src/modules/projects/edit-validation.ts](<../../src/modules/projects/edit-validation.ts>) | implementation | `PropertyEditConflict`, `editVersion`, `requiredText`, `physicalNumber`, `validatePhysicalFacts` |
 | [src/modules/projects/engagement-scope.ts](<../../src/modules/projects/engagement-scope.ts>) | implementation | `currentEngagementWhere` |
 | [src/modules/projects/index.ts](<../../src/modules/projects/index.ts>) | barrel | см. исходник |
 | [src/modules/projects/inventory.seed.ts](<../../src/modules/projects/inventory.seed.ts>) | seed | `ensureSeedInventoryCategory` |
@@ -980,7 +984,9 @@ Exports перечислены синтаксически, без вывода �
 - [src/lib/pms-navigation.ts](<../../src/lib/pms-navigation.ts>)
 - [src/lib/presentation-media.ts](<../../src/lib/presentation-media.ts>)
 - [src/lib/prisma.ts](<../../src/lib/prisma.ts>)
+- [src/lib/property-area.ts](<../../src/lib/property-area.ts>)
 - [src/lib/property-count.ts](<../../src/lib/property-count.ts>)
+- [src/lib/property-editor-return.ts](<../../src/lib/property-editor-return.ts>)
 - [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>)
 - [src/lib/safe-next-path.ts](<../../src/lib/safe-next-path.ts>)
 - [src/lib/secret-catalog.ts](<../../src/lib/secret-catalog.ts>)
@@ -1127,6 +1133,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/projects/ProjectWorkspaceNav.tsx](<../../src/components/projects/ProjectWorkspaceNav.tsx>)
 - [src/components/projects/UnitProjectAmenities.tsx](<../../src/components/projects/UnitProjectAmenities.tsx>)
 - [src/components/property/ManagedGallery.tsx](<../../src/components/property/ManagedGallery.tsx>)
+- [src/components/property/ManagedSleepingSpaces.tsx](<../../src/components/property/ManagedSleepingSpaces.tsx>)
 - [src/components/property/PropertyDealClient.tsx](<../../src/components/property/PropertyDealClient.tsx>)
 - [src/components/property/PropertyImage.tsx](<../../src/components/property/PropertyImage.tsx>)
 - [src/components/property/SaveHomeButton.tsx](<../../src/components/property/SaveHomeButton.tsx>)
@@ -1134,6 +1141,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/property/ShareStayOffer.tsx](<../../src/components/property/ShareStayOffer.tsx>)
 - [src/components/property/SimilarAvailableHomes.tsx](<../../src/components/property/SimilarAvailableHomes.tsx>)
 - [src/components/property/StructureEditor.tsx](<../../src/components/property/StructureEditor.tsx>)
+- [src/components/property/usePropertyEdit.ts](<../../src/components/property/usePropertyEdit.ts>)
 - [src/components/public-analytics.ts](<../../src/components/public-analytics.ts>)
 - [src/components/PublicAnalyticsLink.tsx](<../../src/components/PublicAnalyticsLink.tsx>)
 - [src/components/RoleContextBanner.tsx](<../../src/components/RoleContextBanner.tsx>)
@@ -2955,6 +2963,9 @@ model Refund {
   reason                RefundReason
   status                RefundStatus @default(requested)
   providerRefundId      String?      @map("provider_refund_id")
+  // A new/explicitly reconciled booking request may be dispatched once.
+  // Null on legacy rows: requested alone never proves no provider attempt.
+  dispatchAuthorizedAt  DateTime?    @map("dispatch_authorized_at")
   paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
   initiatedByIdentityId String       @map("initiated_by_identity_id")
 
@@ -6094,6 +6105,7 @@ model RateLimitBucket {
 - [prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql](<../../prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql>)
 - [prisma/migrations/20261015080331_pricing_editor_role/migration.sql](<../../prisma/migrations/20261015080331_pricing_editor_role/migration.sql>)
 - [prisma/migrations/20261015120347_property_capability_delegation/migration.sql](<../../prisma/migrations/20261015120347_property_capability_delegation/migration.sql>)
+- [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
 
 <a id="environment"></a>
 
@@ -6117,14 +6129,15 @@ model RateLimitBucket {
 | `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
-| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `CHROMIUM_EXECUTABLE_PATH` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
 | `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>), [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
-| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
-| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.env.example](<../../.env.example>) |
+| `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `ENCRYPTION_KEY` | [src/lib/encryption.ts](<../../src/lib/encryption.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `GITHUB_OUTPUT` | [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
@@ -6140,6 +6153,7 @@ model RateLimitBucket {
 | `MEDIA_IMPORT_TOKEN` | [src/app/api/cron/import-managed-yandex-media/route.ts](<../../src/app/api/cron/import-managed-yandex-media/route.ts>) |
 | `MIGRATION_DATABASE_HOST` | [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>) |
 | `MYUNO_BROWSER_ACCEPTANCE` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>) |
+| `MYUNO_RECOVERY_REHEARSAL` | [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>) |
 | `NEXT_PUBLIC_APP_URL` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/login/google-login-button.tsx](<../../src/app/login/google-login-button.tsx>), [src/app/login/login-form.tsx](<../../src/app/login/login-form.tsx>), [.env.example](<../../.env.example>) |
 | `NEXT_PUBLIC_MYUNO_DESTINATION` | [src/modules/destinations/index.ts](<../../src/modules/destinations/index.ts>) |
@@ -6148,13 +6162,16 @@ model RateLimitBucket {
 | `NEXTAUTH_URL` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/app/api/auth/callback/google/route.ts](<../../src/app/api/auth/callback/google/route.ts>), [src/app/api/auth/claim/generate-link/route.ts](<../../src/app/api/auth/claim/generate-link/route.ts>), [src/app/api/auth/guest-access/route.ts](<../../src/app/api/auth/guest-access/route.ts>), [src/app/libs/bookingCancelled.ts](<../../src/app/libs/bookingCancelled.ts>), [src/app/libs/bookingConfirmed.ts](<../../src/app/libs/bookingConfirmed.ts>), [src/lib/seo.ts](<../../src/lib/seo.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/booking/booking.service.ts](<../../src/modules/booking/booking.service.ts>), [src/modules/booking/lifecycle.jobs.ts](<../../src/modules/booking/lifecycle.jobs.ts>), [src/modules/booking/notify-modified.ts](<../../src/modules/booking/notify-modified.ts>), [src/modules/booking/notify-request-reminder.ts](<../../src/modules/booking/notify-request-reminder.ts>), [src/modules/booking/notify-requested.ts](<../../src/modules/booking/notify-requested.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/projects/notify-owner-stay.ts](<../../src/modules/projects/notify-owner-stay.ts>), [src/modules/services/notify-order-reminder.ts](<../../src/modules/services/notify-order-reminder.ts>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [.env.example](<../../.env.example>) |
 | `NODE_ENV` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/app/global-error.tsx](<../../src/app/global-error.tsx>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [src/middleware.ts](<../../src/middleware.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/content/content.hook.ts](<../../src/modules/content/content.hook.ts>), [src/modules/content/content.service.ts](<../../src/modules/content/content.service.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/media.service.ts](<../../src/modules/media/media.service.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>) |
 | `OMISE_PUBLIC_KEY` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
-| `OMISE_SECRET_KEY` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
+| `OMISE_SECRET_KEY` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [.env.example](<../../.env.example>) |
 | `OMISE_WEBHOOK_SECRET` | [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
-| `PAYMENT_PROVIDER` | [src/app/api/webhooks/opn/route.ts](<../../src/app/api/webhooks/opn/route.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [.env.example](<../../.env.example>) |
+| `PAYMENT_PROVIDER` | [src/app/api/webhooks/opn/route.ts](<../../src/app/api/webhooks/opn/route.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/finance/finance.service.ts](<../../src/modules/finance/finance.service.ts>), [src/modules/finance/providers/index.ts](<../../src/modules/finance/providers/index.ts>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [.env.example](<../../.env.example>) |
 | `PG_DUMP_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `PG_RESTORE_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `PGDATABASE` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `PROPERTY_EDITING_SERVER_MODE` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
 | `PSQL_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `READONLY_DATABASE_URL` | [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>) |
+| `RECOVERY_HEAD_SHA` | [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>) |
 | `RESEND_API_KEY` | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>), [src/modules/auth/auth.ts](<../../src/modules/auth/auth.ts>), [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
 | `SCHEDULER_MODE` | [src/jobs/registry.ts](<../../src/jobs/registry.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `SCRATCH_DATABASE_URL` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
@@ -6243,11 +6260,14 @@ model RateLimitBucket {
 - [src/app/api/bookings/[id]/bookings-id.integration.test.ts](<../../src/app/api/bookings/[id]/bookings-id.integration.test.ts>)
 - [src/app/api/bookings/[id]/cancel/cancel.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/cancel.integration.test.ts>)
 - [src/app/api/bookings/[id]/cancel/payment-race.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/payment-race.integration.test.ts>)
+- [src/app/api/bookings/[id]/cancel/recovery.integration.test.ts](<../../src/app/api/bookings/[id]/cancel/recovery.integration.test.ts>)
 - [src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts](<../../src/app/api/bookings/[id]/checkin/checkin-gate.integration.test.ts>)
 - [src/app/api/bookings/[id]/confirm-unpaid/confirm-unpaid.integration.test.ts](<../../src/app/api/bookings/[id]/confirm-unpaid/confirm-unpaid.integration.test.ts>)
+- [src/app/api/bookings/[id]/guests/authorization.test.ts](<../../src/app/api/bookings/[id]/guests/authorization.test.ts>)
 - [src/app/api/bookings/[id]/modify/modify.integration.test.ts](<../../src/app/api/bookings/[id]/modify/modify.integration.test.ts>)
 - [src/app/api/bookings/[id]/ops-authorization.integration.test.ts](<../../src/app/api/bookings/[id]/ops-authorization.integration.test.ts>)
 - [src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts](<../../src/app/api/bookings/[id]/record-cash-payment/record-cash-payment.integration.test.ts>)
+- [src/app/api/bookings/[id]/record-transfer/authorization.test.ts](<../../src/app/api/bookings/[id]/record-transfer/authorization.test.ts>)
 - [src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts](<../../src/app/api/bookings/[id]/transfer-instructions/route.integration.test.ts>)
 - [src/app/api/bookings/[id]/verify-passports/route.integration.test.ts](<../../src/app/api/bookings/[id]/verify-passports/route.integration.test.ts>)
 - [src/app/api/bookings/acceptance.integration.test.ts](<../../src/app/api/bookings/acceptance.integration.test.ts>)
@@ -6269,6 +6289,7 @@ model RateLimitBucket {
 - [src/app/api/ledger/record-cost/record-cost.integration.test.ts](<../../src/app/api/ledger/record-cost/record-cost.integration.test.ts>)
 - [src/app/api/mc/fee-report/fee-report.integration.test.ts](<../../src/app/api/mc/fee-report/fee-report.integration.test.ts>)
 - [src/app/api/media/upload/route.test.ts](<../../src/app/api/media/upload/route.test.ts>)
+- [src/app/api/ops/reservation-groups/route.integration.test.ts](<../../src/app/api/ops/reservation-groups/route.integration.test.ts>)
 - [src/app/api/ops/team/route.integration.test.ts](<../../src/app/api/ops/team/route.integration.test.ts>)
 - [src/app/api/owner/statements/[statementId]/question/route.integration.test.ts](<../../src/app/api/owner/statements/[statementId]/question/route.integration.test.ts>)
 - [src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts](<../../src/app/api/owner/statements/[statementId]/sign-off/__tests__/sign-off.integration.test.ts>)
@@ -6323,6 +6344,7 @@ model RateLimitBucket {
 - [src/app/layout-fonts.test.ts](<../../src/app/layout-fonts.test.ts>)
 - [src/app/libs/bookingAccess.test.ts](<../../src/app/libs/bookingAccess.test.ts>)
 - [src/app/libs/bookingConfirmed.integration.test.ts](<../../src/app/libs/bookingConfirmed.integration.test.ts>)
+- [src/app/libs/bookingGuestDataAccess.test.ts](<../../src/app/libs/bookingGuestDataAccess.test.ts>)
 - [src/app/libs/bookingOperationsAccess.test.ts](<../../src/app/libs/bookingOperationsAccess.test.ts>)
 - [src/app/libs/projectScope.integration.test.ts](<../../src/app/libs/projectScope.integration.test.ts>)
 - [src/app/libs/projectScope.null-project.test.ts](<../../src/app/libs/projectScope.null-project.test.ts>)
@@ -6334,6 +6356,7 @@ model RateLimitBucket {
 - [src/app/login/guest-return-pages.test.tsx](<../../src/app/login/guest-return-pages.test.tsx>)
 - [src/app/messages/[threadId]/thread-client.test.tsx](<../../src/app/messages/[threadId]/thread-client.test.tsx>)
 - [src/app/money-display-boundary.test.ts](<../../src/app/money-display-boundary.test.ts>)
+- [src/app/ops/calendar/board/page.boundary.test.tsx](<../../src/app/ops/calendar/board/page.boundary.test.tsx>)
 - [src/app/ops/calendar/board/page.integration.test.tsx](<../../src/app/ops/calendar/board/page.integration.test.tsx>)
 - [src/app/ops/costs/record-cost-client.date.test.tsx](<../../src/app/ops/costs/record-cost-client.date.test.tsx>)
 - [src/app/ops/costs/record-cost-client.test.tsx](<../../src/app/ops/costs/record-cost-client.test.tsx>)
@@ -6413,6 +6436,7 @@ model RateLimitBucket {
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)
+- [src/components/ops/ReservationGroupForm.test.tsx](<../../src/components/ops/ReservationGroupForm.test.tsx>)
 - [src/components/ops/StayActions.unpaid.test.tsx](<../../src/components/ops/StayActions.unpaid.test.tsx>)
 - [src/components/ops/UnifiedStayCalendar.test.tsx](<../../src/components/ops/UnifiedStayCalendar.test.tsx>)
 - [src/components/primitives.test.tsx](<../../src/components/primitives.test.tsx>)
@@ -6422,6 +6446,7 @@ model RateLimitBucket {
 - [src/components/property/ScopedGalleryEditor.test.tsx](<../../src/components/property/ScopedGalleryEditor.test.tsx>)
 - [src/components/property/ShareStayOffer.test.tsx](<../../src/components/property/ShareStayOffer.test.tsx>)
 - [src/components/property/SimilarAvailableHomes.test.tsx](<../../src/components/property/SimilarAvailableHomes.test.tsx>)
+- [src/components/property/property-editing.test.tsx](<../../src/components/property/property-editing.test.tsx>)
 - [src/components/search/SearchResultsMap.lifecycle.test.tsx](<../../src/components/search/SearchResultsMap.lifecycle.test.tsx>)
 - [src/components/stitch/ApplicationFrame.test.tsx](<../../src/components/stitch/ApplicationFrame.test.tsx>)
 - [src/components/stitch/McWorkspaceShell.test.tsx](<../../src/components/stitch/McWorkspaceShell.test.tsx>)
@@ -6448,7 +6473,9 @@ model RateLimitBucket {
 - [src/lib/place-search.test.ts](<../../src/lib/place-search.test.ts>)
 - [src/lib/plus-code.test.ts](<../../src/lib/plus-code.test.ts>)
 - [src/lib/pms-navigation.test.ts](<../../src/lib/pms-navigation.test.ts>)
+- [src/lib/property-area.test.ts](<../../src/lib/property-area.test.ts>)
 - [src/lib/property-count.test.ts](<../../src/lib/property-count.test.ts>)
+- [src/lib/property-editor-return.test.ts](<../../src/lib/property-editor-return.test.ts>)
 - [src/lib/resolveDatabaseUrl.test.ts](<../../src/lib/resolveDatabaseUrl.test.ts>)
 - [src/lib/safe-next-path.test.ts](<../../src/lib/safe-next-path.test.ts>)
 - [src/lib/seo.test.ts](<../../src/lib/seo.test.ts>)
@@ -6489,6 +6516,7 @@ model RateLimitBucket {
 - [src/modules/booking/double-booking.concurrency.integration.test.ts](<../../src/modules/booking/double-booking.concurrency.integration.test.ts>)
 - [src/modules/booking/expiry-winning-transition.integration.test.ts](<../../src/modules/booking/expiry-winning-transition.integration.test.ts>)
 - [src/modules/booking/extension-safety.integration.test.ts](<../../src/modules/booking/extension-safety.integration.test.ts>)
+- [src/modules/booking/guest-date-boundaries.integration.test.ts](<../../src/modules/booking/guest-date-boundaries.integration.test.ts>)
 - [src/modules/booking/guest-journey-context.test.ts](<../../src/modules/booking/guest-journey-context.test.ts>)
 - [src/modules/booking/guest-review.integration.test.ts](<../../src/modules/booking/guest-review.integration.test.ts>)
 - [src/modules/booking/home-space.integration.test.ts](<../../src/modules/booking/home-space.integration.test.ts>)
@@ -6598,6 +6626,7 @@ model RateLimitBucket {
 - [src/modules/crm/property-deal.service.integration.test.ts](<../../src/modules/crm/property-deal.service.integration.test.ts>)
 - [src/modules/crm/public-lead.integration.test.ts](<../../src/modules/crm/public-lead.integration.test.ts>)
 - [src/modules/destinations/index.test.ts](<../../src/modules/destinations/index.test.ts>)
+- [src/modules/finance/bank-transfer-authorization.integration.test.ts](<../../src/modules/finance/bank-transfer-authorization.integration.test.ts>)
 - [src/modules/finance/bank-transfer.integration.test.ts](<../../src/modules/finance/bank-transfer.integration.test.ts>)
 - [src/modules/finance/create-checkout-opn.integration.test.ts](<../../src/modules/finance/create-checkout-opn.integration.test.ts>)
 - [src/modules/finance/deposit-claims.integration.test.ts](<../../src/modules/finance/deposit-claims.integration.test.ts>)
@@ -6616,6 +6645,8 @@ model RateLimitBucket {
 - [src/modules/finance/providers/opn.test.ts](<../../src/modules/finance/providers/opn.test.ts>)
 - [src/modules/finance/providers/provider-seam.test.ts](<../../src/modules/finance/providers/provider-seam.test.ts>)
 - [src/modules/finance/receivable-review.integration.test.ts](<../../src/modules/finance/receivable-review.integration.test.ts>)
+- [src/modules/finance/refund-recovery.test.ts](<../../src/modules/finance/refund-recovery.test.ts>)
+- [src/modules/finance/refund-resolution.integration.test.ts](<../../src/modules/finance/refund-resolution.integration.test.ts>)
 - [src/modules/finance/requested-service-refund.test.ts](<../../src/modules/finance/requested-service-refund.test.ts>)
 - [src/modules/finance/statement-expense.test.ts](<../../src/modules/finance/statement-expense.test.ts>)
 - [src/modules/finance/statement-snapshot.integration.test.ts](<../../src/modules/finance/statement-snapshot.integration.test.ts>)
@@ -6698,6 +6729,7 @@ model RateLimitBucket {
 - [src/modules/projects/projects.integration.test.ts](<../../src/modules/projects/projects.integration.test.ts>)
 - [src/modules/projects/property-booking-mode.integration.test.ts](<../../src/modules/projects/property-booking-mode.integration.test.ts>)
 - [src/modules/projects/property-booking-mode.test.ts](<../../src/modules/projects/property-booking-mode.test.ts>)
+- [src/modules/projects/property-editing.integration.test.ts](<../../src/modules/projects/property-editing.integration.test.ts>)
 - [src/modules/projects/property-readiness.offering.integration.test.ts](<../../src/modules/projects/property-readiness.offering.integration.test.ts>)
 - [src/modules/projects/public-booking-signals.test.ts](<../../src/modules/projects/public-booking-signals.test.ts>)
 - [src/modules/projects/public-discovery.test.ts](<../../src/modules/projects/public-discovery.test.ts>)
@@ -6738,6 +6770,7 @@ model RateLimitBucket {
 - [.github/workflows/browser-acceptance.yml](<../../.github/workflows/browser-acceptance.yml>)
 - [.github/workflows/ci.yml](<../../.github/workflows/ci.yml>)
 - [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>)
+- [.github/workflows/recovery-scheduler.yml](<../../.github/workflows/recovery-scheduler.yml>)
 - [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>)
 - [package.json](<../../package.json>)
 - [package-lock.json](<../../package-lock.json>)

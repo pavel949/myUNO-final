@@ -748,11 +748,17 @@ export async function refund(
 export async function processRequestedCardRefund(db: PrismaClient, refundId: string) {
   const preflight = await db.refund.findUniqueOrThrow({ where: { id: refundId }, include: { payment: true } });
   if (preflight.status !== 'requested' || preflight.method !== 'card_provider') return;
+  if (preflight.payment.bookingId && !preflight.dispatchAuthorizedAt) return;
+  // Recovered requests may proceed only when payment allocation is known.
+  // Never overwrite an unknown provider outcome or an unallocated receipt.
+  const availabilityMarker = 'SERVICE_REFUND_PROVIDER_UNAVAILABLE';
+  if (preflight.payment.reconciliationReason && preflight.payment.reconciliationReason !== availabilityMarker) return;
   try {
     if (getProviderConfig().provider !== preflight.payment.provider || (preflight.payment.provider === 'opn' && !preflight.payment.providerSessionId)) throw new Error('Refund provider unavailable');
     getPaymentProvider(); // Missing credentials must leave the durable request available for recovery.
   } catch {
-    await db.payment.update({ where: { id: preflight.paymentId }, data: { reconciliationReason: 'SERVICE_REFUND_PROVIDER_UNAVAILABLE' } });
+    await db.payment.updateMany({ where: { id: preflight.paymentId, OR: [{ reconciliationReason: null }, { reconciliationReason: availabilityMarker }] },
+      data: { reconciliationReason: availabilityMarker } });
     return;
   }
   const claimed = await db.$transaction(async tx => {
@@ -760,7 +766,14 @@ export async function processRequestedCardRefund(db: PrismaClient, refundId: str
     await lockPaymentSource(tx, snapshot.paymentId);
     const request = await tx.refund.findUniqueOrThrow({ where: { id: refundId }, include: { payment: true } });
     if (request.status !== 'requested' || request.method !== 'card_provider') return null;
-    await tx.refund.update({ where: { id: refundId }, data: { status: 'processing' } });
+    if (request.payment.bookingId && !request.dispatchAuthorizedAt) return null;
+    if (request.payment.reconciliationReason && request.payment.reconciliationReason !== availabilityMarker) return null;
+    if (request.payment.reconciliationReason === availabilityMarker) {
+      await tx.payment.update({ where: { id: request.paymentId }, data: { reconciliationReason: null } });
+    }
+    await tx.refund.update({ where: { id: refundId }, data: { status: 'processing',
+      ...(request.payment.bookingId ? { dispatchAuthorizedAt: null } : {}),
+    } });
     return request;
   });
   if (!claimed) return;

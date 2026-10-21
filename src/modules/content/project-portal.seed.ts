@@ -125,4 +125,22 @@ export const PROJECT_PORTAL_KEYS = [
     th: 'สอบถามเรา',
     status: 'needs_review' as const,
   },
+  {
+    key: 'project_page.hero.primary',
+    namespace: 'project_page',
+    description: 'Project portal: primary hero action',
+    en: 'Explore accommodation',
+    ru: 'Выбрать жильё',
+    th: 'เลือกที่พัก',
+    status: 'needs_review' as const,
+  },
+  {
+    key: 'project_page.hero.secondary',
+    namespace: 'project_page',
+    description: 'Project portal: secondary stay enquiry action',
+    en: 'Ask about your stay',
+    ru: 'Уточнить условия проживания',
+    th: 'สอบถามเรื่องการเข้าพัก',
+    status: 'needs_review' as const,
+  },
 ];

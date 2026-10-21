@@ -21,3 +21,11 @@ verification. This is code-review evidence, not permission to release or assign 
 Limits: independent legacy authority remains; already-authorized in-flight command
 cancellation is not guaranteed; ambiguous shared inventory is unavailable; live email
 delivery and production runtime verification remain unperformed.
+
+## Current-main integration review
+
+After integrating main `24e3b805`, the separate reviewer checked the new imported
+placement boundary. `source.reservationGroup.operatingSpaceId` is checked independently
+of Booking existence, and both scope paths inherit the filter. The regression tests
+foreign exclusion and local restoration with zero Bookings. No new P1/P2 blocker was
+identified. Migration ordering remains additive with no automatic privilege assignment.

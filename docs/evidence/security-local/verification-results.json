@@ -39,5 +39,22 @@
     "tests": 6191,
     "duration_seconds": 549.07,
     "environment": "same compiler/dependencies, separate disposable database, additive generated Prisma client/schema shared with candidate"
+  },
+  "published_candidate_verification": {
+    "source_revision": "1a50b261",
+    "base_revision": "24e3b805",
+    "full_suite": {
+      "exit": 0,
+      "files": 582,
+      "tests": 6262,
+      "duration_seconds": 496.07
+    },
+    "production_build_exit": 0,
+    "production_typecheck_exit": 0,
+    "full_lint_exit": 0,
+    "database_reproducibility_gates": "5/5 passed; disposable local PostgreSQL; 98 migrations",
+    "policy_tests": "18/18 passed",
+    "documentation_checks": "passed",
+    "production_access_changes": false
   }
 }

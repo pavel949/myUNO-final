@@ -252,3 +252,17 @@ disposable database. Its additive generated Prisma client/schema was held consta
 with the candidate; no legacy identities were elevated. Baseline log:
 `/tmp/myuno-review-baseline-tests.log`. Structured results are recorded in
 `docs/evidence/security-local/verification-results.json`.
+
+## Published PR integration checkpoint
+
+Source `1a50b261`, integrated with main `24e3b805`, passed the complete suite:
+**582 files / 6262 tests**, exit 0 (496.07 seconds). Full lint, production TypeScript,
+production build, repository documentation checks, 18 policy tests and all 5 database
+reproducibility/security/drift/idempotency gates passed. All 98 migrations replayed
+only against a disposable local database. The new imported-placement isolation case
+passed and was independently re-reviewed.
+
+PR publication is code-only authorization. Bootstrap, account invitation, recipient
+identity binding, membership assignment and production migration remain separate
+approved operations. The new migration is deliberately not allowlisted for production
+application by this PR; its transition requires the release coordinator's review.

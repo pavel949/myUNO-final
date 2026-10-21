@@ -8,21 +8,21 @@ src/modules/ops/reservation-guests.service.ts:19:export async function canUseRes
 src/modules/ops/reservation-guests.service.ts:20:  if (isAdmin) return true;
 src/modules/ops/reservation-guests.service.ts:62:      !await canUseReservationGuest(tx, guest.id, spaceId, access.unitIds, access.isAdmin))) {
 src/modules/ops/operating-space-governance.service.ts:12:  if (!actor.isAdmin) throw new OperatingAccessError('Founder access required');
-src/modules/ops/operating-space-access.service.ts:36:    id: true, status: true, isAdmin: true,
-src/modules/ops/operating-space-access.service.ts:52:  if (actor.isAdmin) return (await db.unit.findMany({ where: candidate, select: { id: true } })).map(u => u.id);
-src/modules/ops/operating-space-access.service.ts:89:  if (!actor.isAdmin) {
-src/modules/ops/operating-space-access.service.ts:108:  // Never label local authority isAdmin: downstream callers use that flag to bypass global checks.
-src/modules/ops/operating-space-access.service.ts:109:  return { space, unitIds, isAdmin: actor.isAdmin, isWorkspaceAdministrator };
-src/modules/ops/operating-space-access.service.ts:128:  if (actor.isAdmin) return {};
-src/modules/ops/operating-space-access.service.ts:169:  const membership = actor.isAdmin ? null : await db.operatingSpaceMember.findUnique({
-src/modules/ops/operating-space-access.service.ts:173:  if (!actor.isAdmin && !membership?.active) throw new OperatingAccessError('Operating space membership required');
-src/modules/ops/operating-space-access.service.ts:175:  const capabilities = actor.isAdmin || membership?.isAdministrator ? dailyCapabilities :
-src/modules/ops/operating-space-access.service.ts:180:  if (actor.isAdmin) {
-src/modules/ops/operating-space-access.service.ts:184:    if (!access.isAdmin) throw new OperatingAccessError('Authority changed; reload the workspace');
-src/modules/ops/operating-space-access.service.ts:186:      space: access.space, unitIds: access.unitIds, isAdmin: true,
-src/modules/ops/operating-space-access.service.ts:199:  if (!space || (!actor.isAdmin && !unitIds.length)) throw new OperatingAccessError('No effective workspace access');
-src/modules/ops/operating-space-access.service.ts:200:  return { space, unitIds, byCapability, isAdmin: actor.isAdmin, isWorkspaceAdministrator: Boolean(membership?.isAdministrator) };
-src/modules/ops/operating-space-access.service.ts:227:      ...(actor.isAdmin ? [
+src/modules/ops/operating-space-access.service.ts:39:    id: true, status: true, isAdmin: true,
+src/modules/ops/operating-space-access.service.ts:55:  if (actor.isAdmin) return (await db.unit.findMany({ where: candidate, select: { id: true } })).map(u => u.id);
+src/modules/ops/operating-space-access.service.ts:92:  if (!actor.isAdmin) {
+src/modules/ops/operating-space-access.service.ts:111:  // Never label local authority isAdmin: downstream callers use that flag to bypass global checks.
+src/modules/ops/operating-space-access.service.ts:112:  return { space, unitIds, isAdmin: actor.isAdmin, isWorkspaceAdministrator };
+src/modules/ops/operating-space-access.service.ts:131:  if (actor.isAdmin) return {};
+src/modules/ops/operating-space-access.service.ts:172:  const membership = actor.isAdmin ? null : await db.operatingSpaceMember.findUnique({
+src/modules/ops/operating-space-access.service.ts:176:  if (!actor.isAdmin && !membership?.active) throw new OperatingAccessError('Operating space membership required');
+src/modules/ops/operating-space-access.service.ts:178:  const capabilities = actor.isAdmin || membership?.isAdministrator ? dailyCapabilities :
+src/modules/ops/operating-space-access.service.ts:183:  if (actor.isAdmin) {
+src/modules/ops/operating-space-access.service.ts:187:    if (!access.isAdmin) throw new OperatingAccessError('Authority changed; reload the workspace');
+src/modules/ops/operating-space-access.service.ts:189:      space: access.space, unitIds: access.unitIds, isAdmin: true,
+src/modules/ops/operating-space-access.service.ts:202:  if (!space || (!actor.isAdmin && !unitIds.length)) throw new OperatingAccessError('No effective workspace access');
+src/modules/ops/operating-space-access.service.ts:203:  return { space, unitIds, byCapability, isAdmin: actor.isAdmin, isWorkspaceAdministrator: Boolean(membership?.isAdministrator) };
+src/modules/ops/operating-space-access.service.ts:230:      ...(actor.isAdmin ? [
 src/modules/finance/manual-cost.service.ts:164:    throw actor.isAdmin
 src/modules/onboarding/submission-unit-access.ts:8:  user: { identityId: string; isAdmin: boolean },
 src/modules/onboarding/submission-unit-access.ts:13:  if (user.isAdmin) return base;
@@ -96,7 +96,7 @@ src/modules/core/people.service.ts:207:      select: { isAdmin: true, status: tr
 src/modules/core/people.service.ts:209:    if (!granter?.isAdmin || granter.status !== 'active') {
 src/modules/core/layantara.seed.ts:176:  const admin = await db.identity.findFirst({ where: { isAdmin: true } });
 src/modules/content/legal-pages.seed.ts:332:        isAdmin: true,
-src/modules/content/seed.ts:4784:        isAdmin: true,
+src/modules/content/seed.ts:4787:        isAdmin: true,
 src/modules/content/audience-faq.seed.ts:473:        isAdmin: true,
 src/modules/content/project-editorial.seed.ts:122:  const editor = await db.identity.findFirst({ where: { isAdmin: true }, select: { id: true } });
 src/components/Navbar.tsx:24:  isAdmin: boolean;
@@ -275,8 +275,8 @@ src/app/ops/night-audit/page.tsx:26:    where: user.isAdmin ? undefined : { id: 
 src/app/ops/night-audit/page.tsx:210:          {user.isAdmin ? (
 src/app/messages/[threadId]/thread-client.tsx:105:          Boolean(data.isAdmin) ||
 src/app/api/admin/statements/[statementId]/sign-off/route.ts:80:    if (body.actor === 'owner' && !currentUser.isAdmin && !isOwnerOfStatement) {
-src/app/ops/reservations/page.tsx:55:          ...(access.isAdmin ? [{roleAssignments:{some:{role:{in:['guest' as const,'resident' as const,'buyer' as const]},status:'active' as const}}},{bookingsAsGuest:{some:{}}}] : [{bookingsAsGuest:{some:{unitId:{in:authorizedUnitIds}}}}]),
-src/app/ops/reservations/page.tsx:63:      where:{operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
+src/app/ops/reservations/page.tsx:57:          ...(access.isAdmin ? [{roleAssignments:{some:{role:{in:['guest' as const,'resident' as const,'buyer' as const]},status:'active' as const}}},{bookingsAsGuest:{some:{}}}] : [{bookingsAsGuest:{some:{unitId:{in:authorizedUnitIds}}}}]),
+src/app/ops/reservations/page.tsx:65:      where:{importedSource:null,operatingSpaceId:spaceId,status:'active',...(access.isAdmin?{}:{bookings:{some:{unitId:{in:authorizedUnitIds}},every:{unitId:{in:authorizedUnitIds}}}})},
 src/app/ops/spaces/page.tsx:22:      ...(actor.isAdmin ? {} : { members: { some: { identityId: user.identityId, active: true } } }),
 src/app/ops/spaces/page.tsx:30:      if (!access.isAdmin && viewCapability && !access.byCapability[viewCapability]?.length) return null;
 src/app/ops/spaces/page.tsx:31:      const members = access.isAdmin ? await prisma.operatingSpaceMember.count({ where: { operatingSpaceId: candidate.id, active: true } }) : null;
@@ -312,3 +312,5 @@ src/app/(admin)/app/admin/projects/[id]/experience/page.tsx:65:    <ProjectWorks
 src/app/(admin)/app/admin/projects/[id]/amenities/[amenityId]/reservations/page.tsx:48:    <ProjectWorkspaceNav projectId={amenity.project.id} active={'experience'} contentOnly={!actor.isAdmin} />
 src/app/(admin)/app/admin/crm/opportunities/[id]/page.tsx:27:  if (!user.isAdmin) {
 src/app/(admin)/app/admin/crm/opportunities/[id]/deal/page.tsx:15:  if(!user.isAdmin)redirect('/');
+src/modules/integrations/layantara/imported-group.service.ts:25:    const actor = await tx.identity.findUnique({ where: { id: input.actorIdentityId }, select: { isAdmin: true, status: true } });
+src/modules/integrations/layantara/imported-group.service.ts:26:    if (!actor?.isAdmin || actor.status !== 'active') throw new Error('IMPORTED_GROUP_ADMIN_REQUIRED');

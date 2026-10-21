@@ -15,20 +15,12 @@ export type ProjectEditorial = {
   groupsCta: string;
 };
 
-/** Project-neutral, translated editorial sections. Source copy lives in content_key/translation. */
+/** Project-neutral, translated benefit, location and group sections. Source copy lives in content_key/translation. */
 export default function ProjectEditorialSections({ editorial, projectId }: {
   editorial: ProjectEditorial; projectId: string;
 }) {
   const benefits = editorial.benefits.filter(item => item.title && item.body);
-  const hasIntro = Boolean(editorial.headline || editorial.lead);
   return <>
-    {hasIntro && <section className="px-20 py-48 md:px-32 md:py-64">
-      <div className="mx-auto max-w-5xl">
-        {editorial.eyebrow && <p className="mb-12 text-kicker font-semibold text-brand-andaman">{editorial.eyebrow}</p>}
-        {editorial.headline && <h2 className="font-display text-display-xl font-semibold text-text-ink">{editorial.headline}</h2>}
-        {editorial.lead && <p className="mt-16 max-w-3xl whitespace-pre-line text-body text-text-secondary">{editorial.lead}</p>}
-      </div>
-    </section>}
     {benefits.length > 0 && <section className="bg-surface-sand px-20 py-48 md:px-32 md:py-64">
       <div className="mx-auto max-w-content">
         {editorial.benefitsTitle && <h2 className="mb-24 font-display text-heading-2 font-semibold text-text-ink">{editorial.benefitsTitle}</h2>}

@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `4cb60b08e216e1543d983171c0f9ae1271ea2082`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `dfce5a3ad7b46ba86e7881fe928759dbef06f567`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,9 +14,9 @@
 | handlers | 256 |
 | apiHandlers | 251 |
 | modules | 22 |
-| tests | 575 |
-| prismaModels | 122 |
-| migrations | 96 |
+| tests | 579 |
+| prismaModels | 124 |
+| migrations | 97 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -801,7 +801,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### integrations
 
-Файлов: 31; тестовых файлов: 14. [Описание](../../src/modules/integrations/README.md).
+Файлов: 35; тестовых файлов: 17. [Описание](../../src/modules/integrations/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -816,9 +816,10 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/integrations/layantara/adapter.ts](<../../src/modules/integrations/layantara/adapter.ts>) | implementation | `classifyLegacyOccupancy`, `auditLegacyOccupancies` |
 | [src/modules/integrations/layantara/channel-contract.ts](<../../src/modules/integrations/layantara/channel-contract.ts>) | implementation | `parseChannelEvent`, `verifyChannelSignature`, `channelPayloadHash` |
 | [src/modules/integrations/layantara/channel-service.ts](<../../src/modules/integrations/layantara/channel-service.ts>) | implementation | `applyChannelEvent` |
+| [src/modules/integrations/layantara/imported-group.service.ts](<../../src/modules/integrations/layantara/imported-group.service.ts>) | implementation | `groupProtectionMatches`, `applyReviewedImportedGroup`, `listImportedGroupsForUnits` |
 | [src/modules/integrations/layantara/protection.service.ts](<../../src/modules/integrations/layantara/protection.service.ts>) | implementation | `stageProtection` |
-| [src/modules/integrations/layantara/reviewed-workbook.ts](<../../src/modules/integrations/layantara/reviewed-workbook.ts>) | implementation | `evidenceDigest`, `readReviewedWorkbook`, `reviewedEntryForEvent`, `reviewedGuestKey` |
-| [src/modules/integrations/layantara/workbook-import.ts](<../../src/modules/integrations/layantara/workbook-import.ts>) | implementation | `readXlsxSheet`, `parseReservationsWorkbook`, `mapChannel`, `planWorkbookImport`, `WorkbookReconciliationRequired`, `applyWorkbookImport` |
+| [src/modules/integrations/layantara/reviewed-workbook.ts](<../../src/modules/integrations/layantara/reviewed-workbook.ts>) | implementation | `validOperationalDetails`, `evidenceDigest`, `readReviewedWorkbook`, `reviewedEntryForEvent`, `reviewedGuestKey`, `reviewedGroupForContext` |
+| [src/modules/integrations/layantara/workbook-import.ts](<../../src/modules/integrations/layantara/workbook-import.ts>) | implementation | `normalizeWorkbookReference`, `readXlsxSheet`, `parseReservationsWorkbook`, `mapChannel`, `planWorkbookImport`, `WorkbookReconciliationRequired`, `applyWorkbookImport` |
 | [src/modules/integrations/messenger.ts](<../../src/modules/integrations/messenger.ts>) | implementation | `MessengerChannel`, `registerWhatsAppAccount`, `registerTelegramAccount`, `sendMessengerMessage`, `handleMessengerWebhook`, `getMessengerStatus` |
 | [src/modules/integrations/unit-ical-conflicts.ts](<../../src/modules/integrations/unit-ical-conflicts.ts>) | implementation | `getUnitIcalConflictAlerts`, `getProjectIcalConflictAlerts` |
 
@@ -1124,6 +1125,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/ops/ArrivalPassportCaptureModal.tsx](<../../src/components/ops/ArrivalPassportCaptureModal.tsx>)
 - [src/components/ops/CheckInConditionReportModal.tsx](<../../src/components/ops/CheckInConditionReportModal.tsx>)
 - [src/components/ops/CheckOutConditionReportModal.tsx](<../../src/components/ops/CheckOutConditionReportModal.tsx>)
+- [src/components/ops/ImportedReservationGroups.tsx](<../../src/components/ops/ImportedReservationGroups.tsx>)
 - [src/components/ops/ManualReservationForm.tsx](<../../src/components/ops/ManualReservationForm.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.tsx](<../../src/components/ops/OperationalTaskCreateForm.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.tsx](<../../src/components/ops/OperationalTaskQueueClient.tsx>)
@@ -2585,6 +2587,7 @@ model Project {
   area                  Area?                     @relation(fields: [areaId], references: [id], onDelete: SetNull)
   coverMedia            MediaAsset?               @relation(name: "projectCover", fields: [coverMediaId], references: [id])
   masterplanMedia       MediaAsset?               @relation(name: "projectMasterplan", fields: [masterplanMediaId], references: [id], onDelete: SetNull)
+  importedReservationSources ImportedReservationSource[]
   units                 Unit[]
   structureNodes        ProjectStructureNode[]
   roleAssignments       RoleAssignment[]          @relation("projectScope")
@@ -2693,6 +2696,7 @@ model Unit {
   ratePlans                    RatePlan[]
   engagements                  UnitEngagement[]
   roleAssignments              RoleAssignment[]              @relation("unitScope")
+  importedReservationPlacements ImportedReservationPlacement[]
   blockedDates                 BlockedDate[]
   pricingRules                 PricingRule[]
   bookings                     Booking[]
@@ -2745,6 +2749,7 @@ model BlockedDate {
   // Relations
   unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   createdBy Identity? @relation(name: "blockedDateCreator", fields: [createdByIdentityId], references: [id], onDelete: SetNull)
+  importedReservationPlacement ImportedReservationPlacement?
   propertyDeal PropertyDeal? @relation(fields: [propertyDealId], references: [id], onDelete: Restrict)
 
   @@index([unitId, startDate, endDate])
@@ -2779,6 +2784,7 @@ model PricingRule {
 
 ```prisma
 model ReservationGroup {
+  importedSource ImportedReservationSource?
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -5688,6 +5694,7 @@ model ExternalSystem {
   status       String @default("active")
   config       Json   @default("{}") @db.JsonB
 
+  importedReservationSources ImportedReservationSource[]
   mappings    ExternalMapping[]
   inbox       ExternalEventInbox[]
   checkpoints ExternalAggregateCheckpoint[]
@@ -6132,6 +6139,52 @@ model SalesOfferShare {
 }
 ```
 
+### model ImportedReservationSource
+
+```prisma
+model ImportedReservationSource {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  externalSystemId String @map("external_system_id")
+  sourceReference String @map("source_reference")
+  reservationGroupId String @unique @map("reservation_group_id")
+  projectId String @map("project_id")
+  sourceRowDigest String @map("source_row_digest") @db.VarChar(64)
+  workbookSha256 String @map("workbook_sha256") @db.VarChar(64)
+  quotedTotalThb Int @map("quoted_total_thb")
+  currency String @default("THB")
+  sourcePaymentStatus String @map("source_payment_status")
+  reportedPaidThb Int? @map("reported_paid_thb")
+  adults Int?
+  children Int?
+  sourceEvidence Json @map("source_evidence") @db.JsonB
+  externalSystem ExternalSystem @relation(fields:[externalSystemId], references:[id], onDelete:Restrict)
+  reservationGroup ReservationGroup @relation(fields:[reservationGroupId], references:[id], onDelete:Restrict)
+  project Project @relation(fields:[projectId], references:[id], onDelete:Restrict)
+  placements ImportedReservationPlacement[]
+  @@unique([externalSystemId,sourceReference])
+  @@map("imported_reservation_source")
+}
+```
+
+### model ImportedReservationPlacement
+
+```prisma
+model ImportedReservationPlacement {
+  id String @id @default(uuid())
+  sourceId String @map("source_id")
+  unitId String @map("unit_id")
+  blockedDateId String @unique @map("blocked_date_id")
+  sourceUnitCode String @map("source_unit_code")
+  allocatedTotalThb Int? @map("allocated_total_thb")
+  source ImportedReservationSource @relation(fields:[sourceId], references:[id], onDelete:Restrict)
+  unit Unit @relation(fields:[unitId], references:[id], onDelete:Restrict)
+  blockedDate BlockedDate @relation(fields:[blockedDateId], references:[id], onDelete:Restrict)
+  @@unique([sourceId,unitId])
+  @@map("imported_reservation_placement")
+}
+```
+
 ## Все миграции
 
 Наличие файла не доказывает production application. Не править исторические SQL; apply/reconcile отдельно.
@@ -6231,6 +6284,7 @@ model SalesOfferShare {
 - [prisma/migrations/20261015080331_pricing_editor_role/migration.sql](<../../prisma/migrations/20261015080331_pricing_editor_role/migration.sql>)
 - [prisma/migrations/20261015120347_property_capability_delegation/migration.sql](<../../prisma/migrations/20261015120347_property_capability_delegation/migration.sql>)
 - [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
+- [prisma/migrations/20261021023000_imported_reservation_groups/migration.sql](<../../prisma/migrations/20261021023000_imported_reservation_groups/migration.sql>)
 - [prisma/migrations/20261021140000_sales_offer_desk/migration.sql](<../../prisma/migrations/20261021140000_sales_offer_desk/migration.sql>)
 
 <a id="environment"></a>
@@ -6560,6 +6614,7 @@ model SalesOfferShare {
 - [src/components/instay/ActiveOrdersList.test.tsx](<../../src/components/instay/ActiveOrdersList.test.tsx>)
 - [src/components/instay/ServicesRail.test.tsx](<../../src/components/instay/ServicesRail.test.tsx>)
 - [src/components/navigation-prefetch.test.ts](<../../src/components/navigation-prefetch.test.ts>)
+- [src/components/ops/ImportedReservationGroups.test.tsx](<../../src/components/ops/ImportedReservationGroups.test.tsx>)
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)
@@ -6788,9 +6843,12 @@ model SalesOfferShare {
 - [src/modules/integrations/ical-parse.test.ts](<../../src/modules/integrations/ical-parse.test.ts>)
 - [src/modules/integrations/ical-sync.integration.test.ts](<../../src/modules/integrations/ical-sync.integration.test.ts>)
 - [src/modules/integrations/layantara/adapter.test.ts](<../../src/modules/integrations/layantara/adapter.test.ts>)
+- [src/modules/integrations/layantara/bounded-workbook.test.ts](<../../src/modules/integrations/layantara/bounded-workbook.test.ts>)
 - [src/modules/integrations/layantara/channel-contract.test.ts](<../../src/modules/integrations/layantara/channel-contract.test.ts>)
 - [src/modules/integrations/layantara/channel-service.integration.test.ts](<../../src/modules/integrations/layantara/channel-service.integration.test.ts>)
+- [src/modules/integrations/layantara/imported-group.integration.test.ts](<../../src/modules/integrations/layantara/imported-group.integration.test.ts>)
 - [src/modules/integrations/layantara/protection.service.test.ts](<../../src/modules/integrations/layantara/protection.service.test.ts>)
+- [src/modules/integrations/layantara/reviewed-new-placement.test.ts](<../../src/modules/integrations/layantara/reviewed-new-placement.test.ts>)
 - [src/modules/integrations/layantara/reviewed-workbook.test.ts](<../../src/modules/integrations/layantara/reviewed-workbook.test.ts>)
 - [src/modules/integrations/layantara/unified-outbox.integration.test.ts](<../../src/modules/integrations/layantara/unified-outbox.integration.test.ts>)
 - [src/modules/integrations/layantara/workbook-import.integration.test.ts](<../../src/modules/integrations/layantara/workbook-import.integration.test.ts>)

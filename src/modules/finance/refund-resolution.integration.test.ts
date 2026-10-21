@@ -2,13 +2,14 @@ import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { createBooking, createIdentity, createProject, createUnit, db, resetDb } from '@/test/util';
 import { resolveFailedRefund } from './payout.service';
 import { recoverRequestedBookingRefunds } from './refund-recovery';
+import { processRequestedCardRefund } from './finance.service';
 const { gatewayRefund } = vi.hoisted(() => ({ gatewayRefund: vi.fn() }));
 vi.mock('./providers', () => ({
   getProviderConfig: () => ({ provider: 'opn' }),
   getPaymentProvider: () => ({ refund: gatewayRefund }),
 }));
 
-async function fixture(status: 'failed' | 'succeeded' | 'requested' = 'failed', providerRefundId: string | null = 'rfnd_declined') {
+async function fixture(status: 'failed' | 'succeeded' | 'requested' = 'failed', providerRefundId: string | null = 'rfnd_declined', dispatchAuthorized = true) {
   const guest = await createIdentity();
   const staff = await createIdentity();
   const project = await createProject();
@@ -19,7 +20,8 @@ async function fixture(status: 'failed' | 'succeeded' | 'requested' = 'failed', 
   const payment = await db.payment.create({ data: { bookingId: booking.id, purpose: 'stay', payerIdentityId: guest.id,
     method: 'card_provider', provider: 'opn', providerSessionId: 'chrg_synthetic', amountThb: 400_000, status: 'succeeded' } });
   const refund = await db.refund.create({ data: { paymentId: payment.id, method: 'card_provider', amountThb: 400_000,
-    reason: 'cancellation', status, providerRefundId, initiatedByIdentityId: staff.id } });
+    reason: 'cancellation', status, providerRefundId, initiatedByIdentityId: staff.id,
+    dispatchAuthorizedAt: status === 'requested' && dispatchAuthorized ? new Date() : null } });
   return { booking, payment, refund };
 }
 
@@ -92,12 +94,21 @@ describe('PMS refund resolution and recovery', () => {
     expect((await db.refund.findUniqueOrThrow({ where: { id: f.refund.id } })).status).toBe('failed');
     expect(gatewayRefund).not.toHaveBeenCalled();
   });
+  it('never dispatches or silently reauthorizes a legacy requested booking refund', async () => {
+    const f = await fixture('requested', null, false);
+    await processRequestedCardRefund(db, f.refund.id);
+    expect(await recoverRequestedBookingRefunds(db)).toEqual({ processed: 0, deferred: 0 });
+    await expect(resolveFailedRefund(db, f.refund.id, 'retry')).rejects.toMatchObject({ code: 'REFUND_RESOLUTION_CONFLICT' });
+    expect(gatewayRefund).not.toHaveBeenCalled();
+    expect(await db.refund.findUniqueOrThrow({ where: { id: f.refund.id } })).toMatchObject({ status: 'requested', dispatchAuthorizedAt: null });
+  });
   it('recovers a committed requested booking refund and clears only its availability marker', async () => {
     const f = await fixture('requested', null);
     await db.payment.update({ where: { id: f.payment.id }, data: { reconciliationReason: 'SERVICE_REFUND_PROVIDER_UNAVAILABLE' } });
     expect(await recoverRequestedBookingRefunds(db)).toEqual({ processed: 1, deferred: 0 });
     expect(await recoverRequestedBookingRefunds(db)).toEqual({ processed: 0, deferred: 0 });
     expect(gatewayRefund).toHaveBeenCalledTimes(1);
+    expect((await db.refund.findUniqueOrThrow({ where: { id: f.refund.id } })).dispatchAuthorizedAt).toBeNull();
     expect((await db.booking.findUniqueOrThrow({ where: { id: f.booking.id } })).refundAccruedThb).toBe(0);
   });
   it('does not let older requests without provider charge IDs starve a valid recovery batch', async () => {
@@ -106,7 +117,7 @@ describe('PMS refund resolution and recovery', () => {
       payerIdentityId: f.payment.payerIdentityId, method: 'card_provider', provider: 'opn', amountThb: 400_000, status: 'succeeded' } });
     await db.refund.createMany({ data: Array.from({ length: 20 }, () => ({ paymentId: missingSource.id,
       method: 'card_provider' as const, amountThb: 1, reason: 'cancellation' as const, status: 'requested' as const,
-      initiatedByIdentityId: f.refund.initiatedByIdentityId, createdAt: new Date('2020-01-01') })) });
+      initiatedByIdentityId: f.refund.initiatedByIdentityId, dispatchAuthorizedAt: new Date(), createdAt: new Date('2020-01-01') })) });
     expect(await recoverRequestedBookingRefunds(db)).toEqual({ processed: 1, deferred: 0 });
     expect(gatewayRefund).toHaveBeenCalledTimes(1);
     expect(await db.refund.count({ where: { paymentId: missingSource.id, status: 'requested' } })).toBe(20);

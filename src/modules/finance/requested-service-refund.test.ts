@@ -15,6 +15,16 @@ const fake = {
 beforeEach(() => { vi.clearAllMocks(); payment.reconciliationReason = null; status = 'requested'; vi.stubEnv('PAYMENT_PROVIDER', 'opn'); vi.mocked(getProviderConfig).mockReturnValue({ provider: 'opn' } as never); vi.mocked(getPaymentProvider).mockReturnValue({ refund: gatewayRefund } as never); });
 afterEach(() => vi.unstubAllEnvs());
 describe('durable requested service refunds', () => {
+  it('does not claim a legacy booking request without typed dispatch authorization', async () => {
+    const legacy = { ...fake, refund: { findUniqueOrThrow: vi.fn(async () => ({
+      id: 'legacy', status: 'requested', method: 'card_provider', dispatchAuthorizedAt: null,
+      payment: { ...payment, bookingId: 'booking' },
+    })) } };
+    await expect(processRequestedCardRefund(legacy as unknown as PrismaClient, 'legacy')).resolves.toBeUndefined();
+    expect(gatewayRefund).not.toHaveBeenCalled();
+    expect(fake.refund.update).not.toHaveBeenCalled();
+  });
+
   it('never overwrites a quarantined receipt or dispatches its refund', async () => {
     payment.reconciliationReason = 'SERVICE_REFUND_OUTCOME_UNKNOWN';
     await processRequestedCardRefund(fake as unknown as PrismaClient, 'refund');

@@ -14,7 +14,7 @@ Scope: local remediation of ten confirmed PMS bugs on main baseline `97ba836bdd4
 - Group forms retain drafts and unlock after failures, reset after success, and suppress concurrent pending submissions.
 - Calendar departures include the first range day; occupancy remains half-open. Open details use refreshed cells; nonblocking requests remain available.
 
-No schema migration is required. Existing requested refund rows serve as durable work records. No automatic historical financial-data repair is included. Pet grandfathering and reschedule/cancellation-window commercial policies remain unchanged.
+A nullable expand-only migration adds `Refund.dispatchAuthorizedAt`. New cancellation and known failed retry writers authorize dispatch; the claim consumes that timestamp. Historical requested rows remain null and are never automatically reauthorized. Existing requested Refund rows remain the durable work records. Apply the migration before running updated code; no production migration was performed. No automatic historical financial-data repair is included. Pet grandfathering and reschedule/cancellation-window commercial policies remain unchanged.
 
 ## Validation
 

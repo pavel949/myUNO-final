@@ -11,7 +11,7 @@ describe('bounded booking refund recovery', () => {
     await expect(recoverRequestedBookingRefunds({ refund: { findMany } } as unknown as PrismaClient))
       .resolves.toEqual({ processed: 0, deferred: 0 });
     expect(findMany).toHaveBeenCalledWith({
-      where: { status: 'requested', method: 'card_provider', payment: {
+      where: { status: 'requested', method: 'card_provider', dispatchAuthorizedAt: { not: null }, payment: {
         bookingId: { not: null }, provider: 'opn', providerSessionId: { not: null },
         OR: [{ reconciliationReason: null }, { reconciliationReason: 'SERVICE_REFUND_PROVIDER_UNAVAILABLE' }],
       } }, select: { id: true }, orderBy: { createdAt: 'asc' }, take: 20,

@@ -7,7 +7,7 @@ import { processRequestedCardRefund } from './finance.service';
  */
 export async function recoverRequestedBookingRefunds(db: PrismaClient) {
   const requests = await db.refund.findMany({
-    where: { status: 'requested', method: 'card_provider', payment: {
+    where: { status: 'requested', method: 'card_provider', dispatchAuthorizedAt: { not: null }, payment: {
       bookingId: { not: null }, provider: 'opn', providerSessionId: { not: null },
       OR: [{ reconciliationReason: null }, { reconciliationReason: 'SERVICE_REFUND_PROVIDER_UNAVAILABLE' }],
     } },

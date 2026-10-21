@@ -356,6 +356,10 @@ export async function resolveFailedRefund(
     const conflict = (message: string) => Object.assign(new Error(message), { code: 'REFUND_RESOLUTION_CONFLICT' });
 
     if (action === 'write_off' && current.status === 'written_off') return current;
+    if (action === 'retry' && current.status === 'requested' && current.method === 'card_provider' &&
+        current.payment.bookingId && !current.dispatchAuthorizedAt) {
+      throw conflict('The previous provider refund outcome must be reconciled before retrying');
+    }
     // A repeated retry observes the durable claim; never reset settled money.
     if (action === 'retry' && ['requested', 'processing', 'succeeded'].includes(current.status)) return current;
     if (current.status !== 'failed') throw conflict('Only a failed refund can be resolved');
@@ -397,7 +401,9 @@ export async function resolveFailedRefund(
     if (current.payment.reconciliationReason === 'SERVICE_REFUND_REVIEW_REQUIRED') {
       await tx.payment.update({ where: { id: current.paymentId }, data: { reconciliationReason: null } });
     }
-    return tx.refund.update({ where: { id: refundId }, data: { status: 'requested', providerRefundId: null } });
+    return tx.refund.update({ where: { id: refundId }, data: { status: 'requested', providerRefundId: null,
+      ...(current.method === 'card_provider' && current.payment.bookingId ? { dispatchAuthorizedAt: new Date() } : {}),
+    } });
   });
 
   // Dispatch after commit. The dispatcher atomically claims requested work,

@@ -29,6 +29,7 @@ export async function reserveCancellationRefunds(
     const refund = await tx.refund.create({ data: {
       paymentId: payment.id, method: payment.method === 'card_provider' ? 'card_provider' : 'cash',
       amountThb: amount, reason: 'cancellation', status: 'requested',
+      dispatchAuthorizedAt: payment.method === 'card_provider' ? new Date() : null,
       initiatedByIdentityId: input.initiatedByIdentityId,
     } });
     refundIds.push(refund.id);

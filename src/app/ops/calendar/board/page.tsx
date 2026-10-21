@@ -214,6 +214,7 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
       select: { id: true, unitId: true, startDate: true, endDate: true, reason: true, note: true },
     }),
     getLabels({
+      'staff.unified_calendar.attention_only': 'Attention only: conflicts, readiness blockers and channel errors',
       'staff.unified_calendar.title': 'Portfolio stay calendar',
       'staff.unified_calendar.kicker': 'ONE INVENTORY · EVERY CHANNEL',
       'staff.unified_calendar.subtitle': 'Reservations, live holds and blocked nights from one source of truth.',
@@ -310,7 +311,7 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
       sellable: isUnitSellable(unit),
       categoryId: unit.inventoryCategoryId,
       categoryName: unit.inventoryCategory?.name ?? 'Uncategorized',
-      readiness: readinessByUnit[unit.id]?.state ?? 'ready',
+      readiness: readinessByUnit[unit.id]?.state ?? 'in_progress',
       openTaskCount: readinessByUnit[unit.id]?.openTaskCount ?? 0,
       channelState: channelHealthByUnit[unit.id]?.state ?? 'manual_only',
       channelRows: (channelHealthByUnit[unit.id]?.rows ?? []).map((row) => ({

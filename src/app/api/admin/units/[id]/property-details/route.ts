@@ -1,3 +1,6 @@
+import { logAudit } from '@/modules/audit';
+import { editVersion } from '@/modules/projects/edit-validation';
+import { validateSleepingSpace } from '@/modules/projects/sleeping-space-input';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, failed } from '@/app/libs/onboardingGuard';
@@ -64,6 +67,28 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
   if (!guard.ok) return guard.error;
   try {
     const body = await req.json();
+    if (body.action === 'update_sleeping_space' || body.action === 'delete_sleeping_space') {
+      const version = editVersion(body.expectedUpdatedAt);
+      if (!version || typeof body.spaceId !== 'string') return NextResponse.json({ error: 'Room and edit version required' }, { status: 400 });
+      const layout = body.action === 'update_sleeping_space' ? validateSleepingSpace(body) : null;
+      try {
+        const result = await prisma.$transaction(async tx => {
+          // Extended unique filters prevent cross-unit edits and stale writes.
+          const where = { id: body.spaceId, unitId: params.id, updatedAt: version };
+          if (!layout) return tx.sleepingSpace.delete({ where });
+          return tx.sleepingSpace.update({ where, data: {
+            spaceType: layout.spaceType, name: layout.name, sortOrder: layout.sortOrder,
+            updatedAt: new Date(Math.max(Date.now(), version.getTime() + 1)),
+            beds: { deleteMany: {}, create: layout.beds },
+          }, include: { beds: true } });
+        });
+        await logAudit({ actorIdentityId: guard.actorIdentityId, action: `units:${body.action}`, entityType: 'Unit', entityId: params.id, data: { spaceId: body.spaceId } });
+        return NextResponse.json(result);
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') return NextResponse.json({ code: 'property_edit_conflict' }, { status: 409 });
+        throw error;
+      }
+    }
     if (body.action === 'sleeping_space') {
       try {
         const { space, created } = await saveSleepingSpace(prisma, params.id, body);

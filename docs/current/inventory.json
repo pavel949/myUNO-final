@@ -1,5 +1,5 @@
 {
-  "codeRevision": "ef080ca107da8c638601af68bedec5ce2140b204",
+  "codeRevision": "46f04a32b04fca66ec4c3134eea7685656822020",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,7 +7,7 @@
     "handlers": 248,
     "apiHandlers": 245,
     "modules": 21,
-    "tests": 567,
+    "tests": 571,
     "prismaModels": 118,
     "migrations": 95,
     "routeCollisions": 0
@@ -2590,7 +2590,7 @@
     },
     {
       "name": "content",
-      "files": 74,
+      "files": 75,
       "testFiles": 9
     },
     {
@@ -2640,8 +2640,8 @@
     },
     {
       "name": "projects",
-      "files": 84,
-      "testFiles": 42
+      "files": 86,
+      "testFiles": 43
     },
     {
       "name": "services",
@@ -3220,6 +3220,7 @@
     "src/components/property/ScopedGalleryEditor.test.tsx",
     "src/components/property/ShareStayOffer.test.tsx",
     "src/components/property/SimilarAvailableHomes.test.tsx",
+    "src/components/property/property-editing.test.tsx",
     "src/components/search/SearchResultsMap.lifecycle.test.tsx",
     "src/components/stitch/ApplicationFrame.test.tsx",
     "src/components/stitch/McWorkspaceShell.test.tsx",
@@ -3246,7 +3247,9 @@
     "src/lib/place-search.test.ts",
     "src/lib/plus-code.test.ts",
     "src/lib/pms-navigation.test.ts",
+    "src/lib/property-area.test.ts",
     "src/lib/property-count.test.ts",
+    "src/lib/property-editor-return.test.ts",
     "src/lib/resolveDatabaseUrl.test.ts",
     "src/lib/safe-next-path.test.ts",
     "src/lib/seo.test.ts",
@@ -3500,6 +3503,7 @@
     "src/modules/projects/projects.integration.test.ts",
     "src/modules/projects/property-booking-mode.integration.test.ts",
     "src/modules/projects/property-booking-mode.test.ts",
+    "src/modules/projects/property-editing.integration.test.ts",
     "src/modules/projects/property-readiness.offering.integration.test.ts",
     "src/modules/projects/public-booking-signals.test.ts",
     "src/modules/projects/public-discovery.test.ts",

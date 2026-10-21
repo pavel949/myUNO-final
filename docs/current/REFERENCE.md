@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `ef080ca107da8c638601af68bedec5ce2140b204`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `46f04a32b04fca66ec4c3134eea7685656822020`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 248 |
 | apiHandlers | 245 |
 | modules | 21 |
-| tests | 567 |
+| tests | 571 |
 | prismaModels | 118 |
 | migrations | 95 |
 | routeCollisions | 0 |
@@ -610,7 +610,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 74; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 75; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -658,6 +658,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/property-booking-mode.seed.ts](<../../src/modules/content/property-booking-mode.seed.ts>) | seed | `PROPERTY_BOOKING_MODE_KEYS`, `PROPERTY_BOOKING_MODE_LABELS`, `PROPERTY_BOOKING_MODE_DRAFTS` |
 | [src/modules/content/property-category-ui-drafts.ts](<../../src/modules/content/property-category-ui-drafts.ts>) | implementation | `PROPERTY_CATEGORY_UI_DRAFTS` |
 | [src/modules/content/property-delegation.seed.ts](<../../src/modules/content/property-delegation.seed.ts>) | seed | `PROPERTY_DELEGATION_KEYS`, `PROPERTY_DELEGATION_LABELS`, `PROPERTY_DELEGATION_DRAFTS` |
+| [src/modules/content/property-editor.seed.ts](<../../src/modules/content/property-editor.seed.ts>) | seed | `PROPERTY_EDITOR_KEYS`, `PROPERTY_EDITOR_DEFAULTS`, `PROPERTY_EDITOR_DRAFTS`, `editorLabel` |
 | [src/modules/content/property-facts.seed.ts](<../../src/modules/content/property-facts.seed.ts>) | seed | `PROPERTY_FACT_KEYS` |
 | [src/modules/content/property-listings.seed.ts](<../../src/modules/content/property-listings.seed.ts>) | seed | `PROPERTY_LISTINGS_KEYS`, `PROPERTY_LISTINGS_LOCALE_DRAFTS` |
 | [src/modules/content/property-onboarding.seed.ts](<../../src/modules/content/property-onboarding.seed.ts>) | seed | `PROPERTY_ONBOARDING_KEYS`, `PROPERTY_ONBOARDING_LOCALE_DRAFTS` |
@@ -879,7 +880,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### projects
 
-Файлов: 84; тестовых файлов: 42. [Описание](../../src/modules/projects/README.md).
+Файлов: 86; тестовых файлов: 43. [Описание](../../src/modules/projects/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -887,6 +888,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/projects/amenity-usage.ts](<../../src/modules/projects/amenity-usage.ts>) | implementation | `amenityRecord`, `singleAmenityHours`, `hasSimpleAmenityHours`, `amenityLinesInput`, `parseAmenityLines`, `amenityHoursFromForm`, `amenityUsageLines`, `amenityLeadTime`, `amenityLeadTimeFromForm` |
 | [src/modules/projects/area.service.ts](<../../src/modules/projects/area.service.ts>) | implementation | `listAreas`, `collectDescendantIds`, `buildAreaTree`, `wouldFormCycle`, `createArea`, `updateArea`, `resolveAreaLabelKey`, `getAreaForBrowse`, `listBrowsableAreas`, `getAreaPerformance`, `getPortfolioByArea` |
 | [src/modules/projects/commercial-discovery.ts](<../../src/modules/projects/commercial-discovery.ts>) | implementation | `publicOfferingPriceThb`, `eligiblePublicHomeIntents`, `listPublicCommercialHomes`, `getPublicCommercialHomeById` |
+| [src/modules/projects/edit-validation.ts](<../../src/modules/projects/edit-validation.ts>) | implementation | `PropertyEditConflict`, `editVersion`, `requiredText`, `physicalNumber`, `validatePhysicalFacts` |
 | [src/modules/projects/engagement-scope.ts](<../../src/modules/projects/engagement-scope.ts>) | implementation | `currentEngagementWhere` |
 | [src/modules/projects/index.ts](<../../src/modules/projects/index.ts>) | barrel | см. исходник |
 | [src/modules/projects/inventory.seed.ts](<../../src/modules/projects/inventory.seed.ts>) | seed | `ensureSeedInventoryCategory` |
@@ -982,7 +984,9 @@ Exports перечислены синтаксически, без вывода �
 - [src/lib/pms-navigation.ts](<../../src/lib/pms-navigation.ts>)
 - [src/lib/presentation-media.ts](<../../src/lib/presentation-media.ts>)
 - [src/lib/prisma.ts](<../../src/lib/prisma.ts>)
+- [src/lib/property-area.ts](<../../src/lib/property-area.ts>)
 - [src/lib/property-count.ts](<../../src/lib/property-count.ts>)
+- [src/lib/property-editor-return.ts](<../../src/lib/property-editor-return.ts>)
 - [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>)
 - [src/lib/safe-next-path.ts](<../../src/lib/safe-next-path.ts>)
 - [src/lib/secret-catalog.ts](<../../src/lib/secret-catalog.ts>)
@@ -1129,6 +1133,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/projects/ProjectWorkspaceNav.tsx](<../../src/components/projects/ProjectWorkspaceNav.tsx>)
 - [src/components/projects/UnitProjectAmenities.tsx](<../../src/components/projects/UnitProjectAmenities.tsx>)
 - [src/components/property/ManagedGallery.tsx](<../../src/components/property/ManagedGallery.tsx>)
+- [src/components/property/ManagedSleepingSpaces.tsx](<../../src/components/property/ManagedSleepingSpaces.tsx>)
 - [src/components/property/PropertyDealClient.tsx](<../../src/components/property/PropertyDealClient.tsx>)
 - [src/components/property/PropertyImage.tsx](<../../src/components/property/PropertyImage.tsx>)
 - [src/components/property/SaveHomeButton.tsx](<../../src/components/property/SaveHomeButton.tsx>)
@@ -1136,6 +1141,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/property/ShareStayOffer.tsx](<../../src/components/property/ShareStayOffer.tsx>)
 - [src/components/property/SimilarAvailableHomes.tsx](<../../src/components/property/SimilarAvailableHomes.tsx>)
 - [src/components/property/StructureEditor.tsx](<../../src/components/property/StructureEditor.tsx>)
+- [src/components/property/usePropertyEdit.ts](<../../src/components/property/usePropertyEdit.ts>)
 - [src/components/public-analytics.ts](<../../src/components/public-analytics.ts>)
 - [src/components/PublicAnalyticsLink.tsx](<../../src/components/PublicAnalyticsLink.tsx>)
 - [src/components/RoleContextBanner.tsx](<../../src/components/RoleContextBanner.tsx>)
@@ -6123,7 +6129,8 @@ model RateLimitBucket {
 | `BACKUP_VERIFIED_SHA` | [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>) |
 | `BLOB_READ_WRITE_TOKEN` | [src/modules/crm/private-deal-evidence.ts](<../../src/modules/crm/private-deal-evidence.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [scripts/layantara-rehost-photos.ts](<../../scripts/layantara-rehost-photos.ts>), [.env.example](<../../.env.example>) |
 | `BLOB_STORE_ID` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [src/modules/media/storage-config.ts](<../../src/modules/media/storage-config.ts>), [scripts/import-managed-yandex-media.ts](<../../scripts/import-managed-yandex-media.ts>), [.env.example](<../../.env.example>) |
-| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `BROWSER_HEAD_SHA` | [scripts/e2e/complex-amenities.mjs](<../../scripts/e2e/complex-amenities.mjs>), [scripts/e2e/content-contributor.mjs](<../../scripts/e2e/content-contributor.mjs>), [scripts/e2e/employee-creation.mjs](<../../scripts/e2e/employee-creation.mjs>), [scripts/e2e/employee-workspaces.mjs](<../../scripts/e2e/employee-workspaces.mjs>), [scripts/e2e/founder-publication-booking.mjs](<../../scripts/e2e/founder-publication-booking.mjs>), [scripts/e2e/guest-ux-completion.mjs](<../../scripts/e2e/guest-ux-completion.mjs>), [scripts/e2e/next-migration-smoke.mjs](<../../scripts/e2e/next-migration-smoke.mjs>), [scripts/e2e/project-amenity-content.mjs](<../../scripts/e2e/project-amenity-content.mjs>), [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>), [scripts/e2e/property-submission-description.mjs](<../../scripts/e2e/property-submission-description.mjs>), [scripts/e2e/search-map.mjs](<../../scripts/e2e/search-map.mjs>), [scripts/e2e/service-fulfilment.mjs](<../../scripts/e2e/service-fulfilment.mjs>), [scripts/e2e/workspace-navigation.mjs](<../../scripts/e2e/workspace-navigation.mjs>) |
+| `CHROMIUM_EXECUTABLE_PATH` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
@@ -6161,6 +6168,7 @@ model RateLimitBucket {
 | `PG_DUMP_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `PG_RESTORE_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `PGDATABASE` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
+| `PROPERTY_EDITING_SERVER_MODE` | [scripts/e2e/property-card-editing.mjs](<../../scripts/e2e/property-card-editing.mjs>) |
 | `PSQL_BIN` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `READONLY_DATABASE_URL` | [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>) |
 | `RECOVERY_HEAD_SHA` | [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>) |
@@ -6438,6 +6446,7 @@ model RateLimitBucket {
 - [src/components/property/ScopedGalleryEditor.test.tsx](<../../src/components/property/ScopedGalleryEditor.test.tsx>)
 - [src/components/property/ShareStayOffer.test.tsx](<../../src/components/property/ShareStayOffer.test.tsx>)
 - [src/components/property/SimilarAvailableHomes.test.tsx](<../../src/components/property/SimilarAvailableHomes.test.tsx>)
+- [src/components/property/property-editing.test.tsx](<../../src/components/property/property-editing.test.tsx>)
 - [src/components/search/SearchResultsMap.lifecycle.test.tsx](<../../src/components/search/SearchResultsMap.lifecycle.test.tsx>)
 - [src/components/stitch/ApplicationFrame.test.tsx](<../../src/components/stitch/ApplicationFrame.test.tsx>)
 - [src/components/stitch/McWorkspaceShell.test.tsx](<../../src/components/stitch/McWorkspaceShell.test.tsx>)
@@ -6464,7 +6473,9 @@ model RateLimitBucket {
 - [src/lib/place-search.test.ts](<../../src/lib/place-search.test.ts>)
 - [src/lib/plus-code.test.ts](<../../src/lib/plus-code.test.ts>)
 - [src/lib/pms-navigation.test.ts](<../../src/lib/pms-navigation.test.ts>)
+- [src/lib/property-area.test.ts](<../../src/lib/property-area.test.ts>)
 - [src/lib/property-count.test.ts](<../../src/lib/property-count.test.ts>)
+- [src/lib/property-editor-return.test.ts](<../../src/lib/property-editor-return.test.ts>)
 - [src/lib/resolveDatabaseUrl.test.ts](<../../src/lib/resolveDatabaseUrl.test.ts>)
 - [src/lib/safe-next-path.test.ts](<../../src/lib/safe-next-path.test.ts>)
 - [src/lib/seo.test.ts](<../../src/lib/seo.test.ts>)
@@ -6718,6 +6729,7 @@ model RateLimitBucket {
 - [src/modules/projects/projects.integration.test.ts](<../../src/modules/projects/projects.integration.test.ts>)
 - [src/modules/projects/property-booking-mode.integration.test.ts](<../../src/modules/projects/property-booking-mode.integration.test.ts>)
 - [src/modules/projects/property-booking-mode.test.ts](<../../src/modules/projects/property-booking-mode.test.ts>)
+- [src/modules/projects/property-editing.integration.test.ts](<../../src/modules/projects/property-editing.integration.test.ts>)
 - [src/modules/projects/property-readiness.offering.integration.test.ts](<../../src/modules/projects/property-readiness.offering.integration.test.ts>)
 - [src/modules/projects/public-booking-signals.test.ts](<../../src/modules/projects/public-booking-signals.test.ts>)
 - [src/modules/projects/public-discovery.test.ts](<../../src/modules/projects/public-discovery.test.ts>)

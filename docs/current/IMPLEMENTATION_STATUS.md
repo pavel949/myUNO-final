@@ -117,3 +117,7 @@ Next.js 14.2.35 → 15.5.28 (закрыты advisory уровня critical/high,
 ## PMS remediation, 2026-10-21 (local branch)
 
 Reservation guest/finance access, cancellation refund durability/recovery, property-local date boundaries and calendar/form correctness were hardened with regressions. See [scope and verification boundaries](../audits/PMS_REMEDIATION_2026-10-21.md). No production deployment or historical data repair is asserted.
+
+## Property-card editing, 2026-10-21 (local branch)
+
+PMS project-facts saves use descriptive fields without legacy facility arrays. Unit writers validate physical facts; the PMS unit/project forms submit optimistic versions and retain failed/conflicting edits. Editors expose distinct area measurements, protect unsaved navigation and localize controls. Administrators can maintain documentary sleeping spaces/beds from the PMS editor using the existing admin guard; staff permissions and physical capacity are unchanged. Gallery uploads retain distinct asset ownership and refresh partial results after failure. See [verification and remaining boundaries](../audits/PROPERTY_CARD_EDITING_2026-10-21.md). No production deployment, migration or property-data repair is asserted.

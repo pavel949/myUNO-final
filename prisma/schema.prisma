@@ -784,6 +784,9 @@ enum JobRunOutcome {
 // --- The spine ---
 
 model Identity {
+  salesValidations SalesTariffValidation[]
+  salesOffers SalesOffer[]
+  salesOfferShares SalesOfferShare[]
   reservationGroupsAsGuest   ReservationGroup[] @relation("reservationGroupGuest")
   reservationGroupsCreated   ReservationGroup[] @relation("reservationGroupCreator")
   preventiveMaintenancePlansAssigned PreventiveMaintenancePlan[] @relation("preventivePlanAssignee")
@@ -1060,6 +1063,8 @@ model Project {
 }
 
 model Unit {
+  salesValidations SalesTariffValidation[]
+  salesOfferOptions SalesOfferOption[]
   /// Stable public marketing title; null retains the legacy description-derived key.
   marketingTitleKey String? @map("marketing_title_key")
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
@@ -3965,6 +3970,7 @@ model UnitAccessInstruction {
 
 
 model OperatingSpace {
+  salesOffers SalesOffer[]
   reservationGroups ReservationGroup[]
   operationalTasks OperationalTask[]
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
@@ -4111,3 +4117,81 @@ model RateLimitBucket {
 }
 
 
+
+/// CONFIGURATION: explicit commercial review, never inferred from calculability.
+model SalesTariffValidation {
+  id String @id @default(uuid())
+  unitId String @map("unit_id")
+  fingerprint String
+  ruleVersion String @map("rule_version")
+  evidenceRef String @map("evidence_ref")
+  reviewedByIdentityId String @map("reviewed_by_identity_id")
+  validFrom DateTime @map("valid_from") @db.Date
+  validThrough DateTime @map("valid_through") @db.Date
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  currency String
+  createdAt DateTime @default(now()) @map("created_at")
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  reviewer Identity @relation(fields: [reviewedByIdentityId], references: [id], onDelete: Restrict)
+  options SalesOfferOption[]
+  @@index([unitId, fingerprint])
+  @@index([reviewedByIdentityId])
+  @@map("sales_tariff_validation")
+}
+
+/// CANONICAL commercial document; append-only revisions, no inventory authority.
+model SalesOffer {
+  id String @id @default(uuid())
+  seriesId String @map("series_id")
+  version Int
+  operatingSpaceId String @map("operating_space_id")
+  createdByIdentityId String @map("created_by_identity_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  locale String
+  clientNote String @map("client_note")
+  salespersonName String @map("salesperson_name")
+  options SalesOfferOption[]
+  shares SalesOfferShare[]
+  space OperatingSpace @relation(fields: [operatingSpaceId], references: [id], onDelete: Restrict)
+  salesperson Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  @@unique([seriesId, version])
+  @@index([operatingSpaceId, createdAt])
+  @@index([createdByIdentityId])
+  @@map("sales_offer")
+}
+
+/// CANONICAL frozen, guest-safe projection from canonical writers, not live inputs.
+model SalesOfferOption {
+  id String @id @default(uuid())
+  offerId String @map("offer_id")
+  position Int
+  unitId String @map("unit_id")
+  validationId String? @map("validation_id")
+  fingerprint String
+  snapshot Json @db.JsonB
+  offer SalesOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  validation SalesTariffValidation? @relation(fields: [validationId], references: [id], onDelete: Restrict)
+  @@unique([offerId, position])
+  @@index([unitId])
+  @@index([validationId])
+  @@map("sales_offer_option")
+}
+
+/// CONFIGURATION: scoped bearer capability; raw secret is returned once, never persisted.
+model SalesOfferShare {
+  id String @id @default(uuid())
+  offerId String @map("offer_id")
+  tokenHash String @unique @map("token_hash")
+  createdByIdentityId String @map("created_by_identity_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  offer SalesOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  creator Identity @relation(fields: [createdByIdentityId], references: [id], onDelete: Restrict)
+  @@index([offerId])
+  @@index([createdByIdentityId])
+  @@map("sales_offer_share")
+}

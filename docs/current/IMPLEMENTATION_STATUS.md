@@ -121,3 +121,9 @@ Reservation guest/finance access, cancellation refund durability/recovery, prope
 ## Property-card editing, 2026-10-21 (local branch)
 
 PMS project-facts saves use descriptive fields without legacy facility arrays. Unit writers validate physical facts; the PMS unit/project forms submit optimistic versions and retain failed/conflicting edits. Editors expose distinct area measurements, protect unsaved navigation and localize controls. Administrators can maintain documentary sleeping spaces/beds from the PMS editor using the existing admin guard; staff permissions and physical capacity are unchanged. Gallery uploads retain distinct asset ownership and refresh partial results after failure. See [verification and remaining boundaries](../audits/PROPERTY_CARD_EDITING_2026-10-21.md). No production deployment, migration or property-data repair is asserted.
+
+## Sales/offer desk — 2026-10-21 branch implementation
+
+Code path: `/ops/sales` → canonical availability/pricing → comparison → immutable offer revision → guest-safe preview/text/print → explicit staff canonical booking request. Scoped opaque proposal links support guest access without staff login, expiry/revocation and stale disclosures; no automatic sends. Additive migration creates document history, tariff review configuration and hash-only capabilities; it seeds no pricing/approvals/credentials. Only canonical THB pricing is supported; other currencies remain review-required rather than converted.
+
+Readiness: code present; synthetic database/browser verification recorded in [sales desk evidence](../audits/SALES_OFFER_DESK_2026-10-21.md). Production migration/data approval/deployment/runtime **not performed**. Occupancy dashboard, heatmaps, promotional builder, multi-unit bundles and server-generated PDF remain deferred. Commercial Layantara rule alignment is still a release blocker for firm Layantara offers.

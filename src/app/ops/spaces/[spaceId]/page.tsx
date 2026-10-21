@@ -1,3 +1,4 @@
+import { SALES_LABELS, SALES_DRAFTS } from '@/modules/content/sales-offer.seed';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -88,9 +89,10 @@ export default async function OperatingSpaceHome(props: { params: Promise<{ spac
     'staff.space.team': 'Team',
     'staff.space.finance': 'Finance & reports',
     'staff.space.channels': 'Channels',
+    ...SALES_LABELS,
     'staff.space.tasks_link': 'Tasks',
     'staff.space.effective_scope_hint': 'Counts and daily tasks reflect your current authorized homes. Reservation, finance and recurring-automation readiness remain separate.',
-  });
+  }, undefined, SALES_DRAFTS);
 
   const cards = [
     [labels['staff.space.units'], units],
@@ -99,6 +101,7 @@ export default async function OperatingSpaceHome(props: { params: Promise<{ spac
   ] as const;
 
   const links = [
+    ...(can('manage_reservations') ? [[labels['sales.title'], '/ops/sales?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('view_calendar') ? [[labels['staff.space.calendar'], '/ops/calendar/board?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_reservations') ? [[labels['staff.space.reservations'], '/ops/reservations?spaceId=' + encodeURIComponent(space.id)]] : []),
     ...(can('manage_tasks') ? [[labels['staff.space.tasks_link'], '/ops/tasks?spaceId=' + encodeURIComponent(space.id)]] : []),

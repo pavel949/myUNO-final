@@ -1,3 +1,4 @@
+import { SALES_KEYS } from './sales-offer.seed';
 import { PROPERTY_EDITOR_KEYS } from './property-editor.seed';
 import { WORKSPACE_NAVIGATION_KEYS } from './workspace-navigation.seed';
 import { EMPLOYEE_CREATION_KEYS } from './employee-creation.seed';
@@ -74,6 +75,7 @@ const COMMON_KEYS: KeyDef[] = [
   ...GUEST_SERVICE_CONTEXT_KEYS,
   ...STAY_UX_KEYS,
   ...RESERVATION_GUEST_KEYS,
+  ...SALES_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
   { key: 'homes.detail.show_all_photos', namespace: 'homes', description: 'Commercial home detail: show all photos', en: 'Show all {count} photos', ru: 'Показать все фото ({count})', th: 'ดูรูปทั้งหมด {count} รูป', status: 'needs_review' },

@@ -138,7 +138,13 @@ const API_ROOT = APP_ROOT;
 const apiFiles = files; // already collected from APP_ROOT above
 const apiRouteFiles = apiFiles.filter((path) => basename(path) === 'route.ts');
 const apiCallerFiles = apiFiles.filter((path) => basename(path) !== 'route.ts');
+// These sources generate standalone browser documents rather than React components.
+const standaloneClientSources = [
+  'src/modules/sales-offers/public-shell.ts',
+  'src/app/sales-preview/[id]/route.ts',
+].map(path => readFileSync(join(process.cwd(), path), 'utf8'));
 const apiCallerSources = [
+  ...standaloneClientSources,
   ...apiCallerFiles.map((path) => readFileSync(path, 'utf8')),
   ...componentSources,
 ];

@@ -1,15 +1,15 @@
 {
-  "codeRevision": "46f04a32b04fca66ec4c3134eea7685656822020",
+  "codeRevision": "89a7d53feba62bdb6b1c89ea5b46bb63559d7df6",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
-    "pages": 174,
-    "handlers": 248,
-    "apiHandlers": 245,
-    "modules": 21,
-    "tests": 571,
-    "prismaModels": 118,
-    "migrations": 95,
+    "pages": 176,
+    "handlers": 256,
+    "apiHandlers": 251,
+    "modules": 22,
+    "tests": 573,
+    "prismaModels": 122,
+    "migrations": 96,
     "routeCollisions": 0
   },
   "routes": [
@@ -1160,6 +1160,36 @@
       "area": "api"
     },
     {
+      "path": "/api/ops/sales-offers",
+      "source": "src/app/api/ops/sales-offers/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/sales-offers/[id]/preview",
+      "source": "src/app/api/ops/sales-offers/[id]/preview/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/sales-offers/[id]/request",
+      "source": "src/app/api/ops/sales-offers/[id]/request/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/sales-offers/[id]/shares",
+      "source": "src/app/api/ops/sales-offers/[id]/shares/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/ops/sales-offers/search",
+      "source": "src/app/api/ops/sales-offers/search/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
       "path": "/api/ops/tasks",
       "source": "src/app/api/ops/tasks/route.ts",
       "kind": "handler",
@@ -1282,6 +1312,12 @@
     {
       "path": "/api/property-submissions",
       "source": "src/app/api/property-submissions/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/proposals/view",
+      "source": "src/app/api/proposals/view/route.ts",
       "kind": "handler",
       "area": "api"
     },
@@ -2204,6 +2240,18 @@
       "area": "ops"
     },
     {
+      "path": "/ops/sales",
+      "source": "src/app/ops/sales/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
+      "path": "/ops/sales/[id]",
+      "source": "src/app/ops/sales/[id]/page.tsx",
+      "kind": "page",
+      "area": "ops"
+    },
+    {
       "path": "/ops/spaces",
       "source": "src/app/ops/spaces/page.tsx",
       "kind": "page",
@@ -2402,6 +2450,12 @@
       "area": "guest-or-shared"
     },
     {
+      "path": "/proposal",
+      "source": "src/app/proposal/route.ts",
+      "kind": "handler",
+      "area": "guest-or-shared"
+    },
+    {
       "path": "/provider",
       "source": "src/app/provider/page.tsx",
       "kind": "page",
@@ -2453,6 +2507,12 @@
       "path": "/residence",
       "source": "src/app/residence/page.tsx",
       "kind": "page",
+      "area": "guest-or-shared"
+    },
+    {
+      "path": "/sales-preview/[id]",
+      "source": "src/app/sales-preview/[id]/route.ts",
+      "kind": "handler",
       "area": "guest-or-shared"
     },
     {
@@ -2590,7 +2650,7 @@
     },
     {
       "name": "content",
-      "files": 75,
+      "files": 76,
       "testFiles": 9
     },
     {
@@ -2642,6 +2702,11 @@
       "name": "projects",
       "files": 86,
       "testFiles": 43
+    },
+    {
+      "name": "sales-offers",
+      "files": 10,
+      "testFiles": 2
     },
     {
       "name": "services",
@@ -2749,6 +2814,10 @@
     "ReservationGroup",
     "Review",
     "RoleAssignment",
+    "SalesOffer",
+    "SalesOfferOption",
+    "SalesOfferShare",
+    "SalesTariffValidation",
     "SavedSearch",
     "SavedUnit",
     "SecretVaultEntry",
@@ -2963,7 +3032,8 @@
     "prisma/migrations/20261015074000_unit_marketing_title_pointer/migration.sql",
     "prisma/migrations/20261015080331_pricing_editor_role/migration.sql",
     "prisma/migrations/20261015120347_property_capability_delegation/migration.sql",
-    "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql"
+    "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql",
+    "prisma/migrations/20261021140000_sales_offer_desk/migration.sql"
   ],
   "tests": [
     "src/app/(admin)/app/admin/access/workspace-access-client.test.tsx",
@@ -3522,6 +3592,8 @@
     "src/modules/projects/unit-project-coherence.integration.test.ts",
     "src/modules/projects/unit-publication-readiness.test.ts",
     "src/modules/projects/units.integration.test.ts",
+    "src/modules/sales-offers/http.integration.test.ts",
+    "src/modules/sales-offers/offer.integration.test.ts",
     "src/modules/services/notify-order-reminder.integration.test.ts",
     "src/modules/services/project-service-offer.test.ts",
     "src/modules/services/provider.service.integration.test.ts",

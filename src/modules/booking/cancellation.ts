@@ -82,7 +82,7 @@ export function computeRefundAmount(
 export async function resolveCancellationPolicy(
   db: PrismaClient,
   policyKey: string | null | undefined,
-  scope?: { projectId?: string; unitId?: string }
+  scope?: { projectId?: string; unitId?: string; fresh?: boolean }
 ): Promise<CancellationPolicy> {
   // `||` is deliberate here, and is not the hazard T-058 fixed elsewhere. That
   // hazard is about numbers, where a configured 0 is a real value that `||`
@@ -125,7 +125,8 @@ export async function resolveCancellationPolicy(
  */
 export async function resolveStayCancellationPolicy(
   db: PrismaClient,
-  target: { unitId: string } | { inventoryCategoryId: string }
+  target: { unitId: string } | { inventoryCategoryId: string },
+  options: { fresh?: boolean } = {}
 ): Promise<CancellationPolicy> {
   let projectId: string;
   let unitId: string | null = null;
@@ -177,7 +178,7 @@ export async function resolveStayCancellationPolicy(
     null;
 
   return resolveCancellationPolicy(db, planKey || categoryKey || unitKey, {
-    projectId,
+    projectId, fresh: options.fresh,
     ...(unitId ? { unitId } : {}),
   });
 }

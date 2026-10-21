@@ -368,6 +368,20 @@ export default async function ProjectLandingPage(
           title={project.name}
           subtitle={<>{editorial.headline ? <p>{editorial.headline}</p> : null}<p className="mt-4 text-small">{project.address}</p></>}
         />
+        {project.slug === 'layantara-villas' ? (
+          <div className="mb-24 mt-20 overflow-hidden rounded-lg border border-border-line bg-text-ink">
+            <video
+              className="block aspect-[16/9] w-full object-cover"
+              controls
+              playsInline
+              preload="none"
+              poster="/media/layantara-resort-poster.jpg"
+              aria-label={`${project.name} resort film`}
+            >
+              <source src="/media/layantara-resort.mp4" type="video/mp4" />
+            </video>
+          </div>
+        ) : null}
         {editorial.lead ? (
           <div className="mb-24 mt-16 max-w-3xl">
             <p className="text-body leading-relaxed text-text-secondary">{editorial.lead}</p>

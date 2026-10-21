@@ -132,3 +132,17 @@ test('backup endpoint metadata preserves migration credentials and explicit dire
     else process.env.MIGRATION_DATABASE_HOST = previous;
   }
 });
+
+
+test('reviewed additive release SQL is pinned and unpublished importer remains rejected', () => {
+  const names = [
+    '20261021010000_booking_refund_dispatch_authorization',
+    '20261021140000_sales_offer_desk',
+  ];
+  const files = names.map(name => ({ name, sql: readFileSync(new URL(`../prisma/migrations/${name}/migration.sql`, import.meta.url)) }));
+  assert.deepEqual(checkMigrationLedger(files, []), names);
+  for (const file of files) {
+    assert.throws(() => checkMigrationLedger([{ ...file, sql: Buffer.concat([file.sql, Buffer.from('\nSELECT 42;')]) }], []), /checksum mismatch/);
+  }
+  assert.throws(() => checkMigrationLedger([{ name: '20261021023000_imported_reservation_groups', sql: Buffer.from('SELECT 1;') }], []), /Unexpected pending migration/);
+});

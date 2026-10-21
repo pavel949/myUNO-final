@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
 const m = vi.hoisted(() => ({ guard: vi.fn(), unit: vi.fn(), count: vi.fn(), many: vi.fn(), read: vi.fn(), validate: vi.fn(),
-  snapshot: vi.fn(), permissions: vi.fn(), adminSave: vi.fn(), employeeSave: vi.fn() }));
+  snapshot: vi.fn(), permissions: vi.fn(), adminSave: vi.fn(), employeeSave: vi.fn(), seasonSave: vi.fn() }));
 vi.mock('@/app/libs/pricingGuard', () => ({ requireUnitPricing: m.guard }));
 vi.mock('@/lib/prisma', () => ({ prisma: { unit: { findUnique: m.unit, count: m.count, findMany: m.many } } }));
 vi.mock('@/modules/core', () => ({ readTariffDraft: m.read, validateTariffDraft: m.validate, saveTariffDraft: m.adminSave }));
-vi.mock('@/modules/core/tariff-editor', () => ({ readTariffEditorSnapshot: m.snapshot, saveEmployeeTariffDraft: m.employeeSave }));
-import { GET, PUT } from './route';
-const params = { params: { id: 'unit-a' } };
+vi.mock('@/modules/core/tariff-editor', () => ({ readTariffEditorSnapshot: m.snapshot, saveEmployeeTariffDraft: m.employeeSave, saveTariffSeasonAmount: m.seasonSave }));
+import { GET, PUT, PATCH } from './route';
+const params = { params: Promise.resolve({ id: 'unit-a' }) };
 const draft = { includesTaxes: true, includesServiceCharge: true, includesBreakfast: false,
   daily: [{ seasonCode: 'ALL', windows: [{ start: '01-01', end: '12-31' }], amountSatang: 100000, minimumNights: 1 }], monthly: [], yearly: null };
 const request = (scope: string = 'unit') => new Request('http://localhost/tariff', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft, scope, expectedRevision: 'a'.repeat(64) }) }) as NextRequest;
@@ -52,4 +52,19 @@ describe('scoped tariff API', () => {
 it('rejects an unversioned save before write', async () => {
  const req = new Request('http://localhost/tariff', { method: 'PUT', body: JSON.stringify({ draft, scope: 'unit' }) }) as NextRequest;
  expect((await PUT(req, params)).status).toBe(409); expect(m.employeeSave).not.toHaveBeenCalled(); expect(m.adminSave).not.toHaveBeenCalled();
+});
+
+
+it('limits matrix patches to admins and forwards only the selected season amount', async () => {
+ const request = () => new Request('http://localhost/tariff', { method: 'PATCH', body: JSON.stringify({
+  scope: 'category', mode: 'daily', seasonCode: 'BASE', amountSatang: 850001, expectedRevision: 'a'.repeat(64),
+ }) }) as NextRequest;
+ expect((await PATCH(request(), params)).status).toBe(403);
+ expect(m.seasonSave).not.toHaveBeenCalled();
+ m.guard.mockResolvedValue({ ok: true, isAdmin: true, actorIdentityId: 'admin' });
+ m.seasonSave.mockResolvedValue({ saved: 2, revision: 'b'.repeat(64) });
+ expect((await PATCH(request(), params)).status).toBe(200);
+ expect(m.seasonSave).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+  unitIds: ['unit-a', 'unit-b'], categoryId: 'category', mode: 'daily', seasonCode: 'BASE', amountSatang: 850001,
+ }));
 });

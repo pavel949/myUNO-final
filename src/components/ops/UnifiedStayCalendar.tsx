@@ -33,6 +33,7 @@ interface UnitRow {
 }
 interface EntryDetail { id: string; kind: 'booking' | 'block'; status: string; channel: string | null; label: string }
 type Props = {
+  canManagePricing?: boolean;
   mode?: 'staff' | 'mc'; organizationId?: string; spaceId?: string;
   labels: Record<string, string>;
   today: string; start: string; days: string[]; daysCount: number;
@@ -418,6 +419,12 @@ export default function UnifiedStayCalendar(props: Props) {
             </li> : null;
           })}</ul>}
         <div className="mt-16 flex flex-wrap gap-8">
+          {props.canManagePricing && <Link href={'/app/admin/config?' + new URLSearchParams({
+            projectId: inspect.projectId, unitId: inspect.id, view: 'calendar', start: selected.date,
+          })} className="inline-flex rounded-md border border-border-line px-16 py-8 text-small font-semibold text-brand-andaman">
+            {props.labels['pricing.desk.title']}
+          </Link>}
+
           <Link href={props.mode==='mc'
             ? '/mc/properties/'+encodeURIComponent(inspect.id)+'?'+new URLSearchParams({
                 projectId: inspect.projectId,

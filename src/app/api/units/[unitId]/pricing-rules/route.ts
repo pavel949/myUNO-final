@@ -113,13 +113,16 @@ export async function POST(req: NextRequest, props: { params: Promise<{ unitId: 
       );
     }
 
-    const rule = await createPricingRule(prisma, {
+    const rule = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM unit WHERE id = ${unit.id} FOR UPDATE`;
+      return createPricingRule(tx, {
       unitId: unit.id,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       nightlyThb,
       label: typeof label === 'string' ? label.trim() || undefined : undefined,
       minNightsOverride: typeof minNightsOverride === 'number' ? minNightsOverride : undefined,
+      });
     });
 
     await logAudit({

@@ -1,5 +1,10 @@
-import { getLabels } from '@/lib/i18n';
-import { PageHeading } from '@/components/premium/StitchPage';
+import { getLabels, getRequestLocale } from '@/lib/i18n';
+import PricingDesk from './pricing-desk';
+import { bangkokCalendarDay, validCalendarDay } from '@/modules/booking/calendar-projection';
+import { PRICING_DESK_LABELS, PRICING_DESK_DRAFTS } from '@/modules/content/pricing-desk.seed';
+import { COMMERCIAL_LABELS } from '@/components/units/tariff-labels';
+import { TARIFF_EDITOR_USABILITY_DRAFTS } from '@/modules/content/tariff-editor-usability.seed';
+import { PRICING_WORKSPACE_LABELS, PRICING_WORKSPACE_DRAFTS } from '@/modules/content/pricing-workspace.seed';
 import { prisma } from '@/lib/prisma';
 import { listProjects } from '@/modules/projects';
 import { getConfig } from '@/modules/config';
@@ -8,9 +13,9 @@ import ConfigAdminClient from './config-client';
 export const dynamic = 'force-dynamic';
 
 /**
- * Minimal project-scope config editor (LY-9): the founder's "CRUD
- * categories / tariffs / seasons" — data, not code. Server-side validators
- * in config/edit.service.ts reject malformed shapes and raw-THB pastes.
+ * Canonical pricing desk: seasonal matrix and date-specific calendar edits.
+ * The previous project configuration is retained under progressive disclosure
+ * for legacy pricing and non-pricing project settings.
  */
 const EDITABLE_KEYS = [
   'pricing.season.calendar',
@@ -22,7 +27,7 @@ const EDITABLE_KEYS = [
 
 export default async function AdminConfigPage(
   props: {
-    searchParams: Promise<{ projectId?: string }>;
+    searchParams: Promise<{ projectId?: string; unitId?: string; view?: string; start?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -51,7 +56,13 @@ export default async function AdminConfigPage(
     }
   }
 
+  const units = projectId ? await prisma.unit.findMany({
+    where: { projectId, status: { not: 'offboarded' } },
+    select: { id: true, name: true, projectId: true, inventoryCategoryId: true, inventoryCategory: { select: { name: true } } },
+    orderBy: [{ inventoryCategory: { name: 'asc' } }, { name: 'asc' }],
+  }) : [];
   const labels = await getLabels({
+    ...PRICING_DESK_LABELS, ...COMMERCIAL_LABELS, ...PRICING_WORKSPACE_LABELS,
     'admin.config.title': 'Pricing & configuration',
     'admin.config.subtitle':
       'Per-project business rules: seasons, category tariffs, early-bird, concierge WhatsApp. Amounts are satang (THB × 100).',
@@ -68,20 +79,26 @@ export default async function AdminConfigPage(
     'admin.config.history_loading': 'Loading change history…',
     'admin.config.history_empty': 'No changes recorded for this parameter yet.',
     'admin.config.history_error': 'Could not load change history.',
-  });
+  }, undefined, { ...PRICING_DESK_DRAFTS, ...TARIFF_EDITOR_USABILITY_DRAFTS, ...PRICING_WORKSPACE_DRAFTS });
 
   return (
     <div>
-      <PageHeading title={labels['admin.config.title']} subtitle={labels['admin.config.subtitle']} />
       {projectId ? (
-        <ConfigAdminClient
+        <div className="-m-20 min-h-screen bg-surface-ivory p-20 md:-m-32 md:p-32">
+        <PricingDesk key={projectId} projectId={projectId} projects={projects.map(p => ({ id: p.id, name: p.name }))}
+          units={units.map(unit => ({ id: unit.id, name: unit.name, projectId: unit.projectId, categoryId: unit.inventoryCategoryId, categoryName: unit.inventoryCategory?.name ?? null }))}
+          initialUnitId={searchParams.unitId} initialView={searchParams.view === 'calendar' ? 'calendar' : 'rates'}
+          initialStart={searchParams.start && validCalendarDay(searchParams.start) ? searchParams.start : bangkokCalendarDay()}
+          today={bangkokCalendarDay()} locale={getRequestLocale()} labels={labels} />
+        <details className="mt-32 border-t border-border-line pt-16"><summary className="cursor-pointer text-small text-text-secondary">{labels['pricing.desk.settings']}</summary>
+        <div className="mt-16"><ConfigAdminClient
           projectId={projectId}
           projects={projects.map((p) => ({ id: p.id, name: p.name }))}
           values={values}
           overridden={overridden}
           editableKeys={[...EDITABLE_KEYS]}
           labels={labels}
-        />
+        /></div></details></div>
       ) : (
         <p className="text-body text-text-secondary">{labels['admin.config.no_projects']}</p>
       )}

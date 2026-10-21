@@ -1,4 +1,4 @@
-import { PrismaClient, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
+import { Prisma, PrismaClient, BlockedDate, PricingRule, BlockedDateReason } from '@prisma/client';
 import type { SourceBookingTerms } from './commercial-booking-terms';
 import { getConfig, type SeasonPeriod } from '@/modules/config';
 import { daysBetween, startOfUtcDay, toCalendarDay } from '@/lib/date';
@@ -110,7 +110,7 @@ function selectApplicableSeason(
 }
 
 export async function getApplicableSeason(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   date: Date,
   scope?: PricingScope
 ): Promise<SeasonPeriod | null> {
@@ -323,6 +323,8 @@ export interface CreatePricingRuleInput {
   nightlyThb: number;
   label?: string;
   minNightsOverride?: number;
+  /** Explicit admin pricing-desk intent; legacy API callers keep false. */
+  appliesToTariffGrid?: boolean;
 }
 
 /** List a unit's per-night price overrides, most recent first. */
@@ -351,7 +353,7 @@ export async function getUnitPricingRules(
 const OVERRIDE_RATIO_LIMIT = 10;
 
 export async function createPricingRule(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   input: CreatePricingRuleInput
 ): Promise<PricingRule> {
   const { unitId, startDate, endDate, nightlyThb, label, minNightsOverride } = input;
@@ -407,6 +409,7 @@ export async function createPricingRule(
       nightlyThb,
       label: label || null,
       minNightsOverride: minNightsOverride ?? null,
+      appliesToTariffGrid: input.appliesToTariffGrid === true,
     },
   });
 }

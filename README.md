@@ -1,5 +1,7 @@
 # myUNO — Property, Hospitality & Services OS
 
+> **Application identity (2026-10-21):** Next.js myUNO Final, repository `pavel949/myUNO-final`. `pavel949/myuno` is a separate React/Vite application. Both require the same verified 39-villa Layantara catalogue and tariffs. [Current data, publication status and remaining parity work](docs/LAYANTARA_APPLICATION_PARITY.md).
+
 **Актуальная документация по коду `main` на 16 октября 2026.** Репозиторий: [pavel949/myUNO-final](https://github.com/pavel949/myUNO-final). Точный срез исходников: codeRevision в [REFERENCE](docs/current/REFERENCE.md). Реальная production-готовность и проверенные ограничения: [оценка](docs/current/READINESS_ASSESSMENT.md); план достижения 9/10: [критерии и работы](docs/current/PRODUCTION_READINESS_PLAN.md).
 
 myUNO объединяет поиск жилья, прямое бронирование, проживание, PMS, владельцев, управляющих, CRM, услуги и финансовый учёт Ignatev Estate. Один физический объект и одна Identity связывают эти процессы. Внутри — Next.js modular monolith с PostgreSQL; публичные страницы и рабочие кабинеты работают в одном приложении.

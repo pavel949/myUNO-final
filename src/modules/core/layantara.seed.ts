@@ -1,9 +1,13 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { assertLegacyLayantaraSeedEnvironment } from './legacy-layantara-seed-guard';
 import { ensureContentKey, setTranslation } from '@/modules/content';
 import { ensureSeedInventoryCategory } from '@/modules/projects';
 
 /**
- * Seed Layantara Resort — the first real project on the platform (LY-4).
+ * HISTORICAL DEVELOPMENT/TEST FIXTURE (LY-4), not current production inventory.
+ * Current production has 8 imported categories and source-backed offering grids.
+ * Never use this 5-category fixture to refresh either application's tariffs.
+ * See docs/LAYANTARA_APPLICATION_PARITY.md.
  *
  * 39 villas / 94 bedrooms in Bang Tao–Layan, Phuket, built 2018, operated by
  * Ignatev Estate under a hotel licence (legal short-term rentals). Three
@@ -19,7 +23,7 @@ import { ensureSeedInventoryCategory } from '@/modules/projects';
  * stated hotel licence. The licence number itself is pending (Q29).
  */
 
-// The real Layantara season calendar (brief 2026-07-28). Absolute category
+// Historical fixture calendar (brief 2026-07-28), superseded in production. Absolute category
 // rates carry the prices, so every markup stays 0. Peak is a carve-out
 // inside high — shortest-range-wins gives it precedence.
 const SEASON_CALENDAR = [
@@ -173,6 +177,7 @@ async function seedKey(
 }
 
 export async function seedLayantara(db: PrismaClient) {
+  assertLegacyLayantaraSeedEnvironment(process.env.NODE_ENV);
   const admin = await db.identity.findFirst({ where: { isAdmin: true } });
   if (!admin) {
     throw new Error('seedLayantara requires an admin identity (run seedDemoData first)');

@@ -4,7 +4,7 @@
 
 **Status:** authoritative product, architecture and implementation specification  
 **Repository:** `pavel949/myUNO-final`  
-**Target:** `myUNO.app`  
+**Target:** independent Next.js myUNO Final application; `pavel949/myuno` is the separate React/Vite myUNO App. Both require the same verified Layantara catalogue/tariffs. Domains must be verified per deployment; see [application identity and parity](docs/LAYANTARA_APPLICATION_PARITY.md)  
 **Version:** 3.1  
 **Date:** 2026-09-29  
 **Audience:** any capable coding agent or engineering team. Vendor-neutral.

@@ -1,0 +1,18 @@
+[
+  {
+    "jsonb_build_object": {
+      "engagements": null,
+      "service_supply": [
+        {
+          "count": 4,
+          "status": "draft"
+        },
+        {
+          "count": 3,
+          "status": "active"
+        }
+      ],
+      "compliance_records": null
+    }
+  }
+]

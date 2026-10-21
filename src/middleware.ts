@@ -52,8 +52,9 @@ export function middleware(request: NextRequest) {
       "style-src 'self' 'unsafe-inline'", // Tailwind; MapLibre CSS is bundled
       "img-src 'self' data: https:",
       "font-src 'self'",
-      // Search map raster tiles are loaded by MapLibre over fetch/XHR.
-      "connect-src 'self' https://tile.openstreetmap.org",
+      // MapLibre raster tiles and @vercel/blob 2.8.0 presigned PUTs only.
+      // Upload fetches reject redirects; keep this allowance path-restricted.
+      "connect-src 'self' https://tile.openstreetmap.org https://vercel.com/api/blob/",
       // MapLibre creates a blob-backed Web Worker for map rendering.
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",

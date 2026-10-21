@@ -4,12 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { assignTicket } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { loadTicketForUser } from '@/app/libs/ticketScope';
+import { standaloneTicketAuthority } from '@/modules/comms/standalone-ticket-access';
 
 /** POST /api/tickets/[id]/assign — scoped operator assignment (defaults to self). */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -42,11 +41,12 @@ export async function POST(
 
       const hasProjectOpsRole =
         assignee?.isAdmin ||
-        assignee?.roleAssignments.some(
+        (ticket.projectId !== null && assignee?.roleAssignments.some(
           (role) =>
             (role.role === 'staff_ops' || role.role === 'onsite_host') &&
             role.projectId === ticket.projectId
-        );
+        )) || (ticket.projectId === null && assignee &&
+          (await standaloneTicketAuthority(prisma, ticket, assignee.id)).canManage);
 
       if (!hasProjectOpsRole) {
         throw createPublicError('invalid request: assignee is not an operator for this project', 400);

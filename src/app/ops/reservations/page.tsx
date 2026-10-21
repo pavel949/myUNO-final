@@ -16,9 +16,8 @@ import ReservationGroupForm from '@/components/ops/ReservationGroupForm';
 
 export const dynamic='force-dynamic';
 
-export default async function ReservationDesk({
-  searchParams,
-}:{searchParams?:{spaceId?:string;status?:string}}){
+export default async function ReservationDesk(props:{searchParams?: Promise<{spaceId?:string;status?:string}>}) {
+  const searchParams = await props.searchParams;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/reservations');
 
@@ -79,7 +78,7 @@ export default async function ReservationDesk({
       },
       select:{
         id:true,status:true,channel:true,startDate:true,endDate:true,totalThb:true,
-        balanceDueThb:true,reservationGroupId:true,
+        receivableStatus:true,balanceDueThb:true,reservationGroupId:true,
         guestIdentity:{select:{id:true,firstName:true,lastName:true}},
         unit:{select:{id:true,name:true,project:{select:{name:true}}}},
         payments:{where:{status:'succeeded',purpose:{in:['stay','stay_balance']}},select:{amountThb:true}},
@@ -100,7 +99,8 @@ export default async function ReservationDesk({
     'reservations.total':'Reservations',
     'reservations.arrivals':'Arrivals today',
     'reservations.requests':'Requests',
-    'reservations.balance':'Balance due',
+    'reservations.balance':'Collectible balance',
+    'reservations.pending_reconciliation':'Balances awaiting reconciliation',
     'reservations.groups':'Reservation groups',
     'reservations.open':'Open stay →',
     'reservations.create':'Create reservation',
@@ -122,7 +122,8 @@ export default async function ReservationDesk({
     'reservations.group_title':'Group title',
     'reservations.group_failed':'Group creation failed',
     'reservations.all':'All',
-    'reservations.paid':'Paid',
+    'reservations.paid':'Verified receipts',
+    'reservations.review':'Balance awaiting reconciliation',
     'reservations.group_summary':'{count} reservations · ฿{amount}',
   },locale,RESERVATION_GUEST_DRAFTS);
 
@@ -153,6 +154,7 @@ export default async function ReservationDesk({
           [labels['reservations.arrivals'],arrivals],
           [labels['reservations.requests'],requests],
           [labels['reservations.balance'],'฿'+Math.round(balance/100).toLocaleString(UI_LOCALE)],
+          [labels['reservations.pending_reconciliation'],String(bookings.filter(b=>b.receivableStatus==='pending_reconciliation').length)],
         ].map(([label,value])=><div key={String(label)} className="stitch-panel p-16">
           <p className="text-small text-text-secondary">{label}</p>
           <p className="mt-4 font-display text-heading-2 font-bold font-tabular">{value}</p>
@@ -180,7 +182,7 @@ export default async function ReservationDesk({
             </div>
             <div><p className="text-small text-text-secondary">{enumLabel(labels,'bookingStatus',booking.status)}</p><p>{enumLabel(labels,'bookingChannel',booking.channel)}</p></div>
             <div><p>{formatDate(booking.startDate,locale)}</p><p className="text-small text-text-secondary">→ {formatDate(booking.endDate,locale)}</p></div>
-            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p></div>
+            <div><p className="font-semibold">฿{Math.round(booking.totalThb/100).toLocaleString()}</p><p className="text-small text-text-secondary">{labels['reservations.paid']} ฿{Math.round(paid/100).toLocaleString()}</p>{booking.receivableStatus==='pending_reconciliation'&&<p className="text-small text-state-warning">{labels['reservations.review']}</p>}</div>
             <div><Link href={'/ops/stays/'+encodeURIComponent(booking.id)} className="text-small font-semibold text-brand-andaman">{labels['reservations.open']}</Link></div>
           </article>;
         })}
@@ -200,4 +202,5 @@ export default async function ReservationDesk({
     </div>
   </main>;
 }
+
 

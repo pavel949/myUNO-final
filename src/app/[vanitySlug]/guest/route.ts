@@ -9,10 +9,8 @@ export const dynamic = 'force-dynamic';
  * reason as the parent segment: real 307/404 statuses instead of a streamed
  * 200 shell.
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { vanitySlug: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ vanitySlug: string }> }) {
+  const params = await props.params;
   const slug = await resolveLiveProjectSlug(params.vanitySlug);
   if (!slug) return vanityNotFound();
   return NextResponse.redirect(new URL(`/guests/access?project=${slug}`, req.url), 307);

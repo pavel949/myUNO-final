@@ -1,5 +1,7 @@
 # myUNO — Brand & Art Direction
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 The **art direction**. Fable expands it into a full design system (`docs/06_design_system.md`). Agents build UI only from that system. Visual references: `myuno_brand.html`, `myuno_positioning.html`.
 
 ## Personality

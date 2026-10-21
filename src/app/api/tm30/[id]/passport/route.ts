@@ -16,10 +16,8 @@ import {
 } from '@/modules/ops';
 import { canAccessTm30Filing } from '@/app/libs/projectScope';
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user?.identityId) {

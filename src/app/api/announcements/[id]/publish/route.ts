@@ -44,7 +44,8 @@ async function authorize(announcementId: string) {
   return { user, identity, announcement };
 }
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await authorize(params.id);
   if (auth.error) return auth.error;
 
@@ -71,7 +72,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ status: 'published' });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await authorize(params.id);
   if (auth.error) return auth.error;
 

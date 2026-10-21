@@ -180,6 +180,23 @@ describe('unit ledger lock', () => {
     expect(audit.data).toMatchObject({ verified: 'legacy_unverifiable' });
   });
 
+  it('rejects an unsigned statement after a same-total date move within its period', async () => {
+    const stay = await db.booking.findFirstOrThrow({ where: { unitId: world.unit.id } });
+    await db.booking.update({ where: { id: stay.id }, data: { startDate: new Date('2026-07-06'), endDate: new Date('2026-07-11') } });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id)).rejects.toMatchObject({ reason: 'stale' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).signedOffByOperatorAt).toBeNull();
+    expect((await db.booking.findUniqueOrThrow({ where: { id: stay.id } })).totalThb).toBe(stay.totalThb);
+  });
+
+  it('preserves issued signed snapshot integrity after a same-total date move', async () => {
+    await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
+    const signed = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
+    const stay = await db.booking.findFirstOrThrow({ where: { unitId: world.unit.id } });
+    await db.booking.update({ where: { id: stay.id }, data: { startDate: new Date('2026-07-06'), endDate: new Date('2026-07-11') } });
+    await expect(verifyStatementSnapshot(db, signed)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
+    expect(await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).toMatchObject({ sourceFingerprint: signed.sourceFingerprint, snapshotHash: signed.snapshotHash });
+  });
+
   it('verifies integrity only once the operator has signed', async () => {
     await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
     await db.ledgerEntry.create({
@@ -187,6 +204,35 @@ describe('unit ledger lock', () => {
     });
     const fresh = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
     await expect(verifyStatementSnapshot(db, fresh)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
+  });
+
+  it('rejects a signature when a new paid crossing cancellation was absent from the contained-source hash', async () => {
+    const crossing = await createBooking({
+      unitId: world.unit.id, projectId: world.project.id, guestIdentityId: world.newOwner.id,
+      startDate: new Date('2026-06-29'), endDate: new Date('2026-07-03'), status: 'cancelled', totalThb: 12_000,
+    });
+    await db.payment.create({ data: {
+      bookingId: crossing.id, payerIdentityId: world.newOwner.id, purpose: 'stay_balance',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: 'succeeded', succeededAt: NOW,
+    } });
+    await expect(collectSnapshotSources(db, world.period)).rejects.toMatchObject({ code: 'STATEMENT_ALLOCATION_REQUIRED', bookingId: crossing.id });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id)).rejects.toMatchObject({ reason: 'stale' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } })).signedOffByOperatorAt).toBeNull();
+  });
+
+  it('preserves an operator-signed snapshot when a paid crossing cancellation is added later', async () => {
+    await recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id);
+    const signed = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
+    const crossing = await createBooking({
+      unitId: world.unit.id, projectId: world.project.id, guestIdentityId: world.newOwner.id,
+      startDate: new Date('2026-07-29'), endDate: new Date('2026-08-03'), status: 'cancelled', totalThb: 12_000,
+    });
+    await db.payment.create({ data: {
+      bookingId: crossing.id, payerIdentityId: world.newOwner.id, purpose: 'stay',
+      method: 'cash', provider: 'cash', amountThb: 5_000, status: 'succeeded', succeededAt: NOW,
+    } });
+    await expect(verifyStatementSnapshot(db, signed)).resolves.toEqual({ ok: true, verified: 'integrity_only' });
+    expect((await db.ownerStatement.findUniqueOrThrow({ where: { id: signed.id } })).snapshotHash).toBe(signed.snapshotHash);
   });
 });
 
@@ -253,5 +299,42 @@ describe('owner change vs statement approval', () => {
     const row = await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } });
     expect(row.signedOffByOperatorAt).not.toBeNull();
     expect(await verifyStatementSnapshot(db, { ...row, signedOffByOperatorAt: null })).toEqual({ ok: false, reason: 'stale' });
+  });
+});
+
+
+describe('source receivable review blocks financial close', () => {
+  async function requireReview() {
+    await db.booking.updateMany({ where: { unitId: world.unit.id }, data: { receivableStatus: 'pending_reconciliation' } });
+  }
+  it('refuses generation sources instead of recognizing source claims as distributable cash', async () => {
+    await requireReview();
+    await expect(collectSnapshotSources(db, world.period)).rejects.toMatchObject({ code: 'STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED' });
+  });
+  it('checks review before legacy and operator-signed snapshot exemptions', async () => {
+    await requireReview();
+    await expect(verifyStatementSnapshot(db, { ...world.statement, sourceFingerprint: null, snapshotHash: null }))
+      .resolves.toEqual({ ok: false, reason: 'receivable_review' });
+    await expect(verifyStatementSnapshot(db, { ...world.statement, signedOffByOperatorAt: NOW }))
+      .resolves.toEqual({ ok: false, reason: 'receivable_review' });
+    await expect(recordStatementSignOff(db, world.statement.id, 'operator', NOW, world.admin.id))
+      .rejects.toMatchObject({ reason: 'receivable_review' });
+  });
+  it('DB guard blocks bypass generation, distribution and owner payout without altering issued history', async () => {
+    await requireReview();
+    await expect(db.ownerStatement.create({ data: { ...world.statement, id: randomUUID(), status: 'draft' } }))
+      .rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    await expect(db.ownerStatement.update({ where: { id: world.statement.id }, data: { status: 'distributed' } }))
+      .rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    await expect(db.payout.create({ data: {
+      payeeType: 'owner', ownerStatementId: world.statement.id, amountThb: world.statement.ownerShareTh,
+      periodStart: world.period.periodStart, periodEnd: world.period.periodEnd,
+      method: 'bank_transfer_thb', reference: 'SYNTHETIC-REVIEW', executedOn: NOW,
+      recordedByIdentityId: world.admin.id, status: 'recorded',
+    } })).rejects.toThrow('STATEMENT_RECEIVABLE_RECONCILIATION_REQUIRED');
+    expect(await db.ownerStatement.findUniqueOrThrow({ where: { id: world.statement.id } }))
+      .toMatchObject({ status: world.statement.status, sourceFingerprint: world.statement.sourceFingerprint,
+        snapshotHash: world.statement.snapshotHash, ownerShareTh: world.statement.ownerShareTh });
+    expect(await db.payout.count({ where: { ownerStatementId: world.statement.id } })).toBe(0);
   });
 });

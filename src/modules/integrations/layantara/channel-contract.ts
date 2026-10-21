@@ -54,7 +54,7 @@ const hasId = (value: unknown): value is string =>
 const positiveInteger = (value: unknown): value is number =>
   typeof value==='number' && Number.isSafeInteger(value) && value>0;
 
-export function parseChannelEvent(payload: unknown): ChannelEvent {
+export function parseChannelEvent(payload: unknown, options: { reviewedUnknownParty?: boolean } = {}): ChannelEvent {
   if (!payload || typeof payload!=='object' || Array.isArray(payload)) throw new Error('invalid_payload');
   const e=payload as Record<string,unknown>;
   if (e.contractVersion!==1 || !supported.has(e.eventType as ChannelEventKind)) throw new Error('unsupported_event_type');
@@ -75,7 +75,7 @@ export function parseChannelEvent(payload: unknown): ChannelEvent {
   if (e.eventType==='booking.confirmed' || e.eventType==='booking.changed') {
     if (!channels.has(e.channel as string) || !hasId(e.guestExternalId) ||
         typeof e.guestName!=='string' || e.guestName.trim().length<2 ||
-        e.guestName.length>180 || !Number.isInteger(e.adults) || (e.adults as number)<1 ||
+        e.guestName.length>180 || !Number.isInteger(e.adults) || (e.adults as number)<(options.reviewedUnknownParty ? 0 : 1) ||
         !Number.isInteger(e.children) || (e.children as number)<0 ||
         !Number.isSafeInteger(e.totalSatang) || (e.totalSatang as number)<0 ||
         e.currency!=='THB' ||

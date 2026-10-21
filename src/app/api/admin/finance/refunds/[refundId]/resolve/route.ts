@@ -10,10 +10,8 @@ interface ResolveRefundRequest {
   action: 'retry' | 'write_off';
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { refundId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ refundId: string }> }) {
+  const params = await props.params;
   try {
     const guard = await requireAdmin();
     if (!guard.ok) return guard.error;
@@ -37,9 +35,12 @@ export async function POST(
         amountThb: refund.amountThb,
         reason: refund.reason,
       },
-      message: `Refund ${body.action === 'retry' ? 'queued for retry' : 'written off'}: ฿${refund.amountThb.toLocaleString(UI_LOCALE)}`,
+      message: `Refund ${refund.status}: ฿${(refund.amountThb / 100).toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
+    if ((error as { code?: string })?.code === 'REFUND_RESOLUTION_CONFLICT') {
+      return NextResponse.json({ error: (error as Error).message }, { status: 409 });
+    }
     if (error instanceof Error && error.message === 'Refund not found') {
       return NextResponse.json(
         { error: 'Refund not found' },

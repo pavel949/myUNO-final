@@ -1,3 +1,11 @@
+import UnitProjectAmenities from '@/components/projects/UnitProjectAmenities';
+import { getConfig } from '@/modules/config';
+import { GUEST_BOOKING_DRAFTS } from '@/modules/content/guest-booking-drafts';
+import { getGalleryCopy } from '@/lib/gallery-copy';
+import { GUEST_SEARCH_UX_KEYS, guestSearchDefaults, type GuestSearchCopy } from '@/modules/content/guest-search-ux.seed';
+import { ShareStayOffer } from '@/components/property/ShareStayOffer';
+import { SavedHomesProvider } from '@/components/property/SaveHomeButton';
+import { STAY_UX_KEYS, stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
 import { formatPropertyCount } from '@/lib/property-count';
 import { PublicSleepingSummary } from '@/components/units/PublicSleepingSummary';
 import { publicSleepingLabelsForLocale } from '@/modules/content/public-sleeping';
@@ -37,11 +45,12 @@ async function unitDescription(descriptionKey: string | null): Promise<string | 
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];
 
   // Only live units and explicitly imported public discovery inventory get metadata.
@@ -63,7 +72,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function UnitDetailPage({ params, searchParams = {} }: { params: { id: string }; searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function UnitDetailPage(
+  props: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const searchParams = (await props.searchParams) ?? {};
+  const params = await props.params;
   // Booking stays behind the strict gate; imported inventory gets inquiry-only details.
   const context = discoveryContext(searchParams);
   const unit = await getPublicUnitById(params.id).catch(() => null) ?? (await listPublicDiscoveryUnits({ unitId: params.id }))[0];
@@ -84,6 +97,12 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
   const description = await unitDescription(unit.descriptionKey);
   const jsonLd = 'bookable' in unit ? unitJsonLd({ ...unit, description }) : null;
 
+  const galleryLabels = await getGalleryCopy();
+  const uxLocale = getRequestLocale();
+  const uxLabels = await getLabels(Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(STAY_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const similarLabels = await getLabels(Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, row.en])), uxLocale, Object.fromEntries(GUEST_SEARCH_UX_KEYS.map(row => [row.key, { ru: row.ru, th: row.th, zh: row.zh }])));
+  const similarCopy = Object.fromEntries(Object.keys(guestSearchDefaults(uxLocale)).map(key => [key, similarLabels[`guest_search.${key}`]])) as GuestSearchCopy;
+  const uxCopy = Object.fromEntries(Object.keys(stayUxDefaults(uxLocale)).map(key => [key, uxLabels[`stay_ux.${key}`]])) as StayUxCopy;
   const labels = await getLabels({
     ...publicSleepingLabelsForLocale(getRequestLocale()),
     'units.breadcrumb_home': 'Home',
@@ -100,7 +119,6 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'listing.floor': 'Floor {value}',
     'listing.min_nights_count': 'Min {count} nights',
     'homes.detail.size_unit': 'sqm',
-    'listing.not_charged_yet': 'You are not charged yet. Card, transfer or cash on arrival.',
     'listing.fewer_guests': 'Fewer adults',
     'listing.more_guests': 'More adults',
     'search.bar_check_in': 'Check-in',
@@ -127,6 +145,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'listing.payment_method': 'Payment method',
     'listing.pay_cash': 'Cash on arrival',
     'listing.pay_card': 'Card (online)',
+    'listing.pay_transfer': 'Bank transfer',
     'listing.guest_note': 'Guest note (optional)',
     'listing.guest_note_placeholder': 'Any special requests…',
     'listing.reserve': 'Reserve',
@@ -171,8 +190,8 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
     'catalog.cancellation_policies.flexible.label': 'Flexible',
     'catalog.cancellation_policies.moderate.label': 'Moderate',
     'catalog.cancellation_policies.strict.label': 'Strict',
-    'catalog.cancellation_policies.season.label': 'By season of arrival',
-  });
+    'catalog.cancellation_policies.season.label': 'Season terms',
+  }, undefined, GUEST_BOOKING_DRAFTS);
 
   const breadcrumbs = [
     { label: labels['units.breadcrumb_home'], href: '/' },
@@ -184,19 +203,36 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
   if (!('bookable' in unit)) {
     return <main className="stitch-workspace">
       <Breadcrumb items={breadcrumbs} />
-      <div className="stitch-page space-y-24">
+      <div className="stitch-page space-y-24 pb-[160px] lg:pb-32">
         <Link href={`/search${context ? `?${context}` : ''}`} className="text-brand-andaman hover:underline">{labels['listing.back_to_results']}</Link>
         <PageHeading title={unit.name} subtitle={<Link href={`${projectHref}#homes`} className="text-brand-andaman hover:underline">{unit.project.name} · {copy.project} →</Link>} />
-        <UnitPhotoMosaic images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
+        <ShareStayOffer name={`${unit.name} · ${unit.project.name}`} unitId={unit.id}
+          startDate={typeof searchParams.startDate === 'string' ? searchParams.startDate : null}
+          endDate={typeof searchParams.endDate === 'string' ? searchParams.endDate : null}
+          guests={Number(searchParams.adults || 1) + Number(searchParams.children || 0)} copy={uxCopy} />
+        <UnitPhotoMosaic galleryLabels={galleryLabels} images={unit.galleryUrls} alt={unit.name} showAllLabel={labels['listing.show_all_photos'].replace('{count}', String(unit.galleryUrls.length))} emptyLabel={copy.photos} />
         <p>{[unit.bedrooms > 0 ? formatPropertyCount(`{count} ${copy.bedrooms}`, unit.bedrooms, getRequestLocale()) : null, unit.maxGuests > 0 ? formatPropertyCount(`{count} ${copy.guests}`, unit.maxGuests, getRequestLocale()) : null, unit.sizeSqm && unit.sizeSqm > 0 ? `${unit.sizeSqm} m²` : null].filter(Boolean).join(' · ')}</p>
         {unit.photoScope === 'room_type' && <p className="text-small text-text-secondary">{copy.representative}</p>}
         {description && <p className="max-w-3xl leading-relaxed">{description}</p>}
         <PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />
         <aside className="stitch-panel p-24"><p>{copy.pending}</p><a href="#lead-form" className="mt-16 inline-flex min-h-48 items-center rounded-lg bg-brand-andaman px-24 text-white">{copy.ask}</a></aside>
       </div>
+      <div className="fixed inset-x-0 bottom-64 md:bottom-0 z-30 border-t border-border-line bg-surface-paper/95 px-16 py-12 shadow-float lg:hidden">
+        <a href="#lead-form" className="flex min-h-48 items-center justify-center rounded-lg bg-brand-andaman px-24 font-semibold text-white">{copy.ask}</a>
+      </div>
+      <UnitProjectAmenities unitId={unit.id} />
       <LeadFormSection audience={inquiryAudience} projectId={unit.project.id} unitId={unit.id} contextLabel={`${unit.name} · ${unit.project.name}`} initialMessage={`${unit.project.name} — ${unit.name}`} />
     </main>;
   }
+
+  // Match review's project-scoped enabled methods. Do not repeat the legacy
+  // static CMS promise, which may name payment rails this property lacks.
+  const paymentScope = await prisma.unit.findUnique({ where: { id: unit.id }, select: { projectId: true } });
+  const enabledMethods = paymentScope
+    ? (await getConfig(prisma, 'booking.payment.methods_enabled', { projectId: paymentScope.projectId })) ?? ['cash', 'bank_transfer']
+    : [];
+  const paymentLabels = { cash: labels['listing.pay_cash'], bank_transfer: labels['listing.pay_transfer'], card_provider: labels['listing.pay_card'] };
+  const paymentMethodsSummary = enabledMethods.map(method => paymentLabels[method]).join(' · ');
 
   return (
     <Suspense>
@@ -205,7 +241,10 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
-      <UnitDetailClient
+      <SavedHomesProvider><UnitDetailClient
+        galleryLabels={galleryLabels}
+        similarCopy={similarCopy}
+        uxCopy={uxCopy}
         unitId={params.id}
         sleepingSummary={<PublicSleepingSummary spaces={unit.sleepingSpaces} labels={labels} />}
         labels={{
@@ -221,7 +260,7 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
           floor: labels['listing.floor'],
           minNightsCount: labels['listing.min_nights_count'],
           sizeUnit: labels['homes.detail.size_unit'],
-          notChargedYet: labels['listing.not_charged_yet'],
+          paymentMethodsSummary,
           fewerGuests: labels['listing.fewer_guests'],
           moreGuests: labels['listing.more_guests'],
           checkIn: labels['search.bar_check_in'],
@@ -298,6 +337,8 @@ export default async function UnitDetailPage({ params, searchParams = {} }: { pa
           },
         }}
       />
+      </SavedHomesProvider>
+      <UnitProjectAmenities unitId={unit.id} />
     </Suspense>
   );
 }

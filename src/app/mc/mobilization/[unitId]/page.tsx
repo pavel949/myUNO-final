@@ -12,13 +12,14 @@ export const dynamic = 'force-dynamic';
 /**
  * MC mobilization workspace (doc 07 F-OWN-1 via management company).
  */
-export default async function McMobilizationUnitPage({
-  params,
-  searchParams,
-}: {
-  params: { unitId: string };
-  searchParams?: { projectId?: string; organizationId?: string };
-}) {
+export default async function McMobilizationUnitPage(
+  props: {
+    params: Promise<{ unitId: string }>;
+    searchParams?: Promise<{ projectId?: string; organizationId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/mc/mobilization/${params.unitId}`);

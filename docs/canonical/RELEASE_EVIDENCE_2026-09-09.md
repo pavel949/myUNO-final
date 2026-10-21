@@ -1,5 +1,7 @@
 # RELEASE_EVIDENCE — myUNO canonical v3 release candidate
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 **Repository:** `pavel949/myUNO-final`  
 **Branch:** `feat/canonical-platform-v3`  
 **PR:** #64  

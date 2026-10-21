@@ -19,10 +19,8 @@ interface LineItemView {
   createdAt: string;
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 

@@ -1,5 +1,7 @@
 # Supplier listing and management journeys — 2026-10-02
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Founder decision: owners and authorized management companies may submit rental listings and configure their verified supply. myUNO remains the guest-facing booking/support contact. Listing distribution does not claim full myUNO property management. Actual on-site responsibility and contractual booking/payment responsibilities remain explicit and require verification.
 
 ## Public routes

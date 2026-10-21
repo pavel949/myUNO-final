@@ -25,7 +25,12 @@ export default async function SupplierListingsPage() {
     <div className="mt-20 flex flex-wrap gap-12"><LinkButton href="/property/onboard?kind=home&offers=short_stay,monthly,yearly">{labels['property.listings.create']}</LinkButton><LinkButton variant="secondary" href="/manage">{labels['property.listings.management']}</LinkButton></div>
     <section className="stitch-panel p-20 md:p-24"><h2 className="font-display text-heading-2">{labels['property.listings.applications']}</h2>{!drafts.length && <p className="mt-12">{labels['property.listings.empty']}</p>}{drafts.map(draft => {
       const data = draft.requirements as Record<string, unknown>;
-      return <Link key={draft.id} href={'/property/onboard?submissionId=' + draft.id} className="stitch-panel mt-12 block p-16">{draft.title} · {labels[`property.listings.status.${typeof data.status === 'string' ? data.status : 'draft'}`] || labels['property.listings.status.unknown']}</Link>;
+      // A governed intake never resumes through the ordinary owner/manager writer,
+      // including when its reserved receipt is malformed. The destination rechecks ownership.
+      const href = Object.prototype.hasOwnProperty.call(data, 'employeeCreation')
+        ? '/property/create?id=' + encodeURIComponent(draft.id)
+        : '/property/onboard?submissionId=' + encodeURIComponent(draft.id);
+      return <Link key={draft.id} href={href} className="stitch-panel mt-12 block p-16">{draft.title} · {labels[`property.listings.status.${typeof data.status === 'string' ? data.status : 'draft'}`] || labels['property.listings.status.unknown']}</Link>;
     })}</section>
     <section className="stitch-panel p-20 md:p-24"><h2 className="font-display text-heading-2">{labels['property.listings.settings']}</h2>{!editable.length && <p className="mt-12 text-text-secondary">{labels['property.listings.settings_empty']}</p>}{editable.map(unit => <Link key={unit.id} href={'/property/listings/' + unit.id} className="stitch-panel mt-12 block p-16">{unit.name} →</Link>)}</section>
   </StitchMain>;

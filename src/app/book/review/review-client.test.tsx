@@ -21,8 +21,9 @@ const quote = (total = 3000) => ({
   lengthOfStayDiscount: 0, earlyBirdDiscount: 0, cleaningFee: 0, occupancyTax: 0,
 });
 const response = (data: unknown, status = 200) => ({ ok: status < 400, status, json: async () => data });
+const stepsLabels = { aria: 'Booking progress', review: 'Review', pay: 'Pay', confirmed: 'Confirmed', current: 'current step', approval: 'Property approval' };
 const renderReview = () => render(
-  <BookingReviewClient labels={labels} methods={['cash']} defaultPolicy="Policy" projectId="project-a" />
+  <BookingReviewClient stepsLabels={stepsLabels} labels={labels} methods={['cash']} defaultPolicy="Policy" projectId="project-a" />
 );
 const bookingCalls = () => fetchMock.mock.calls.filter(([url]) => url === '/api/bookings');
 
@@ -33,6 +34,36 @@ async function consent() {
 }
 
 describe('reviewed price and recovery', () => {
+  it('recovers the saved booking when card checkout cannot be created', async () => {
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => url === '/api/bookings'
+      ? response({ code: 'CHECKOUT_UNAVAILABLE', booking: { id: 'saved-booking' } }, 503)
+      : normalFetch(url, options));
+    renderReview();
+    await consent();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/saved-booking'));
+    expect(bookingCalls()).toHaveLength(1);
+  });
+
+  it('lets a guest retry a failed quote without losing the stay or booking intent', async () => {
+    let quotes = 0;
+    const normalFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string, options: unknown) => {
+      if (url === '/api/pricing/breakdown' && ++quotes === 1) throw new Error('offline');
+      return normalFetch(url, options);
+    });
+    renderReview();
+    expect(await screen.findByRole('alert')).toHaveTextContent('error');
+    fireEvent.click(screen.getByRole('button', { name: 'searchAgain' }));
+    await consent();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(bookingCalls()).toHaveLength(1));
+    expect(JSON.parse(bookingCalls()[0][1].body)).toMatchObject({
+      unitId: 'unit-a', startDate: '2027-02-01', endDate: '2027-02-04', adultsCount: 2,
+    });
+  });
+
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,13 +79,73 @@ describe('reviewed price and recovery', () => {
     });
   });
 
+  it('returns to the unit with the resolved project and supported search context', async () => {
+    navigation.params.set('projectId', 'unvalidated-project');
+    navigation.params.set('areaSlug', 'layan');
+    navigation.params.set('bedrooms', '2');
+    navigation.params.set('amenities', 'pool,wifi');
+    navigation.params.set('sort', 'price_asc');
+    navigation.params.set('next', 'https://example.invalid');
+    renderReview();
+    await consent();
+    const url = new URL(screen.getByRole('link', { name: 'back' }).getAttribute('href')!, 'http://localhost');
+    expect(url.pathname).toBe('/units/unit-a');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      startDate: '2027-02-01', endDate: '2027-02-04', adults: '2', children: '0',
+      projectId: 'project-a', areaSlug: 'layan', bedrooms: '2', amenities: 'pool,wifi', sort: 'price_asc',
+    });
+  });
+
+  it('does not promise a payment route before the authoritative mode arrives', () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    renderReview();
+    expect(screen.queryByRole('navigation', { name: stepsLabels.aria })).not.toBeInTheDocument();
+  });
+
+  it('shows the direct payment path for an authoritative instant booking', async () => {
+    navigation.params.set('instantBook', '0');
+    renderReview();
+    await consent();
+    const rail = screen.getByRole('navigation', { name: stepsLabels.aria });
+    expect(rail.querySelectorAll('li')).toHaveLength(3);
+    expect(rail).not.toHaveTextContent('Property approval');
+  });
+
+  it('updates refreshed cancellation terms and requires fresh consent', async () => {
+    const view = renderReview();
+    await consent();
+    view.rerender(<BookingReviewClient stepsLabels={stepsLabels} labels={labels} methods={['cash']}
+      defaultPolicy="Updated seasonal terms" projectId="project-a" />);
+    expect(screen.getByText('Updated seasonal terms')).toBeInTheDocument();
+    expect(screen.queryByText('Policy')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'confirm' })).toBeDisabled();
+    expect(bookingCalls()).toHaveLength(0);
+  });
+
   it('submits exactly the direct-unit total the guest reviewed in satang', async () => {
     renderReview();
     await consent();
     fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
     await waitFor(() => expect(bookingCalls()).toHaveLength(1));
     expect(JSON.parse(bookingCalls()[0][1].body)).toMatchObject({ unitId: 'unit-a', acceptedTotalSatang: 300_000 });
-    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips'));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/trips/booking-a'));
+  });
+
+  it('keeps a return category out of an exact-unit booking request', async () => {
+    navigation.params.set('inventoryCategoryId', 'category-a');
+    navigation.params.set('categoryKey', 'legacy-category');
+    renderReview();
+    await consent();
+    const back = new URL(screen.getByRole('link', { name: 'back' }).getAttribute('href')!, 'http://localhost');
+    expect(back.searchParams.get('inventoryCategoryId')).toBe('category-a');
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    await waitFor(() => expect(bookingCalls()).toHaveLength(1));
+    const payload = JSON.parse(bookingCalls()[0][1].body);
+    expect(payload.unitId).toBe('unit-a');
+    expect(payload).not.toHaveProperty('inventoryCategoryId');
+    expect(payload).not.toHaveProperty('categoryKey');
+    expect(payload).not.toHaveProperty('categoryQuoteToken');
   });
 
   it('retains the category signed quote and accepted ceiling', async () => {
@@ -210,8 +301,12 @@ describe('reviewed price and recovery', () => {
     renderReview();
     await waitFor(() => expect(screen.getByText('requestNote')).toBeInTheDocument());
     expect(screen.getByText('requestTitle')).toBeInTheDocument();
+    const rail = screen.getByRole('navigation', { name: stepsLabels.aria });
+    expect(rail.querySelectorAll('li')).toHaveLength(4);
+    expect(rail).toHaveTextContent('Property approval');
     expect(screen.getByText('requestConsent')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('checkbox')).toBeEnabled());
+    expect(screen.getByRole('navigation', { name: stepsLabels.aria })).toHaveTextContent('Property approval');
     fireEvent.click(screen.getByRole('checkbox'));
     await waitFor(() => expect(screen.getByRole('button', { name: 'requestConfirm' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'requestConfirm' }));
@@ -230,6 +325,7 @@ describe('reviewed price and recovery', () => {
     renderReview();
     await waitFor(() => expect(screen.getByText('requestNote')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByRole('checkbox')).toBeEnabled());
+    expect(screen.getByRole('navigation', { name: stepsLabels.aria })).toHaveTextContent('Property approval');
     fireEvent.click(screen.getByRole('checkbox'));
     await waitFor(() => expect(screen.getByRole('button', { name: 'requestConfirm' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'requestConfirm' }));

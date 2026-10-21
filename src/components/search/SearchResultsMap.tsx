@@ -56,6 +56,15 @@ export function SearchResultsMap({
     onBoundsChangeRef.current = onBoundsChange;
   }, [onBoundsChange]);
 
+  // A mobile list/map switch changes the container size without a window
+  // resize. Resize the existing map rather than recreate it or lose filters.
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => mapRef.current?.resize());
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     let map: import('maplibre-gl').Map | null = null;
@@ -109,6 +118,11 @@ export function SearchResultsMap({
       if (cancelled || !containerRef.current || mapRef.current) return;
       libRef.current = maplibregl;
 
+      // v6 cannot discover its worker after webpack replaces import.meta.url.
+      // Build/dev copy the locked package's self-contained worker to public/.
+      // Versioned URLs prevent a cached worker from an older release being used.
+      maplibregl.setWorkerUrl(`/maplibre/maplibre-gl-worker-${maplibregl.getVersion()}.mjs`);
+
       map = new maplibregl.Map({
         container: containerRef.current,
         center: [98.32, 7.95],
@@ -138,7 +152,7 @@ export function SearchResultsMap({
     };
 
     import('maplibre-gl')
-      .then((mod) => start((mod.default ?? mod) as MapLibre))
+      .then((mod) => start(((mod as { default?: unknown }).default ?? mod) as MapLibre))
       .catch(onError);
 
     return dispose;

@@ -1,5 +1,7 @@
 # Nocturne design system
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../../current/SYSTEM.md) и [остатка работ](../../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Nocturne is a quiet, compact dark interface: a near-neutral blue-grey ground, Inter at medium weight, soft 8px radii and an accent used as a line and a glow rather than a flood. Rules fade to transparent at their ends — over 48px a side — rather than stopping cleanly; short accent marks stay solid. Contrast comes from the tonal ramps, not from saturation, and photographs blend into the page with their dark values falling away.
 
 ## How to use this

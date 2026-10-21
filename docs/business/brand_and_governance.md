@@ -1,5 +1,7 @@
 # Ignatev Estate — brand architecture, lifecycle, data governance, fee transparency
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Moved verbatim from CLAUDE.md on 2026-10-05 so it is read on demand (CRM, owner statements, copy, permissions work) instead of loaded into every agent session. Content unchanged except the luxury-villa tone example, which contradicted the no-24/7-promises rule.
 
 myUNO operates within Ignatev Estate's owner-side model, which manages real estate economics from acquisition through operation to exit. **Four brand layers, each with distinct decision-making authority and audience:**

@@ -91,6 +91,9 @@ enum RoleType {
   juristic_member
   staff_ops
   onsite_host
+  content_contributor
+  pricing_editor
+  booking_mode_editor
 }
 
 enum RoleScopeType {
@@ -139,6 +142,16 @@ enum BookingStatus {
   declined
   expired
   cancelled
+}
+
+enum BookingPartyDetailsStatus {
+  known
+  source_unknown
+}
+
+enum BookingReceivableStatus {
+  collectible
+  pending_reconciliation
 }
 
 enum VerificationStatus {
@@ -1047,6 +1060,8 @@ model Project {
 }
 
 model Unit {
+  /// Stable public marketing title; null retains the legacy description-derived key.
+  marketingTitleKey String? @map("marketing_title_key")
   preventiveMaintenancePlans PreventiveMaintenancePlan[]
   operatingSpaces OperatingSpaceUnit[]
   accessInstruction UnitAccessInstruction?
@@ -1229,6 +1244,8 @@ model Booking {
   creationFingerprint        String?            @map("creation_fingerprint") @db.VarChar(64)
   startDate                  DateTime           @map("start_date") @db.Date
   endDate                    DateTime           @map("end_date") @db.Date
+  /// Unknown counts are permitted only for reviewed external operating records.
+  partyDetailsStatus         BookingPartyDetailsStatus @default(known) @map("party_details_status")
   adults                     Int
   children                   Int
   /// Not counted toward occupancy — an infant needs a cot, not a bed.
@@ -1237,6 +1254,8 @@ model Booking {
   pets                       Int                @default(0)
   priceBreakdown             Json?              @map("price_breakdown") @db.JsonB
   totalThb                   Int                @map("total_thb")
+  /// Collection eligibility is independent of source-reported payments and stay status.
+  receivableStatus           BookingReceivableStatus @default(collectible) @map("receivable_status")
   balanceDueThb              Int                @default(0) @map("balance_due_thb")
   refundAccruedThb           Int                @default(0) @map("refund_accrued_thb")
   cancellationPolicySnapshot Json?              @map("cancellation_policy_snapshot") @db.JsonB
@@ -1380,6 +1399,9 @@ model Refund {
   reason                RefundReason
   status                RefundStatus @default(requested)
   providerRefundId      String?      @map("provider_refund_id")
+  // A new/explicitly reconciled booking request may be dispatched once.
+  // Null on legacy rows: requested alone never proves no provider attempt.
+  dispatchAuthorizedAt  DateTime?    @map("dispatch_authorized_at")
   paidBackByIdentityId  String?      @map("paid_back_by_identity_id")
   initiatedByIdentityId String       @map("initiated_by_identity_id")
 
@@ -1682,6 +1704,7 @@ model UnitEngagement {
 }
 
 model Organization {
+  serviceSupportTickets Ticket[] @relation("serviceSupportOrganization")
   operatingSpaces OperatingSpace[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -1859,6 +1882,9 @@ model ServiceProject {
 }
 
 model ServiceOrder {
+  request_key String? @map("request_key") @db.VarChar(36)
+  request_fingerprint String? @map("request_fingerprint") @db.VarChar(64)
+  supportTickets Ticket[]
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1924,6 +1950,7 @@ model ServiceOrder {
   @@index([project_id, status, createdAt])
   @@index([provider_id, status])
   @@index([orderer_identity_id, createdAt])
+  @@unique([orderer_identity_id, request_key])
   dispatch ServiceOrderDispatch?
 
   @@map("service_order")
@@ -1971,6 +1998,9 @@ model RoleAssignment {
   providerId          String?       @map("provider_id")
   status              RoleStatus    @default(active)
   grantedByIdentityId String?       @map("granted_by_identity_id")
+  canDelegate         Boolean       @default(false) @map("can_delegate")
+  parentGrantId       String?       @map("parent_grant_id")
+  expiresAt           DateTime?     @map("expires_at")
 
   // Relations
   identity     Identity      @relation(name: "roleAssignmentIdentity", fields: [identityId], references: [id], onDelete: Cascade)
@@ -1980,6 +2010,10 @@ model RoleAssignment {
   provider     Provider?     @relation(fields: [providerId], references: [id], onDelete: Cascade)
   grantedBy    Identity?     @relation(name: "grantedRoles", fields: [grantedByIdentityId], references: [id])
 
+  parentGrant RoleAssignment?  @relation("PropertyCapabilityDelegation", fields: [parentGrantId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_assignment_parent_grant_fk")
+  delegatedGrants RoleAssignment[] @relation("PropertyCapabilityDelegation")
+
+  @@index([parentGrantId])
   @@index([identityId, status])
   @@map("role_assignment")
 }
@@ -2556,8 +2590,10 @@ model Ticket {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  projectId          String   @map("project_id")
+  projectId          String?  @map("project_id")
   unitId             String?  @map("unit_id")
+  serviceOrderId String? @map("service_order_id")
+  responsibleOrganizationId String? @map("responsible_organization_id")
   raisedByIdentityId String   @map("raised_by_identity_id")
   raisedByRole       RoleType @map("raised_by_role")
   assigneeIdentityId String?  @map("assignee_identity_id")
@@ -2575,7 +2611,9 @@ model Ticket {
   threadId String? @map("thread_id")
 
   // Relations
-  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
+  responsibleOrganization Organization? @relation("serviceSupportOrganization", fields: [responsibleOrganizationId], references: [id], onDelete: Restrict)
+  project  Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   unit     Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   raisedBy Identity      @relation(name: "ticketRaisedBy", fields: [raisedByIdentityId], references: [id], onDelete: Restrict)
   assignee Identity?     @relation(name: "ticketAssignee", fields: [assigneeIdentityId], references: [id], onDelete: SetNull)
@@ -2585,6 +2623,8 @@ model Ticket {
   dispute  Dispute?
 
   @@index([projectId, status])
+  @@index([serviceOrderId])
+  @@index([responsibleOrganizationId, status])
   @@index([assigneeIdentityId, slaDueAt])
   @@map("ticket")
 }
@@ -4069,3 +4109,5 @@ model RateLimitBucket {
   @@index([resetAt])
   @@map("rate_limit_bucket")
 }
+
+

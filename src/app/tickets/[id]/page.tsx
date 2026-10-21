@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PAYMENT_CHECKOUT_DRAFTS } from '@/modules/content/guest-checkout.seed';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
@@ -17,11 +18,12 @@ function isStatusError(error: unknown, statusCode: number): boolean {
   );
 }
 
-export default async function TicketDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function TicketDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/tickets/${params.id}`)}`);
@@ -61,6 +63,7 @@ export default async function TicketDetailPage({
   }
 
   const labels = await getLabels({
+    'payments.checkout.back_to_order': 'View your order',
     'tickets.detail.back': '← My requests',
     'tickets.detail.title': 'Request details',
     'tickets.detail.project': 'Project',
@@ -97,10 +100,11 @@ export default async function TicketDetailPage({
     'tickets.status.resolved': 'Resolved',
     'tickets.status.closed': 'Closed',
     'tickets.status.cancelled': 'Cancelled',
-  });
+  }, undefined, { 'payments.checkout.back_to_order': PAYMENT_CHECKOUT_DRAFTS['payments.checkout.back_to_order'] });
 
   const detail: TicketDetailView = {
     id: ticket.id,
+    serviceOrderId: isReporter ? ticket.serviceOrderId : null,
     title: ticket.title,
     description: ticket.description,
     status: ticket.status,

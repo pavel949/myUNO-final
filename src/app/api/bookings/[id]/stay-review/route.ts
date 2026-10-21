@@ -17,10 +17,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
  *
  * Response: { id: string } (review ID) or error
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

@@ -6,7 +6,8 @@ import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import { logAudit } from '@/modules/audit';
 import { getProjectAmenityOpsActor } from '@/app/libs/projectExperienceGuard';
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('Unauthorized', 401);
@@ -21,7 +22,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) throw createPublicError('Unauthorized', 401);

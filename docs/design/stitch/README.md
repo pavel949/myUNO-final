@@ -1,5 +1,7 @@
 # Stitch UI reference screens
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../../current/SYSTEM.md) и [остатка работ](../../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Design and flow **reference only** — not a data model and not a source of business truth. Canonical rules (authority gates, pricing, availability, media readiness, RBAC, audit) stay authoritative; see `../../STITCH_FLOW_RECONCILIATION.md` for what was adopted and what was deliberately excluded.
 
 Added 2026-10-05 from the founder's Stitch export (`stitch_myuno_ui_design_flows.zip`): 52 screens. Each folder holds `screen.png` (rendering) and `code.html` (Stitch markup — layout reference, not production code). Folders without a `code.html` hold only what the export provided.

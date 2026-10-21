@@ -1,5 +1,6 @@
 /** Reviewable UI drafts; importing this file never writes or approves CMS content. */
 export const UNIT_PUBLICATION_KEYS = [
+  { suffix: 'edit_marketing_title', en: 'Edit marketing title', ru: 'Редактировать рекламный заголовок', th: 'แก้ไขชื่อสำหรับการตลาด', zh: '编辑营销标题' },
   { suffix: 'edit_description', en: 'Edit description', ru: 'Редактировать описание', th: 'แก้ไขคำอธิบาย', zh: '编辑描述' },
   { suffix: 'edit_tariffs', en: 'Edit rates and booking rules', ru: 'Тарифы и правила бронирования', th: 'แก้ไขราคาและกฎการจอง', zh: '编辑价格和预订规则' },
   { suffix: 'publish_saved', en: '{name} is set to live. Review its public visibility and booking readiness.', ru: '{name}: статус «Опубликован» сохранён. Проверьте публичную страницу и готовность к бронированию.', th: 'บันทึกสถานะเผยแพร่ของ {name} แล้ว โปรดตรวจสอบการแสดงต่อสาธารณะและความพร้อมรับจอง', zh: '{name} 已设为上线。请核验公开展示和预订准备情况。' },
@@ -23,3 +24,4 @@ export const UNIT_PUBLICATION_KEYS = [
 ].map(({ suffix, ...entry }) => ({ ...entry, key: `admin.unit_publication.${suffix}`, namespace: 'admin', description: 'Separate publication and booking capability display', status: 'needs_review' as const }));
 export const UNIT_PUBLICATION_LABELS = Object.fromEntries(UNIT_PUBLICATION_KEYS.map(row => [row.key, row.en]));
 export const UNIT_PUBLICATION_DRAFTS = Object.fromEntries(UNIT_PUBLICATION_KEYS.map(row => [row.key, { en: row.en, ru: row.ru, th: row.th, zh: row.zh }]));
+

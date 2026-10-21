@@ -1,5 +1,7 @@
 # Frontend, navigation, content and commerce funnel architecture audit
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-10-08 · source baseline `24138a2` on main. Scope: current modular frontend and public discovery → dated search → quote → booking, public services → order, content/localization and readiness for additional destinations. Read-only source assessment against PROJECT.md and canonical ARCHITECTURE/DESIGN/AI_AGENT_RULES. No DB mutation, load test, production command or new runtime claim. Existing separate runtime audit evidence is not substituted for architectural proof.
 
 ## Verdict

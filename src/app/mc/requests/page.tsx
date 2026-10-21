@@ -12,16 +12,17 @@ import McRequestsClient from './requests-client';
 export const dynamic = 'force-dynamic';
 
 interface McRequestsPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
     organizationId?: string;
-  };
+  }>;
 }
 
 /**
  * Booking request inbox for MC-managed units (doc 07 F-OPS-5 / F-MC-2).
  */
-export default async function McRequestsPage({ searchParams }: McRequestsPageProps) {
+export default async function McRequestsPage(props: McRequestsPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/mc/requests');

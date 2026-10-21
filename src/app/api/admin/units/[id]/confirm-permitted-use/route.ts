@@ -2,10 +2,8 @@ import { requireAction } from '@/app/libs/onboardingGuard';
 import { confirmPermittedUse } from '@/modules/projects';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // Confirming permitted use is the hard gate before a unit can go live, and
   // doc 03 marks `owner` and `mc_member` read-only on
   // `compliance:manage_compliance_records` — the canonical action behind this

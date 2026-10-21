@@ -1,5 +1,7 @@
 # Design execution plan (working document)
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 This document turns the completed design system spec (`docs/06_design_system.md`) into an execution queue that can be implemented, reviewed, and shipped in small safe increments.
 
 ## Scope

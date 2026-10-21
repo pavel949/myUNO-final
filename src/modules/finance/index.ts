@@ -9,6 +9,7 @@ export {
   CheckoutStateError,
   verifyAndConfirm,
   refund,
+  processRequestedCardRefund,
   markRefundFailed,
   markRefundSucceeded,
   settleManualRefund,
@@ -161,3 +162,5 @@ export {
 export { processOpnEvent, type OpnWebhookEvent } from './provider-webhook.service';
 
 export { getPaymentProvider } from './providers';
+
+export { reserveCancellationRefunds } from './cancellation-refunds';

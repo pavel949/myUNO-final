@@ -8,7 +8,8 @@ import { getOperationalActor, getOperatingSpaceOverviewAccess, OperatingAccessEr
 
 export const dynamic = 'force-dynamic';
 
-export default async function OperatingSpacesPage({ searchParams }: { searchParams?: { view?: string } }) {
+export default async function OperatingSpacesPage(props: { searchParams?: Promise<{ view?: string }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/spaces');
 

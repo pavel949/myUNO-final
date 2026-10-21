@@ -46,11 +46,11 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - name: Validate strict isolation guard
         run: |
-          node --test scripts/e2e/isolation.test.cjs scripts/e2e/block-egress.test.cjs
+          node --test scripts/e2e/isolation.test.cjs scripts/e2e/block-egress.test.cjs scripts/e2e/workspace-navigation.test.cjs
           node scripts/e2e/isolation.cjs
           for file in .env .env.local .env.production .env.production.local; do
             test ! -f "$file" || { echo "Refusing checkout with runtime env file: $file"; exit 1; }
@@ -87,8 +87,16 @@ jobs:
             sleep 2
           done
           test "$ready" = 1 || { cat browser-results/server.log; exit 1; }
-          node scripts/e2e/founder-publication-booking.mjs
+          journey_failed=0
+          for journey in founder-publication-booking property-card-editing guest-ux-completion property-submission-description \
+            content-contributor complex-amenities project-amenity-content employee-workspaces \
+            employee-creation workspace-navigation service-fulfilment search-map next-migration-smoke; do
+            # Preserve every assertion and collect all failures in one run.
+            # Each runner retains its own isolation and prerequisite guards.
+            node "scripts/e2e/$journey.mjs" || journey_failed=1
+          done
           test ! -s browser-results/blocked-server-egress.log
+          exit "$journey_failed"
       - name: Upload synthetic screenshots and step evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -96,7 +104,19 @@ jobs:
           name: founder-publication-booking-${{ github.sha }}
           path: |
             browser-results/result.json
+            browser-results/guest-ux-result.json
+            browser-results/property-submission-result.json
+            browser-results/content-contributor-result.json
+            browser-results/complex-amenities-result.json
+            browser-results/project-amenity-content-result.json
+            browser-results/employee-workspaces-result.json
+            browser-results/employee-creation-result.json
+            browser-results/workspace-navigation-result.json
+            browser-results/service-fulfilment-result.json
+            browser-results/search-map-result.json
+            browser-results/next-migration-result.json
             browser-results/*.png
+            browser-results/property-editing/
             browser-results/server.log
             browser-results/blocked-server-egress.log
           retention-days: 7

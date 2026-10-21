@@ -18,12 +18,13 @@ const stages = [
 
 const money = (satang: number) => (satang / 100).toLocaleString('en-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default async function BookingJourneyPage({ params }: { params: { id: string } }) {
+export default async function BookingJourneyPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const booking = await prisma.booking.findUnique({
     where: { id: params.id },
     select: {
       id: true, status: true, startDate: true, endDate: true, totalThb: true,
-      balanceDueThb: true, refundAccruedThb: true, checkedInAt: true, checkedOutAt: true,
+      receivableStatus: true, balanceDueThb: true, refundAccruedThb: true, checkedInAt: true, checkedOutAt: true,
       project: { select: { id: true, name: true } },
       unit: { select: { id: true, name: true } },
       payments: {
@@ -72,7 +73,7 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
   const ownerPayoutReconciled = statements.some(s => s.payouts.some(p => p.status === 'reconciled'));
   const checks = [
     { name: 'Payment / ledger reconciliation', good: cashReconciled, description: cashReconciled ? 'Successful rental receipts match the rental ledger.' : 'Payment and ledger need reconciliation.' },
-    { name: 'Outstanding guest balance', good: outstandingStayBalanceSatang(booking) === 0, description: `฿${money(outstandingStayBalanceSatang(booking))} outstanding` },
+    { name: 'Outstanding guest balance', good: booking.receivableStatus === 'collectible' && outstandingStayBalanceSatang(booking) === 0, description: booking.receivableStatus === 'pending_reconciliation' ? 'Source payment and guest balance awaiting reconciliation; collection paused.' : `฿${money(outstandingStayBalanceSatang(booking))} outstanding` },
     { name: 'Refund obligations', good: booking.refundAccruedThb === 0 && outstandingRefunds.length === 0, description: `฿${money(booking.refundAccruedThb)} liability · ${outstandingRefunds.length} in flight` },
     { name: 'Stay operationally closed', good: stayClosed, description: `Booking status: ${booking.status.replace(/_/g, ' ')}` },
     { name: 'Owner statement', good: ownerRecorded, description: ownerRecorded ? `${statements.length} statement(s) linked` : 'No statement line linked yet.' },
@@ -134,3 +135,4 @@ export default async function BookingJourneyPage({ params }: { params: { id: str
     </main>
   );
 }
+

@@ -1,5 +1,7 @@
 # Night execution coverage — 8/9 October 2026
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 
 Checked application commit: `fca678918b88edae5a43f69e90776adc7ece1271` on `codex/night-booking-integrity-20261008`. Base: `3e6fa8d5`, preserving nine earlier unpublished commits above remote-known main `c0627258`. Fourteen implementation commits are local only. This is a coverage report for the changed slices, not whole-platform production acceptance.
 

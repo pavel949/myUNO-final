@@ -9,10 +9,8 @@ import { canAccessPaymentSession } from '@/app/libs/bookingAccess';
  * Checkout session summary for the mock checkout page: amount + booking
  * context. Payer-only (or admin).
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

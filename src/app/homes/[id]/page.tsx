@@ -1,5 +1,7 @@
+import { getGalleryCopy } from '@/lib/gallery-copy';
 import { UI_LOCALE } from '@/lib/format';
 import Link from 'next/link';
+import { discoveryCopy } from '@/components/DiscoveryHomes';
 import { UnitPhotoMosaic } from '@/components/UnitPhotoMosaic';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
@@ -12,22 +14,28 @@ import { getRequestLocale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CommercialHomePage({ params, searchParams }: {
-  params: { id: string }; searchParams?: {
-    intent?: string;
-    area?: string;
-    type?: string;
-    bedrooms?: string;
-    minArea?: string;
-    maxArea?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    moveIn?: string;
-    leaseTermMonths?: string;
-    pets?: string;
-    projectId?: string;
-  };
-}) {
+export default async function CommercialHomePage(
+  props: {
+    params: Promise<{ id: string }>; searchParams?: Promise<{
+      intent?: string;
+      area?: string;
+      type?: string;
+      bedrooms?: string;
+      minArea?: string;
+      maxArea?: string;
+      minPrice?: string;
+      maxPrice?: string;
+      moveIn?: string;
+      leaseTermMonths?: string;
+      pets?: string;
+      projectId?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const galleryLabels = await getGalleryCopy();
+  const discovery = await discoveryCopy(getRequestLocale());
   const home = await getPublicCommercialHomeById(prisma, params.id);
   if (!home) notFound();
   const requested: HomeIntent = searchParams?.intent === 'rent' ? 'rent' : 'buy';
@@ -94,7 +102,8 @@ export default async function CommercialHomePage({ params, searchParams }: {
       <p className="mt-24 text-kicker uppercase tracking-wider text-brand-andaman"><Link href={`/projects/${home.project.slug}`} className="hover:underline">{home.project.name}</Link></p>
       <h1 className="mt-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-brand-deep">{home.name}</h1>
       <div className="mt-24">
-        <UnitPhotoMosaic
+        <UnitPhotoMosaic galleryLabels={galleryLabels}
+          emptyLabel={discovery.photos}
           images={home.images}
           alt={home.name}
           showAllLabel={labels['homes.detail.show_all_photos'].replace('{count}', String(home.images.length))}
@@ -137,7 +146,7 @@ export default async function CommercialHomePage({ params, searchParams }: {
           ) : null}
           <p className="mt-12 text-small text-text-secondary">{labels['homes.detail.legal']}</p>
           <div className="mt-24 flex flex-wrap gap-8">
-            {home.intents.map(mode => <Link key={mode} href={'/homes/'+encodeURIComponent(home.id)+'?intent='+mode}
+            {home.intents.map(mode => <Link key={mode} href={'/homes/'+encodeURIComponent(home.id)+'?'+new URLSearchParams({ ...Object.fromEntries(backParams), intent: mode }).toString()}
               aria-current={intent===mode?'page':undefined}
               className={'rounded-full border px-20 py-12 text-small font-semibold '+
                 (intent===mode?'border-brand-deep bg-brand-deep text-white':'border-border-line bg-surface-paper')}>

@@ -22,14 +22,15 @@ const FILTER_VALUES: AdminTicketBoardFilter[] = [
  * Cross-project ticket board (doc 08 §6 §9, S14).
  * Admin oversight of every open request, sorted by SLA.
  */
-export default async function AdminTicketsPage({
-  searchParams,
-}: {
-  searchParams?: {
-    projectId?: string;
-    filter?: string;
-  };
-}) {
+export default async function AdminTicketsPage(
+  props: {
+    searchParams?: Promise<{
+      projectId?: string;
+      filter?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const requestedProjectId =
     typeof searchParams?.projectId === 'string' ? searchParams.projectId : '';
   const requestedFilter =
@@ -102,7 +103,7 @@ export default async function AdminTicketsPage({
           categoryKey: ticket.categoryKey,
           createdAt: ticket.createdAt.toISOString(),
           slaDueAt: ticket.slaDueAt?.toISOString() ?? null,
-          projectName: ticket.project.name,
+          projectName: ticket.project?.name ?? '—',
           unitName: ticket.unit?.name ?? null,
           raisedByName: `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`.trim(),
           assigneeName: ticket.assignee

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { EmployeeCreationError } from '@/modules/onboarding/employee-creation.schema';
+import { employeeCreationForConversionTx, employeeCreationFailure } from '@/modules/onboarding/employee-creation.service';
 import { setUnitOwnerTx } from '@/modules/projects';
 import { createDraftUnitEngagementTx } from '@/modules/core';
+import { createSubmissionDescriptionTx, resolveSubmissionDescription, SubmissionDescriptionError } from '@/modules/onboarding/submission-description';
 import {
   ensureDraftCommercialOfferingsTx,
   resolveCanonicalUnitTx,
@@ -19,7 +22,8 @@ import {
  * canonical write, ownership-period initialization and application outcome
  * is atomic; retry returns the same canonical IDs.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -34,19 +38,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await tx.$queryRaw`SELECT id FROM crm_opportunity WHERE id = ${params.id} FOR UPDATE`;
       const application = await tx.crmOpportunity.findUnique({
         where: { id: params.id },
-        select: { id: true, source: true, identityId: true, projectId: true, requirements: true },
+        select: { id: true, source: true, identityId: true, projectId: true, unitId: true, requirements: true },
       });
-      if (!application || application.source !== 'myuno_property_submission_v1') throw new Error('Application not found');
+      if (!application || application.source !== 'myuno_property_submission_v1') throw new EmployeeCreationError(400, 'Application not found');
       const data = application.requirements as Record<string, unknown>;
+      const employee = await employeeCreationForConversionTx(tx, application, guard.actorIdentityId, review);
       if (data.status === 'converted') {
-        return { projectId: String(data.canonicalProjectId), unitId: data.canonicalUnitId ? String(data.canonicalUnitId) : null, alreadyConverted: true };
+        if (employee && application.unitId) {
+          const bound = await tx.unit.findFirst({ where: { id: application.unitId, projectId: application.projectId! }, select: { id: true } });
+          if (!bound) throw new EmployeeCreationError(400, 'Converted property scope changed.');
+        }
+        return { projectId: String(data.canonicalProjectId), unitId: data.canonicalUnitId ? String(data.canonicalUnitId) : null, alreadyConverted: true,
+          ...(employee ? { createdProjectId: employee.createdProjectId, createdUnitId: employee.createdUnitId, matchedExisting: !employee.createdProjectId && !employee.createdUnitId } : {}) };
       }
-      if (data.status !== 'submitted') throw new Error('Only submitted applications can be converted.');
+      if (data.status !== 'submitted') throw new EmployeeCreationError(400, 'Only submitted applications can be converted.');
+      const description = resolveSubmissionDescription(data, review.descriptionLocale);
       const applicant = await tx.identity.findUnique({
         where: { id: application.identityId },
         select: { id: true },
       });
-      if (!applicant) throw new Error('Applicant identity not found');
+      if (!applicant) throw new EmployeeCreationError(400, 'Applicant identity not found');
 
       const name = String(data.proposedProject || '').trim();
       const unitName = String(data.unitName || '').trim();
@@ -63,15 +74,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const lng = longitudeInput == null || longitudeInput === '' ? NaN : Number(longitudeInput);
         if (!name || !address || !areaId || !Number.isFinite(lat) || !Number.isFinite(lng) ||
             Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-          throw new Error('New complexes require name, address, canonical area and valid map coordinates.');
+          throw new EmployeeCreationError(400, 'New complexes require name, address, canonical area and valid map coordinates.');
         }
         const area = await tx.area.findUnique({ where: { id: areaId }, select: { id: true, status: true } });
-        if (!area || area.status !== 'live') throw new Error('Choose a live canonical area.');
+        if (!area || area.status !== 'live') throw new EmployeeCreationError(400, 'Choose a live canonical area.');
+        // Name OR address duplicates serialize across different applications and
+        // both owner and employee flows. Separate sorted keys match the OR.
+        for (const key of [`project-name:${name.normalize('NFKC').toLowerCase()}`, `project-address:${address.normalize('NFKC').toLowerCase()}`].sort()) {
+          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
+        }
         const duplicate = await tx.project.findFirst({
           where: { OR: [{ name: { equals: name, mode: 'insensitive' } }, { address: { equals: address, mode: 'insensitive' } }] },
           select: { id: true, name: true },
         });
-        if (duplicate) throw new Error(`Possible existing complex: ${duplicate.name}. Link the application to that project instead of duplicating it.`);
+        if (duplicate) throw new EmployeeCreationError(400, `Possible existing complex: ${duplicate.name}. Link the application to that project instead of duplicating it.`);
         const slug = (name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'property') + '-' + application.id.slice(0, 8);
         const project = await tx.project.create({
           data: {
@@ -83,23 +99,31 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           select: { id: true },
         });
         projectId = project.id;
+        // A complex-only application describes the project. A home application
+        // describes its Unit, even when it also proposes a new complex.
+        if (!unitName && description) {
+          await createSubmissionDescriptionTx(tx, {
+            key: `project.${slug}.description`, namespace: 'project',
+            ...description, actorIdentityId: guard.actorIdentityId,
+          });
+        }
         const projectPhotos = Array.isArray(data.projectPhotos) ? data.projectPhotos.filter((id): id is string => typeof id === 'string') : [];
         if (projectPhotos.length) {
           const count = await tx.mediaAsset.count({ where: { id: { in: projectPhotos }, uploadedByIdentityId: applicant.id, kind: 'photo', encrypted: false } });
-          if (count !== new Set(projectPhotos).size) throw new Error('Project photographs are not verified applicant media.');
+          if (count !== new Set(projectPhotos).size) throw new EmployeeCreationError(400, 'Project photographs are not verified applicant media.');
           await tx.projectMedia.createMany({ data: projectPhotos.map((mediaId, sort) => ({ projectId: project.id, mediaId, sort })), skipDuplicates: true });
           await tx.project.update({ where: { id: project.id }, data: { coverMediaId: projectPhotos[0] } });
         }
       }
-      if (!projectId) throw new Error('Project is required.');
+      if (!projectId) throw new EmployeeCreationError(400, 'Project is required.');
       const project = await tx.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
-      if (!project || project.status === 'archived') throw new Error('Selected project cannot accept submissions.');
+      if (!project || project.status === 'archived') throw new EmployeeCreationError(400, 'Selected project cannot accept submissions.');
       const requestedOrgId = typeof review.organizationId === 'string' && review.organizationId ? review.organizationId : null;
       const operatingModel = ['owner_direct', 'via_management_company', 'direct_managed'].includes(String(data.operatingModel))
         ? String(data.operatingModel)
         : null;
       if (operatingModel === 'via_management_company') {
-        if (!requestedOrgId) throw new Error('Choose the verified management company before conversion.');
+        if (!requestedOrgId) throw new EmployeeCreationError(400, 'Choose the verified management company before conversion.');
         const org = await tx.organization.findFirst({
           where: {
             id: requestedOrgId,
@@ -109,15 +133,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           },
           select: { id: true },
         });
-        if (!org) throw new Error('Management organization is not approved for this project.');
+        if (!org) throw new EmployeeCreationError(400, 'Management organization is not approved for this project.');
       }
 
       let unitId: string | null = null;
+      let createdUnitId: string | null = null;
       if (unitName) {
-        const existingUnitId = typeof data.existingUnitId === 'string' && data.existingUnitId ? data.existingUnitId : null;
+        const existingUnitId = employee && Object.prototype.hasOwnProperty.call(review, 'existingUnitId')
+          ? typeof review.existingUnitId === 'string' && review.existingUnitId ? review.existingUnitId : null
+          : typeof data.existingUnitId === 'string' && data.existingUnitId ? data.existingUnitId : null;
         const resolved = await resolveCanonicalUnitTx(tx, { projectId, existingUnitId, unitName });
         if (resolved.duplicateCandidateId && !existingUnitId) {
-          throw new Error('Possible existing property found. Select the existing Unit instead of creating another.');
+          throw new EmployeeCreationError(409, 'Possible existing property found. Select the existing Unit instead of creating another.');
         }
 
         if (resolved.unitId) {
@@ -127,12 +154,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           const bathrooms = Number(data.bathrooms ?? 0);
           const maxGuests = Number(data.maxGuests ?? Math.max(1, bedrooms * 2));
           if (![bedrooms, bathrooms, maxGuests].every(Number.isSafeInteger) || bedrooms < 0 || bathrooms < 0 || maxGuests < 1) {
-            throw new Error('Bedrooms, bathrooms and capacity must be valid.');
+            throw new EmployeeCreationError(400, 'Bedrooms, bathrooms and capacity must be valid.');
           }
 
           const proposedNightlyBaht = data.proposedNightlyBaht == null ? 0 : Number(data.proposedNightlyBaht);
           const proposedMinNights = data.proposedMinNights == null ? 1 : Number(data.proposedMinNights);
-          if (!Number.isSafeInteger(proposedNightlyBaht) || proposedNightlyBaht < 0 || proposedNightlyBaht > 10000000 || !Number.isSafeInteger(proposedMinNights) || proposedMinNights < 1 || proposedMinNights > 365) throw new Error('Invalid proposed rental terms.');
+          if (!Number.isSafeInteger(proposedNightlyBaht) || proposedNightlyBaht < 0 || proposedNightlyBaht > 10000000 || !Number.isSafeInteger(proposedMinNights) || proposedMinNights < 1 || proposedMinNights > 365) throw new EmployeeCreationError(400, 'Invalid proposed rental terms.');
           const unit = await tx.unit.create({
             data: {
               projectId,
@@ -156,9 +183,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             select: { id: true },
           });
           unitId = unit.id;
+          createdUnitId = unit.id;
+          if (description) {
+            await createSubmissionDescriptionTx(tx, {
+              key: `unit.${application.id.replace(/-/g, '')}.description`, namespace: 'unit',
+              ...description, actorIdentityId: guard.actorIdentityId,
+            });
+          }
         }
 
-        const ownerIdentityId = review.verifiedOwner === true ? applicant.id : null;
+        const ownerIdentityId = !employee && review.verifiedOwner === true ? applicant.id : null;
         if (ownerIdentityId) {
           await setUnitOwnerTx(tx, {
             unitId,
@@ -170,11 +204,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         const canonicalUnitId = unitId;
         const photos = Array.isArray(data.photos) ? data.photos.filter((id): id is string => typeof id === 'string') : [];
-        if (photos.length) {
+        if (photos.length && (!employee || createdUnitId !== null)) {
           const count = await tx.mediaAsset.count({
             where: { id: { in: photos }, uploadedByIdentityId: applicant.id, kind: 'photo', encrypted: false },
           });
-          if (count !== new Set(photos).size) throw new Error('Unit photographs are not verified applicant media.');
+          if (count !== new Set(photos).size) throw new EmployeeCreationError(400, 'Unit photographs are not verified applicant media.');
           await tx.unitMedia.createMany({
             data: photos.map((mediaId, sort) => ({ unitId: canonicalUnitId, mediaId, sort })),
             skipDuplicates: true,
@@ -185,7 +219,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           }
         }
 
-        await ensureDraftCommercialOfferingsTx(tx, unitId, data.offers);
+        if (!employee) await ensureDraftCommercialOfferingsTx(tx, unitId, data.offers);
 
         if (ownerIdentityId && operatingModel) {
           const existingDraft = await tx.unitEngagement.findFirst({
@@ -209,22 +243,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const result = {
         ...data,
         status: 'converted',
+        ...(description ? { descriptionLocale: description.locale } : {}),
         canonicalProjectId: projectId,
         canonicalUnitId: unitId,
         onboardingState: readiness.state,
         onboardingBlockers: readiness.blockers,
         convertedAt: new Date().toISOString(),
         reviewedByIdentityId: guard.actorIdentityId,
+        ...(employee ? { employeeCreation: { ...employee, createdProjectId: isNew ? projectId : null, createdUnitId } } : {}),
       };
       await tx.crmOpportunity.update({ where: { id: application.id }, data: { projectId, unitId, requirements: result as Prisma.InputJsonValue } });
       await tx.auditLog.create({
         data: { actorIdentityId: guard.actorIdentityId, action: 'property_submission:convert', entityType: 'CrmOpportunity', entityId: application.id,
-          data: { projectId, unitId, applicantIdentityId: application.identityId, createdNewProject: isNew, verifiedOwner: Boolean(review.verifiedOwner), organizationId: requestedOrgId } },
+          data: { projectId, unitId, applicantIdentityId: application.identityId, createdNewProject: isNew, verifiedOwner: !employee && Boolean(review.verifiedOwner), organizationId: employee?.organizationId ?? requestedOrgId, employeeCreation: Boolean(employee), createdUnitId } },
       });
-      return { projectId, unitId, alreadyConverted: false };
-    }, { timeout: 20000 });
+      return { projectId, unitId, alreadyConverted: false,
+        ...(employee ? { createdProjectId: isNew ? projectId : null, createdUnitId, matchedExisting: !isNew && !createdUnitId } : {}) };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 });
     return NextResponse.json(converted);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Conversion failed' }, { status: 400 });
+    if (error instanceof SubmissionDescriptionError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    const failure = employeeCreationFailure(error);
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 }

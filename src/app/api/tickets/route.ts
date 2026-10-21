@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { raiseTicket, getReporterTickets } from '@/modules/comms';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import type { RoleType } from '@prisma/client';
+import { orderResponsibleOrganization } from '@/modules/comms/standalone-ticket-access';
 
 /** GET /api/tickets — tickets the caller raised, newest first. */
 export async function GET() {
@@ -33,7 +34,39 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { projectId, unitId, bookingId, categoryKey, title, description, priority } = body;
+    const { projectId, unitId, bookingId, serviceOrderId, categoryKey, title, description, priority } = body;
+
+    if (serviceOrderId) {
+      if (typeof serviceOrderId !== 'string' || typeof title !== 'string' || !title.trim() ||
+        typeof categoryKey !== 'string' || !categoryKey ||
+        (priority && !['low', 'normal', 'high', 'urgent'].includes(priority))) {
+        throw createPublicError('invalid request', 400);
+      }
+      const order = await prisma.serviceOrder.findUnique({
+        where: { id: serviceOrderId },
+        select: { project_id: true, unit_id: true, booking_id: true, orderer_identity_id: true, service_context: true },
+      });
+      if (!order || order.orderer_identity_id !== user.identityId) throw createPublicError('not found', 404);
+      if ((projectId && projectId !== order.project_id) || (unitId && unitId !== order.unit_id) ||
+        (bookingId && bookingId !== order.booking_id)) throw createPublicError('invalid request: order context mismatch', 400);
+      const responsibleOrganizationId = orderResponsibleOrganization(order.service_context);
+      if (order.project_id === null && !responsibleOrganizationId) {
+        throw createPublicError('This order needs support configuration. Contact the service team.', 409);
+      }
+      const ticket = await raiseTicket(prisma, {
+        projectId: order.project_id,
+        unitId: order.unit_id ?? undefined,
+        serviceOrderId,
+        responsibleOrganizationId: responsibleOrganizationId ?? undefined,
+        raisedByIdentityId: user.identityId,
+        raisedByRole: 'resident',
+        categoryKey,
+        title: title.trim().slice(0, 200),
+        description: typeof description === 'string' ? description.slice(0, 5000) : undefined,
+        priority,
+      });
+      return NextResponse.json({ ticket }, { status: 201 });
+    }
 
     if (!projectId || !categoryKey || !title) {
       throw createPublicError(
@@ -44,7 +77,9 @@ export async function POST(req: NextRequest) {
 
     // Stake check: role in project / own unit / guest of the booking
     let raisedByRole = user.roles.find(
-      (r) => r.projectId === projectId || r.projectId === null
+      // Draft-content scope does not establish a property-support relationship.
+      // The independent booking and ownership checks below still apply.
+      (r) => r.role !== 'content_contributor' && r.role !== 'pricing_editor' && r.role !== 'booking_mode_editor' && (r.projectId === projectId || r.projectId === null)
     )?.role;
 
     if (bookingId) {

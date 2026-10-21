@@ -13,7 +13,8 @@ import { canViewTransferInstructions, resolveBookingAccess } from '@/app/libs/bo
  * an account number and a matching amount is most of what an invoice-fraud
  * email needs.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -25,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       projectId: true,
       guestIdentityId: true,
       totalThb: true,
-      balanceDueThb: true,
+      receivableStatus: true, balanceDueThb: true,
       status: true,
       holdExpiresAt: true,
     },
@@ -41,6 +42,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  if (booking.receivableStatus !== 'collectible') {
+    return NextResponse.json({ code: 'BOOKING_RECEIVABLE_RECONCILIATION_REQUIRED',
+      error: 'The source payment and guest balance need reconciliation before collecting money.' }, { status: 409 });
+  }
+
   // A request has not been accepted, and terminal/expired reservations must
   // never invite a guest to send money. Confirmed unpaid balances remain
   // collectable in exactly the states supported by canonical receipt writers.
@@ -54,9 +60,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   // Initial payment is all-or-nothing. An unexpected captured payment on a
   // still-pending stay needs reconciliation, never a second payment invitation.
-  if (booking.status === 'pending_payment' && await prisma.payment.count({
+  if (booking.status === 'pending_payment' && (await prisma.payment.count({
     where: { bookingId: booking.id, status: 'succeeded' },
-  })) {
+  }))) {
     return NextResponse.json({
       code: 'PAYMENT_RECONCILIATION_REQUIRED',
       error: 'A payment is already recorded and needs review. Contact the property before sending another transfer.',
@@ -95,4 +101,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     );
   }
 }
+
 

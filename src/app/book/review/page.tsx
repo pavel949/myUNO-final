@@ -1,3 +1,5 @@
+import { BOOKING_STEPS_DRAFTS, BOOKING_STEPS_KEYS } from '@/modules/content/booking-steps.seed';
+import { GUEST_BOOKING_DRAFTS } from '@/modules/content/guest-booking-drafts';
 import { BOOKING_MODE_RELIABILITY_DRAFTS } from '@/modules/content/booking-mode-reliability.seed';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
@@ -6,24 +8,26 @@ import { getLabels } from '@/lib/i18n';
 import { getConfig } from '@/modules/config';
 import { resolveStayCancellationPolicyForDates } from '@/modules/booking';
 import BookingReviewClient from './review-client';
+import { REVIEW_CHECKOUT_DRAFTS } from '@/modules/content/guest-checkout.seed';
 
 export const dynamic = 'force-dynamic';
 
-export default async function BookingReviewPage({
-  searchParams,
-}: {
-  searchParams: {
-    unitId?: string;
-    inventoryCategoryId?: string;
-    categoryId?: string;
-    categoryKey?: string;
-    projectId?: string;
-    startDate?: string;
-    endDate?: string;
-    adults?: string;
-    children?: string;
-  };
-}) {
+export default async function BookingReviewPage(
+  props: {
+    searchParams: Promise<{
+      unitId?: string;
+      inventoryCategoryId?: string;
+      categoryId?: string;
+      categoryKey?: string;
+      projectId?: string;
+      startDate?: string;
+      endDate?: string;
+      adults?: string;
+      children?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const inventoryCategoryId = searchParams.inventoryCategoryId || searchParams.categoryId;
 
   if (
@@ -46,12 +50,13 @@ export default async function BookingReviewPage({
     projectId = category.projectId;
   }
 
-  if (!projectId && searchParams.unitId) {
+  if (searchParams.unitId) {
     const unit = await prisma.unit.findUnique({
       where: { id: searchParams.unitId },
       select: { projectId: true },
     });
-    projectId = unit?.projectId;
+    if (!unit || (projectId && projectId !== unit.projectId)) redirect('/search');
+    projectId = unit.projectId;
   }
 
   // Legacy categoryKey requests still need an explicit project because the key
@@ -96,6 +101,7 @@ export default async function BookingReviewPage({
     }
   ).catch(() => null);
 
+  const steps = await getLabels(Object.fromEntries(BOOKING_STEPS_KEYS.map(row => [row.key, row.en])), undefined, BOOKING_STEPS_DRAFTS);
   const labels = await getLabels({
     'booking.review.title': 'Review and confirm',
     'booking.review.request_title': 'Review your booking request',
@@ -119,6 +125,8 @@ export default async function BookingReviewPage({
       'After you confirm we will ask for guest details so we can file the stay. You are not charged on this screen if you chose cash or bank transfer.',
     'booking.review.confirm': 'Confirm booking',
     'booking.review.confirming': 'Confirming…',
+    'booking.review.loading_quote': 'Checking availability and the total for your stay…',
+    'booking.review.retry_quote': 'Check availability again',
     'booking.review.back': '← Back',
     'booking.review.error': 'Could not complete the booking. Please try again.',
     'booking.review.terms_requote': 'The price or booking terms changed. Review the updated details and agree again before booking.',
@@ -139,11 +147,16 @@ export default async function BookingReviewPage({
     'listing.cleaning_fee': 'Cleaning',
     'listing.occupancy_tax': 'Occupancy tax',
     'listing.cancellation_default': 'The cancellation terms for this home apply.',
-  }, undefined, BOOKING_MODE_RELIABILITY_DRAFTS);
+  }, undefined, { ...BOOKING_MODE_RELIABILITY_DRAFTS, ...REVIEW_CHECKOUT_DRAFTS, ...GUEST_BOOKING_DRAFTS });
 
   return (
     <Suspense>
       <BookingReviewClient
+        stepsLabels={{
+          aria: steps['booking.steps.aria'], review: steps['booking.steps.review'],
+          pay: steps['booking.steps.pay'], confirmed: steps['booking.steps.confirmed'],
+          current: steps['booking.steps.current'], approval: steps['booking.steps.approval'],
+        }}
         projectId={projectId}
         methods={enabled}
         defaultPolicy={
@@ -182,6 +195,8 @@ export default async function BookingReviewPage({
           payTransfer: labels['listing.pay_transfer'],
           confirm: labels['booking.review.confirm'],
           confirming: labels['booking.review.confirming'],
+          loadingQuote: labels['booking.review.loading_quote'],
+          retryQuote: labels['booking.review.retry_quote'],
           back: labels['booking.review.back'],
           error: labels['booking.review.error'],
           requote: labels['booking.review.terms_requote'],

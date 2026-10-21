@@ -1,5 +1,7 @@
 # Property Flows — Onboard, List, Search, Select, Book
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Date:** 2026-09-07 · **Head:** `ac43205` · **Method:** traced each flow through the running code
 — pages, the API routes they call, the services behind them — not through the specs. Every claim
 names a file.

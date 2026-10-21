@@ -428,6 +428,14 @@ export async function seedConfig(db: PrismaClient) {
         description: 'No-show refund treatment',
       },
       {
+        key: 'service.fulfilment_confirm_window_hours',
+        valueType: 'int',
+        defaultValue: 48,
+        scopeableTo: 'project',
+        groupKey: 'cancellation',
+        description: 'Positive whole hours after fulfilment for customer confirmation or dispute',
+      },
+      {
         key: 'service.cancel_window_hours',
         valueType: 'int',
         defaultValue: 24,
@@ -478,6 +486,14 @@ export async function seedConfig(db: PrismaClient) {
         scopeableTo: 'project',
         groupKey: 'geo',
         description: 'Longitude anchoring short Plus Code resolution (default: Phuket)',
+      },
+      {
+        key: 'services.standalone_offers',
+        valueType: 'json',
+        defaultValue: [],
+        scopeableTo: 'global',
+        groupKey: 'services',
+        description: 'Reviewed standalone service supply, organization, destination and area coverage',
       },
       {
         key: 'services.take_rate_pct',

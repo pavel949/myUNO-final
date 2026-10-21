@@ -1,5 +1,7 @@
 # Annual tariff editor usability slice
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Baseline: `7b29b4728961f583028d6b3350d7505fdcd05965`. Scope: the existing admin unit page and the same CommercialOffering tariff writer and booking calculator. No migration, deployment, source cutover, payment or historical-booking changes.
 
 ## User path

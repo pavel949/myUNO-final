@@ -29,7 +29,7 @@ beforeEach(() => {
 
 const defaults = Object.fromEntries(Object.entries(PROPERTY_CATEGORY_UI_DRAFTS).map(([key, row]) => [key, row.en]));
 const placeholders = (value: string) => value.match(/\{[a-zA-Z_]+\}/g)?.sort() || [];
-const renderPage = async () => renderToStaticMarkup(await ProjectCategoryPage({ params: { slug: 'example', categoryKey: 'category' } }));
+const renderPage = async () => renderToStaticMarkup(await ProjectCategoryPage({ params: { slug: 'example', categoryKey: 'category' }, searchParams: { startDate: '2026-11-10', endDate: '2026-11-14', adults: '2', children: '1' } }));
 
 describe('category UI registered locale drafts', () => {
   it('covers only static registered copy with matching RU/EN placeholders', () => {
@@ -99,7 +99,12 @@ describe('category UI registered locale drafts', () => {
     for (const text of ['Назад к комплексу', 'Спален: 3', 'Объектов в категории: 5', 'Узнать об этом доме', 'Фотографии категории', 'Объекты в этой категории', 'Максимум гостей: 6', 'Представительные фото типа номера', 'Точные фотографии и условия онлайн-бронирования ещё уточняются.', 'Смотреть объект', 'Оригинальное описание категории', 'Оригинальное описание объекта']) expect(html).toContain(text);
     expect(html).toContain('alt="Original Category"');
     expect(html).toContain('alt="Original Home"');
-    expect(html).toContain('/projects/example#lead-form');
+    const inquiryHref = [...html.matchAll(/href="([^"]+)"/g)].map(match => match[1].replaceAll('&amp;', '&')).find(href => href.endsWith('#lead-form'));
+    expect(inquiryHref).toBeTruthy();
+    const inquiry = new URL(inquiryHref!, 'https://myuno.example');
+    expect(inquiry.pathname).toBe('/projects/example');
+    expect(inquiry.hash).toBe('#lead-form');
+    expect(Object.fromEntries(inquiry.searchParams)).toEqual({ startDate: '2026-11-10', endDate: '2026-11-14', adults: '2', children: '1', projectId: 'project-1', inventoryCategoryId: 'category-1' });
     expect(html).not.toContain('Проверить доступность');
     expect(html).not.toContain('Back to project');
     expect(html).not.toContain('฿');
@@ -111,7 +116,7 @@ describe('category UI registered locale drafts', () => {
     const html = await renderPage();
     for (const text of ['Back to project', 'Bedrooms: 3', 'Homes in this category: 5', 'Category gallery', 'Maximum guests: 6', 'Representative room-type photos', 'View home', 'Check availability']) expect(html).toContain(text);
     expect(html).toContain('/search?');
-    expect(html).not.toContain('/projects/example#lead-form');
+    expect(html).not.toContain('#lead-form');
     expect(html).not.toContain('Exact photos or online booking terms are still being completed.');
   });
 });

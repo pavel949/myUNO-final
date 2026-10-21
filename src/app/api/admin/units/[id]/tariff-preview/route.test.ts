@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({ guard: vi.fn(), offers: vi.fn(), quote: vi.fn() }));
-vi.mock('@/app/libs/onboardingGuard', () => ({ requireAdmin: mocks.guard }));
+vi.mock('@/app/libs/pricingGuard', () => ({ requireUnitPricing: mocks.guard }));
 vi.mock('@/lib/prisma', () => ({ prisma: { commercialOffering: { findMany: mocks.offers } } }));
 vi.mock('@/modules/core/canonical-pricing.service', () => ({ computeCanonicalPriceBreakdown: mocks.quote }));
 import { POST } from './route';

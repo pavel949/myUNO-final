@@ -8,7 +8,11 @@ async function ownedAmenity(projectId: string, amenityId: string) {
   return prisma.projectAmenity.findFirst({ where: { id: amenityId, projectId } });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);
@@ -16,6 +20,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json();
+    if (typeof body.expectedUpdatedAt !== 'string') {
+      return NextResponse.json({ error: 'Reload this facility before saving; an edit version is required.' }, { status: 428 });
+    }
+    const expectedUpdatedAt = new Date(body.expectedUpdatedAt);
+    if (Number.isNaN(expectedUpdatedAt.getTime())) {
+      return NextResponse.json({ error: 'Invalid amenity edit version.' }, { status: 400 });
+    }
+    const conflict = () => NextResponse.json({ error: 'This facility changed since you opened it. Your input is kept; copy it, reload the page, and reconcile before saving.' }, { status: 409 });
+    if (current.updatedAt.getTime() !== expectedUpdatedAt.getTime()) return conflict();
     const merged = projectAmenityData({
       name: current.name,
       slug: current.slug,
@@ -42,10 +55,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       sort: current.sort,
       ...body,
     });
-    const amenity = await prisma.projectAmenity.update({
-      where: { id: current.id },
-      data: merged,
+    // PostgreSQL timestamps use millisecond precision here; advance even in the same clock tick.
+    const nextUpdatedAt = new Date(Math.max(Date.now(), current.updatedAt.getTime() + 1));
+    const amenity = await prisma.$transaction(async tx => {
+      // Compare and swap also protects edits that race after the initial read.
+      const updated = await tx.projectAmenity.updateMany({
+        where: { id: current.id, projectId: params.id, updatedAt: expectedUpdatedAt },
+        data: { ...merged, updatedAt: nextUpdatedAt },
+      });
+      if (updated.count !== 1) return null;
+      return tx.projectAmenity.findUnique({ where: { id: current.id } });
     });
+    if (!amenity) return conflict();
     await logAudit({
       actorIdentityId: guard.user.identityId,
       action: 'project_amenity:update',
@@ -63,7 +84,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string; amenityId: string } }) {
+export async function DELETE(
+  _req: NextRequest,
+  props: { params: Promise<{ id: string; amenityId: string }> }
+) {
+  const params = await props.params;
   const guard = await projectExperienceAccess(params.id);
   if ('error' in guard) return guard.error;
   const current = await ownedAmenity(params.id, params.amenityId);

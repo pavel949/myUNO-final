@@ -1,5 +1,7 @@
 # PMS pricing and restrictions audit — 2026-10-08 (Asia/Bangkok)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Baseline: `pavel949/myUNO-final`, main `e92f4a0080ac97698e77ad7b11f70170dfd0455d`.
 Scope: rate setup and effective prices for one home, a condominium portfolio, and a resort/category such as Layantara. This is the source and existing-test part of the parallel PMS audit. It is **not** a claim that the authenticated production screens were clicked or that production tariffs were changed. The parent audit supplies runtime/screenshots separately.
 

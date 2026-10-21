@@ -22,8 +22,10 @@ export default function NewTicketClient({
   const projectId = searchParams?.get('projectId');
   const unitId = searchParams?.get('unitId');
   const bookingId = searchParams?.get('bookingId');
+  const serviceOrderId = searchParams?.get('serviceOrderId');
 
-  const [categoryKey, setCategoryKey] = useState('maintenance');
+  const [categoryKey, setCategoryKey] = useState(serviceOrderId && categories.includes('other')
+    ? 'other' : categories.includes('maintenance') ? 'maintenance' : categories[0] || 'other');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('normal');
@@ -32,6 +34,7 @@ export default function NewTicketClient({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -39,11 +42,13 @@ export default function NewTicketClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId,
-          unitId: unitId || undefined,
-          bookingId: bookingId || undefined,
+          ...(serviceOrderId ? { serviceOrderId } : {
+            projectId,
+            unitId: unitId || undefined,
+            bookingId: bookingId || undefined,
+          }),
           categoryKey,
-          title,
+          title: title.trim(),
           description: description || undefined,
           priority,
         }),
@@ -52,7 +57,8 @@ export default function NewTicketClient({
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || labels['tickets.new.error_generic']);
       }
-      router.push('/tickets');
+      const data = await response.json().catch(() => null);
+      router.push(typeof data?.ticket?.id === 'string' ? `/tickets/${encodeURIComponent(data.ticket.id)}` : '/tickets');
     } catch (err) {
       setError(err instanceof Error ? err.message : labels['tickets.new.error_generic']);
     } finally {
@@ -72,11 +78,14 @@ export default function NewTicketClient({
           {labels['tickets.new.title']}
         </h1>
 
-        {!projectId ? (
+        {!projectId && !serviceOrderId ? (
           <div className="stitch-panel p-24">
             <p className="text-body text-text-secondary">
               {labels['tickets.new.missing_context']}
             </p>
+            <Link href="/trips" className="mt-16 inline-flex font-semibold text-brand-andaman hover:underline">
+              {labels['tickets.new.choose_trip']}
+            </Link>
           </div>
         ) : (
           <form
@@ -90,6 +99,7 @@ export default function NewTicketClient({
                   <button
                     key={c}
                     type="button"
+                    aria-pressed={categoryKey === c}
                     onClick={() => setCategoryKey(c)}
                     className={
                       categoryKey === c
@@ -141,7 +151,7 @@ export default function NewTicketClient({
               </select>
             </div>
 
-            {error && <p className="text-small text-state-error">{error}</p>}
+            {error && <p role="alert" className="text-small text-state-error">{error}</p>}
 
             <Button type="submit" isLoading={busy} disabled={!title.trim()}>
               {labels['tickets.new.submit']}

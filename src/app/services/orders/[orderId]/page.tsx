@@ -3,8 +3,11 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
+import type { Prisma } from '@prisma/client';
 import { getLabels } from '@/lib/i18n';
 import PayOrderButton from './pay-order-button';
+import OrderConfirmationPanel from './order-confirmation-panel';
 import OrderDisputePanel from './order-dispute-panel';
 import OrderNoShowPanel from './order-no-show-panel';
 import OrderRatingPanel from './order-rating-panel';
@@ -24,14 +27,21 @@ interface ServiceOrderDetail {
   status: string;
   quantity: number;
   totalThb: number;
-  takeRatePctSnapshot: number;
   priceBreakdown: Record<string, any>;
   refundAccruedThb: number;
   noteToProvider: string | null;
   addressNote: string | null;
+  serviceContext: Prisma.JsonValue;
+  termsSnapshot: Prisma.JsonValue;
   cancelledAt: string | null;
   cancellationReason: string | null;
   rated: boolean;
+  fulfilledAt: string | null;
+  closedAt: string | null;
+  confirmationDeadline: string | null;
+  canConfirm: boolean;
+  canDispute: boolean;
+  dispute: { id: string; ticketId: string; pending: boolean } | null;
   service: {
     id: string;
     title: string;
@@ -70,13 +80,14 @@ interface ServiceOrderDetail {
   }>;
 }
 
-export default async function ServiceOrderDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { orderId: string };
-  searchParams: { paid?: string; placed?: string };
-}) {
+export default async function ServiceOrderDetailPage(
+  props: {
+    params: Promise<{ orderId: string }>;
+    searchParams: Promise<{ paid?: string; placed?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
@@ -91,8 +102,22 @@ export default async function ServiceOrderDetailPage({
     notFound();
   }
   const order: ServiceOrderDetail = result.order;
+  const standaloneContext = order.serviceContext && typeof order.serviceContext === 'object' && !Array.isArray(order.serviceContext) && order.serviceContext.kind === 'standalone' ? order.serviceContext : null;
+  const acceptedTerms = order.termsSnapshot && typeof order.termsSnapshot === 'object' && !Array.isArray(order.termsSnapshot) ? order.termsSnapshot : null;
 
   const labels = await getLabels({
+    'service-order.confirm.action': 'Confirm service completed',
+    'service-order.confirm.notice': 'Confirm only if the service is complete. Confirmation closes this order. If there is a problem, raise a dispute before the deadline below.',
+    'service-order.confirm.deadline': 'Confirmation or dispute deadline',
+    'service-order.confirm.expired': 'The confirmation window has ended. Contact support if you need further help.',
+    'service-order.confirm.error': 'Could not confirm the order. Refresh and try again, or contact support.',
+    'service-order.detail.closed': 'Closed',
+    'help.requests.cta': 'Open My requests',
+    'services.standalone.responsibility': 'Responsible organization: {organization}',
+    'services.standalone.cancellation': 'Full refund if cancelled more than {hours} hours before the service. No refund within that window.',
+    'services.standalone.location': 'Service location',
+    'services.standalone.recipient': 'Recipient name',
+    'services.standalone.phone': 'Recipient phone',
     'service-order.breadcrumb_home': 'Home',
     'service-order.breadcrumb_services': 'Services',
     'service-order.breadcrumb_orders': 'Orders',
@@ -171,7 +196,7 @@ export default async function ServiceOrderDetailPage({
     'service-order.detail.no_show_error': 'Could not submit the report. Please try again.',
     'service-order.detail.no_show_done':
       'No-show reported. Any refund due is being processed — our team has opened a ticket.',
-  });
+  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   // SA-2 confirmation rail: arriving from checkout (?paid=1) or the
   // cash-on-fulfilment choice (?placed=cash) shows the confirmation banner.
@@ -186,6 +211,7 @@ export default async function ServiceOrderDetailPage({
     placed: labels['service-order.detail.placed'],
     accepted: labels['service-order.detail.accepted'],
     declined: labels['service-order.detail.declined'],
+    closed: labels['service-order.detail.closed'],
     fulfilled: labels['service-order.detail.fulfilled'],
     cancelled: labels['service-order.detail.cancelled'],
     failed: labels['service-order.detail.failed'],
@@ -205,23 +231,13 @@ export default async function ServiceOrderDetailPage({
   const isPaymentRequired =
     order.status === 'placed' && order.totalThb > 0;
   const isPaid =
-    order.payments.some((p) => p.status === 'completed') ||
-    order.status === 'fulfilled';
+    order.payments.filter(p => p.status === 'succeeded').reduce((sum, p) => sum + p.amountThb, 0) >= order.totalThb;
 
   const isOrderer = order.orderer.id === user.identityId;
   const slotStarted = new Date() >= new Date(order.scheduledStart);
   const canReportNoShow = isOrderer && order.status === 'accepted' && slotStarted;
-  const disputableStatuses = ['accepted', 'fulfilled', 'closed', 'failed'];
-  const canDispute =
-    isOrderer && disputableStatuses.includes(order.status);
-
-  const existingDispute =
-    canDispute
-      ? await prisma.dispute.findFirst({
-          where: { subjectType: 'service_order', subjectId: order.id },
-          select: { id: true, ticketId: true },
-        })
-      : null;
+  const canDispute = isOrderer && order.canDispute;
+  const existingDispute = order.dispute;
 
   const breadcrumbs = [
     { label: labels['service-order.breadcrumb_home'], href: '/' },
@@ -259,7 +275,7 @@ export default async function ServiceOrderDetailPage({
               <div className="flex items-center gap-8">
                 <span
                   className={`px-12 py-4 rounded-full text-small font-semibold ${
-                    order.status === 'fulfilled'
+                    ['fulfilled', 'closed'].includes(order.status)
                       ? 'bg-state-success-soft bg-opacity-10 text-state-success'
                       : order.status === 'cancelled'
                         ? 'bg-state-error-soft bg-opacity-10 text-state-error'
@@ -455,6 +471,17 @@ export default async function ServiceOrderDetailPage({
           </div>
         </div>
 
+        <Link href={`/tickets/new?serviceOrderId=${encodeURIComponent(order.id)}`} className="mb-24 inline-flex min-h-44 items-center font-semibold text-brand-andaman hover:underline">{labels['help.requests.cta']}</Link>
+        {standaloneContext && <section className="stitch-panel p-24 mb-24">
+          <h2 className="font-semibold text-heading-3 mb-12">{labels['services.standalone.location']}</h2>
+          <p className="whitespace-pre-line">{String(standaloneContext.address ?? '')}</p>
+          <p className="mt-12">{labels['services.standalone.recipient']}: {String(standaloneContext.recipientName ?? '')}</p>
+          <p>{labels['services.standalone.phone']}: {String(standaloneContext.recipientPhone ?? '')}</p>
+          {acceptedTerms && <div className="mt-16 text-small text-text-secondary space-y-8">
+            <p>{labels['services.standalone.responsibility'].replace('{organization}', String(acceptedTerms.responsibleOrganizationName ?? ''))}</p>
+            <p>{labels['services.standalone.cancellation'].replace('{hours}', String(acceptedTerms.cancellationWindowHours ?? ''))}</p>
+          </div>}
+        </section>}
         {/* Location */}
         {order.unit && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
@@ -471,7 +498,7 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {/* Notes */}
-        {(order.noteToProvider || order.addressNote) && (
+        {(order.noteToProvider || (order.addressNote && order.addressNote !== standaloneContext?.address)) && (
           <div className="bg-surface-paper border border-border-line rounded-lg p-24 mb-24">
             <h2 className="text-heading-2 font-semibold text-text-ink mb-16">
               {labels['service-order.detail.notes']}
@@ -486,7 +513,7 @@ export default async function ServiceOrderDetailPage({
                 </p>
               </div>
             )}
-            {order.addressNote && (
+            {order.addressNote && order.addressNote !== standaloneContext?.address && (
               <div>
                 <p className="text-small text-text-secondary mb-4">
                   {labels['service-order.detail.address_note']}
@@ -519,12 +546,23 @@ export default async function ServiceOrderDetailPage({
           </div>
         )}
 
+        {order.status === 'fulfilled' && (
+          <div className="stitch-panel p-24 mb-24">
+            {order.confirmationDeadline && <>
+              <p className="text-small text-text-secondary">{labels['service-order.confirm.deadline']}</p>
+              <LocalDate value={order.confirmationDeadline} format={'dateTime'} />
+            </>}
+            {order.canConfirm ? <OrderConfirmationPanel orderId={order.id} deadline={order.confirmationDeadline!} labels={labels} />
+              : !order.dispute?.pending && <p className="mt-12">{labels['service-order.confirm.expired']}</p>}
+          </div>
+        )}
+
         {canReportNoShow && <OrderNoShowPanel orderId={order.id} labels={labels} />}
 
         {/* A fulfilled order can be rated from here, not only from the in-stay
             home space — after check-out that surface is no longer where anyone
             goes, and this is. */}
-        {order.status === 'fulfilled' && isOrderer && (
+        {['fulfilled', 'closed'].includes(order.status) && isOrderer && (
           <div className="mt-16">
             <OrderRatingPanel orderId={order.id} rated={order.rated} labels={labels} />
           </div>
@@ -542,7 +580,7 @@ export default async function ServiceOrderDetailPage({
         )}
 
         {canDispute && !existingDispute && (
-          <OrderDisputePanel orderId={order.id} labels={labels} />
+          <OrderDisputePanel orderId={order.id} labels={labels} deadline={order.confirmationDeadline} />
         )}
 
         {existingDispute && (

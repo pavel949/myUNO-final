@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { prisma } from '@/lib/prisma';
 import { advanceSessionGeneration } from '@/lib/session-generation';
 import {
@@ -54,6 +55,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
+  let returnPath: string | null = null;
+  try {
+    returnPath = safeNextPath(decodeURIComponent(request.cookies.get('google_oauth_next')?.value || ''));
+  } catch {
+    // Malformed or external destinations never override the local fallback.
+  }
   const cookieState = request.cookies.get('google_oauth_state')?.value;
   const clearOauthState = {
     path: '/',
@@ -62,10 +69,12 @@ export async function GET(request: NextRequest) {
     secure: request.nextUrl.protocol === 'https:',
   };
   const loginRedirect = (reason: string) => {
-    const response = NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(reason)}`, request.nextUrl.origin)
-    );
+    const loginUrl = new URL('/login', request.nextUrl.origin);
+    loginUrl.searchParams.set('error', reason);
+    if (returnPath) loginUrl.searchParams.set('next', returnPath);
+    const response = NextResponse.redirect(loginUrl);
     response.cookies.set('google_oauth_state', '', clearOauthState);
+    response.cookies.set('google_oauth_next', '', clearOauthState);
     return response;
   };
 
@@ -188,13 +197,14 @@ export async function GET(request: NextRequest) {
     const sessionToken = await createSessionToken(identity.id, identity.sessionsValidFrom?.getTime() ?? null);
 
     // Step 6: Redirect to app with session cookie
-    const response = NextResponse.redirect(new URL('/app', request.nextUrl.origin));
+    const response = NextResponse.redirect(new URL(returnPath || '/app', request.nextUrl.origin));
     response.cookies.set(
       SESSION_COOKIE_NAME,
       sessionToken,
       sessionCookieOptions()
     );
     response.cookies.set('google_oauth_state', '', clearOauthState);
+    response.cookies.set('google_oauth_next', '', clearOauthState);
 
     return response;
   } catch (error) {

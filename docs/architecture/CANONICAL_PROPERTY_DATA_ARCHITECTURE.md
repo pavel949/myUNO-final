@@ -1,4 +1,6 @@
 # CANONICAL PROPERTY DATA ARCHITECTURE
+
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
 **Repository:** `pavel949/myUNO-final`
 **Architectural Standard:** One canonical property record + one developer relationship + multiple commercial uses + jurisdiction-aware compliance.
 

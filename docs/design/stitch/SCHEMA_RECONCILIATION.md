@@ -1,5 +1,7 @@
 # Stitch schema ↔ myUNO canonical schema — reconciliation
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Date: 2026-10-05 · Source: `myuno_schema.prisma.txt` (Stitch export, 22 models / 19 enums)
 Compared against: `prisma/schema.prisma` (114 models / 90 enums, the canonical, production-applied schema)
 

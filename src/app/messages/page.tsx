@@ -1,7 +1,7 @@
 
 import { redirect } from 'next/navigation';
 import { PageHeading } from '@/components/premium/StitchPage';
-import Link from 'next/link';
+import { WorkspaceContextLink as Link } from '@/components/WorkspaceNavigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { getThreadsForIdentity, getUnreadCounts } from '@/modules/comms';
@@ -44,6 +44,7 @@ export default async function MessagesInboxPage() {
     'messages.inbox.title': 'Messages',
     'messages.inbox.empty':
       'No conversations yet. Message us from any of your trips and we will answer here.',
+    'messages.inbox.choose_trip': 'Open your trips',
     'messages.inbox.empty_pane.lead': 'Select a conversation.',
   });
 
@@ -55,9 +56,12 @@ export default async function MessagesInboxPage() {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside className="w-full shrink-0 border-border-line md:w-[360px] md:border-r">
           {threads.length === 0 ? (
-            <p className="px-24 py-32 text-body text-text-secondary">
-              {labels['messages.inbox.empty']}
-            </p>
+            <div className="px-24 py-32">
+              <p className="text-body text-text-secondary">{labels['messages.inbox.empty']}</p>
+              <Link href="/trips" className="mt-16 inline-flex font-semibold text-brand-andaman hover:underline">
+                {labels['messages.inbox.choose_trip']}
+              </Link>
+            </div>
           ) : (
             <ul>
               {threads.map((thread) => (

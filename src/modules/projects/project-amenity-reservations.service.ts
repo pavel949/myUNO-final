@@ -1,5 +1,12 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 
+// Domain unavailability is expected, public-safe traffic, not an internal server failure.
+export class ProjectAmenityUnavailableError extends Error {
+  readonly statusCode = 404;
+  readonly isPublic = true;
+  constructor() { super('Amenity not available'); this.name = 'ProjectAmenityUnavailableError'; }
+}
+
 export type AmenityReservationPolicy = {
   slotMinutes?: number;
   minLeadMinutes?: number;
@@ -60,6 +67,9 @@ async function accessContext(
     where: {
       identityId: input.identityId,
       status: 'active',
+      // Content and pricing assignments do not confer resident/guest amenity privileges.
+      // An eligible stay has already been checked independently above.
+      role: { notIn: ['content_contributor', 'pricing_editor', 'booking_mode_editor'] },
       OR: [
         { projectId: input.projectId },
         { unit: { projectId: input.projectId } },
@@ -106,10 +116,10 @@ export async function createProjectAmenityReservation(
           select: {
             id: true, projectId: true, name: true, published: true,
             bookingRequired: true, bookingMode: true, reservationConfig: true,
-            capacity: true,
+            capacity: true, project: { select: { status: true } },
           },
         });
-        if (!amenity || !amenity.published) throw new Error('Amenity not available');
+        if (!amenity || !amenity.published || amenity.project.status !== 'live') throw new ProjectAmenityUnavailableError();
         if (!amenity.bookingRequired || !['time_slot', 'request', 'reception'].includes(amenity.bookingMode)) {
           throw new Error('This amenity does not use native reservations');
         }

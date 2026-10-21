@@ -1,3 +1,4 @@
+import { amenityRecord, singleAmenityHours } from '@/modules/projects/amenity-usage';
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -105,6 +106,8 @@ export default function ProjectAmenitiesSection({
                 <p className="text-kicker uppercase text-brand-andaman">{human(amenity.categoryKey)}</p>
               ) : null}
               <h3 className="mt-4 font-display text-subtitle font-semibold text-text-ink">{amenity.name}</h3>
+              {amenity.locationLabel ? <p className="mt-8 text-small text-text-secondary">{amenity.locationLabel}</p> : null}
+              {singleAmenityHours(amenityRecord(amenity.openingHours).daily) ? <p className="mt-4 text-small text-text-secondary">{singleAmenityHours(amenityRecord(amenity.openingHours).daily)?.join('–')}</p> : null}
               {amenity.shortDescription ? (
                 <p className="mt-8 line-clamp-3 text-small text-text-secondary">{amenity.shortDescription}</p>
               ) : null}

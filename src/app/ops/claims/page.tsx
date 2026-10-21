@@ -16,15 +16,16 @@ import {
 export const dynamic = 'force-dynamic';
 
 interface OpsClaimsPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
 /**
  * Filing a damage claim (doc 07 F-DIS-1, staff side).
  */
-export default async function OpsClaimsPage({ searchParams }: OpsClaimsPageProps) {
+export default async function OpsClaimsPage(props: OpsClaimsPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/claims');
 

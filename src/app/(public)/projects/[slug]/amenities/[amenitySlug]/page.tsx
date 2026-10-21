@@ -1,3 +1,5 @@
+import { amenityLeadTime, amenityUsageLines } from '@/modules/projects/amenity-usage';
+import { AMENITY_USAGE_LABELS, AMENITY_USAGE_DRAFTS, amenityUsageLabels } from '@/modules/projects/amenity-usage-copy';
 import { UI_LOCALE } from '@/lib/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,23 +13,20 @@ export const dynamic = 'force-dynamic';
 function human(value: string) {
   return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
-function renderJson(value: unknown) {
-  if (!value) return null;
-  if (Array.isArray(value)) return value.map((row, i) => <li key={i}>{typeof row === 'string' ? row : JSON.stringify(row)}</li>);
-  if (typeof value === 'object') return Object.entries(value as Record<string, unknown>).map(([k,v]) => <li key={k}><strong>{human(k)}:</strong> {typeof v === 'string' ? v : JSON.stringify(v)}</li>);
-  return <li>{String(value)}</li>;
-}
-
-export default async function AmenityDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string; amenitySlug: string };
-  searchParams?: { bookingId?: string };
-}) {
+export default async function AmenityDetailPage(
+  props: {
+    params: Promise<{ slug: string; amenitySlug: string }>;
+    searchParams?: Promise<{ bookingId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
   if (!data) notFound();
   const { project, amenity } = data;
+  const usageLabels = amenityUsageLabels(await getLabels(AMENITY_USAGE_LABELS, getRequestLocale(), AMENITY_USAGE_DRAFTS));
+  const leadTime = amenityLeadTime(amenity.reservationConfig);
+  const leadText = leadTime ? usageLabels.lead.replace('{amount}', String(leadTime.amount)).replace('{unit}', usageLabels[leadTime.unit]) : null;
   const labels = await getLabels({
     'project_amenity.back': 'All amenities',
     'project_amenity.terms': 'Terms of use',
@@ -65,21 +64,21 @@ export default async function AmenityDetailPage({
       <div className="mt-32 grid gap-24 lg:grid-cols-[1fr_320px]">
         <article>
           {amenity.description ? <p className="whitespace-pre-line text-body leading-relaxed text-text-secondary">{amenity.description}</p> : null}
-          {amenity.openingHours ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.hours']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{renderJson(amenity.openingHours)}</ul></section> : null}
+          {amenity.openingHours ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.hours']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{amenityUsageLines(amenity.openingHours, usageLabels).map((line, index) => <li key={index}>{line}</li>)}</ul></section> : null}
           {amenity.terms ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.terms']}</h2><p className="mt-8 whitespace-pre-line text-body text-text-secondary">{amenity.terms}</p></section> : null}
-          {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{renderJson(amenity.rules)}</ul></section> : null}
+          {amenity.rules ? <section className="mt-24"><h2 className="font-display text-heading-2 font-semibold">{labels['project_amenity.rules']}</h2><ul className="mt-8 list-disc space-y-8 pl-20 text-body text-text-secondary">{amenityUsageLines(amenity.rules, usageLabels).map((line, index) => <li key={index}>{line}</li>)}</ul></section> : null}
         </article>
         <aside className="stitch-panel-soft p-20">
           <dl className="space-y-12 text-small">
             {amenity.locationLabel ? <div><dt className="text-text-secondary">{labels['project_amenity.location']}</dt><dd className="font-medium">{amenity.locationLabel}</dd></div> : null}
-            <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{human(amenity.accessType)}</dd></div>
+            <div><dt className="text-text-secondary">{labels['project_amenity.access']}</dt><dd className="font-medium">{amenity.accessType === 'not_specified' ? usageLabels.unknown : human(amenity.accessType)}</dd></div>
             {amenity.accessInstructions ? <div><dt className="text-text-secondary">{labels['project_amenity.how_access']}</dt><dd className="font-medium">{amenity.accessInstructions}</dd></div> : null}
-            <div><dt className="text-text-secondary">{labels['project_amenity.cost']}</dt><dd className="font-medium">{amenity.pricingType === 'included' ? labels['project_amenity.included'] : amenity.pricingType === 'free' ? labels['project_amenity.free'] : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString(UI_LOCALE)}` : human(amenity.pricingType)}</dd></div>
+            <div><dt className="text-text-secondary">{labels['project_amenity.cost']}</dt><dd className="font-medium">{amenity.pricingType === 'not_specified' ? usageLabels.unknown : amenity.pricingType === 'included' ? labels['project_amenity.included'] : amenity.pricingType === 'free' ? labels['project_amenity.free'] : amenity.priceThb !== null ? `฿${Math.round(amenity.priceThb/100).toLocaleString(UI_LOCALE)}` : human(amenity.pricingType)}</dd></div>
             {amenity.capacity ? <div><dt className="text-text-secondary">{labels['project_amenity.capacity']}</dt><dd className="font-medium">{amenity.capacity}</dd></div> : null}
             {amenity.minAge !== null ? <div><dt className="text-text-secondary">{labels['project_amenity.min_age']}</dt><dd className="font-medium">{amenity.minAge}</dd></div> : null}
-            {amenity.bookingRequired ? <div><dt className="text-text-secondary">{labels['project_amenity.booking']}</dt><dd className="font-medium">{human(amenity.bookingMode)}</dd></div> : null}
+            {amenity.bookingRequired ? <div><dt className="text-text-secondary">{labels['project_amenity.booking']}</dt><dd className="font-medium">{amenity.bookingMode === 'other' ? usageLabels.otherBooking : human(amenity.bookingMode)}{leadText ? <p className="mt-4">{leadText}</p> : null}</dd></div> : null}
           </dl>
-          {amenity.bookingRequired ? (
+          {amenity.bookingRequired && project.status === 'live' ? (
             ['time_slot','request','reception'].includes(amenity.bookingMode) ? (
               <Link
                 href={`/projects/${project.slug}/amenities/${amenity.slug}/book${searchParams?.bookingId ? `?bookingId=${encodeURIComponent(searchParams.bookingId)}` : ''}`}

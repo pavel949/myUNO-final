@@ -3,7 +3,7 @@
 
 import { UI_LOCALE, APP_TZ } from '@/lib/format';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { WorkspaceContextLink as Link } from '@/components/WorkspaceNavigation';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/Button';
 
@@ -42,14 +42,18 @@ export default function ThreadClient({
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
+  const readVersion = useRef(0);
   const requestRef = useRef<{ body: string; id: string } | null>(null);
 
   const load = useCallback(async () => {
+    const version = ++readVersion.current;
     try {
-      const response = await fetch(`/api/threads/${threadId}`);
+      const response = await fetch(`/api/threads/${threadId}`, { cache: 'no-store' });
+      if (version !== readVersion.current) return;
       if (response.status === 401) {
         setThread(null);
         router.push(`/login?next=/messages/${threadId}`);
@@ -57,22 +61,37 @@ export default function ThreadClient({
       }
       if (!response.ok) {
         if (response.status === 403 || response.status === 404) setThread(null);
-        setError(labels['messages.thread.not_found']);
+        setLoadError(response.status === 403 || response.status === 404
+          ? labels['messages.thread.not_found']
+          : labels['messages.thread.load_error'] || labels['messages.thread.error_generic']);
         return;
       }
       const data = await response.json();
+      if (version !== readVersion.current) return;
       setThread(data.thread);
+      setLoadError(null);
     } catch {
-      setError(labels['messages.thread.error_generic']);
+      if (version !== readVersion.current) return;
+      setLoadError(labels['messages.thread.load_error'] || labels['messages.thread.error_generic']);
     } finally {
-      setLoading(false);
+      if (version === readVersion.current) setLoading(false);
     }
   }, [threadId, router, labels]);
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000); // light polling until SSE lands
-    return () => clearInterval(interval);
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const interval = setInterval(refresh, 15000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      // This is a request generation counter, not a DOM ref; invalidate every pending read.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ++readVersion.current; // Late reads cannot restore revoked or replaced conversation data.
+      clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [load]);
 
   useEffect(() => {
@@ -153,8 +172,11 @@ export default function ThreadClient({
       <main className="stitch-workspace">
         <div className="stitch-page max-w-2xl">
           <p className="mb-16 text-body text-state-error">
-            {error || labels['messages.thread.not_found']}
+            {loadError || error || labels['messages.thread.not_found']}
           </p>
+          {loadError && <Button variant="secondary" onClick={() => void load()} className="mb-16">
+            {labels['messages.thread.retry']}
+          </Button>}
           <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
             {labels['messages.thread.back']}
           </Link>
@@ -172,7 +194,7 @@ export default function ThreadClient({
     <div className="stitch-page max-w-4xl">
     <div className="stitch-panel flex min-h-[70vh] flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-border-line bg-surface-ivory px-24 py-16">
-        <div className="flex items-center gap-16">
+        <div className="flex min-w-0 flex-wrap items-center gap-16">
           <Link href="/messages" className="font-semibold text-brand-andaman hover:underline">
             {labels['messages.thread.back']}
           </Link>
@@ -184,7 +206,11 @@ export default function ThreadClient({
         </div>
       </div>
 
+      {loadError && <div role="alert" className="flex flex-wrap items-center gap-12 px-24 py-12 text-small text-state-error">
+        <p>{loadError}</p><Button variant="secondary" size="sm" onClick={() => void load()}>{labels['messages.thread.retry']}</Button>
+      </div>}
       <div className="flex-1 space-y-12 overflow-y-auto px-24 py-20">
+        {thread.messages.length === 0 && <p className="text-body text-text-secondary">{labels['messages.thread.empty']}</p>}
         {thread.messages.map((message) => {
           const mine = myId !== null && message.sender?.id === myId;
           if (message.messageKind === 'system') {
@@ -210,7 +236,7 @@ export default function ThreadClient({
                     {message.sender.firstName} {message.sender.lastName}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap text-body font-normal">
+                <p className="whitespace-pre-wrap break-words text-body font-normal">
                   {message.body && message.body !== '—' ? message.body : ''}
                 </p>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-8">
@@ -237,7 +263,7 @@ export default function ThreadClient({
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="px-24 text-small text-state-error">{error}</p>}
+      {error && <p role="alert" className="px-24 text-small text-state-error">{error}</p>}
 
       <form onSubmit={send} className="flex gap-12 border-t border-border-line bg-surface-paper px-24 py-16">
         <input
@@ -247,7 +273,7 @@ export default function ThreadClient({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={labels['messages.thread.placeholder']}
-          className="stitch-control flex-1"
+          className="stitch-control min-w-0 flex-1"
         />
         <Button type="submit" isLoading={sending} disabled={!draft.trim()}>
           {labels['messages.thread.send']}

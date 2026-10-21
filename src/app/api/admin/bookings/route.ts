@@ -13,6 +13,8 @@ export interface AdminBooking {
   endDate: string;
   totalThb: number;
   balanceDueSatang: number;
+  receivableStatus: string;
+  grossBalanceSatang: number;
   unitName: string | null;
   guestName: string;
   paid: boolean;
@@ -82,11 +84,13 @@ export async function GET(req: NextRequest) {
       // Display boundary: totalThb is satang (THB x 100).
       totalThb: b.totalThb / 100,
       balanceDueSatang: outstandingStayBalanceSatang(b),
+      receivableStatus: b.receivableStatus,
+      grossBalanceSatang: b.balanceDueThb,
       unitName: b.unit?.name || null,
       guestName: b.guestIdentity
         ? `${b.guestIdentity.firstName} ${b.guestIdentity.lastName}`
         : '—',
-      paid: b.payments.length > 0 && b.balanceDueThb === 0 && ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(b.status),
+      paid: b.receivableStatus === 'collectible' && b.payments.length > 0 && b.balanceDueThb === 0 && ['confirmed', 'checked_in', 'checked_out', 'completed'].includes(b.status),
       receiptRef: b.payments[0]?.receiptRef || null,
       guestIdentityId: b.guestIdentity?.id || null,
       guestInvited: b.guestIdentity?.status === 'invited',
@@ -111,3 +115,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

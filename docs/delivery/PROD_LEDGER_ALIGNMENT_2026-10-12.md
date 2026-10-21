@@ -1,5 +1,7 @@
 # Production Prisma ledger alignment — 2026-10-12
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Authorised by the founder. Applied to Supabase `burcnghheyzbzffzgmjz` as a single INSERT into `_prisma_migrations`
 (idempotent: `WHERE NOT EXISTS`), after read-only verification that every object each migration creates already exists.
 

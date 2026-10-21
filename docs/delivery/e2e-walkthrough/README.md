@@ -1,5 +1,7 @@
 # End-to-end walkthrough of the platform's main processes (2026-10-12)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Every process below was checked in code, then clicked through in a real browser (Playwright/Chromium) against a **local production build and a throw-away database** — never the live database. Each folder has `RESULT.md` (step table) and screenshots.
 
 | # | Process | Result |

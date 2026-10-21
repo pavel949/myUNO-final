@@ -3,13 +3,17 @@ import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { prisma } from '@/lib/prisma';
 import { classifyPropertySubmission } from '@/modules/onboarding';
 import { submissionUnitWhere } from '@/modules/onboarding/submission-unit-access';
+import { submissionDescriptionLocale } from '@/modules/onboarding/submission-description';
+
+import { assertNoEmployeeCreationInput, hasEmployeeCreationReceipt } from '@/modules/onboarding/employee-creation.service';
 
 const MARKER = 'myuno_property_submission_v1';
 const allowedKinds = new Set(['home', 'resort', 'management']);
 const allowedOffers = new Set(['short_stay', 'monthly', 'yearly', 'sale']);
-type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
+type Submission = { kind: string; existingUnitId: string | null; operatingModel: 'owner_direct' | 'via_management_company' | 'direct_managed' | null; requestedManagementCompanyName: string; projectId: string | null; proposedProject: string; projectAddress: string; projectType: string; areaId: string | null; latitude: number | null; longitude: number | null; projectPhotos: string[]; unitName: string; unitType: string; bedrooms: number | null; bathrooms: number | null; sizeSqm: number | null; maxGuests: number | null; proposedNightlyBaht: number | null; proposedMinNights: number | null; floor: string; description: string; descriptionLocale: string | null; offers: string[]; contact: string; photos: string[]; status: 'draft' | 'submitted' };
 
 function normalize(body: Record<string, unknown>): Submission {
+  assertNoEmployeeCreationInput(body);
   if (body.existingUnitId && (typeof body.projectId !== 'string' || !body.projectId)) {
     throw new Error('Choose the project for the selected existing property.');
   }
@@ -37,6 +41,7 @@ function normalize(body: Record<string, unknown>): Submission {
     unitType: ['villa', 'apartment', 'condo', 'house'].includes(String(body.unitType)) ? String(body.unitType) : 'condo',
     bedrooms, bathrooms, sizeSqm, maxGuests, proposedNightlyBaht, proposedMinNights, floor: String(body.floor || '').trim().slice(0, 40),
     description: String(body.description || '').trim().slice(0, 3000),
+    descriptionLocale: submissionDescriptionLocale(body.descriptionLocale),
     offers, contact: String(body.contact || '').trim().slice(0, 160),
     photos: Array.isArray(body.photos) ? [...new Set(body.photos.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [],
     status: body.status === 'submitted' ? 'submitted' : 'draft',
@@ -80,12 +85,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ units });
   }
 
-  const rows = await prisma.crmOpportunity.findMany({
-    where: { identityId: access.user.identityId, source: MARKER },
+  // Presence (including a malformed/null marker) is excluded BEFORE paging.
+  // JSON-path null comparisons would conflate a missing key with JSON null.
+  const visible = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM crm_opportunity
+    WHERE identity_id = ${access.user.identityId} AND source = ${MARKER}
+      AND NOT (requirements ? 'employeeCreation')
+    ORDER BY updated_at DESC, id ASC LIMIT 50`;
+  const candidates = await prisma.crmOpportunity.findMany({
+    where: { id: { in: visible.map(row => row.id) }, identityId: access.user.identityId, source: MARKER },
     select: { id: true, createdAt: true, updatedAt: true, requirements: true },
     orderBy: { updatedAt: 'desc' },
     take: 50,
   });
+  const rows = candidates.filter(row => !hasEmployeeCreationReceipt(row.requirements));
   const ids = [...new Set(rows.flatMap(row => {
     const data = row.requirements as Record<string, unknown>;
     return [...(Array.isArray(data.photos) ? data.photos : []), ...(Array.isArray(data.projectPhotos) ? data.projectPhotos : [])].filter((id): id is string => typeof id === 'string');
@@ -133,9 +145,11 @@ export async function PATCH(req: NextRequest) {
   if ('error' in access) return access.error;
   try {
     const body = await req.json();
+    assertNoEmployeeCreationInput(body);
     const id = typeof body.id === 'string' ? body.id : '';
     const existing = await prisma.crmOpportunity.findFirst({ where: { id, identityId: access.user.identityId, source: MARKER }, select: { id: true, requirements: true } });
     if (!existing) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
+    if (hasEmployeeCreationReceipt(existing.requirements)) return NextResponse.json({ error: 'Use the employee creation workspace for this request.' }, { status: 403 });
     const previous = existing.requirements as Record<string, unknown>;
     if (previous.status !== 'draft') return NextResponse.json({ error: 'Submitted applications cannot be edited. Contact the myUNO team.' }, { status: 409 });
     const data = normalize({ ...previous, ...body });

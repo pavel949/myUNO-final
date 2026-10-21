@@ -22,6 +22,15 @@ describe('CMS client uses stable ContentKey IDs', () => {
   });
 });
 
+it('preserves an unsaved draft when server props refresh for the same editor', () => {
+  const props = { namespaces: [{ namespace: 'project', count: 1 }], initialNamespace: 'project', initialKeys: [{ id: contentId, key, description: '', translations: {} }], labels };
+  const view = render(<ContentAdminClient {...props} />);
+  fireEvent.change(screen.getAllByRole('textbox')[1], { target: { value: 'Unsaved edit' } });
+  view.rerender(<ContentAdminClient {...props} labels={{ ...labels }} initialKeys={props.initialKeys.map(row => ({ ...row }))} />);
+  expect(screen.getAllByRole('textbox')[1]).toHaveValue('Unsaved edit');
+  expect(screen.getAllByRole('button', { name: 'Save' })[1]).toBeEnabled();
+});
+
 it('retains the stable ID when switching to an API-loaded namespace', async () => {
   const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => url.includes('/namespace/') ? { keys: [{ id: contentId, key, description: '', translations: [{ locale: 'ru', value: 'Old', status: 'needs_review' }] }] } : { success: true, key: { id: contentId, key, description: '', translations: [{ locale: 'ru', value: 'Новое', status: 'needs_review' }] } } }));
   vi.stubGlobal('fetch', fetchMock);

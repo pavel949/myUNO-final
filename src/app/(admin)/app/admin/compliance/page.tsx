@@ -38,11 +38,12 @@ function tm30Tone(status: string): string {
  * Admin compliance dashboard (doc 08 §6 §11): TM30 ledger, unit records,
  * retention posture.
  */
-export default async function AdminCompliancePage({
-  searchParams,
-}: {
-  searchParams?: { projectId?: string };
-}) {
+export default async function AdminCompliancePage(
+  props: {
+    searchParams?: Promise<{ projectId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const requestedProjectId =
     typeof searchParams?.projectId === 'string' ? searchParams.projectId : '';
 

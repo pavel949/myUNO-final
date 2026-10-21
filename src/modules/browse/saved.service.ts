@@ -30,7 +30,7 @@ export interface SaveUnitInput {
  * Save a villa. Saving one already saved is not an error — the guest expressed
  * the same intent twice, and failing them for it would be pedantry.
  */
-export async function saveUnit(db: PrismaClient, input: SaveUnitInput) {
+export async function saveUnit(db: PrismaClient | Prisma.TransactionClient, input: SaveUnitInput) {
   const { identityId, unitId, collection = null, note } = input;
 
   const existing = await db.savedUnit.findFirst({
@@ -47,7 +47,7 @@ export async function saveUnit(db: PrismaClient, input: SaveUnitInput) {
 
 /** Remove a save. Removing one that is not there is a no-op, for the same reason. */
 export async function unsaveUnit(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   identityId: string,
   unitId: string,
   collection: string | null = null

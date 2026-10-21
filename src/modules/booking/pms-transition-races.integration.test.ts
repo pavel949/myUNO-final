@@ -14,6 +14,23 @@ function pauseFirstBookingRead(){
  return{client,read,release};
 }
 describe('PMS source transition races',()=>{
+ it('completed cleaning does not permit arrival until independent blocking maintenance is ready',async()=>{
+  const f=await fixture();
+  await db.operationalTask.create({data:{projectId:f.project.id,unitId:f.unit.id,bookingId:f.booking.id,taskType:'turnover_cleaning',status:'ready',dueAt:new Date()}});
+  const repair=await db.operationalTask.create({data:{projectId:f.project.id,unitId:f.unit.id,taskType:'maintenance_followup',status:'blocked',blocksInventory:true,dueAt:new Date()}});
+  await expect(checkInBooking(db,f.booking.id,new Date('2026-10-12T12:00:00Z'))).rejects.toMatchObject({code:'UNIT_NOT_READY'});
+  expect((await db.booking.findUniqueOrThrow({where:{id:f.booking.id}})).status).toBe('confirmed');
+  await db.operationalTask.update({where:{id:repair.id},data:{status:'ready'}});
+  expect((await checkInBooking(db,f.booking.id,new Date('2026-10-12T12:00:00Z'))).status).toBe('checked_in');
+ });
+ it('nonblocking and cancelled maintenance does not block an otherwise ready arrival',async()=>{
+  const f=await fixture();
+  await db.operationalTask.createMany({data:[
+   {projectId:f.project.id,unitId:f.unit.id,taskType:'maintenance_followup',status:'planned',blocksInventory:false,dueAt:new Date()},
+   {projectId:f.project.id,unitId:f.unit.id,taskType:'maintenance_followup',status:'cancelled',blocksInventory:true,dueAt:new Date()},
+  ]});
+  expect((await checkInBooking(db,f.booking.id,new Date('2026-10-12T12:00:00Z'))).status).toBe('checked_in');
+ });
  it.each(['turnover_cleaning','turnover_inspection'] as const)('blocks check-in while %s is blocked',async taskType=>{
   const f=await fixture();await db.operationalTask.create({data:{projectId:f.project.id,unitId:f.unit.id,bookingId:f.booking.id,taskType,status:'blocked',dueAt:new Date()}});
   await expect(checkInBooking(db,f.booking.id,new Date('2026-10-12T12:00:00Z'))).rejects.toMatchObject({code:'UNIT_NOT_READY'});expect((await db.booking.findUniqueOrThrow({where:{id:f.booking.id}})).status).toBe('confirmed');

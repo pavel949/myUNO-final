@@ -1,5 +1,22 @@
+import { PROPERTY_EDITOR_KEYS } from './property-editor.seed';
+import { WORKSPACE_NAVIGATION_KEYS } from './workspace-navigation.seed';
+import { EMPLOYEE_CREATION_KEYS } from './employee-creation.seed';
+import { PROPERTY_BOOKING_MODE_KEYS } from './property-booking-mode.seed';
+import { PROPERTY_DELEGATION_KEYS } from './property-delegation.seed';
+import { PROPERTY_WORKSPACE_KEYS } from './property-workspace.seed';
+import { GALLERY_EMERGENCY_KEYS } from './gallery-emergency.seed';
+import { GUEST_SEARCH_UX_KEYS } from './guest-search-ux.seed';
+import { GUEST_CHECKOUT_KEYS } from './guest-checkout.seed';
+import { GUEST_AUTH_SUPPORT_KEYS } from './guest-auth-support.seed';
+import { GUEST_SERVICE_CONTEXT_KEYS } from './guest-service-context.seed';
+import { STAY_UX_KEYS } from './stay-ux.seed';
 import { RESERVATION_GUEST_KEYS } from './reservation-guest.seed';
 import { INQUIRY_CONTENT_KEYS } from './inquiry-copy';
+import { PRICING_WORKSPACE_KEYS } from './pricing-workspace.seed';
+import { PRICING_EDITOR_ROLE_KEYS } from './pricing-editor-role.seed';
+import { CONTENT_CONTRIBUTOR_ROLE_KEYS } from './content-contributor-role.seed';
+import { CONTENT_PROPOSAL_EDITOR_KEYS } from './content-proposal-editor.seed';
+import { CONTENT_PROPOSAL_REVIEW_KEYS } from './content-proposal-review.seed';
 import { PROPERTY_ONBOARDING_KEYS } from './property-onboarding.seed';
 import { PROPERTY_LISTINGS_KEYS } from './property-listings.seed';
 import { OWNER_EVIDENCE_KEYS } from './owner-evidence.seed';
@@ -50,6 +67,12 @@ interface KeyDef {
 }
 
 const COMMON_KEYS: KeyDef[] = [
+  ...GALLERY_EMERGENCY_KEYS,
+  ...GUEST_SEARCH_UX_KEYS,
+  ...GUEST_CHECKOUT_KEYS,
+  ...GUEST_AUTH_SUPPORT_KEYS,
+  ...GUEST_SERVICE_CONTEXT_KEYS,
+  ...STAY_UX_KEYS,
   ...RESERVATION_GUEST_KEYS,
   ...INQUIRY_CONTENT_KEYS,
   { key: 'admin.scheduler.job.preventive_maintenance', namespace: 'admin.scheduler', description: 'Preventive maintenance scheduler job', en: 'Preventive maintenance', ru: 'Профилактическое обслуживание', th: 'การบำรุงรักษาเชิงป้องกัน', status: 'needs_review' },
@@ -4771,7 +4794,11 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...PROPERTY_ONBOARDING_KEYS, ...PROPERTY_LISTINGS_KEYS, ...OWNER_EVIDENCE_KEYS, ...UNIT_PUBLICATION_KEYS, ...SLEEPING_SPACE_KEYS, ...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS, ...PROJECT_PORTAL_KEYS, ...DISCOVERY_KEYS, ...PROJECT_RESTYLE_KEYS, ...HOMEPAGE_V4_KEYS, ...PROPERTY_FACT_KEYS, ...AUDIT_FIX_KEYS, ...EXPENSE_SAFETY_KEYS, ...BOOKING_STEPS_KEYS, ...REFUND_SETTLEMENT_KEYS, ...WALKTHROUGH_FIX_KEYS, ...LAUNCH_READINESS_KEYS, ...SESSION_SECURITY_KEYS];
+  const registryKeys: KeyDef[] = [...WORKSPACE_NAVIGATION_KEYS, ...PRICING_WORKSPACE_KEYS,
+  ...PROPERTY_WORKSPACE_KEYS,
+  ...PROPERTY_EDITOR_KEYS,
+  ...PROPERTY_BOOKING_MODE_KEYS,
+  ...EMPLOYEE_CREATION_KEYS, ...PROPERTY_DELEGATION_KEYS, ...PRICING_EDITOR_ROLE_KEYS, ...CONTENT_CONTRIBUTOR_ROLE_KEYS, ...CONTENT_PROPOSAL_EDITOR_KEYS, ...CONTENT_PROPOSAL_REVIEW_KEYS, ...PROPERTY_ONBOARDING_KEYS, ...PROPERTY_LISTINGS_KEYS, ...OWNER_EVIDENCE_KEYS, ...UNIT_PUBLICATION_KEYS, ...SLEEPING_SPACE_KEYS, ...COMMON_KEYS, ...TRUST_LEGAL_PAGE_KEYS, ...UI_SHELL_KEYS, ...HOME_KEYS, ...ADMIN_S3_KEYS, ...SERVICE_DETAIL_KEYS, ...SERVICE_ORDER_DETAIL_KEYS, ...PROJECT_PAGE_KEYS, ...LEAD_FORM_KEYS, ...AUDIENCE_EXPANSION_KEYS, ...CATALOG_LABEL_KEYS, ...AREA_LABEL_KEYS, ...ONBOARDING_KEYS, ...ACCOUNT_KEYS, ...STATUS_LABEL_KEYS, ...SCHEDULER_KEYS, ...CANONICAL_ADMIN_360_KEYS, ...UNIFIED_STAY_KEYS, ...LAYANTARA_OPERATION_KEYS, ...GALLERY_EDITOR_KEYS, ...COMMERCE_STRUCTURE_KEYS, ...ROLE_DASHBOARD_KEYS, ...PROJECT_GALLERY_KEYS, ...PROJECT_TEAM_KEYS, ...CONSOLIDATED_RELEASE_KEYS, ...PMS_RELEASE_KEYS, ...OPERATING_SPACE_KEYS, ...RESERVATION_DESK_KEYS, ...PROJECT_PORTAL_KEYS, ...DISCOVERY_KEYS, ...PROJECT_RESTYLE_KEYS, ...HOMEPAGE_V4_KEYS, ...PROPERTY_FACT_KEYS, ...AUDIT_FIX_KEYS, ...EXPENSE_SAFETY_KEYS, ...BOOKING_STEPS_KEYS, ...REFUND_SETTLEMENT_KEYS, ...WALKTHROUGH_FIX_KEYS, ...LAUNCH_READINESS_KEYS, ...SESSION_SECURITY_KEYS];
   // Content keys may be shared by several surfaces; PostgreSQL ON CONFLICT
   // cannot update one key twice in a single multi-row statement. Last
   // registry definition wins deterministically, without duplicate inserts.

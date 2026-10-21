@@ -1,5 +1,7 @@
 # Canonical operating loop execution ledger — 2026-10-08
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 This is a working evidence ledger for the 66-section `MYUNO_CANONICAL_OPERATING_LOOP_CODEX.md` assignment. Its supplied §66 ends after `reason`; no omitted requirement is inferred. A static source path, test name, or successful build is not a completed operating flow. Recheck every status at the next main HEAD.
 
 ## Baseline and authority

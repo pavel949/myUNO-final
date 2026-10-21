@@ -1,3 +1,4 @@
+import { StatementReceivableReviewError } from '@/modules/finance/statement-snapshot';
 import { UI_LOCALE } from '@/lib/format';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -100,6 +101,8 @@ export async function POST(req: NextRequest) {
       message: `Owner payout recorded for ${statement.unit.name}: ฿${(payout.amountThb / 100).toLocaleString(UI_LOCALE)}`,
     })
   } catch (error) {
+    if (error instanceof StatementReceivableReviewError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     return handleError(error)
   }
 }
+

@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from '@/modules/projects/unit-marketing-title';
 import { PrismaClient } from '@prisma/client';
 
 const db = new PrismaClient();
@@ -38,7 +39,7 @@ async function main() {
         select: {
           id: true,
           name: true,
-          descriptionKey: true,
+          descriptionKey: true, marketingTitleKey: true,
           unitFeatures: true,
           inventoryCategoryId: true,
         },
@@ -64,12 +65,12 @@ async function main() {
       unitCopyGaps.push(`${unit.name}: missing descriptionKey`);
       continue;
     }
-    const titleKey = unit.descriptionKey.replace(/\.description$/, '.title');
+    const titleKey = resolveUnitMarketingTitleKey(unit);
     for (const locale of ['en', 'ru']) {
       if (!(await hasTranslation(unit.descriptionKey, locale))) {
         unitCopyGaps.push(`${unit.name}: missing ${locale} description`);
       }
-      if (!(await hasTranslation(titleKey, locale))) {
+      if (!titleKey || !(await hasTranslation(titleKey, locale))) {
         unitCopyGaps.push(`${unit.name}: missing ${locale} title`);
       }
     }
@@ -176,3 +177,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   });
+

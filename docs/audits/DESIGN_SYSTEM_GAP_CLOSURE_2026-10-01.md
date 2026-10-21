@@ -1,5 +1,7 @@
 # myUNO Design-System Gap Closure Audit — 2026-10-01
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Source benchmark: uploaded “App design system project” package, latest supplied version `(5)`, covering Design System, Home v2, Wireframes, Key Screens, Flows, Portals and Data Model.
 
 ## Design principles adopted

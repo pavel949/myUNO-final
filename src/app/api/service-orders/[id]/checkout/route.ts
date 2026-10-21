@@ -10,10 +10,8 @@ import { loadOrderForUser } from '@/app/libs/serviceOrderGuards';
  * for a placed order (payment seam; mock provider in loop one). Amount is
  * ALWAYS the order's server-stored total.
  */
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

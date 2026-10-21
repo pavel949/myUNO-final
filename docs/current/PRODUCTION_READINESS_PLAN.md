@@ -1,0 +1,130 @@
+# План доведения myUNO до production readiness 9/10
+
+Дата: 2026-10-16. База плана: main `1d600e95bbcb13515c924c0b0713ed90f84064e5`, инвентаризация всех модулей/CO01–CO30, текущие CI/browser результаты, реальный restore run 38896564642 и read-only SQL. В production: 44 live и 12 draft units; канонических bookings/payments/service orders в момент проверки нет. Нулевые таблицы не являются доказательством исправности процессов.
+
+## Что означает 9/10
+
+Оценка относится к эксплуатации опубликованного продукта: прямые бронирования, PMS, owner/MC/provider scopes, деньги/отчёты, текущие услуги, media и восстановление. Полнота будущей платформы (AI/wallet/товарный склад/full ARI) оценивается отдельно и не объявляется готовой. При запуске должны честно отображаться доступные способы оплаты и каналы связи; неподключённые возможности не могут обещать исполнение.
+
+Достижение цели требует >=90 подтверждённых баллов по следующей таблице **и отсутствия критического провала денег, приватности, инвентаря, восстановления или обязательного operational flow**. Не проверено = 0 подтверждённых баллов; «код написан» не закрывает runtime acceptance. Это фиксированная модель приёмки, не маркетинговый процент.
+
+| Область | Вес | Обязательное доказательство |
+|---|---:|---|
+| Релиз | 15 | Exact main CI; protected production migration с fresh backup; served deployment SHA; health и реальные route/auth responses |
+| Доступ и приватность | 15 | Guest/owner/MC/provider/staff cross-scope denial, revoke/session, private passports/receipts/media, audit |
+| Бронирование и услуги | 20 | Quote/request/instant/hold/payment/expiry/cancel/extension/reschedule; service paid/accept/fulfill/refund; duplicate и concurrent calls |
+| PMS | 15 | Arrival/check-in/verification/TM30→stay→checkout→cleaning→inspection; maintenance blocker, preventive tasks, команды |
+| Деньги и owner reports | 15 | Cash/transfer и доступный provider path; late/duplicate payment/refund; cost/receipt→statement/freshness→sign-off→payout; period boundaries |
+| Контент и media | 10 | Draft→scoped edit/review→real Blob upload/finalize/retry→publish→public gallery; mobile/языки; недостающие сведения видны |
+| Эксплуатация | 10 | JobRun cadence/failures, alerting, consistent backup→restore parity, key recovery; проверка внешних последствий после restore |
+
+## Последовательность и конкретные изменения
+
+| Пакет | Факт/проблема | Работа | Проверка результата | Статус |
+|---|---|---|---|---|
+| R01 | Backup был блокером | Сохранить уже выполненный PR #293; повторить protected backup на exact release SHA | Consistent snapshot всех application tables + row-count/digest parity + encrypted artifact | Реальный restore уже подтверждён; repeat at release |
+| R02 | Readiness ожидает omise, runtime принимает opn | Исправить provider key и требования; не требовать неиспользуемый HMAC secret | Config tests для opn/unsupported/mock/key mode; provider HTTP tests; real merchant smoke только с настроенным account | Код и целевые unit/policy tests готовы; runtime отдельно |
+| R03 | Readiness игнорирует Blob OIDC/store | Общий parser поддержанных storage credentials; корректный secret catalog и отсутствие ложного «storage ready» | Token/OIDC/invalid/missing config; actual upload/finalize/retry on staged deployment | Код и целевые unit/policy tests готовы; runtime отдельно |
+| R04 | Content gate пропускает недоступную БД | Production fail-closed, безопасные логи и проверяемая pure policy; dev/isolated CI override явно отделён | Missing/unreachable/review-pending/reviewed cases; никакого bulk approval и отключения review ради релиза | Код и целевые unit/policy tests готовы; runtime отдельно |
+| R05 | Statement fingerprint не содержит даты брони | Включить canonical start/end в source fingerprint; historical issued snapshots не менять | Same total + changed dates invalidates unsigned draft; signed snapshot remains readable/immutable | Merged PR294/295; DB regressions и6005-test CI passed; historical signed snapshots сохраняются |
+| R06 | Readiness scheduler может учитывать только первый frequent job | Требовать freshness каждого frequent job и отсутствие unhealthy registry rows | One fresh + one stale никогда не green | Код и целевые unit/policy tests готовы; runtime отдельно |
+| R07 | Риск межсерверных уведомлений | Сохранить уже работающие DB polling в NotificationBell и thread-client; укрепить auth/error/race/visibility refresh | Независимые экземпляры читают сохранённые сообщения; revoke закрывает доступ; повтор отправки не дублирует | Polling сохранён; race/revoke/focus/visibility component tests пройдены |
+| R08 | Услуги не имеют полного confirm/dispute/close пути | Завершить атомарные переходы, сроки, customer UI и nightly close; не переписать payment/fulfillment/settlement в один статус | Concurrent confirm/dispute/close, duplicate, provider/remittance/refund, real UI | Merged PR294; DB/concurrency и isolated Chromium acceptance passed; live отдельно |
+| R09 | Reschedule model без replacement-hold runtime | Добавить предложение новых дат/hold, frozen quote, funding/refund delta, atomic commit/expiry и восстановление | Original booking сохраняется до успешного commit; нельзя double book или оплатить дважды | Запланировано |
+| R10 | Quote-priced services отправляют на ручной контакт | Сохранить честный manual fallback; реализовать versioned quote→accept→existing order без client-authoritative total | Expiry/revision/concurrent accept, foreign ID denial, one order, immutable accepted terms | Запланировано |
+| R11 | Live release отстаёт от main | После green exact-main protected migration создать staged production deployment; verify→promote | Alias SHA + authenticated property/PMS routes, no404, health; rollback compatible | После кода/CI; без дублирования уже активного release workflow |
+| R12 | Фото и полный operational flow не подтверждены live | Изолированные synthetic browser flows + dedicated nonpublic live draft для actual Blob; production read-only для существующих деловых записей | Upload≤8MiB/MIME/retry/foreign identity; booking/payment/PMS/owner flow evidence | Admin QA upload/reload/Blob digest подтверждены на старом deployedSHA; остальные сценарии открыты |
+| R13 | Неподключённые внешние провайдеры | Проверить имеющиеся env/config по presence без секретов; работающие каналы показывать честно; adapters только с реальным contract/config | Никакой фиктивной delivery/charge. Outbound smoke — только synthetic recipient или отдельное разрешение | По фактической конфигурации |
+| R14 | Часть public content needs_review | Разделить техническую проверку и founder/legal approval; review реального опубликованного контента | Без вымышленных лицензий, ownership, rates, SLA и blanket status changes | По реальному реестру; отсутствие approval остаётся blocker |
+| R15 | Финальная оценка может стать произвольной | Обновить evidence по каждой строке веса, blockers и exact SHA; сохранить актуальные docs/reference | Нельзя заявить 9/10 при missing critical evidence; явно назвать достигнутый результат | После приёмки |
+
+## Контуры проверки
+
+1. Unit/component/policy — локально с synthetic values, без production credentials.
+2. DB/concurrency/migration replay — отдельная disposable PostgreSQL через CI; test reset никогда не на production.
+3. Chromium — production build + synthetic isolated DB/egress guard; mobile/desktop и разные роли.
+4. Production existing data — read-only reconciliation и health. Не создавать фиктивные bookings/payments/owners и не менять статус/authority ради теста.
+5. Реальные внешние операции — только поддержанным scoped действием, dedicated draft/test object и настроенным provider; факт исполнения фиксируется отдельно от кода.
+
+## Известные зависимости и запрет ложного завершения
+
+- Protected migration требует successful push CI exact main; running workflow не дублировать.
+- Vercel team/project берутся из verified project ID, не из предположения по slug.
+- Live photo acceptance требует действующей scoped application session и Blob; auth не подделывать, founder passwords не менять для теста.
+- Merchant/card/messenger provider должен быть действительно подключён; отсутствующие credentials нельзя заменить mock в production.
+- Правила, сроки и разрешённое использование недвижимости не выдумываются из пустого поля.
+- Backup не заменяет migration parity, code deployment, external money reconciliation или live process acceptance.
+
+[Система](SYSTEM.md) · [Матрица](IMPLEMENTATION_STATUS.md) · [CO01–CO30](PROCESS_COVERAGE.md) · [Эксплуатация](OPERATIONS.md).
+
+## Evidence пакета исправлений
+
+- Production read-only: translation needs_review=4213, ok=8716. Проверка review не обходится; статусы автоматически не менялись.
+- Main CI run 38897708543 успешен. Production migration run 38899390156: backup/restore успешны, migrate завершился ошибкой до вывода списка pending. Read-only ledger подтверждает две ожидаемые pending и только известное comment-only отличие; причина ошибки connection/config без безопасного stage/code не установлена. В script добавлены stage/code diagnostics без driver message/credentials. Повторный запуск не создан.
+- Локально: целевые readiness/storage/statement/component/policy tests; production TypeScript проверяется после Prisma generate. DB race и route authorization tests добавлены для disposable CI PostgreSQL; до успешного CI они не отмечаются пройденными.
+- Config key `service.fulfilment_confirm_window_hours` добавлен в seed registry, default 48h. Для существующей БД без seeded key применяется тот же 48h default; schema migration не требуется. Правки override проходят positive whole-hour validation.
+- Закрытие не меняет fulfilled_at, recognized commission, payments и payouts. Legacy fulfilled без fulfilled_at остаётся для operator review, время не восстанавливается из updated_at.
+- Production9/10 пока **не подтверждено**: текущий PR ещё не live; R09/R10 и runtime acceptance остаются открытыми, контент требует review.
+
+### Production automation и content, read-only 2026-10-16
+
+- Последние booking_lifecycle/tm30_escalations/ical_sync: 10:50:41–10:50:43 UTC. На момент проверки это больше часа назад. Успешный Scheduler38889878798 был workflow_dispatch; фактическая регулярность external cadence не подтверждена. Default branch main; причина отсутствия новых schedule runs не установлена. Нужна проверка enabled-state workflow и успешной серии scheduled ticks, один ручной запуск не закрывает acceptance.
+- Needs_review по основным namespaces: landing829, admin741, staff603, homes230, ops225, home138, nav132, mc131, help126, passport105. Это приоритетный реестр review, а не основание массово ставить ok.
+- Новый isolated Chromium runner проверяет реальный cash→accept→fulfil→customer confirm, повтор подтверждения без нового commission/payment, и dispute→confirmation denied. Browser workflow сохраняет service-fulfilment-result.json; до успешного run это authored coverage.
+
+### R16 — подтверждённый transaction/email defect
+
+В полном CI run 38900018681 обнаружены исходные ошибки Transaction already closed в fire-and-forget email после accept/fulfil. Добавлена durable post-commit queue на существующем NotificationDelivery: TransactionClient только сохраняет pending; frequent sweep обрабатывает после commit; advisory lock, provider Idempotency-Key, bounded network timeout и retry window, no legacy replay. Unit/DB tests покрывают rollback/no-send, competing workers, transient retry, mute и expiry. Scope не включает реализацию WhatsApp/Telegram adapters; они продолжают честно fail-closed. [Контракт Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
+
+Первый полный CI:5975 passed/2 failed, оба сбоя — static seeded key discovery (двойные кавычки в новых entries); формат исправлен, локальные coverage tests проходят. PostgreSQL confirm/dispute/close7/7 и route authorization в этом run прошли. Первый isolated browser run 38900018460 успешен; новый service-fulfilment runner требует отдельного execution evidence.
+
+### Совпадение runtime для финальной приёмки
+
+Vercel project подтверждает Node24.x. Финальные CI и isolated Chromium переведены на Node24, чтобы проверять тот же major runtime. Предыдущие Node20 результаты сохраняются как regression evidence, но не подменяют финальный build/test на production runtime.
+
+### Повторная полная приёмка
+
+Node20 CI38901926718 на e54c5497:5990/5990 tests в553 files, lint/typecheck/build passed. Browser38901927006 passed, в том числе новыйservice-fulfilment runner. Историческая проверка; актуальная Node24 оценка1–10: [READINESS_ASSESSMENT](READINESS_ASSESSMENT.md), актуальные exact-head checks перечислены в assessment.
+
+### R17 — atomic provider payout validation
+
+Дополнительная сверка показала TOCTOU: route считал remittance до transaction записи payout. В writer добавлены provider mutex, общие order advisory/row locks, повторный расчёт под locks, запрет пересекающихся/неопределённых payout periods и требование завершённого периода. Route возвращает тот report, который прошёл проверку внутри transaction.
+
+Requested/processing refunds для eligible current orders блокируют выплату независимо от даты создания refund. Succeeded refund после конца периода, но до первой выплаты, не покрывается существующей моделью captured-period/late-clawback: writer возвращает409 для явной financial reconciliation вместо завышенной выплаты. Полноценная allocation/snapshot-модель таких поздних корректировок остаётся отдельной работой; существующие financial records не переписываются. Добавлены PostgreSQL tests для source-lock race, overlapping concurrent periods, exact ledger consequence, open period, amount tampering и post-period refunds.
+
+
+### R18–R19 — продолжение 16 октября, после main fc0508fe
+
+- R18: оплаченная отменённая бронь на границе периода могла отсутствовать в источниках отчёта, а прежний guard проверял только active revenue statuses. Единый allocation guard теперь вызывается при чтении snapshot sources и перед unsigned sign-off. Он учитывает только succeeded/reconciled stay/stay_balance payment для отмен; unpaid/failed/deposit/unreconciled не блокируют close. Generation возвращает409 STATEMENT_ALLOCATION_REQUIRED с bookingId; unsigned signature отклоняется как stale. Подписанный operator snapshot сохраняет integrity-only проверку. Добавлены8 PostgreSQL regressions; их выполнение проверяется CI текущего PR, а не наличием файлов.
+- R19: повторный защищённый release [38925087403](https://github.com/pavel949/myUNO-final/actions/runs/38925087403) на fc0508fe прошёл fresh backup/actual restore, но migrate остановился на ledger_read, до SQL, code=unclassified. В безопасной диагностике добавлено чтение errorCode настоящего PrismaClientInitializationError; credential или raw message не выводятся. Причина подключения ещё не установлена; history repair и подмена подключения на backup principal не выполнялись.
+- Scheduler active; [38920535596](https://github.com/pavel949/myUNO-final/actions/runs/38920535596) — настоящий schedule, HTTP200, все frequent jobs ok в15:01UTC/22:01ICT. Один tick не доказывает регулярную5-minute cadence: при следующей сверке в15:34UTC новых JobRun не было. SCHEDULER_MODE=external ещё нельзя объявить подтверждённым.
+- Исторический merged-main baseline [CI38906673035](https://github.com/pavel949/myUNO-final/actions/runs/38906673035):5997 tests/554 files, lint/typecheck/build passed. Актуальный baseline6005 tests и его exact-head Checks приведены ниже и в assessment.
+
+
+### Live media evidence —22:53ICT
+
+[Реальная загрузка и сохранение изображения](../evidence/readiness-20261016/PRODUCTION_MEDIA_ACCEPTANCE.md) подтверждены через действующую admin session и существующий непубличный QA draft. Blob image9978bytes/960×640, MediaAsset и связь с unit сохранены, reload не теряет фото; unit остаётся draft и не публиковался. Проверка относится к старому deployed SHA408ad99, а не к PR295. Следовательно actual upload больше не считается полностью not checked, но live retry/foreign-scope/private-media и новый deployment всё ещё требуют acceptance. Оценка production остаётся5/10.
+
+
+### R20 — одинаковый проверенный connection path для migration read и DDL
+
+Application Prisma использует resolveDatabaseUrl, а release script использовал raw DATABASE_URL. Для canonical direct Supabase URL это оставляло IPv6-only endpoint в migration runner, хотя приложение работает через IPv4 session pooler. Runner теперь применяет тот же существующий resolver; raw и resolved URL оба проходят canonical project/port/username validation. Transaction-pooler/foreign input не нормализуется в допустимый target. PrismaClient и subprocess migrate deploy получают одну и ту же resolved URL; пароль не извлекается, не заменяется и не выводится. Node24 требуется для общего TypeScript resolver, как уже настроено в workflow.
+
+Добавлены два policy regression: encoded credentials/transport preservation и отказ для foreign/transaction/host override. Семь policy tests локально passed. Это исправляет подтверждённое различие в коде, но пока не доказывает, что фактическая ошибка ledger_read вызвана именно IPv6: нужен новый protected release на проверенном main. [Официальный контракт Supabase/Prisma](https://supabase.com/docs/guides/database/prisma). Backup/unchanged-main/ledger/checksum/financial parity gates сохранены.
+
+
+### R21 — read-only release preflight и bounded diagnostic categories
+
+Повтор [38932599598](https://github.com/pavel949/myUNO-final/actions/runs/38932599598) на main1ffa40f6: свежий backup/restore passed; migration снова failed на ledger_read/unclassified до SQL. Общий resolver не доказал устранение фактической причины. Основной push [CI38930745531](https://github.com/pavel949/myUNO-final/actions/runs/38930745531) passed6005 tests/554 files, lint/typecheck/build; Chromium38928840417 passed на final PR295 head71f3589a.
+
+Добавлен отдельный preflight job перед backup: реальная транзакция SET TRANSACTION READ ONLY, чтение ledger и тот же checksum/pending policy. preflight_only=true пропускает backup и migrate; такой green run **не является успешной миграцией**. В версии R21 выбор configured/aws-0/aws-1 использовался для двух диагностических probes; в R22 текущие варианты заменены на backup_route/configured. Raw/resolved target по-прежнему проверяются. Нормальный release после successful preflight по-прежнему требует свежий backup/restore, unchanged main и financial parity.
+
+Unknown Prisma connector errors классифицируются только в фиксированные категории tenant/auth/circuit/capacity/ledger/network/TLS/timeout; URI и произвольный текст никогда не выводятся. Метка категории — diagnostic hint, а не основание для смены credentials или history repair. Проверки:11 node policy/preflight tests, включая реальный Prisma unknown-error shape, no secret echo и обязательный READ ONLY до запроса. До run на reviewed main root cause остаётся not confirmed.
+
+
+### R22 — фактический endpoint миграции и public schema
+
+Диагностика R21 доказала недоступность configured aws-1 и отказ alternate aws-0, но не успешную миграцию. Следующий ops пакет выбирает только metadata host из уже проверенного backup credential внутри protected workflow. Миграция сохраняет собственный DATABASE_URL password и TLS, запрещает foreign host/principal/non-public schema. Acceptance:12 policy/preflight tests → exact-main push CI → preflight_only на backup_route → только при успехе fresh backup/restore → migration/financial parity. Ни история миграций, ни бизнес-данные ради проверки не подменяются. Код8.5/10, production5/10 до получения нового live evidence.
+
+
+Фактический итог R22: [preflight38940368573](https://github.com/pavel949/myUNO-final/actions/runs/38940368573) на reviewed main53634204 — route metadata passed, endpointaws-1-ap-south-1.pooler.supabase.com:5432, ledger_read P1001/network_unreachable; backup/migrate skipped. Это не доказывает неверный пароль и не устраняет runner connectivity. Нужна защищённая проверка действующей migration connection/auth/TLS/доступности; не извлекать Vercel credentials, не сбрасывать пароль, не обходить workflow и не ремонтировать ledger. Полные PR/main CI6005 tests/554 files,12 policy/preflight checks и Chromium passed. Итоговая оценка8.5/10 код,5/10 production; полноценный deployment и live acceptance остаются открытыми.

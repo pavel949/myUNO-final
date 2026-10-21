@@ -8,12 +8,13 @@ import { fetchHandbookContent } from '@/app/actions/getHandbookContent';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 
 interface HandbookPageProps {
-  params: {
+  params: Promise<{
     bookingId: string;
-  };
+  }>;
 }
 
-export default async function HandbookPage({ params }: HandbookPageProps) {
+export default async function HandbookPage(props: HandbookPageProps) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/bookings/${params.bookingId}/home-space/handbook`);

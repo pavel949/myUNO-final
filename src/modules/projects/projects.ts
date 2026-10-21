@@ -1,3 +1,4 @@
+import { editVersion, PropertyEditConflict } from './edit-validation';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/modules/audit';
 import { assertCatalogKeys } from '@/modules/config';
@@ -38,6 +39,7 @@ interface CreateProjectInput {
 }
 
 interface UpdateProjectInput {
+  expectedUpdatedAt?: string;
   projectId: string;
   name?: string;
   areaLabelKey?: string;
@@ -240,6 +242,7 @@ export async function listProjects(status?: ProjectStatus) {
  * Admin-only action.
  */
 export async function updateProject(input: UpdateProjectInput) {
+  const expectedVersion = editVersion(input.expectedUpdatedAt);
   const {
     projectId,
     name,
@@ -303,8 +306,9 @@ export async function updateProject(input: UpdateProjectInput) {
   }
 
   const updated = await prisma.project.update({
-    where: { id: projectId },
+    where: { id: projectId, ...(expectedVersion && { updatedAt: expectedVersion }) },
     data: {
+      ...(expectedVersion && { updatedAt: new Date(Math.max(Date.now(), expectedVersion.getTime() + 1)) }),
       ...(name !== undefined && { name }),
       ...(areaLabelKey !== undefined && { areaLabelKey }),
       ...(descriptionKey !== undefined && { descriptionKey }),
@@ -332,6 +336,9 @@ export async function updateProject(input: UpdateProjectInput) {
        ...(landAreaSqm !== undefined && { landAreaSqm }),
       ...(commonAreaSqm !== undefined && { commonAreaSqm }),
     } as any,
+  }).catch(error => {
+    if (expectedVersion && error.code === 'P2025') throw new PropertyEditConflict();
+    throw error;
   });
 
   // Audit log

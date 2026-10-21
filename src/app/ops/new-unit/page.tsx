@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function NewManagedUnitPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/new-unit');
+  if (!user.isAdmin) redirect('/property/create?kind=unit&from=operations');
   const roles = await prisma.roleAssignment.findMany({
     where: { identityId: user.identityId, status: 'active', role: 'staff_ops', scopeType: 'project', projectId: { not: null } },
     select: { projectId: true },

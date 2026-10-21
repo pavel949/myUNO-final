@@ -19,15 +19,16 @@ import { bookingRequestInboxLabelDrafts } from '@/lib/bookingRequestInboxLabels'
 export const dynamic = 'force-dynamic';
 
 interface OpsRequestsPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     projectId?: string;
-  };
+  }>;
 }
 
 /**
  * Staff booking request inbox (doc 07 F-OPS-5).
  */
-export default async function OpsRequestsPage({ searchParams }: OpsRequestsPageProps) {
+export default async function OpsRequestsPage(props: OpsRequestsPageProps) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/ops/requests');

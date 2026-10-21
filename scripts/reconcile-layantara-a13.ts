@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from '@/modules/projects/unit-marketing-title';
 import { PrismaClient } from '@prisma/client';
 
 const db = new PrismaClient();
@@ -12,7 +13,7 @@ async function main() {
       id: true,
       name: true,
       projectId: true,
-      descriptionKey: true,
+      descriptionKey: true, marketingTitleKey: true,
     },
   });
 
@@ -20,7 +21,7 @@ async function main() {
     throw new Error('Layantara A13 reconciliation aborted: expected physical unit is missing');
   }
 
-  const titleKey = unit.descriptionKey?.replace(/\.description$/, '.title') ?? null;
+  const titleKey = resolveUnitMarketingTitleKey(unit);
   const title = titleKey
     ? await db.translation.findFirst({
         where: { contentKey: { key: titleKey }, locale: 'en' },
@@ -73,3 +74,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   });
+

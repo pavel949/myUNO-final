@@ -51,7 +51,8 @@ async function loadIdentityAndUnit(unitId: string) {
   return { identity, unit, actorIdentityId: identity.id } as const;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { unitId: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const loaded = await loadIdentityAndUnit(params.unitId);
   if ('error' in loaded) return loaded.error;
   const { identity, unit } = loaded;
@@ -61,7 +62,7 @@ export async function GET(_req: NextRequest, { params }: { params: { unitId: str
     action: 'units:manage_availability_and_pricing',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
+  if (!allowed && !(await hasSelfListingAccess(identity.id, unit.id))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -79,7 +80,8 @@ export async function GET(_req: NextRequest, { params }: { params: { unitId: str
   });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { unitId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   const loaded = await loadIdentityAndUnit(params.unitId);
   if ('error' in loaded) return loaded.error;
   const { identity, unit, actorIdentityId } = loaded;
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: { unitId: str
     requiredAccess: 'allow',
     resource: { projectId: unit.projectId, unitId: unit.id },
   });
-  if (!allowed && !await hasSelfListingAccess(identity.id, unit.id)) {
+  if (!allowed && !(await hasSelfListingAccess(identity.id, unit.id))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

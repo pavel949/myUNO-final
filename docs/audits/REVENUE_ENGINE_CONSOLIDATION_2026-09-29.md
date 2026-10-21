@@ -1,5 +1,7 @@
 # Revenue, booking and catalog consolidation — 2026-09-29
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 ## Scope decision
 Historical Layantara bookings and historical financial records are retained in the private immutable snapshot but are NOT release gates for the catalog/revenue migration. Current/future occupancy (84 active source protections), open reservation obligations and channel authority STILL block double-selling; do not discard them. No synthetic paid bookings or financial balances.
 

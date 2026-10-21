@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { raiseDispute } from '@/modules/comms';
+import { ServiceOrderClosureError } from '@/modules/services/service-order-closure';
+import { raiseDispute, DisputeRequestError } from '@/modules/comms/dispute.service';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
 import type { DisputeSubjectType, RoleType } from '@prisma/client';
 
@@ -32,7 +33,9 @@ export async function POST(req: NextRequest) {
         400
       );
     }
-    if (!subjectId || !title || !description) {
+    if (typeof subjectId !== 'string' || !subjectId.trim() || subjectId.length > 200 ||
+        typeof title !== 'string' || !title.trim() || title.length > 200 ||
+        typeof description !== 'string' || !description.trim() || description.length > 4000) {
       throw createPublicError(
         'invalid request: subjectId, title, and description are required',
         400
@@ -45,15 +48,17 @@ export async function POST(req: NextRequest) {
 
     const dispute = await raiseDispute(prisma, {
       subjectType,
-      subjectId: String(subjectId),
+      subjectId: subjectId.trim(),
       raisedByIdentityId: user.identityId,
       raisedByRole: raisedByRole as RoleType,
-      title: String(title).slice(0, 200),
-      description: String(description).slice(0, 4000),
+      title: title.trim(),
+      description: description.trim(),
     });
 
     return NextResponse.json({ dispute }, { status: 201 });
   } catch (error) {
+    if (error instanceof DisputeRequestError) return handleError(createPublicError(error.status === 404 ? 'not found' : error.message, error.status));
+    if (error instanceof ServiceOrderClosureError) return handleError(createPublicError('The service order is no longer open for a dispute. Contact support for further help.', 409));
     return handleError(error);
   }
 }

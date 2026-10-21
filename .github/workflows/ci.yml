@@ -29,10 +29,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Reference revision needs full history, not the synthetic PR merge.
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -41,11 +43,25 @@ jobs:
       - name: Test platform inventory discovery
         run: npm run audit:inventory:test
 
+      - name: Test production content review policy
+        run: node --test scripts/content-review-gate-policy.test.mjs
+
+      - name: Test production migration safety policy
+        run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs
+
+      - name: Test backup connection and restore policy
+        run: node --test scripts/backup-policy.test.mjs
+
       - name: Test Claude Code guard hook
         run: npm run agents:guard:test
 
       - name: Generate current platform inventory
         run: npm run audit:inventory -- --out /tmp/myuno-platform-inventory.json
+
+      - name: Check repository documentation and inventory freshness
+        run: |
+          node scripts/generate-repository-reference.mjs --check
+          node scripts/check-repository-docs.mjs
 
       - name: Run linter
         run: npm run lint
@@ -105,11 +121,48 @@ jobs:
         run: npm run db:verify
         timeout-minutes: 10
 
+      - name: Rehearse backup and restore with isolated PostgreSQL
+        env:
+          PGPASSWORD: test
+          BACKUP_DATABASE_URL: postgresql://backup_test_reader:synthetic-backup-only@127.0.0.1:5432/myuno_test
+          SCRATCH_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/myuno_backup_restore_test
+        run: |
+          set -euo pipefail
+          psql -h localhost -U test -d myuno_test -v ON_ERROR_STOP=1 -c "CREATE ROLE backup_test_reader LOGIN PASSWORD 'synthetic-backup-only' BYPASSRLS; GRANT pg_read_all_data TO backup_test_reader; ALTER ROLE backup_test_reader SET default_transaction_read_only=on;"
+          psql -h localhost -U test -d myuno_test -v ON_ERROR_STOP=1 -c 'CREATE DATABASE myuno_backup_restore_test;'
+          node scripts/backup-public-schema.mjs dump --test-source
+          node scripts/backup-public-schema.mjs restore
+          rm -f dump.pgc backup-manifest.json restore-list.txt
+
       - name: Focused unified-engine tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
         run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts
+
+      - name: Employee release integration regressions
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: >-
+          npx vitest run src/app/reachability.test.ts
+          src/modules/core/permissions-active-identity.test.ts
+          src/modules/core/people.service.integration.test.ts
+          src/modules/content/content.test.ts
+          src/app/api/property-submissions/property-submissions.integration.test.ts
+          src/app/api/property-submissions/submission-description-route.test.ts
+
+      - name: Critical production-readiness regressions
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
+          DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        run: npx vitest run src/modules/finance/provider-payout-safety.integration.test.ts src/modules/comms/notification-delivery.integration.test.ts src/modules/services/service-order-closure.integration.test.ts src/modules/finance/statement-snapshot.integration.test.ts
 
       - name: Run tests
         env:

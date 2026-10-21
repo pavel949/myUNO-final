@@ -2,7 +2,7 @@ import { requireAdminPage } from '@/app/libs/requireAdminPage';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { eligibleOrganizationUnits } from '@/modules/ops/operating-space-access.service';
-import { OPERATING_GOVERNANCE_LABELS } from '@/modules/content/operating-governance.seed';
+import { OPERATING_GOVERNANCE_LABELS, OPERATING_GOVERNANCE_DRAFTS } from '@/modules/content/operating-governance.seed';
 import WorkspaceAccessClient from './workspace-access-client';
 
 export const dynamic = 'force-dynamic';
@@ -22,5 +22,5 @@ export default async function WorkspaceAccessPage() {
     unitIds: s.units.filter(u => u.active).map(u => u.unitId),
     currentUnits: s.units.filter(u => u.active).map(u => u.unit),
     units: undefined,
-  }))} labels={await getLabels(OPERATING_GOVERNANCE_LABELS)} />;
+  }))} labels={await getLabels(OPERATING_GOVERNANCE_LABELS, undefined, OPERATING_GOVERNANCE_DRAFTS)} />;
 }

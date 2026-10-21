@@ -61,6 +61,15 @@ describe('In-stay home space — stay project scope (T-034)', () => {
     });
   }
 
+  it('carries receivable review separately from the retained gross balance', async () => {
+    const { guest, booking } = await stayIn();
+    await db.booking.update({ where: { id: booking.id }, data: {
+      receivableStatus: 'pending_reconciliation', balanceDueThb: 123456,
+    } });
+    const data = await getInStayHomeSpace(db, booking.id, guest.id);
+    expect(data.booking).toMatchObject({ receivableStatus: 'pending_reconciliation', balanceDueThb: 123456 });
+  });
+
   describe('announcements', () => {
     it('shows the stay project-s announcements and no other project-s', async () => {
       const { project, guest, booking } = await stayIn();
@@ -412,3 +421,4 @@ describe('In-stay home space — stay project scope (T-034)', () => {
     });
   });
 });
+

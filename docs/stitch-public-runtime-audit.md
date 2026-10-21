@@ -1,5 +1,7 @@
 # Public Stitch runtime audit · 2026-10-08
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: production `https://my-uno-final.vercel.app`, RU, desktop viewport 1348×926. Current-run UI captures and navigation, plus source grounding against `docs/canonical/DESIGN.md` §16, the founder's approved Stitch export and shared Stitch components. Read-only except narrow ProjectCard corrections recorded below. This is representative public-surface evidence, not a claim that every authenticated workflow is complete.
 
 ## Verdict

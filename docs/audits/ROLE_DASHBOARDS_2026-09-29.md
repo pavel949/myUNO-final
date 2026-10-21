@@ -1,5 +1,7 @@
 # myUNO role-dashboard audit — 2026-09-29
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Scope:** code-level review of `release/unified-myuno-20260929`, with fixes in PR #153. This is **not** evidence of a deployed production screen, successful authenticated browser session, or completed Layantara cutover. No production data is written.
 
 ## Decision and information architecture

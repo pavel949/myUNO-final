@@ -1,3 +1,5 @@
+import { serviceOrderDeadline } from './service-order-closure';
+import { parseStandaloneContext } from './standalone-context';
 import type { PrismaClient } from '@prisma/client';
 
 export type ServiceOrderCustomerViewResult = Awaited<ReturnType<typeof getServiceOrderCustomerView>>;
@@ -78,14 +80,20 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
 
   // Has the orderer already rated it? The rating route refuses a second
   // review, so the surface must not offer one.
-  const existingReview = await db.review.findFirst({
+  const [existingReview, deadline, dispute] = await Promise.all([db.review.findFirst({
     where: {
       target_type: 'service_order',
       target_id: order.id,
       author_identity_id: identityId,
     },
     select: { id: true },
-  });
+  }),
+  order.status === 'fulfilled' ? serviceOrderDeadline(db, order) : Promise.resolve(null),
+  db.dispute.findFirst({
+    where: { subjectType: 'service_order', subjectId: id },
+    select: { id: true, ticketId: true, decidedAt: true },
+  })]);
+  const inWindow = deadline !== null && new Date() < deadline;
 
   // Parse price breakdown
   const priceBreakdown = typeof order.price_breakdown === 'string'
@@ -98,14 +106,21 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     updatedAt: order.updatedAt.toISOString(),
     status: order.status,
     quantity: order.quantity,
+    fulfilledAt: order.fulfilled_at?.toISOString() ?? null,
+    closedAt: order.closed_at?.toISOString() ?? null,
+    confirmationDeadline: deadline?.toISOString() ?? null,
+    canConfirm: order.status === 'fulfilled' && inWindow && (!dispute || dispute.decidedAt !== null),
+    canDispute: ['accepted', 'failed'].includes(order.status) || (order.status === 'fulfilled' && inWindow),
+    dispute: dispute ? { id: dispute.id, ticketId: dispute.ticketId, pending: dispute.decidedAt === null } : null,
     scheduledStart: order.scheduled_start.toISOString(),
     scheduledEnd: order.scheduled_end.toISOString(),
     totalThb: order.total_thb,
-    takeRatePctSnapshot: Number(order.take_rate_pct_snapshot),
     priceBreakdown,
     refundAccruedThb: order.refund_accrued_thb,
     noteToProvider: order.note_to_provider,
     addressNote: order.address_note,
+    serviceContext: (() => { try { return { ...parseStandaloneContext(order.service_context) }; } catch { return null; } })(),
+    termsSnapshot: customerServiceTerms(order.terms_snapshot),
     cancelledAt: order.cancelled_at?.toISOString() || null,
     cancellationReason: order.cancellation_reason,
     rated: Boolean(existingReview),
@@ -144,4 +159,15 @@ export async function getServiceOrderCustomerView(db: PrismaClient, id: string, 
     })),
   };
   return { kind: 'ok' as const, order: view };
+}
+
+/** Customer terms deliberately exclude internal commission and configuration identifiers. */
+export function customerServiceTerms(snapshot: unknown): Record<string, string | number> | null {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
+  const record = snapshot as Record<string, unknown>;
+  const allowed: Record<string, string | number> = {};
+  for (const key of ['collector', 'fulfilmentMode', 'responsibleOrganizationName', 'cancellationWindowHours', 'totalThb']) {
+    if (typeof record[key] === 'string' || typeof record[key] === 'number') allowed[key] = record[key] as string | number;
+  }
+  return Object.keys(allowed).length ? allowed : null;
 }

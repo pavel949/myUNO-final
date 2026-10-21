@@ -1,5 +1,7 @@
 # Phase 1 Implementation Plan (corrected)
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Date:** 2026-08-18 · Supersedes any earlier plan. Built from `PHASE0_EVIDENCE_REPORT.md`, not
 from assumptions.
 

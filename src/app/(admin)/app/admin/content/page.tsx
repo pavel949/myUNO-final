@@ -8,11 +8,12 @@ import ContentAdminClient from './content-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminContentPage({
-  searchParams,
-}: {
-  searchParams: { ns?: string; key?: string };
-}) {
+export default async function AdminContentPage(
+  props: {
+    searchParams: Promise<{ ns?: string; key?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireAdminPage();
 
   const exactKey = searchParams.key;

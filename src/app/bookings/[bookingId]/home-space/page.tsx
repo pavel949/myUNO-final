@@ -1,4 +1,5 @@
 import React from 'react';
+import { GALLERY_EMERGENCY_LOCALE_DRAFTS } from '@/modules/content/gallery-emergency.seed';
 import { redirect } from 'next/navigation';
 import { fetchInStayHomeSpace } from '@/app/actions/getInStayHomeSpace';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -11,12 +12,13 @@ import { InStayHomeSpaceClient } from './client';
 export const dynamic = 'force-dynamic';
 
 interface InStayHomeSpacePageProps {
-  params: {
+  params: Promise<{
     bookingId: string;
-  };
+  }>;
 }
 
-export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePageProps) {
+export default async function InStayHomeSpacePage(props: InStayHomeSpacePageProps) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=/bookings/${params.bookingId}/home-space`);
@@ -25,6 +27,7 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
   const data = await fetchInStayHomeSpace(params.bookingId);
   const labels = await getLabels({
     'home.welcome': 'Welcome to',
+    'help.emergency.title': 'Emergency help',
     'home.welcome_back': 'Welcome back, {name}',
     'home.handbook.title': 'Property Handbook',
     'home.handbook.description': 'Learn about the property amenities, check-out procedures, and local information.',
@@ -105,7 +108,7 @@ export default async function InStayHomeSpacePage({ params }: InStayHomeSpacePag
     'services.rating.button_submit': 'Submit rating',
     'services.rating.button_submitting': 'Submitting...',
     'services.rating.star_label': '{n} out of 5',
-  });
+  }, undefined, GALLERY_EMERGENCY_LOCALE_DRAFTS);
 
   // Project-specific shuttle schedule (content key; empty until the founder
   // supplies the real timetable — Q29)

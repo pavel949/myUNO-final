@@ -10,7 +10,8 @@ import AmenityReservationsClient from './amenity-reservations-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AmenityReservationsPage({ params }: { params: { id: string; amenityId: string } }) {
+export default async function AmenityReservationsPage(props: { params: Promise<{ id: string; amenityId: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(`/app/admin/projects/${params.id}/amenities/${params.amenityId}/reservations`));
   const actor = await getProjectAmenityOpsActor(params.id);

@@ -40,6 +40,14 @@ describe('sourceFingerprint', () => {
     expect(fp(a)).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it('invalidates an unsigned source snapshot when a booking moves inside the same period without changing revenue', () => {
+    const old = sources();
+    const moved = sources({ bookings: old.bookings.map(b => ({ ...b, startDate: new Date('2026-07-03'), endDate: new Date('2026-07-06') })) });
+    expect(fp(moved)).not.toBe(fp(old));
+    const extended = sources({ bookings: old.bookings.map(b => ({ ...b, endDate: new Date('2026-07-06') })) });
+    expect(fp(extended)).not.toBe(fp(old));
+  });
+
   it('changes when a cost is added, reversed, or its amount differs', () => {
     const base = fp(sources());
     const extra = sources({
@@ -120,4 +128,13 @@ describe('sourceFingerprint — cancelled stays', () => {
     expect(fp(cancelled(300_000))).not.toBe(fp(cancelled(400_000)));
     expect(fp(cancelled(300_000))).toBe(fp(cancelled(300_000)));
   });
+});
+
+
+it('preserves legacy collectible fingerprints but invalidates pending source review', () => {
+  const legacy = sources();
+  const collectible = sources({ bookings: legacy.bookings.map(b => ({ ...b, receivableStatus: 'collectible' })) });
+  const pending = sources({ bookings: legacy.bookings.map(b => ({ ...b, receivableStatus: 'pending_reconciliation' })) });
+  expect(fp(collectible)).toBe(fp(legacy));
+  expect(fp(pending)).not.toBe(fp(legacy));
 });

@@ -16,13 +16,15 @@ import {
   sendPostStayPrompts,
   sendPostStayReengage,
 } from '@/modules/booking';
-import { expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
+import { closeFulfilledServiceOrders, expireStaleServiceOrders, remindUnansweredServiceOrders, sendServiceOrderReviewPrompts } from '@/modules/services';
+import { flushPendingNotificationDeliveries } from '@/modules/comms/notification-delivery';
 import { autoCloseResolvedTickets, checkAndTrackSLABreaches } from '@/modules/comms';
 import { syncAllICalAccounts } from '@/modules/integrations';
 import { getConfig } from '@/modules/config';
 import { JOB_KEYS } from './registry';
 import { runRegisteredJob } from './record';
 import { releaseExpiredDepositPreauths } from '@/modules/finance';
+import { recoverRequestedBookingRefunds } from '@/modules/finance/refund-recovery';
 
 export type JobDispatchResult = Record<string, string>;
 
@@ -38,10 +40,12 @@ export async function runBookingLifecycleJob(db: PrismaClient) {
       const expired = await expireHolds(db);
       const declined = await autoDeclineRequests(db);
       const reminded = await remindUnansweredRequests(db);
-      return { expired, declined, reminded };
+      const deliveries = await flushPendingNotificationDeliveries(db);
+      const refunds = await recoverRequestedBookingRefunds(db);
+      return { expired, declined, reminded, deliveries, refunds };
     },
     (r) =>
-      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders`
+      `${r.expired} holds expired, ${r.declined} requests auto-declined, ${r.reminded} request reminders, ${r.deliveries.sent} deliveries sent, ${r.deliveries.failed} failed, ${r.deliveries.deferred} deferred, ${r.refunds.processed} refund requests processed, ${r.refunds.deferred} refunds deferred`
   );
 }
 
@@ -136,15 +140,16 @@ export async function runServiceOrderExpiryJob(db: PrismaClient) {
       const reminded = await remindUnansweredServiceOrders(db);
       const reviewPrompted = await sendServiceOrderReviewPrompts(db);
       const expired = await expireStaleServiceOrders(db, slaHours ?? 12);
+      const serviceOrdersClosed = await closeFulfilledServiceOrders(db);
       const autoCloseDays = (await getConfig(db, 'tickets.auto_close_resolved_days')) as
         | number
         | null;
       const closed = await autoCloseResolvedTickets(db, autoCloseDays ?? 7);
       const breached = await checkAndTrackSLABreaches(db);
-      return { reminded, reviewPrompted, ...expired, closed, breached };
+      return { reminded, reviewPrompted, ...expired, serviceOrdersClosed, closed, breached };
     },
     (r) =>
-      `${r.reminded} reminded, ${r.reviewPrompted} review prompts, ${r.expired} expired, ${r.refunded} refunded, ${r.closed} tickets closed, ${r.breached} SLA escalated`
+      `${r.reminded} reminded, ${r.reviewPrompted} review prompts, ${r.expired} expired, ${r.refunded} refunded, ${r.serviceOrdersClosed} orders closed, ${r.closed} tickets closed, ${r.breached} SLA escalated`
   );
 }
 

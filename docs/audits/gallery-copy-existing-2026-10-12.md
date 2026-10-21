@@ -1,5 +1,7 @@
 # Copy existing unit photos to the complex gallery — 2026-10-12
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Scope: CO24 content/media lifecycle and AT16 scoped gallery authoring.
 Initial baseline: main `fc1376f12402baad0856275a5f9d4fc1bf3df998`.
 Final branch rebased onto `31a09e96fa8b0eb376abd01bcf50893aa47b3d99` (PR #249,

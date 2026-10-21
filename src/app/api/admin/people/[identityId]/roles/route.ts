@@ -12,7 +12,8 @@ import { requireAction } from '@/app/libs/onboardingGuard';
  */
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: Request, { params }: { params: { identityId: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ identityId: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('people:view');
   if (!guard.ok) return guard.error;
 
@@ -42,6 +43,12 @@ export async function GET(_req: Request, { params }: { params: { identityId: str
       role: a.role,
       scopeType: a.scopeType,
       status: a.status,
+      projectId: a.projectId,
+      unitId: a.unitId,
+      canDelegate: a.canDelegate,
+      parentGrantId: a.parentGrantId,
+      expiresAt: a.expiresAt?.toISOString() ?? null,
+      updatedAt: a.updatedAt.toISOString(),
       projectName: a.project?.name ?? null,
       unitName: a.unit?.name ?? null,
     })),

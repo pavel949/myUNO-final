@@ -1,5 +1,7 @@
 # Layantara cutover: independently refreshed live preflight
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Date:** 2026-09-29, read-only queries against the connected live Layan Tara OS and MyUno-final PostgreSQL databases. No source or target writes, schema application, import, status change, booking creation, or deploy occurred. This file is a *point-in-time* supplement to `LAYANTARA_LIVE_RECONCILIATION_2026-09-29.md`, not permission to activate the project.
 
 ## Verified inventory and source occupancy

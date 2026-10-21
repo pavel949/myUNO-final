@@ -1,4 +1,6 @@
 # Ignatev Estate — Business & Operating Model (v3)
+
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
 ### The Continuity Layer · Complete Reference
 
 *This is the complete, canonical description of Ignatev Estate — the whole business and every process, in plain language. It is the full target state: what the business becomes when fully built. You will execute only the most reachable part first (Part V), but this is the map of the whole territory. This version merges the operating model with the demand, occupancy, and community strategy into a single source of truth, and supersedes all earlier drafts.*

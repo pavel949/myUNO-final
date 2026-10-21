@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { capturePassportData, createTm30Filing, encryptGuestPii, safeDecrypt } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { canManageBookingGuests, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { canAccessBookingGuestData } from '@/app/libs/bookingAccess';
 
 async function authorize(bookingId: string) {
   const user = await getCurrentUser();
@@ -27,13 +27,13 @@ async function authorize(bookingId: string) {
   if (!bookingRow) {
     throw createPublicError('not found', 404);
   }
-  const access = await resolveBookingAccess(user, {
+  const allowed = await canAccessBookingGuestData(user, {
     guestIdentityId: bookingRow.guestIdentityId,
     projectId: bookingRow.projectId,
     unitId: bookingRow.unitId,
     ownerIdentityId: bookingRow.unit?.ownerIdentityId,
   });
-  if (!canManageBookingGuests(access)) {
+  if (!allowed) {
     throw createPublicError('not found', 404);
   }
   const booking = {
@@ -51,10 +51,8 @@ async function authorize(bookingId: string) {
  * List the booking's party members. Passport numbers are NEVER returned —
  * only whether one has been provided (PDPA, doc 12).
  */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const { booking } = await authorize(params.id);
 
@@ -96,10 +94,8 @@ export async function GET(
  *
  * Body: { fullName, nationality, passportNumber, dateOfBirth?, isLead? }
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await authorize(params.id);
 

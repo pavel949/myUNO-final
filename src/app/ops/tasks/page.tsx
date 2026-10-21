@@ -8,12 +8,14 @@ import { getScopedOperationalAccess, getLegacyOperationalUnitIds, operationalTas
 import OperationalTaskQueueClient from '@/components/ops/OperationalTaskQueueClient';
 import OperationalTaskCreateForm from '@/components/ops/OperationalTaskCreateForm';
 import { enumLabelDefaults } from '@/lib/enum-labels';
+import { taskCalendarReturnHref } from '@/lib/calendar-navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OperationalTasksPage({
-  searchParams,
-}: { searchParams?: { unitId?: string; mc?: string; spaceId?: string } }) {
+export default async function OperationalTasksPage(
+  props: { searchParams?: Promise<{ unitId?: string; mc?: string; spaceId?: string; returnTo?: string | string[] }> }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/ops/tasks');
 
@@ -47,7 +49,9 @@ export default async function OperationalTasksPage({
     if (error instanceof OperatingAccessError) notFound();
     throw error;
   }
-  const backHref = requestedSpaceId ? '/ops/spaces/' + encodeURIComponent(requestedSpaceId) : explicitMcMode ? '/mc/calendar' : '/ops/calendar';
+  const backHref = taskCalendarReturnHref(searchParams?.returnTo, {
+    spaceId: requestedSpaceId, unitId: requestedUnitId, mc: explicitMcMode,
+  });
 
   const labels = await getLabels({
     ...enumLabelDefaults('taskType', 'taskStatus'),
@@ -91,6 +95,8 @@ export default async function OperationalTasksPage({
         <p className="mt-4 text-body text-text-secondary">{labels['staff.tasks.subtitle']}</p>
       </div>
       {requestedSpaceId && taskFormData && taskTimeZone ? <OperationalTaskCreateForm
+        key={requestedSpaceId + ':' + (requestedUnitId || '')}
+        initialUnitId={requestedUnitId}
         operatingSpaceId={requestedSpaceId}
         timeZone={taskTimeZone}
         units={taskFormData[0]}
@@ -121,4 +127,5 @@ export default async function OperationalTasksPage({
     </div>
   </main>;
 }
+
 

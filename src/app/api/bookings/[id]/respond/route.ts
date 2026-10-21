@@ -18,10 +18,8 @@ import { t, type Locale } from '@/modules/content';
  * Permission: stays:approve_decline_booking_requests (staff_ops, onsite_host,
  * mc_member scoped to their units; admin bypasses via can()).
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser();
     if (!user) {

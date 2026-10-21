@@ -4,12 +4,16 @@ import ThreadClient from './thread-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ThreadPage({ params }: { params: { threadId: string } }) {
+export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
+  const params = await props.params;
   const labels = await getLabels({
     'messages.breadcrumb_home': 'Home',
     'messages.breadcrumb_messages': 'Messages',
     'messages.breadcrumb_thread': 'Conversation',
     'messages.thread.back': '← Messages',
+    'messages.thread.retry': 'Try again',
+    'messages.thread.load_error': 'Could not refresh this conversation. Your message draft is kept.',
+    'messages.thread.empty': 'Start the conversation by sending a message below.',
     'messages.thread.loading': 'Loading conversation…',
     'messages.thread.not_found': 'Conversation not found',
     'messages.thread.placeholder': 'Write a message…',
@@ -27,7 +31,7 @@ export default async function ThreadPage({ params }: { params: { threadId: strin
 
   return (
     <>
-      <Breadcrumb items={breadcrumbs} />
+      <Breadcrumb items={breadcrumbs} preserveWorkspace />
       <ThreadClient threadId={params.threadId} labels={labels} />
     </>
   );

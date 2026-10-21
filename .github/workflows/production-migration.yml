@@ -1,0 +1,124 @@
+name: Production migration (backup required)
+on:
+  workflow_dispatch:
+    inputs:
+      preflight_only:
+        description: 'Read-only connection/ledger verification; skips backup and migration'
+        type: boolean
+        default: false
+      pooler_host:
+        description: 'Use the verified backup endpoint metadata or the configured migration route'
+        type: choice
+        default: backup_route
+        options:
+          - backup_route
+          - configured
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+jobs:
+  reviewed-main:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful CI for the current main SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          [ "$current" = "$GITHUB_SHA" ] || { echo '::error::Main changed; start a fresh release.'; exit 1; }
+          passed="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=10" --jq '[.workflow_runs[] | select(.event == "push" and .head_branch == "main")] | length')"
+          [ "$passed" -gt 0 ] || { echo '::error::Exact main SHA has no successful push CI.'; exit 1; }
+  route:
+    needs: reviewed-main
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      host: ${{ steps.endpoint.outputs.host }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Extract canonical endpoint metadata without exporting credentials
+        id: endpoint
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { backupConnection } from './scripts/backup-policy.mjs';
+          try {
+            const { PGHOST } = backupConnection(process.env.BACKUP_DATABASE_URL);
+            appendFileSync(process.env.GITHUB_OUTPUT, `host=${PGHOST}\n`);
+          } catch { console.error('Canonical backup endpoint metadata rejected'); process.exitCode = 1; }
+          JS
+  preflight:
+    needs: route
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/production-migration-policy.test.mjs scripts/production-migration-preflight.test.mjs
+      - name: Read-only canonical connection and migration ledger
+        env:
+          # The proven backup principal already has SELECT on the ledger.
+          # DDL still uses the separate migration credential in the migrate job.
+          READONLY_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
+          MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}
+        run: node scripts/production-migration-preflight.mjs
+  backup:
+    needs: preflight
+    if: ${{ !inputs.preflight_only }}
+    uses: ./.github/workflows/backup.yml
+    secrets:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+  migrate:
+    needs: [backup, route]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/production-migration-policy.test.mjs
+      - name: Recheck main after backup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          [ "$current" = "$GITHUB_SHA" ] || { echo '::error::Main changed during backup; start a fresh release.'; exit 1; }
+      - name: Explicit Prisma migration and financial parity
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_POOLER_HOST: ${{ vars.DATABASE_POOLER_HOST }}
+          MIGRATION_DATABASE_HOST: ${{ inputs.pooler_host == 'backup_route' && needs.route.outputs.host || '' }}
+          BACKUP_VERIFIED_SHA: ${{ github.sha }}
+        run: node scripts/production-migrate.mjs

@@ -1,5 +1,7 @@
 # DECISIONS_CHANGELOG.md — Canonical Changes in v3
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 ## Added from the reviewed founder prompt
 1. Vendor-neutral agent language; no dependency on Claude.
 2. Standalone Phuket service/product ordering without property/stay requirement.
@@ -53,6 +55,4 @@ The amount a guest paid and the host kept after a cancellation refund (the retai
 Implementation: a cancelled stay enters the period at what the guest paid (succeeded stay payments); the refund is
 deducted as before, so the owner nets paid minus refunded — never negative for a stay that earned something, never a
 charge for one that earned nothing. The myUNO service fee is charged on revenue the owner keeps (gross minus the
-refunded part of cancelled stays). Open edge: a cancelled stay that crosses a period boundary is not yet blocked from
-silently dropping out (crossing-stay check still covers live statuses only). Cash/transfer holds: 24 h (decided,
-implementation pending).
+refunded part of cancelled stays). Period-boundary rule: a cancelled stay with reconciled succeeded rental payments must not silently drop out of a statement. Generation and unsigned sign-off require explicit allocation when such a stay crosses the period; an already operator-signed snapshot remains immutable. Unpaid cancellations, deposits and unreconciled claims are not retained rental revenue. Cash/transfer holds: 24 h (decided, implementation pending).

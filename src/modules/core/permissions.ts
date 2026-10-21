@@ -1,5 +1,7 @@
 import { Identity, Prisma, PrismaClient, RoleAssignment, RoleType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { PropertyCapabilityError, readPropertyCapabilityAccess } from './property-capability-access';
+import { capabilityScopeMatches } from './property-capability-policy';
 
 export type AccessLevel = 'allow' | 'read';
 
@@ -82,7 +84,13 @@ const ADMIN_ONLY_ACTIONS = new Set([
  * Note: 'admin' is not included here because admin access is handled via Identity.isAdmin flag,
  * which bypasses all permission checks in the can() function.
  */
+// content_contributor intentionally has NO entries here. Its project scope is
+// shared-complex draft content only, never all units or operational authority.
+// Dedicated proposal services enforce that narrower content boundary.
 export const PERMISSIONS: PermissionEntry[] = [
+  // Independently delegated pricing only. Never alias to availability or full-unit access.
+  { action: 'units:manage_pricing', role: 'pricing_editor', access: 'allow', scope: 'assigned_pricing' },
+  { action: 'units:manage_booking_mode', role: 'booking_mode_editor', access: 'allow', scope: 'assigned_booking_mode' },
   // Projects & units — 6 capabilities
   // NOTE: 'projects:edit_and_set_live' is admin-only per doc 03 §3 (row:
   // "Create/edit projects, set live" = ✅ only for admin). staff_ops must NOT
@@ -327,6 +335,26 @@ export async function can(
   const { identity, action, resource } = context;
   const requiredAccess: RequiredAccess = context.requiredAccess ?? 'read';
   const resolvedAction = resolvePermissionAction(action);
+
+  // These two rights never use generic role scope matching or stale session claims.
+  if (resolvedAction === 'units:manage_pricing' || resolvedAction === 'units:manage_booking_mode') {
+    if (identity.status !== 'active') return false;
+    try {
+      const role = resolvedAction === 'units:manage_pricing' ? 'pricing_editor' : 'booking_mode_editor';
+      const access = await readPropertyCapabilityAccess(db, identity.id, role);
+      if (access.actor.isAdmin) return true;
+      if (typeof resource?.projectId !== 'string' || !resource.projectId || resource.projectId !== resource.projectId.trim()) return false;
+      if (resource.unitId !== undefined) {
+        if (typeof resource.unitId !== 'string' || !resource.unitId || resource.unitId !== resource.unitId.trim()) return false;
+        const unit = await db.unit.findUnique({ where: { id: resource.unitId }, select: { projectId: true, status: true } });
+        if (!unit || unit.projectId !== resource.projectId || unit.status === 'offboarded') return false;
+      }
+      return access.grants.some(grant => capabilityScopeMatches(grant, resource));
+    } catch (error) {
+      if (error instanceof PropertyCapabilityError) return false;
+      throw error;
+    }
+  }
 
   // Rule 1: Only active identities may exercise permissions (PR #242).
   if (identity.status !== 'active') {

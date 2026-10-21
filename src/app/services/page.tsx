@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
@@ -33,6 +34,9 @@ export default async function ServicesPage() {
 
   const labels = await getLabels({
     'services.browse.title': 'Services',
+    'services.browse.loading': 'Loading…',
+    'services.browse.load_error': 'Could not load this information. Please try again.',
+    'services.browse.retry': 'Try again',
     'landing.services.no_photo': 'Illustrative image',
     'services.browse.subtitle':
       'Cleaning, repairs, deliveries — every provider vetted, every order on the record.',
@@ -73,7 +77,7 @@ export default async function ServicesPage() {
     'services.order_status.cancelled': 'Cancelled',
     'services.order_status.closed': 'Closed',
     ...categoryLabelKeys,
-  });
+  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   const allLabels = labels as Record<string, string>;
   const categories = catalog.map((c) => ({

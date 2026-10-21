@@ -22,12 +22,12 @@ export const dynamic = 'force-dynamic'
  * must have passed the admin sign-off gate — an owner cannot sign a draft they
  * are not allowed to read.
  */
-export async function PUT(
-  _req: NextRequest,
-  { params }: { params: { statementId: string } }
-) {
+export async function PUT(_req: NextRequest, props: { params: Promise<{ statementId: string }> }) {
   try {
+    // Resolve the caller before awaiting params: identity is read in the first
+    // synchronous segment, exactly as before the async-params signature.
     const currentUser = await getCurrentUser()
+    const params = await props.params;
 
     if (!currentUser) {
       return NextResponse.json(
@@ -96,7 +96,7 @@ export async function PUT(
       }
       // The statement is theirs and visible; it simply no longer matches the
       // facts it was prepared from. Say so — a 404 here would read as "gone".
-      if (error.reason === 'stale' || error.reason === 'snapshot_mismatch') {
+      if (error.reason === 'receivable_review' || error.reason === 'stale' || error.reason === 'snapshot_mismatch') {
         return NextResponse.json(
           { error: error.message, code: `statement_${error.reason}` },
           { status: 409 }
@@ -111,3 +111,4 @@ export async function PUT(
     )
   }
 }
+

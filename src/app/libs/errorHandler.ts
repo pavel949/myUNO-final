@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { headers, type UnsafeUnwrappedHeaders } from 'next/headers';
 import { CORRELATION_ID_HEADER, reportError, sanitiseCorrelationId } from '@/lib/observability';
 
 interface ErrorWithStatus extends Error {
@@ -16,7 +16,9 @@ interface ErrorWithStatus extends Error {
  */
 function currentCorrelationId(): string | null {
   try {
-    return sanitiseCorrelationId(headers().get(CORRELATION_ID_HEADER));
+    // Synchronous on purpose: handleError has hundreds of sync callers. Next 15
+    // still supports the unwrapped form; Next 16 removes it, so migrate then.
+    return sanitiseCorrelationId((headers() as unknown as UnsafeUnwrappedHeaders).get(CORRELATION_ID_HEADER));
   } catch {
     return null;
   }

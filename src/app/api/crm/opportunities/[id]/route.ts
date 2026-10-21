@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { assertNoEmployeeCreationInput, hasEmployeeCreationReceipt, employeeCreationFailure } from '@/modules/onboarding/employee-creation.service';
+import { EmployeeCreationError } from '@/modules/onboarding/employee-creation.schema';
 import { requireAdmin } from '@/app/libs/onboardingGuard';
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
@@ -134,33 +134,28 @@ export async function GET(
   });
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.error;
 
-  const body = await req.json();
-  const { requirements } = body;
-
-  const opportunity = await prisma.crmOpportunity.findUnique({
-    where: { id: params.id },
-  });
-
-  if (!opportunity) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  try {
+    const body = await req.json();
+    assertNoEmployeeCreationInput(body);
+    const updated = await prisma.$transaction(async tx => {
+      // Keep the provenance guard and mutation under the same lock. A generic
+      // CRM edit cannot inject, strip or rewrite a governed creation lifecycle.
+      await tx.$queryRaw`SELECT id FROM crm_opportunity WHERE id = ${params.id} FOR UPDATE`;
+      const opportunity = await tx.crmOpportunity.findUnique({ where: { id: params.id } });
+      if (!opportunity) throw new EmployeeCreationError(404, 'Not found');
+      if (hasEmployeeCreationReceipt(opportunity.requirements)) {
+        throw new EmployeeCreationError(403, 'Employee creation requests require their dedicated review workflow.');
+      }
+      return tx.crmOpportunity.update({ where: { id: params.id }, data: { requirements: body.requirements || {} } });
+    });
+    return NextResponse.json({ id: updated.id, requirements: updated.requirements });
+  } catch (error) {
+    const failure = employeeCreationFailure(error);
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
-
-  const updated = await prisma.crmOpportunity.update({
-    where: { id: params.id },
-    data: {
-      requirements: requirements || {},
-    },
-  });
-
-  return NextResponse.json({
-    id: updated.id,
-    requirements: updated.requirements,
-  });
 }

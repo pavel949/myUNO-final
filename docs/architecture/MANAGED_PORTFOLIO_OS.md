@@ -1,5 +1,7 @@
 # myUNO Managed Portfolio OS — canonical operating contract
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Status: shared read-only operational calendar implemented at /ops/calendar/board. Legacy /mc/calendar and /mc/portfolio entry points redirect into this projection; canonical unit-level availability/pricing screens remain the only write path. This is not a claim that every PMS overlay or production cutover gate is complete.
 
 ## The operating model

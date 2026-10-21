@@ -5,6 +5,7 @@ import { Navbar } from './Navbar';
 
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/trips'),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('./NotificationBell', () => ({

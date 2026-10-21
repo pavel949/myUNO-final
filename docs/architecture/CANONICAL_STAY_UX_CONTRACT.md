@@ -1,5 +1,7 @@
 # Stay UX Contract
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 The UI mirrors the canonical data graph. Labels may be friendly, but they must not hide which object is being edited.
 
 ## Admin information architecture

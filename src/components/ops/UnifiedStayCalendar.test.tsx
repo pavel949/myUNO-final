@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, cleanup } from '@testing-library/react';
+import { fireEvent, render, screen, cleanup, within } from '@testing-library/react';
 import UnifiedStayCalendar from './UnifiedStayCalendar';
 
 const push = vi.fn();
@@ -146,4 +146,59 @@ describe('one calendar surface with mode-specific safe actions', () => {
     }
   });
 
+  it.each(['staff', 'mc'] as const)('retains the advanced range and original board filters through tasks (%s)', mode => {
+    const current = { ...props, start: '2026-10-15', days: ['2026-10-15'], daysCount: 14,
+      mode, spaceId: 'resort-space', organizationId: mode === 'mc' ? 'org-a' : '' };
+    const { rerender } = render(<UnifiedStayCalendar {...current} />);
+    const next = new URL(screen.getByRole('link', { name: /Next/ }).getAttribute('href')!, 'https://myuno.test');
+    const start = next.searchParams.get('start')!;
+    expect(start).toBe('2026-10-29');
+    rerender(<UnifiedStayCalendar {...current} start={start} days={[start]} />);
+    fireEvent.click(screen.getAllByRole('button', { name: new RegExp(`Villa A.*${start}`) })[0]);
+    const tasks = new URL(screen.getByRole('link', { name: /Housekeeping & readiness/ }).getAttribute('href')!, 'https://myuno.test');
+    expect(tasks.pathname).toBe('/ops/tasks');
+    expect(tasks.searchParams.get('unitId')).toBe('unit-a');
+    expect(tasks.searchParams.get('spaceId')).toBe('resort-space');
+    expect(tasks.searchParams.get('returnTo')).toBe(next.pathname + next.search);
+    // The board was showing all category units, not just the selected task unit.
+    expect(new URL(tasks.searchParams.get('returnTo')!, 'https://myuno.test').searchParams.has('unitId')).toBe(false);
+  });
+
+});
+
+
+describe('calendar refresh and available inventory', () => {
+  it('refreshes open night details when canonical occupancy changes', () => {
+    const free = { state: 'free' as const, entryIds: [], bookingIds: [], blocking: false };
+    const { rerender } = render(<UnifiedStayCalendar {...props} cells={{ 'unit-a': [free] }} entries={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Villa A.*2026-09-29.*Available/ }));
+    expect(within(screen.getByRole('region', { name: 'Night details' })).getByText('Available')).toBeTruthy();
+
+    rerender(<UnifiedStayCalendar {...props} />);
+    const occupied = screen.getByRole('region', { name: 'Night details' });
+    expect(within(occupied).getByText('Reserved')).toBeTruthy();
+    expect(within(occupied).getByRole('link', { name: /Open canonical stay/ }).getAttribute('href'))
+      .toBe('/ops/stays/booking-a');
+
+    rerender(<UnifiedStayCalendar {...props} cells={{ 'unit-a': [free] }} entries={{}} />);
+    const released = screen.getByRole('region', { name: 'Night details' });
+    expect(within(released).getByText('Available')).toBeTruthy();
+    expect(within(released).getByText('No entries')).toBeTruthy();
+    expect(within(released).queryByRole('link', { name: /Open canonical stay/ })).toBeNull();
+
+    rerender(<UnifiedStayCalendar {...props} start="2026-10-01" days={['2026-10-01']} />);
+    expect(screen.queryByRole('region', { name: 'Night details' })).toBeNull();
+  });
+
+  it('counts nonblocking request nights as available while excluding holds and unsellable units', () => {
+    const unit = props.units[0];
+    const request = { state: 'request' as const, entryIds: ['booking-a'], bookingIds: ['booking-a'], blocking: false };
+    const hold = { state: 'hold' as const, entryIds: ['hold'], bookingIds: ['hold'], blocking: true };
+    render(<UnifiedStayCalendar {...props}
+      units={[unit, { ...unit, id: 'held' }, { ...unit, id: 'unsellable', sellable: false }]}
+      cells={{ 'unit-a': [request], held: [hold], unsellable: [request] }} />);
+    const summary = screen.getByRole('region', { name: 'Calendar summary' });
+    expect(within(summary).getByText('Available').parentElement).toHaveTextContent('Available1');
+    expect(within(summary).getByText('Holds').parentElement).toHaveTextContent('Holds1');
+  });
 });

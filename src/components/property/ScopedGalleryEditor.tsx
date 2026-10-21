@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable local-rules/no-literal-ui-text */
 
+import { uploadPhoto, finalizePhoto, PhotoUploadError, type PendingPhotoUpload, type UploadedPhoto } from '@/modules/media/client-upload';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   assessGalleryReadiness,
@@ -28,16 +29,33 @@ function endpoint(target: Target) {
   return `/api/admin/units/${target.id}/media`;
 }
 
-export default function ScopedGalleryEditor({
-  projectId, projectName, categories, units, initialSelection, labels,
-}: {
+type Props = {
   projectId: string;
   projectName: string;
   categories: Array<{ id: string; name: string }>;
   units: Array<{ id: string; name: string }>;
   initialSelection?: string;
+  onSelectionChange?: (selection: string) => void;
   labels: Record<string,string>;
-}) {
+};
+
+export default function ScopedGalleryEditor(props: Props) {
+  const { projectId, categories, units, initialSelection } = props;
+  // A deep link can only select an object supplied by this property's loader.
+  const selection = initialSelection === `project:${projectId}` ||
+    categories.some(category => initialSelection === `category:${category.id}`) ||
+    units.some(unit => initialSelection === `unit:${unit.id}`)
+    ? initialSelection!
+    : `project:${projectId}`;
+  // App Router reuses the page for query-only navigation. A new route target
+  // needs a fresh editor session, including any pending operation's UI state.
+  // Ordinary refreshes keep the key and preserve the user's dropdown choice.
+  return <GalleryEditor key={`${projectId}:${selection}`} {...props} initialSelection={selection} />;
+}
+
+function GalleryEditor({
+  projectId, projectName, categories, units, initialSelection, onSelectionChange, labels,
+}: Props) {
   const targets: Target[] = [
     { scope: 'project', id: projectId, name: projectName },
     ...categories.map(c => ({ scope: 'category' as const, id: c.id, name: c.name })),
@@ -52,6 +70,7 @@ export default function ScopedGalleryEditor({
   const [loading, setLoading] = useState(true);
   const [loadedGalleryUrl, setLoadedGalleryUrl] = useState<string | null>(null);
   const loadRequest = useRef(0);
+  const active = useRef(true);
   const [message, setMessage] = useState<string | null>(null);
   const [failedMediaIds, setFailedMediaIds] = useState<Set<string>>(new Set());
   const target = targets.find(t => `${t.scope}:${t.id}` === selection) ?? targets[0];
@@ -79,8 +98,9 @@ export default function ScopedGalleryEditor({
         : 'Exact physical home: its real view, fit-out, rooms and distinguishing details.';
 
   const load = useCallback(async () => {
+    if (!active.current) return false;
     const request = ++loadRequest.current;
-    const isCurrent = () => request === loadRequest.current && galleryUrl === currentGalleryUrl.current;
+    const isCurrent = () => active.current && request === loadRequest.current && galleryUrl === currentGalleryUrl.current;
     setLoading(true);
     setLoadedGalleryUrl(null);
     try {
@@ -102,9 +122,10 @@ export default function ScopedGalleryEditor({
   }, [galleryUrl]);
 
   useEffect(() => {
+    active.current = true;
     setCopiedMediaIds(new Set());
     void load();
-    return () => { loadRequest.current += 1; };
+    return () => { active.current = false; loadRequest.current += 1; };
   }, [load]);
 
   async function write(method: 'POST' | 'PATCH' | 'DELETE', payload: object | null, mediaId?: string) {
@@ -149,11 +170,26 @@ export default function ScopedGalleryEditor({
   }
 
   async function upload(file: File, makeCover: boolean) {
-    const data = new FormData(); data.set('file', file); data.set('kind', 'photo');
-    const res = await fetch('/api/media/upload', { method: 'POST', body: data });
-    const body = await res.json().catch(() => null);
-    if (!res.ok || !body?.mediaAssetId) throw new Error(body?.error || 'Upload failed');
-    await write('POST', { mediaAssetId: body.mediaAssetId, cover: makeCover });
+    // Category attachments require project authority. The upload creates only
+    // an asset; the existing scoped gallery writer remains the attachment gate.
+    const uploadTarget = target.scope === 'unit'
+      ? { scope: 'unit' as const, targetId: target.id }
+      : { scope: 'project' as const, targetId: projectId };
+    const signal = new AbortController().signal;
+    let pending: PendingPhotoUpload | null = null;
+    let uploaded: UploadedPhoto;
+    try {
+      uploaded = await uploadPhoto(file, uploadTarget, { signal, onPending: value => { pending = value; } });
+    } catch (error) {
+      if (pending && error instanceof PhotoUploadError &&
+          ['upload_finalize_uncertain', 'upload_transfer_uncertain'].includes(error.key)) {
+        // Retry registration of the same intent, never transfer the bytes again.
+        uploaded = await finalizePhoto(pending, { signal }).catch(() => { throw new Error('Upload failed'); });
+      } else {
+        throw new Error('Upload failed');
+      }
+    }
+    await write('POST', { mediaAssetId: uploaded.mediaAssetId, cover: makeCover });
   }
 
   async function persistOrder(ordered: Item[], nextCover = cover) {
@@ -172,7 +208,7 @@ export default function ScopedGalleryEditor({
             value={target.scope}
             onChange={e => {
               const first = targets.find(t => t.scope === e.target.value);
-              if (first) { setSelection(`${first.scope}:${first.id}`); setMessage(null); }
+              if (first) { const next = `${first.scope}:${first.id}`; setSelection(next); onSelectionChange?.(next); setMessage(null); }
             }}>
             <option value="project">{labels['admin.gallery.project']}</option>
             <option value="category" disabled={!categories.length}>{labels['admin.gallery.category']}</option>
@@ -181,7 +217,7 @@ export default function ScopedGalleryEditor({
         </label>
         <label className="text-small md:col-span-2">{labels['admin.gallery.object']}
           <select disabled={busy} aria-label={labels['admin.gallery.object']} className="block w-full border rounded-md p-8"
-            value={selection} onChange={e => { setSelection(e.target.value); setMessage(null); }}>
+            value={`${target.scope}:${target.id}`} onChange={e => { setSelection(e.target.value); onSelectionChange?.(e.target.value); setMessage(null); }}>
             {targets.filter(t => t.scope === target.scope).map(t =>
               <option key={`${t.scope}:${t.id}`} value={`${t.scope}:${t.id}`}>{t.name}</option>)}
           </select>

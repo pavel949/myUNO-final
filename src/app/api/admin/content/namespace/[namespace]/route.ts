@@ -4,10 +4,8 @@ import { listContentKeys } from '@/modules/content';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { namespace: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ namespace: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

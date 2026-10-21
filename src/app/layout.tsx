@@ -14,25 +14,10 @@ import { siteUrl } from '@/lib/seo';
 import { ApplicationFrame } from '@/components/stitch/ApplicationFrame';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { MobileTabBar } from '@/components/MobileTabBar';
-import { availableSurfaces, type Landing } from '@/modules/core';
-import { getActiveStayId } from '@/app/actions/getActiveStay';
-import type { RoleType } from '@prisma/client';
+import { WorkspaceNavigationProvider, WorkspaceSwitcher, WorkspaceTabs } from '@/components/WorkspaceNavigation';
+import { getWorkspaceNavigationContext } from '@/lib/workspace-navigation-server';
+import { WORKSPACE_NAVIGATION_LABELS, WORKSPACE_NAVIGATION_DRAFTS } from '@/modules/content/workspace-navigation.seed';
 import { getDestination } from '@/modules/destinations';
-
-const SURFACE_LABEL_KEYS = {
-  active_stay: 'nav.stay',
-  admin: 'nav.admin',
-  staff: 'nav.ops',
-  management_company: 'nav.mc_portal',
-  juristic: 'nav.juristic_portal',
-  provider: 'nav.provider_portal',
-  owner: 'nav.owner_dashboard',
-  resident: 'nav.residence',
-  buyer: 'nav.buying',
-  guest: 'nav.my_trips',
-  public: 'nav.find_stay',
-} as const satisfies Record<Landing['reason'], string>;
 
 const destination = getDestination();
 
@@ -49,10 +34,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const userPromise = getCurrentUser();
+  const workspaceContextPromise = userPromise.then(user => getWorkspaceNavigationContext(user));
   const locale = getRequestLocale();
 
-  const navLabels = await getLabels({
+  const navLabelsPromise = getLabels({
     'nav.find_stay': 'Stay',
     'nav.monthly': 'Monthly',
     'nav.buy': 'Buy',
@@ -106,21 +92,9 @@ export default async function RootLayout({
     'nav.account_home': 'Account',
   });
 
-  const activeBookingId = user ? await getActiveStayId() : null;
-  const roleLinks = user
-    ? availableSurfaces({
-        isAdmin: user.isAdmin,
-        roles: user.roles.map((r) => r.role as RoleType),
-        activeBookingId,
-      })
-        .filter((surface) => surface.path !== '/trips')
-        .map((surface) => ({
-          href: surface.path,
-          label: navLabels[SURFACE_LABEL_KEYS[surface.reason]],
-        }))
-    : [];
+  const workspaceLabelsPromise = getLabels(WORKSPACE_NAVIGATION_LABELS, locale, WORKSPACE_NAVIGATION_DRAFTS);
 
-  const footerLabels = await getLabels({
+  const footerLabelsPromise = getLabels({
     'nav.footer.brand_name': 'myUNO',
     'nav.footer.brand_tagline': `Property, stays and services connected across ${destination.name}.`,
     'nav.footer.brand_column': 'Explore',
@@ -157,10 +131,24 @@ export default async function RootLayout({
     'nav.footer.copyright': '© 2026 myUNO. All rights reserved.',
   });
 
+  // Independent shell reads run together; authority is still resolved fresh per request.
+  const [user, workspaceContext, navLabels, workspaceLabels, footerLabels] = await Promise.all([
+    userPromise, workspaceContextPromise, navLabelsPromise, workspaceLabelsPromise, footerLabelsPromise,
+  ]);
+  const roleLinks = [
+    ...workspaceContext.propertyOptions,
+    ...workspaceContext.serviceOptions,
+    ...workspaceContext.personalLinks,
+    ...(workspaceContext.controlPlane ? [workspaceContext.controlPlane] : []),
+  ].filter(surface => surface.href !== '/trips')
+    .filter((surface, index, all) => all.findIndex(item => item.href === surface.href) === index)
+    .map(surface => ({ href: surface.href, label: workspaceLabels[surface.labelKey] + ('scopeName' in surface && surface.scopeName ? ` · ${surface.scopeName}` : '') }));
+
   return (
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
         <LocaleProvider locale={locale}>
+        <WorkspaceNavigationProvider context={workspaceContext} labels={workspaceLabels}>
         <ApplicationFrame
           navigation={<Navbar
           user={
@@ -222,16 +210,8 @@ export default async function RootLayout({
             zh: navLabels['nav.locale.zh'],
           }}
         />}
-          mobileNavigation={<MobileTabBar
-          labels={{
-            residences: navLabels['nav.projects'],
-            explore: navLabels['nav.explore'],
-            saved: navLabels['nav.saved'],
-            concierge: navLabels['nav.services'],
-            profile: navLabels['nav.account_home'],
-          }}
-          profileHref={user ? '/app' : '/login'}
-        />}
+          workspaceSwitcher={<WorkspaceSwitcher />}
+          mobileNavigation={<WorkspaceTabs />}
           footer={<Footer
           locale={locale}
           labels={{
@@ -279,6 +259,7 @@ export default async function RootLayout({
         >
           {children}
         </ApplicationFrame>
+        </WorkspaceNavigationProvider>
         </LocaleProvider>
       </body>
     </html>

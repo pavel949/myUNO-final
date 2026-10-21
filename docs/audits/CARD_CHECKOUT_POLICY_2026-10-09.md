@@ -1,5 +1,7 @@
 # Card checkout policy follow-up - 9 October 2026 (Phuket)
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Checked application commit: `79dcba041362ff933d938c39c018cfaf1fc945f1` on `codex/night-booking-integrity-20261008`. This is one isolated follow-up after preserved checkpoint `4fd5c2702884cd0cb5fbea054d241bcd6ed67cfa`. Both commits remain local. Evidence assembled at 2026-10-08T21:28:05.816027+00:00.
 
 ## Reproduced issue and acceptance

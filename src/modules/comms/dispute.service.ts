@@ -1,4 +1,6 @@
 import { PrismaClient, Dispute, DisputeSubjectType, RoleType, TicketStatus } from '@prisma/client';
+import { assertServiceOrderDisputable, lockServiceOrder } from '@/modules/services/service-order-closure';
+import { standaloneOrganizationId } from '@/modules/services/standalone-context';
 import { raiseTicket, updateTicketStatus } from './ticket.service';
 import { refund, recordCashRefund, recordCost } from '@/modules/finance';
 
@@ -20,6 +22,10 @@ import { refund, recordCashRefund, recordCost } from '@/modules/finance';
  * creates money itself, only decides which existing seam to call.
  */
 
+export class DisputeRequestError extends Error {
+  constructor(public readonly status: 403 | 404 | 409, message: string) { super(message); }
+}
+
 export interface RaiseDisputeInput {
   subjectType: DisputeSubjectType;
   subjectId: string;
@@ -30,7 +36,9 @@ export interface RaiseDisputeInput {
 }
 
 interface SubjectContext {
-  projectId: string;
+  projectId: string | null;
+  serviceOrderId?: string;
+  responsibleOrganizationId?: string;
   unitId: string | null;
   /** The identity allowed to raise a dispute over this subject. */
   ownerIdentityId: string;
@@ -53,7 +61,7 @@ async function loadSubject(
         payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
-    if (!booking) throw new Error('Booking not found');
+    if (!booking) throw new DisputeRequestError(404, 'Record not found');
     return {
       projectId: booking.projectId,
       unitId: booking.unitId,
@@ -67,21 +75,16 @@ async function loadSubject(
       where: { id: subjectId },
       select: {
         project_id: true,
+        service_context: true,
         unit_id: true,
         orderer_identity_id: true,
         payments: { where: { status: 'succeeded' }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true } },
       },
     });
-    if (!order) throw new Error('Service order not found');
-    // `ticket.project_id` is NOT NULL, so a dispute needs the order's project.
-    // Standalone orders (no project) are representable in the schema since the
-    // canonical v3 commerce migration but cannot yet be created, so this is
-    // unreachable today — and is the tripwire for when they can be.
-    if (order.project_id === null) {
-      throw new Error(`Service order ${subjectId} has no project, which a dispute ticket requires`);
-    }
+    if (!order) throw new DisputeRequestError(404, 'Record not found');
     return {
       projectId: order.project_id,
+      ...(order.project_id ? {} : { serviceOrderId: subjectId, responsibleOrganizationId: standaloneOrganizationId(order.service_context) }),
       unitId: order.unit_id,
       ownerIdentityId: order.orderer_identity_id,
       paymentId: order.payments[0]?.id ?? null,
@@ -93,7 +96,7 @@ async function loadSubject(
     where: { id: subjectId },
     select: { unit: { select: { id: true, projectId: true } }, ownerIdentityId: true },
   });
-  if (!statement) throw new Error('Statement not found');
+  if (!statement) throw new DisputeRequestError(404, 'Record not found');
   return {
     projectId: statement.unit.projectId,
     unitId: statement.unit.id,
@@ -108,20 +111,34 @@ async function loadSubject(
  * grievance, not one anyone can file about anyone else's record.
  */
 export async function raiseDispute(db: PrismaClient, input: RaiseDisputeInput): Promise<Dispute> {
+  return db.$transaction(async tx => {
+    if (input.subjectType === 'service_order') await lockServiceOrder(tx, input.subjectId);
+    // Match the database duplicate-subject guard before creating the shared ticket/thread.
+    const subjectKey = `${input.subjectType}:${input.subjectId}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${subjectKey}, 0))`;
+    return raiseDisputeOnce(tx as unknown as PrismaClient, input);
+  });
+}
+
+async function raiseDisputeOnce(db: PrismaClient, input: RaiseDisputeInput): Promise<Dispute> {
   const { subjectType, subjectId, raisedByIdentityId, raisedByRole, title, description } = input;
 
   const subject = await loadSubject(db, subjectType, subjectId);
   if (subject.ownerIdentityId !== raisedByIdentityId) {
-    throw new Error('You can only raise a dispute over your own booking, order, or statement');
+    throw new DisputeRequestError(404, 'You can only raise a dispute over your own booking, order, or statement');
   }
+
+  if (subjectType === 'service_order') await assertServiceOrderDisputable(db, subjectId);
 
   const existing = await db.dispute.findFirst({ where: { subjectType, subjectId } });
   if (existing) {
-    throw new Error('A dispute has already been raised for this record');
+    throw new DisputeRequestError(409, 'A dispute has already been raised for this record');
   }
 
   const { id: ticketId } = await raiseTicket(db, {
     projectId: subject.projectId,
+    serviceOrderId: subject.serviceOrderId,
+    responsibleOrganizationId: subject.responsibleOrganizationId,
     unitId: subject.unitId ?? undefined,
     raisedByIdentityId,
     raisedByRole,

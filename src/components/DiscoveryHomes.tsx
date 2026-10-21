@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatPropertyCount } from '@/lib/property-count';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
 import { discoveryDefaults } from '@/modules/content/discovery.seed';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import type { PublicDiscoveryUnit } from '@/modules/projects/public-discovery';
@@ -23,7 +23,7 @@ export default async function DiscoveryHomes({ units, context = '' }: { units: P
         query.set('projectId', unit.project.id);
         return <article key={unit.id} className="overflow-hidden rounded-lg border border-border-line bg-surface-paper">
           <Link href={`/units/${unit.id}?${query}`} className="block focus-visible:outline-brand-andaman">
-            {unit.coverUrl ? <Image src={unit.coverUrl} alt={unit.name} width={640} height={480} className="aspect-[4/3] w-full object-cover" /> : <p className="flex aspect-[4/3] items-center justify-center bg-surface-sand text-text-secondary">{copy.photos}</p>}
+            {unit.coverUrl ? <PropertyImage fallbackLabel={copy.photos} src={unit.coverUrl} alt={unit.name} width={640} height={480} className="aspect-[4/3] w-full object-cover" /> : <p className="flex aspect-[4/3] items-center justify-center bg-surface-sand text-text-secondary">{copy.photos}</p>}
             <div className="p-20">
               <p className="text-small text-text-secondary">{unit.categoryName}</p>
               <h3 className="font-display text-heading-3 font-semibold">{unit.name}</h3>

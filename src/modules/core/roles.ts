@@ -1,5 +1,8 @@
 import { RoleType, RoleScopeType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { grantRole as grantPeopleRole } from './people.service';
+import { isPropertyCapabilityRole } from './property-capability-policy';
+import { revokePropertyCapability } from './property-capability-grants';
 
 interface GrantRoleInput {
   identityId: string;
@@ -13,6 +16,7 @@ interface GrantRoleInput {
 }
 
 interface RevokeRoleInput {
+  actorIdentityId?: string;
   identityId: string;
   role: RoleType;
   scopeType: RoleScopeType;
@@ -26,6 +30,11 @@ interface RevokeRoleInput {
  * Creates or updates the role assignment.
  */
 export async function grantRole(input: GrantRoleInput) {
+  // Keep restricted employee roles on the same strict assignment path.
+  if (input.role === 'content_contributor' || isPropertyCapabilityRole(input.role)) {
+    return grantPeopleRole(prisma, input);
+  }
+
   const {
     identityId,
     role,
@@ -120,6 +129,10 @@ export async function revokeRole(input: RevokeRoleInput) {
     throw new Error('Role assignment not found');
   }
 
+  if (isPropertyCapabilityRole(assignment.role)) {
+    if (!input.actorIdentityId) throw new Error('Current actor is required to revoke a property capability');
+    return (await revokePropertyCapability(prisma, input.actorIdentityId, assignment.id)).grant;
+  }
   return await prisma.roleAssignment.update({
     where: { id: assignment.id },
     data: { status: 'revoked' },

@@ -102,6 +102,7 @@ export interface CancellationConfig {
   'cancellation.host_cancel_full_refund': boolean;
   'cancellation.no_show_treated_as': 'late_cancel' | 'forfeit';
   'service.cancel_window_hours': number;
+  'service.fulfilment_confirm_window_hours': number;
   'service.provider_no_show_refund_pct': number;
   'service.accept_sla_hours': number;
 }
@@ -109,6 +110,7 @@ export interface CancellationConfig {
 // Services & tickets — marketplace and SLAs (doc 04 §6)
 export interface ServicesConfig {
   'services.take_rate_pct': number;
+  'services.standalone_offers': Array<{ serviceId: string; responsibleOrganizationId: string; destinationKey: string; areaKeys: string[]; termsVersion: number; enabled: boolean; takeRatePct?: number }>;
   'services.advance_notice_hours_default': number;
   'services.require_admin_approval': boolean;
   'services.payout_period': 'weekly' | 'biweekly' | 'monthly';

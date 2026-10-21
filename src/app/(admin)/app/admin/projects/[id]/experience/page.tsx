@@ -13,7 +13,8 @@ import { PROJECT_EXPERIENCE_CONTENT_FIELDS, projectExperienceContentKey } from '
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectExperiencePage({ params }: { params: { id: string } }) {
+export default async function ProjectExperiencePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/experience'));
   const actor = await getProjectExperienceActor(params.id);
@@ -23,7 +24,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     select: {
-      id: true, name: true, slug: true, descriptionKey: true, handbookKey: true,
+      id: true, name: true, slug: true, timezone: true, descriptionKey: true, handbookKey: true,
       nearbyPlaces: {
         orderBy: [{ isFeatured: 'desc' }, { sort: 'asc' }, { name: 'asc' }],
         select: {
@@ -75,7 +76,7 @@ export default async function ProjectExperiencePage({ params }: { params: { id: 
     </div>
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />
-      <ProjectExperienceClient projectId={project.id} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
+      <ProjectExperienceClient projectId={project.id} timezone={project.timezone} initialAmenities={project.amenities} canOperateReservations={Boolean(amenityOpsActor)} />
       <ProjectNearbyEditor
         projectId={project.id}
         initialPlaces={project.nearbyPlaces.map(place => ({

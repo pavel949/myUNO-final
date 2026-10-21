@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
+import { PRICING_WORKSPACE_DRAFTS } from '@/modules/content/pricing-workspace.seed';
+import { CONTENT_PROPOSAL_REVIEW_DRAFTS } from '@/modules/content/content-proposal-review.seed';
 import { AdminNavLinks, NavSection } from './AdminNavLinks';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) {
-    const pathname = headers().get('x-myuno-request-path') ?? '';
+    const pathname = (await headers()).get('x-myuno-request-path') ?? '';
     const safePath = pathname === '/app/admin' || pathname.startsWith('/app/admin/')
       ? pathname
       : '/app/admin';
@@ -22,6 +24,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const labels = await getLabels({
+    'property.content.review.title': 'Review property content',
+    'pricing.workspace.title': 'Assigned property rates',
     'admin.nav.title': 'myUNO Admin',
     'admin.nav.mobile_menu': 'Open admin navigation',
     'admin.nav.dashboard': 'Dashboard',
@@ -67,7 +71,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.scheduler': 'Scheduler',
     'admin.nav.launch_readiness': 'Launch readiness',
     'admin.nav.back_to_site': '← Back to site',
-  });
+  }, undefined, { ...CONTENT_PROPOSAL_REVIEW_DRAFTS, ...PRICING_WORKSPACE_DRAFTS });
 
   const sections: NavSection[] = [
     {
@@ -91,6 +95,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/mc/portfolio', label: labels['admin.nav.portfolio_os'] },
         { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
         { href: '/app/admin/property-submissions', label: 'Property applications' },
+        { href: '/app/admin/property-content-proposals', label: labels['property.content.review.title'] },
+        { href: '/property/pricing', label: labels['pricing.workspace.title'] },
         { href: '/app/admin/areas', label: labels['admin.projects.manage_areas'] },
         { href: '/app/admin/units', label: labels['admin.nav.units'] },
         { href: '/app/admin/people', label: labels['admin.nav.people'] },

@@ -11,13 +11,14 @@ import ProjectWorkspaceNav from '@/components/projects/ProjectWorkspaceNav';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectMediaPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams?: { select?: string };
-}) {
+export default async function ProjectMediaPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams?: Promise<{ select?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent('/app/admin/projects/' + params.id + '/media'));
   const actor = await getProjectExperienceActor(params.id);

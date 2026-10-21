@@ -1,4 +1,6 @@
 # LayantaraOS → myUNO OS: single-backbone migration runbook
+
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
 Date: 2026-09-29. Change control: consolidated PR #139. Source Supabase project `omwoglpcwaiflaprgrne`; target `burcnghheyzbzffzgmjz`. **This is not cutover approval.**
 
 ## Scope amendment (2026-09-29): commercial-engine release

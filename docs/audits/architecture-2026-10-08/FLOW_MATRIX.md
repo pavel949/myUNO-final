@@ -1,5 +1,7 @@
 # CO/AT coverage boundaries
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Focused architectural assessment; no process E2E is marked complete. Nine columns use canonical evidence vocabulary. Specification/code/permission/test are partial only when the reporttraces related seams; applied DB/config/fullUI/runtime remain not checked. Deployment verified for assessed main source, not full process readiness.
 
 | ID | Scenario | Spec | Code | Migration | Data/config | Permission | UI | Critical test | Deployed | Runtime | Related findings |

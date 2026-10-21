@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { WorkspaceContextLink } from '@/components/WorkspaceNavigation';
 
 export interface BreadcrumbItem {
   label: string;
@@ -10,9 +11,11 @@ export interface BreadcrumbItem {
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
   className?: string;
+  preserveWorkspace?: boolean;
 }
 
-export function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
+export function Breadcrumb({ items, className = '', preserveWorkspace = false }: BreadcrumbProps) {
+  const ItemLink = preserveWorkspace ? WorkspaceContextLink : Link;
   return (
     <nav
       aria-label="Breadcrumb"
@@ -22,12 +25,12 @@ export function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
         <React.Fragment key={index}>
           {index > 0 && <span className="text-text-secondary">/</span>}
           {item.href && !item.current ? (
-            <Link
+            <ItemLink
               href={item.href}
               className="text-brand-andaman hover:underline transition-colors"
             >
               {item.label}
-            </Link>
+            </ItemLink>
           ) : (
             <span className={item.current ? 'text-text-ink font-medium' : 'text-text-secondary'}>
               {item.label}

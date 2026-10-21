@@ -19,7 +19,8 @@ import { logAudit } from '@/modules/audit';
  * units, run mobilization checklist".
  */
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('units:create');
   if (!guard.ok) return guard.error;
 
@@ -32,7 +33,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 /** Start the checklist. Idempotent, so a retry repairs rather than duplicates. */
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const guard = await requireAction('units:create');
   if (!guard.ok) return guard.error;
 

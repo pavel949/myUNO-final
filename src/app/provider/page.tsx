@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getProviderForIdentity } from '@/modules/services';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
 import { getLabels } from '@/lib/i18n';
 import { prisma } from '@/lib/prisma';
 import ProviderOrdersClient from './provider-orders-client';
@@ -39,6 +40,10 @@ export default async function ProviderPage() {
   }
 
   const labels = await getLabels({
+      'services.standalone.address': 'Full address and arrival instructions',
+      'services.standalone.recipient': 'Recipient name',
+      'services.standalone.phone': 'Recipient phone',
+
     'provider.orders.refresh': 'Refresh orders',
     'provider.orders.needs_response': 'Awaiting response',
     'provider.orders.to_fulfil': 'Ready to fulfil',
@@ -64,7 +69,7 @@ export default async function ProviderPage() {
       'services.order_status.expired': 'Expired',
       'services.order_status.failed': 'Failed',
       'services.order_status.closed': 'Closed',
-    });
+    }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   return <ProviderOrdersClient labels={labels} />;
 }

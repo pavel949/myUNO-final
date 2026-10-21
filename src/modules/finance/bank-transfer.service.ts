@@ -1,3 +1,4 @@
+import { assertStayReceivableCollectible } from '@/modules/booking/outstanding-balance';
 import { PrismaClient, PaymentPurpose } from '@prisma/client';
 import { getConfig } from '@/modules/config';
 import { track } from '@/modules/analytics';
@@ -60,6 +61,8 @@ export async function getTransferInstructions(
   db: PrismaClient,
   input: { bookingId: string; amountThb: number; projectId?: string }
 ): Promise<TransferInstructions> {
+  const booking = await db.booking.findUniqueOrThrow({ where: { id: input.bookingId }, select: { receivableStatus: true } });
+  assertStayReceivableCollectible(booking);
   const scope = input.projectId ? { projectId: input.projectId } : undefined;
 
   const [enabled, legalName, bankName, accountName, accountNumber, swift, taxId, windowHours] =
@@ -117,6 +120,7 @@ export interface RecordBankTransferInput {
   confirmedByIdentityId: string;
   /** The bank's own reference for the credit, so the entry can be traced. */
   bankReference: string;
+  authorizeBooking?: (db: PrismaClient, scope: { projectId: string; unitId: string }) => Promise<boolean>;
 }
 
 /**
@@ -151,8 +155,12 @@ export async function recordBankTransfer(
       // Lock the canonical booking before comparing its payment state. Two staff
       // clicks cannot record the same initial charge or balance simultaneously.
       const locked = await lockBookingInventory(tx, input.bookingId);
+      if (locked) assertStayReceivableCollectible(locked);
       booking = locked;
       if (!booking) throw new Error('Booking not found');
+      if (input.authorizeBooking && !await input.authorizeBooking(tx as PrismaClient, booking)) {
+        throw Object.assign(new Error('Booking authority changed'), { code: 'BOOKING_FORBIDDEN' });
+      }
       if (booking.guestIdentityId !== input.payerIdentityId) throw new Error('Payer does not match booking');
 
       if (input.purpose === 'stay') {
@@ -234,3 +242,4 @@ export async function recordBankTransfer(
 
   return result.payment;
 }
+

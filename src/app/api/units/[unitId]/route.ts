@@ -1,3 +1,4 @@
+import { resolveUnitMarketingTitleKey } from '@/modules/projects/unit-marketing-title';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { track } from '@/modules/analytics';
@@ -24,10 +25,8 @@ import { getRequestLocale } from '@/lib/i18n';
  * Legacy baseNightlyThb/minNights remain in the response temporarily for old
  * clients, but new guest surfaces should prefer `pricing`.
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { unitId: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
   try {
     const searchParams = req.nextUrl.searchParams;
     const startDateStr = searchParams.get('startDate');
@@ -60,6 +59,7 @@ export async function GET(
         inventoryCategoryId: true,
         name: true,
         descriptionKey: true,
+        marketingTitleKey: true,
         unitType: true,
         accommodationType: true,
         bedrooms: true,
@@ -223,11 +223,10 @@ export async function GET(
       commercialOfferings: _commercialOfferings,
       inventoryCategory,
       project,
+      marketingTitleKey: _marketingTitleKey,
       ...rest
     } = unit;
-    const titleKey = unit.descriptionKey
-      ? unit.descriptionKey.replace(/\.description$/, '.title')
-      : null;
+    const titleKey = resolveUnitMarketingTitleKey(unit);
     const factKeys = [
       ...unit.views.map(view => `catalog.views.${view}.label`),
       ...unit.unitFeatures
@@ -299,3 +298,4 @@ export async function GET(
     return NextResponse.json({ error: 'Stay quote unavailable' }, { status: 503 });
   }
 }
+

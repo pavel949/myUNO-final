@@ -1,5 +1,7 @@
 # myUNO Canonical Specification Pack v3
 
+> **Целевые требования, не отчёт о реализации.** Что уже есть в main и что остаётся: [текущая матрица](../current/IMPLEMENTATION_STATUS.md), [система](../current/SYSTEM.md). Сверка 2026-10-16.
+
 This package is the implementation constitution for `pavel949/myUNO-final`.
 
 It is vendor-neutral and may be used by ChatGPT/Codex, Claude Code, Cursor, Gemini or an engineering team.

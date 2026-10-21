@@ -1,5 +1,7 @@
 # Platform Maturity Assessment
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **Date:** 2026-08-18 · **Head:** `163f1a9` · Method: read against the running code and the
 1318-test suite, not against the specification.
 

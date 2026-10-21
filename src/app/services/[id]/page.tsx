@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PageHeading, Panel } from '@/components/premium/StitchPage';
 import { Breadcrumb } from '@/components/Breadcrumb';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
 import { getLabels, getRequestLocale } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { track } from '@/modules/analytics';
@@ -10,6 +11,7 @@ import { getPublicMarketplaceServiceDetail } from '@/modules/services';
 import { prisma } from '@/lib/prisma';
 import { getConfig } from '@/modules/config';
 import OrderWizard from './order-wizard';
+import { getStandaloneServiceOffer } from '@/modules/services/standalone-context';
 import { formatServicePriceLabel } from './price-label';
 import { getDestination } from '@/modules/destinations';
 import { servicePresentationImage } from '@/lib/presentation-media';
@@ -36,13 +38,14 @@ interface ServiceDetail {
   };
 }
 
-export default async function ServiceDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { bookingId?: string; projectId?: string; unitId?: string };
-}) {
+export default async function ServiceDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ bookingId?: string; projectId?: string; unitId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { id } = params;
   const bookingId = searchParams.bookingId || null;
   // A guest arrives with a stay. Everyone else — a resident, an owner, an MC
@@ -75,7 +78,19 @@ export default async function ServiceDetailPage({
     track(prisma, 'service_opened', serviceEventDimensions),
   ]).catch(() => null);
 
+  const standaloneOffer = await getStandaloneServiceOffer(prisma, service.id);
+  const standaloneAreas = standaloneOffer ? await prisma.area.findMany({ where: { slug: { in: standaloneOffer.areaKeys }, status: 'live' }, select: { slug: true, nameKey: true }, orderBy: { sort: 'asc' } }) : [];
+  const standalone = standaloneOffer && standaloneAreas.length ? { destinationKey: standaloneOffer.destinationKey, responsibleOrganizationName: standaloneOffer.responsibleOrganizationName ?? '', cancellationWindowHours: Number((await getConfig(prisma, 'service.cancel_window_hours', { fresh: true })) ?? 24), areas: standaloneAreas.map(area => ({ key: area.slug, label: area.slug.replace(/-/g, ' ') })) } : null;
+
   const labels = await getLabels({
+    'services.standalone.another_address': 'Order for another address',
+    'services.standalone.location': 'Service location',
+    'services.standalone.responsibility': 'Responsible organization: {organization}',
+    'services.standalone.cancellation': 'Full refund if cancelled more than {hours} hours before the service. No refund within that window.',
+    'services.standalone.area': 'Choose a service area',
+    'services.standalone.address': 'Full address and arrival instructions',
+    'services.standalone.recipient': 'Recipient name',
+    'services.standalone.phone': 'Recipient phone',
     'landing.services.no_photo': 'Illustrative image',
     'services.breadcrumb_home': 'Home',
     'services.breadcrumb_services': 'Services',
@@ -98,6 +113,10 @@ export default async function ServiceDetailPage({
     'services.detail.photos': 'Photos',
     'services.detail.back': 'Back to services',
     'services.wizard.title': 'Your order',
+    'services.browse.login_needed': 'Log in to place an order.',
+    'services.browse.loading': 'Loading…',
+    'services.wizard.choose_stay': 'Choose the stay for this service',
+    'services.wizard.no_context': 'To order online, open this service from your stay or property. For another location, message the team to arrange it.',
     'services.wizard.when': 'When',
     'services.wizard.quantity': 'Quantity',
     'services.wizard.note': 'Note to provider (optional)',
@@ -114,7 +133,7 @@ export default async function ServiceDetailPage({
     'services.wizard.quote_whatsapp': 'Ask the concierge on WhatsApp',
     'services.wizard.quote_messages': 'Message us',
     'services.wizard.error_generic': 'Could not place the order. Please try again.',
-  });
+  }, undefined, GUEST_SERVICE_LOCALE_DRAFTS);
 
   // Quote CTA: the concierge WhatsApp is a project-scoped parameter — when
   // the guest arrives from a stay, resolve it through their booking's project.
@@ -260,6 +279,7 @@ export default async function ServiceDetailPage({
             projectId={projectId}
             unitId={unitId}
             whatsappNumber={whatsappNumber}
+              standalone={standalone}
             labels={labels}
           />
           <div className="mt-16">

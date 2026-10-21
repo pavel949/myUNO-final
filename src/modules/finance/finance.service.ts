@@ -1,3 +1,4 @@
+import { assertStayReceivableCollectible } from '@/modules/booking/outstanding-balance';
 import { PrismaClient, PaymentPurpose, RefundReason, type Prisma } from '@prisma/client';
 import { findOrCreateThread, addSystemMessage, createNotification } from '@/modules/comms';
 import { track } from '@/modules/analytics';
@@ -70,9 +71,10 @@ async function assertStayPaymentAmount(
   if (!bookingId) throw new Error('Stay payment requires bookingId');
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
-    select: { totalThb: true, balanceDueThb: true },
+    select: { totalThb: true, balanceDueThb: true, receivableStatus: true },
   });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  assertStayReceivableCollectible(booking);
   const expected = purpose === 'stay' ? booking.totalThb : booking.balanceDueThb;
   if (expected <= 0) throw new Error('Booking has no balance due');
   if (amountThb !== expected) {
@@ -174,6 +176,7 @@ export async function recordCashPayment(
       if (input.authorizeBooking && !(await input.authorizeBooking(tx as PrismaClient, booking))) {
         throw Object.assign(new Error('Forbidden'), { code: 'BOOKING_FORBIDDEN' });
       }
+      assertStayReceivableCollectible(locked!);
       if (booking.guestIdentityId !== payerIdentityId) throw new Error('Payer does not match booking');
       if (purpose === 'stay') {
         if (booking.status !== 'pending_payment') throw new Error('Booking is not awaiting initial payment');
@@ -580,6 +583,7 @@ export async function verifyAndConfirm(
     if (current.purpose === 'stay' || current.purpose === 'stay_balance') {
       if (!booking) reconciliationReason = 'BOOKING_NOT_FOUND';
       else if (booking.guestIdentityId !== current.payerIdentityId) reconciliationReason = 'BOOKING_PAYER_MISMATCH';
+      else if (booking.receivableStatus !== 'collectible') reconciliationReason = 'BOOKING_RECEIVABLE_RECONCILIATION_REQUIRED';
       else if (current.purpose === 'stay') {
         reconciliationReason = await initialStayConfirmationIssue(tx, booking);
         if (!reconciliationReason && current.amountThb !== booking.totalThb) reconciliationReason = 'BOOKING_AMOUNT_CHANGED';
@@ -596,20 +600,15 @@ export async function verifyAndConfirm(
 
     let serviceOrderToPay: null | { id: string; projectId: string | null; unitId: string | null } = null;
     if (current.purpose === 'service_order') {
-      if (!current.serviceOrderId) throw new Error('Service order payment is missing order id');
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${current.serviceOrderId}))`;
-      const order = await tx.serviceOrder.findUnique({
+      const order = current.serviceOrderId ? await tx.serviceOrder.findUnique({
         where: { id: current.serviceOrderId },
         select: { id: true, status: true, total_thb: true, orderer_identity_id: true, project_id: true, unit_id: true },
-      });
-      if (!order || order.status !== 'placed') throw new Error('Service order is no longer awaiting payment');
-      if (order.total_thb !== current.amountThb || order.orderer_identity_id !== current.payerIdentityId) {
-        throw new Error('Service order payment amount or payer does not match');
-      }
-      if (await tx.payment.count({
-        where: { serviceOrderId: current.serviceOrderId, purpose: 'service_order', status: 'succeeded', id: { not: sessionId } },
-      })) throw new Error('Another payment already succeeded for this service order');
-      serviceOrderToPay = { id: order.id, projectId: order.project_id, unitId: order.unit_id };
+      }) : null;
+      if (!order) reconciliationReason = 'SERVICE_ORDER_NOT_FOUND';
+      else if (order.total_thb !== current.amountThb || order.orderer_identity_id !== current.payerIdentityId) reconciliationReason = 'SERVICE_ORDER_AMOUNT_OR_PAYER_MISMATCH';
+      else if (order.status !== 'placed') reconciliationReason = 'SERVICE_ORDER_NO_LONGER_PAYABLE';
+      else if (await tx.payment.count({ where: { serviceOrderId: current.serviceOrderId, purpose: 'service_order', status: 'succeeded', id: { not: sessionId } } })) reconciliationReason = 'SERVICE_ORDER_PAYMENT_ALREADY_RECEIVED';
+      if (order && !reconciliationReason) serviceOrderToPay = { id: order.id, projectId: order.project_id, unitId: order.unit_id };
     }
 
     const succeeded = await tx.payment.update({
@@ -623,7 +622,7 @@ export async function verifyAndConfirm(
       // must reconcile/refund it; this does not pretend a refund was executed.
       await tx.ledgerEntry.create({ data: {
         entryType: 'payment_unallocated', amountThb: succeeded.amountThb,
-        paymentId: succeeded.id, bookingId: current.bookingId, occurredOn: now,
+        paymentId: succeeded.id, bookingId: current.bookingId, serviceOrderId: current.serviceOrderId, occurredOn: now,
         description: `Verified card receipt awaiting reconciliation: ${reconciliationReason}`,
       } });
       if (booking?.status === 'pending_payment' && booking.holdExpiresAt && booking.holdExpiresAt <= new Date()) {
@@ -745,6 +744,57 @@ export async function refund(
   return db.refund.findUniqueOrThrow({ where: { id: refund.id } });
 }
 
+/** Claim a durable card-refund request once; gateway I/O always follows commit. */
+export async function processRequestedCardRefund(db: PrismaClient, refundId: string) {
+  const preflight = await db.refund.findUniqueOrThrow({ where: { id: refundId }, include: { payment: true } });
+  if (preflight.status !== 'requested' || preflight.method !== 'card_provider') return;
+  if (preflight.payment.bookingId && !preflight.dispatchAuthorizedAt) return;
+  // Recovered requests may proceed only when payment allocation is known.
+  // Never overwrite an unknown provider outcome or an unallocated receipt.
+  const availabilityMarker = 'SERVICE_REFUND_PROVIDER_UNAVAILABLE';
+  if (preflight.payment.reconciliationReason && preflight.payment.reconciliationReason !== availabilityMarker) return;
+  try {
+    if (getProviderConfig().provider !== preflight.payment.provider || (preflight.payment.provider === 'opn' && !preflight.payment.providerSessionId)) throw new Error('Refund provider unavailable');
+    getPaymentProvider(); // Missing credentials must leave the durable request available for recovery.
+  } catch {
+    await db.payment.updateMany({ where: { id: preflight.paymentId, OR: [{ reconciliationReason: null }, { reconciliationReason: availabilityMarker }] },
+      data: { reconciliationReason: availabilityMarker } });
+    return;
+  }
+  const claimed = await db.$transaction(async tx => {
+    const snapshot = await tx.refund.findUniqueOrThrow({ where: { id: refundId } });
+    await lockPaymentSource(tx, snapshot.paymentId);
+    const request = await tx.refund.findUniqueOrThrow({ where: { id: refundId }, include: { payment: true } });
+    if (request.status !== 'requested' || request.method !== 'card_provider') return null;
+    if (request.payment.bookingId && !request.dispatchAuthorizedAt) return null;
+    if (request.payment.reconciliationReason && request.payment.reconciliationReason !== availabilityMarker) return null;
+    if (request.payment.reconciliationReason === availabilityMarker) {
+      await tx.payment.update({ where: { id: request.paymentId }, data: { reconciliationReason: null } });
+    }
+    await tx.refund.update({ where: { id: refundId }, data: { status: 'processing',
+      ...(request.payment.bookingId ? { dispatchAuthorizedAt: null } : {}),
+    } });
+    return request;
+  });
+  if (!claimed) return;
+  const payment = claimed.payment;
+  if (payment.provider === 'opn' && payment.providerSessionId && process.env.PAYMENT_PROVIDER === 'opn') {
+    try {
+      const result = await getPaymentProvider().refund({ chargeId: payment.providerSessionId, amount: claimed.amountThb, reason: claimed.reason });
+      await db.refund.update({ where: { id: refundId }, data: { providerRefundId: result.refundId } });
+      if (result.status === 'failed') {
+        await markRefundFailed(db, refundId, result.reason ?? 'provider_declined');
+        await db.payment.update({ where: { id: claimed.paymentId }, data: { reconciliationReason: 'SERVICE_REFUND_REVIEW_REQUIRED' } });
+      }
+      else if (result.status === 'completed') await markRefundSucceeded(db, refundId);
+    } catch {
+      // Outcome unknown: processing is a durable reconciliation obligation.
+      // Never release its reserved amount or blindly dispatch it again.
+      await db.payment.update({ where: { id: claimed.paymentId }, data: { reconciliationReason: 'SERVICE_REFUND_OUTCOME_UNKNOWN' } }).catch(() => null);
+    }
+  }
+}
+
 export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
   return db.$transaction(async (tx) => {
     const snapshot = await tx.refund.findUniqueOrThrow({ where: { id: refundId }, select: { paymentId: true } });
@@ -768,13 +818,15 @@ export async function markRefundSucceeded(db: PrismaClient, refundId: string) {
             select: { unitId: true, projectId: true },
           })
         : null;
+      const serviceOrder = refund.payment.serviceOrderId ? await tx.serviceOrder.findUnique({ where: { id: refund.payment.serviceOrderId }, select: { project_id: true, unit_id: true } }) : null;
       await tx.ledgerEntry.create({
         data: {
           entryType: 'refund_out',
           amountThb: -refund.amountThb,
-          unitId: booking?.unitId,
-          projectId: booking?.projectId,
+          unitId: booking?.unitId ?? serviceOrder?.unit_id,
+          projectId: booking?.projectId ?? serviceOrder?.project_id,
           bookingId: refund.payment.bookingId,
+          serviceOrderId: refund.payment.serviceOrderId,
           paymentId: refund.paymentId,
           refundId,
           occurredOn: new Date(),
@@ -984,3 +1036,4 @@ export async function markPaymentFailed(
 
   return failed;
 }
+

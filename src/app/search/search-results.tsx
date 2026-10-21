@@ -1,11 +1,15 @@
 'use client';
+import { propertyHeadlineArea } from '@/lib/property-area';
 
 
+import { formatPropertyCount } from '@/lib/property-count';
 import { UI_LOCALE } from '@/lib/format';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatBaht } from '@/lib/money';
 import Link from 'next/link';
-import Image from 'next/image';
+import { PropertyImage } from '@/components/property/PropertyImage';
+import { stayUxDefaults, type StayUxCopy } from '@/modules/content/stay-ux.seed';
+import { SaveHomeButton } from '@/components/property/SaveHomeButton';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { SearchBar } from '@/components/SearchBar';
@@ -18,6 +22,12 @@ interface Unit {
   id: string;
   name: string;
   baseNightlyThb: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  maxGuests?: number;
+  sizeSqm?: number | null;
+  grossAreaSqm?: number | string | null;
+  pricing?: { stayTotalThb: number | null };
   description?: string;
   projectId?: string;
   project?: { id: string; name: string; slug: string; latitude: number; longitude: number } | null;
@@ -37,6 +47,8 @@ interface CategoryCard {
 
 export interface SearchResultsLabels {
   title: string;
+  guestsCount?: string;
+  bedroomsCount?: string;
   resultsSummary: string;
   prompt: string;
   loading: string;
@@ -97,16 +109,29 @@ function formatStayDate(value: string, locale: string): string {
 
 export default function SearchResults({
   locale = 'en',
+  uxCopy,
   labels,
   sortOptions,
   typeOptions,
+  amenityOptions = [], amenityTitle,
 }: {
+  amenityTitle?: string; amenityOptions?: { key: string; label: string }[];
   locale?: string;
+  uxCopy?: StayUxCopy;
   labels: SearchResultsLabels;
   sortOptions: SortOption[];
   typeOptions: { key: string; label: string }[];
 }) {
+  const ux = uxCopy ?? stayUxDefaults(locale);
   const searchParams = useSearchParams();
+  const [view, setView] = useState<'list' | 'map'>('list');
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const sync = () => setDesktop(window.innerWidth >= 1024);
+    sync();
+    window.addEventListener('resize', sync);
+    return () => window.removeEventListener('resize', sync);
+  }, []);
   const router = useRouter();
   const [units, setUnits] = useState<Unit[]>([]);
   const [total, setTotal] = useState(0);
@@ -129,6 +154,8 @@ export default function SearchResults({
   const sort = searchParams?.get('sort') || sortOptions[0]?.key || 'recommended';
   const bedrooms = searchParams?.get('bedrooms') || '';
   const unitTypes = searchParams?.get('unitTypes') || '';
+  const amenities = searchParams?.get('amenities') || '';
+  const selectedAmenities = new Set(amenities.split(',').filter(Boolean));
   const minPrice = searchParams?.get('minPrice') || '';
   const maxPrice = searchParams?.get('maxPrice') || '';
   const swLat = searchParams?.get('swLat') || '';
@@ -169,6 +196,7 @@ export default function SearchResults({
         if (stayMode) params.set('stayMode', stayMode);
         if (bedrooms) params.set('bedrooms', bedrooms);
         if (unitTypes) params.set('unitTypes', unitTypes);
+        if (amenities) params.set('amenities', amenities);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
         if (hasMapBounds) {
@@ -222,7 +250,7 @@ export default function SearchResults({
         }
       }
     },
-    [startDate, endDate, adults, children, projectId, inventoryCategoryId, areaSlug, stayMode, sort, bedrooms, unitTypes, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
+    [startDate, endDate, adults, children, projectId, inventoryCategoryId, areaSlug, stayMode, sort, bedrooms, unitTypes, amenities, minPrice, maxPrice, hasMapBounds, swLat, swLng, neLat, neLng, labels.errorGeneric]
   );
 
   useEffect(() => {
@@ -289,11 +317,12 @@ export default function SearchResults({
   const handleMapProjectSelect = useCallback(
     (selected: string) => {
       setSelectedProjectId(selected);
+      setView('list');
       const unit = units.find((candidate) => candidate.project?.id === selected);
       if (unit) {
-        document
+        requestAnimationFrame(() => document
           .getElementById(`unit-card-${unit.id}`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       }
     },
     [units]
@@ -371,6 +400,15 @@ export default function SearchResults({
           </div>
         )}
 
+        {amenityOptions.length > 0 && <fieldset className="mb-24 mt-16">
+          <legend className="mb-8 text-small text-text-stone">{amenityTitle}</legend>
+          <div className="flex flex-wrap gap-8">{amenityOptions.map(option => <button key={option.key} type="button" aria-pressed={selectedAmenities.has(option.key)} onClick={() => replaceFilters(next => {
+            const selected = new Set((next.get('amenities') || '').split(',').filter(Boolean));
+            if (selected.has(option.key)) selected.delete(option.key); else selected.add(option.key);
+            if (selected.size) next.set('amenities', [...selected].join(',')); else next.delete('amenities');
+          })} className={selectedAmenities.has(option.key) ? 'rounded-full bg-brand-andaman px-16 py-8 text-small text-on-dark-text' : 'rounded-full border border-border-line bg-surface-paper px-16 py-8 text-small text-text-ink'}>{option.label}</button>)}</div>
+        </fieldset>}
+
         {hasDates && (
           <div className="mb-24 space-y-16">
             <div>
@@ -380,6 +418,7 @@ export default function SearchResults({
                   <button
                     key={option.key}
                     type="button"
+                    aria-pressed={selectedTypes.has(option.key)}
                     onClick={() => toggleType(option.key)}
                     className={
                       selectedTypes.has(option.key)
@@ -393,6 +432,13 @@ export default function SearchResults({
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-12">
+              <label className="text-small text-text-stone">{ux.bedrooms}
+                <select value={bedrooms} onChange={event => replaceFilters(next => {
+                  if (event.target.value) next.set('bedrooms', event.target.value); else next.delete('bedrooms');
+                })} className="mt-4 block h-48 rounded-sm border border-border-line bg-surface-paper px-12">
+                  <option value="">—</option>{[0,1,2,3,4,5,6].map(count => <option key={count} value={count}>{count}</option>)}
+                </select>
+              </label>
               {bedrooms && <p className="text-small text-text-stone">{labels.filterBedrooms || 'Bedrooms'}: {bedrooms}</p>}
               <label className="text-small text-text-stone">
                 {labels.filterMin}
@@ -424,7 +470,7 @@ export default function SearchResults({
                   className="mt-4 block h-40 w-[120px] rounded-sm border border-border-line bg-surface-paper px-12 text-body text-text-ink"
                 />
               </label>
-              {(bedrooms || unitTypes || minPrice || maxPrice) && (
+              {(bedrooms || unitTypes || amenities || minPrice || maxPrice) && (
                 <button
                   type="button"
                   onClick={() =>
@@ -433,6 +479,7 @@ export default function SearchResults({
                       next.delete('minPrice');
                       next.delete('maxPrice');
                       next.delete('bedrooms');
+                      next.delete('amenities');
                     })
                   }
                   className="h-40 text-small font-semibold text-brand-andaman hover:underline"
@@ -444,7 +491,7 @@ export default function SearchResults({
           </div>
         )}
 
-        {loading && (
+        {loading && !searched && (
           <div aria-label={labels.loading} className="grid gap-16 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="overflow-hidden rounded-md border border-border-line bg-surface-paper">
@@ -504,9 +551,15 @@ export default function SearchResults({
           </div>
         )}
 
-        {!loading && searched && (
+        {searched && (
           <section className="grid gap-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
-            <div>
+            <div role="group" aria-label={ux.map} className="flex gap-8 lg:hidden">
+              {(['list', 'map'] as const).map(value => <button key={value} type="button" aria-pressed={view === value}
+                onClick={() => setView(value)} className={`min-h-48 flex-1 rounded-full border border-border-line px-16 ${view === value ? 'bg-brand-andaman text-white' : 'bg-surface-paper text-brand-andaman'}`}>{ux[value]}</button>)}
+            </div>
+            <div className={view === 'map' ? 'hidden lg:block' : ''}>
+              {loading && <p role="status" className="p-16 text-small text-text-secondary">{labels.loading}</p>}
+              <div hidden={loading}>
               <div className="mb-12 flex flex-wrap items-center justify-between gap-8">
                 <p className="text-small text-text-secondary">
                   {fill(labels.mapResults, { shown: units.length, total })}
@@ -531,10 +584,9 @@ export default function SearchResults({
                 <>
                   <div className="grid grid-cols-1 gap-16 md:grid-cols-2">
                     {units.map((unit) => (
-                      <Link
+                      <article
                         id={`unit-card-${unit.id}`}
                         key={unit.id}
-                        href={`/units/${unit.id}?${searchParams?.toString() || ''}`}
                         onMouseEnter={() => setSelectedProjectId(unit.project?.id ?? null)}
                         onFocus={() => setSelectedProjectId(unit.project?.id ?? null)}
                         className={
@@ -543,8 +595,10 @@ export default function SearchResults({
                             : 'overflow-hidden rounded-md border border-border-line bg-surface-paper transition-shadow duration-micro hover:shadow-card'
                         }
                       >
+                        <div className="relative">
+                        <Link href={`/units/${unit.id}?${searchParams?.toString() || ''}`}>
                         {unit.coverUrl ? (
-                          <Image
+                          <PropertyImage fallbackLabel={ux.photos}
                             src={unit.coverUrl}
                             alt={unit.name}
                             width={640}
@@ -554,15 +608,22 @@ export default function SearchResults({
                         ) : (
                           <div className="aspect-[4/3] bg-gradient-to-br from-surface-paper to-border-line" />
                         )}
-                        <div className="p-16">
+                        </Link>
+                        <div className="absolute right-8 top-8"><SaveHomeButton unitId={unit.id} copy={ux} /></div>
+                        </div>
+                        <Link href={`/units/${unit.id}?${searchParams?.toString() || ''}`} className="block p-16">
                           {unit.project?.name ? (
                             <p className="mb-4 text-small text-text-secondary">{unit.project.name}</p>
                           ) : null}
                           <h3 className="mb-8 text-subtitle font-semibold text-text-ink">{unit.name}</h3>
+                          {(unit.bedrooms !== undefined || unit.maxGuests !== undefined) && <p className="mb-8 text-small text-text-secondary">
+                            {[unit.bedrooms !== undefined && labels.bedroomsCount ? formatPropertyCount(labels.bedroomsCount, unit.bedrooms, locale) : '', unit.maxGuests !== undefined && labels.guestsCount ? formatPropertyCount(labels.guestsCount, unit.maxGuests, locale) : '', propertyHeadlineArea(unit) ? `${propertyHeadlineArea(unit)} m²` : ''].filter(Boolean).join(' · ')}
+                          </p>}
+                          {unit.pricing?.stayTotalThb != null && <p className="mb-8 text-small text-text-secondary">{ux.totalStay}: <strong className="text-text-ink">{formatBaht(unit.pricing.stayTotalThb)}</strong></p>}
                           <p className="mb-4 font-display text-title font-semibold tabular-nums text-text-ink">
                             {formatBaht(unit.baseNightlyThb ?? 0)}
                           </p>
-                          <p className="text-small text-text-secondary">{labels.perNight}</p>
+                          <p className="text-small text-text-secondary">{labels.perNight} · {ux.beforeFees}</p>
                           {unit.averageRating !== null && unit.averageRating !== undefined && (
                             <p className="mt-8 text-small text-text-secondary">
                               {fill(labels.ratingSummary, {
@@ -571,8 +632,8 @@ export default function SearchResults({
                               })}
                             </p>
                           )}
-                        </div>
-                      </Link>
+                        </Link>
+                      </article>
                     ))}
                   </div>
 
@@ -593,16 +654,19 @@ export default function SearchResults({
                   </div>
                 </>
               )}
+              </div>
             </div>
 
-            <SearchResultsMap
+            <div className={view === 'list' ? 'hidden lg:block' : ''}>
+            {(desktop || view === 'map') && <SearchResultsMap
               projects={mapProjects}
               selectedProjectId={selectedProjectId}
               onSelectProject={handleMapProjectSelect}
               onBoundsChange={handleMapBoundsChange}
               labels={{ loading: labels.mapLoading, unavailable: labels.mapUnavailable, homes: labels.mapHomes, aria: labels.mapAria }}
               fitToProjects={!hasMapBounds}
-            />
+            />}
+            </div>
           </section>
         )}
       </div>

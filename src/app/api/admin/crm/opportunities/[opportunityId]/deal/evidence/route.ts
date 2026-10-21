@@ -6,8 +6,9 @@ import {
   isAllowedDealEvidenceType, MAX_DEAL_EVIDENCE_BYTES,
 } from '@/modules/crm/private-deal-evidence';
 
-type Params={params:{opportunityId:string}};
-export async function POST(req:NextRequest,{params}:Params){
+type Params={params: Promise<{opportunityId:string}>};
+export async function POST(req:NextRequest, props:Params) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   try{
@@ -30,7 +31,8 @@ export async function POST(req:NextRequest,{params}:Params){
   }catch(error){return failed(error,'Private evidence upload unavailable');}
 }
 
-export async function GET(req:NextRequest,{params}:Params){
+export async function GET(req:NextRequest, props:Params) {
+  const params = await props.params;
   const guard=await requireAdmin();
   if(!guard.ok)return guard.error;
   try{

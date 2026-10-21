@@ -1,5 +1,7 @@
 # Process 5 — arrival: passports → check-in → TM30 → check-out
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../../current/SYSTEM.md) и [реализация / остаток](../../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Local production build, throw-away DB; browser as guest and admin/front desk.
 
 | Step | Result |

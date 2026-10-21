@@ -8,20 +8,23 @@ import AmenityBookingClient from '@/components/projects/AmenityBookingClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AmenityBookingPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string; amenitySlug: string };
-  searchParams?: { bookingId?: string };
-}) {
+export default async function AmenityBookingPage(
+  props: {
+    params: Promise<{ slug: string; amenitySlug: string }>;
+    searchParams?: Promise<{ bookingId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  // Resource eligibility is public; reject unavailable resources before login so
+  // draft/archived links cannot turn into a successful login-page navigation.
+  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
+  if (!data || data.project.status !== 'live') notFound();
+  if (!data.amenity.bookingRequired || !['time_slot','request','reception'].includes(data.amenity.bookingMode)) notFound();
+
   const next = `/projects/${params.slug}/amenities/${params.amenitySlug}/book${searchParams?.bookingId ? `?bookingId=${encodeURIComponent(searchParams.bookingId)}` : ''}`;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(next));
-
-  const data = await getPublicProjectAmenityBySlug(prisma, params.slug, params.amenitySlug, getRequestLocale());
-  if (!data) notFound();
-  if (!data.amenity.bookingRequired || !['time_slot','request','reception'].includes(data.amenity.bookingMode)) notFound();
 
   const labels = await getLabels({
     'amenity_booking.back': 'Back to amenity',

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createPublicError } from '@/app/libs/errorHandler';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { hasManagedUnitMcAccess, hasProjectStaffAccess } from '@/app/libs/projectScope';
+import { hasResponsibleOrganizationSupportAccess, orderResponsibleOrganization } from '@/modules/comms/standalone-ticket-access';
 
 /**
  * Load a service order and establish the caller's relationship to it.
@@ -27,7 +28,10 @@ export async function loadOrderForUser(orderId: string, user: CurrentUser) {
   const isProviderMember = user.roles.some(
     (r) => r.role === 'provider_member' && r.providerId === order.provider_id
   );
-  const isStaff = hasProjectStaffAccess(user, order.project_id);
+  const isStaff = hasProjectStaffAccess(user, order.project_id) ||
+    (order.project_id === null && await hasResponsibleOrganizationSupportAccess(
+      prisma, orderResponsibleOrganization(order.service_context), user.identityId,
+    ));
   const isManagedMc = order.unit_id
     ? await hasManagedUnitMcAccess(user, {
         projectId: order.project_id,

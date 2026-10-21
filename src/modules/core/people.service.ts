@@ -1,6 +1,9 @@
 import { PrismaClient, Identity, RoleAssignment, Organization, RoleType, RoleScopeType, OrganizationType } from '@prisma/client';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { validateRoleAssignmentScope } from './role-assignment-policy';
+import { isPropertyCapabilityRole } from './property-capability-policy';
+import { grantPropertyCapability, revokePropertyCapability } from './property-capability-grants';
 
 interface SearchIdentitiesInput {
   query?: string;
@@ -17,10 +20,15 @@ interface GrantRoleInput {
   organizationId?: string;
   providerId?: string;
   grantedByIdentityId: string;
+  canDelegate?: boolean;
+  parentGrantId?: string | null;
+  expiresAt?: string | null;
+  expectedUpdatedAt?: string;
 }
 
 interface RevokeRoleInput {
   roleAssignmentId: string;
+  actorIdentityId?: string;
 }
 
 interface BlockIdentityInput {
@@ -87,15 +95,23 @@ export async function inviteIdentity(
   db: PrismaClient,
   input: InviteIdentityInput
 ): Promise<InviteIdentityResult> {
+  if (typeof input.email !== 'string' || input.email.length > 254 ||
+    typeof input.firstName !== 'string' || input.firstName.length > 100 ||
+    typeof input.lastName !== 'string' || input.lastName.length > 100 ||
+    (input.phone !== undefined && (typeof input.phone !== 'string' || input.phone.length > 32)) ||
+    (input.preferredLocale !== undefined && !['en', 'ru', 'th', 'zh'].includes(input.preferredLocale)))
+    throw new Error('Enter a valid email, name and supported language');
   const email = input.email.trim().toLowerCase();
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
 
-  if (!email.includes('@')) throw new Error('A valid email address is required');
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) throw new Error('A valid email address is required');
   if (!firstName || !lastName) throw new Error('A first and last name are required');
 
   const existing = await db.identity.findUnique({ where: { email } });
   if (existing) {
+    if (!['active', 'invited'].includes(existing.status))
+      throw new Error('This account is unavailable. Review its status before inviting it.');
     // Never downgrade a live account to `invited`: that would suspend a working
     // login on the strength of somebody typing a familiar address into a form.
     return {
@@ -170,23 +186,31 @@ export async function searchIdentities(
 export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promise<RoleAssignment> {
   const { identityId, role, scopeType, projectId, unitId, organizationId, providerId, grantedByIdentityId } = input;
 
+  validateRoleAssignmentScope(input);
+  if (isPropertyCapabilityRole(role)) {
+    const result = await grantPropertyCapability(db, grantedByIdentityId, {
+      identityId, role, scopeType, projectId, unitId,
+      canDelegate: input.canDelegate, parentGrantId: input.parentGrantId,
+      expiresAt: input.expiresAt, expectedUpdatedAt: input.expectedUpdatedAt,
+    });
+    return result.grant;
+  }
+
+  // Restricted employee grants must not piggyback on operational invitation paths.
+  if (role === 'content_contributor') {
+    const granter = await db.identity.findUnique({
+      where: { id: grantedByIdentityId },
+      select: { isAdmin: true, status: true },
+    });
+    if (!granter?.isAdmin || granter.status !== 'active') {
+      throw new Error('Only active admins can grant content contributor roles');
+    }
+  }
+
   // Verify identity exists
   const identity = await db.identity.findUnique({ where: { id: identityId } });
   if (!identity) {
     throw new Error(`Identity ${identityId} not found`);
-  }
-
-  if (scopeType === 'project' && !projectId) {
-    throw new Error('projectId is required for project-scoped roles');
-  }
-
-  if (scopeType === 'unit') {
-    if (!projectId) {
-      throw new Error('projectId is required for unit-scoped roles');
-    }
-    if (!unitId) {
-      throw new Error('unitId is required for unit-scoped roles');
-    }
   }
 
   const normalizedProjectId = scopeType === 'platform' ? null : (projectId ?? null);
@@ -274,7 +298,11 @@ export async function grantRole(db: PrismaClient, input: GrantRoleInput): Promis
  */
 export async function revokeRole(db: PrismaClient, input: RevokeRoleInput): Promise<RoleAssignment> {
   const { roleAssignmentId } = input;
-
+  const assignment = await db.roleAssignment.findUnique({ where: { id: roleAssignmentId } });
+  if (assignment && isPropertyCapabilityRole(assignment.role)) {
+    if (!input.actorIdentityId) throw new Error('Current actor is required to revoke a property capability');
+    return (await revokePropertyCapability(db, input.actorIdentityId, roleAssignmentId)).grant;
+  }
   return db.roleAssignment.update({
     where: { id: roleAssignmentId },
     data: { status: 'revoked' },
@@ -381,94 +409,56 @@ export async function deleteOrganization(db: PrismaClient, organizationId: strin
  * Generate a claim link for an invited identity
  */
 export async function generateClaimLink(db: PrismaClient, input: GenerateClaimLinkInput): Promise<string> {
-  const { identityId, ttlMinutes = 7 * 24 * 60 } = input; // 7 days default
-
-  const identity = await db.identity.findUnique({ where: { id: identityId } });
-  if (!identity) {
-    throw new Error(`Identity ${identityId} not found`);
-  }
-
-  if (identity.status !== 'invited') {
-    throw new Error(`Identity ${identityId} is not in invited status`);
-  }
-
-  // Generate a random token
+  const { identityId, ttlMinutes = 7 * 24 * 60 } = input;
+  if (!Number.isSafeInteger(ttlMinutes) || ttlMinutes <= 0 || ttlMinutes > 7 * 24 * 60)
+    throw new Error('Claim link expiry must be between one minute and seven days');
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = hashToken(token);
-  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
-
-  // Issuing a new link kills every earlier one, as the password-reset flow
-  // already does. Otherwise every resend leaves another live key to the
-  // account lying in an old email or a forwarded chat message.
-  await db.oneTimeToken.updateMany({
-    where: { identityId, purpose: 'account_claim', consumedAt: null },
-    data: { consumedAt: new Date() },
+  // The same identity lock serializes resend, first claim and administrator block.
+  await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM identity WHERE id = ${identityId} FOR UPDATE`;
+    const identity = await tx.identity.findUnique({ where: { id: identityId } });
+    if (!identity) throw new Error(`Identity ${identityId} not found`);
+    if (identity.status !== 'invited') throw new Error(`Identity ${identityId} is not in invited status`);
+    await tx.oneTimeToken.updateMany({ where: { identityId, purpose: 'account_claim', consumedAt: null },
+      data: { consumedAt: new Date() } });
+    await tx.oneTimeToken.create({ data: { identityId, purpose: 'account_claim', tokenHash,
+      expiresAt: new Date(Date.now() + ttlMinutes * 60 * 1000) } });
   });
-
-  // Store the hashed token
-  await db.oneTimeToken.create({
-    data: {
-      identityId,
-      purpose: 'account_claim',
-      tokenHash,
-      expiresAt,
-    },
-  });
-
   return token;
 }
 
-/**
- * Claim an invited identity by setting password and validating claim token
- */
+/** Claim exactly once. Never let concurrent claims overwrite the first chosen password. */
 export async function claimIdentity(db: PrismaClient, input: ClaimIdentityInput): Promise<Identity> {
   const { tokenHash, password } = input;
-
-  // Find the token
-  const token = await db.oneTimeToken.findFirst({
-    where: { tokenHash, purpose: 'account_claim' },
-    include: { identity: true },
-  });
-
-  if (!token) {
+  if (typeof tokenHash !== 'string' || !/^[a-f0-9]{64}$/.test(tokenHash))
     throw new Error('Invalid or expired claim link');
-  }
-
-  if (token.consumedAt) {
-    throw new Error('This claim link has already been used');
-  }
-
-  if (new Date() > token.expiresAt) {
-    throw new Error('This claim link has expired');
-  }
-
-  if (token.identity.status !== 'invited') {
-    throw new Error('Identity is not in invited status');
-  }
-
-  // Hash the password
+  if (typeof password !== 'string' || password.length < 8 || Buffer.byteLength(password, 'utf8') > 72)
+    throw new Error('Use a password of at least 8 characters and at most 72 UTF-8 bytes');
+  // This lookup chooses the lock target only; all authority checks happen again inside it.
+  const reference = await db.oneTimeToken.findFirst({ where: { tokenHash, purpose: 'account_claim' },
+    select: { id: true, identityId: true } });
+  if (!reference) throw new Error('Invalid or expired claim link');
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Update identity and consume token in a transaction
-  const result = await db.$transaction(async (tx) => {
-    // Mark token as consumed
-    await tx.oneTimeToken.update({
-      where: { id: token.id },
-      data: { consumedAt: new Date() },
-    });
-
-    // Update identity
-    return tx.identity.update({
-      where: { id: token.identityId },
-      data: {
-        status: 'active',
-        hashedPassword,
-        emailVerifiedAt: new Date(), // Claiming via email link verifies the email
-      },
-    });
+  return db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM identity WHERE id = ${reference.identityId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM one_time_token WHERE id = ${reference.id} FOR UPDATE`;
+    const token = await tx.oneTimeToken.findFirst({ where: { id: reference.id, tokenHash, purpose: 'account_claim' },
+      include: { identity: true } });
+    if (!token) throw new Error('Invalid or expired claim link');
+    if (token.consumedAt) throw new Error('This claim link has already been used');
+    if (token.expiresAt <= new Date()) throw new Error('This claim link has expired');
+    if (token.identity.status !== 'invited') throw new Error('Identity is not in invited status');
+    await tx.oneTimeToken.update({ where: { id: token.id }, data: { consumedAt: new Date() } });
+    const identity = await tx.identity.update({ where: { id: token.identityId },
+      // Account-claim links may be handed over by an authorized inviter.
+      // Possession proves this claim, not control of the email mailbox.
+      // A separately verified timestamp, if any, is left untouched.
+      data: { status: 'active', hashedPassword } });
+    await tx.auditLog.create({ data: { actorIdentityId: identity.id, action: 'people.account_claimed',
+      entityType: 'Identity', entityId: identity.id, data: {} } });
+    return identity;
   });
-
-  return result;
 }
 
 /**

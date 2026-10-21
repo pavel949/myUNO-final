@@ -1,5 +1,7 @@
 # Open Questions — the running register
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](current/SYSTEM.md) и [остатка работ](current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 Anything a scenario needs that the specs don't yet cover is logged here and **asked, never invented**. Each entry says where it came from, what is blocked, and — where the specs had to proceed — what **provisional, clearly-marked assumption** was written down so the founder can confirm or overturn it. Provisional answers are always the *safest, most reversible* reading, and are also marked `⚠ provisional` at the point of use in the spec.
 
 Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a marked assumption is in the specs pending confirmation · **ANSWERED** — resolved, folded into the specs.
@@ -624,3 +626,8 @@ Status legend: **OPEN** — needs the founder's call · **PROVISIONAL** — a ma
 - **Open:** fill the columns for future stays; a re-upload updates the bookings as recorded changes.
 
 *Maintained by Fable. New gaps found while walking journeys are appended; nothing is silently invented.*
+
+
+## 2026-10-16 — Booking-mode compatibility URL
+
+The administrator PUT `/api/admin/units/[id]/booking-mode` remains a compatibility alias to the same reviewed scoped writer. The current UI uses `/api/property-booking-mode/[unitId]`. There is no current in-repository UI caller of the old URL; audit external callers before removing it. Neither endpoint bypasses preview baselines or current authorization.

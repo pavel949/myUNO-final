@@ -1,4 +1,6 @@
+import { GALLERY_EMERGENCY_LOCALE_DRAFTS } from '@/modules/content/gallery-emergency.seed';
 import { Suspense } from 'react';
+import { GUEST_SERVICE_LOCALE_DRAFTS } from '@/modules/content/guest-service-context.seed';
 import { getLabels } from '@/lib/i18n';
 import TripsList from './trips-list';
 
@@ -7,6 +9,8 @@ export const dynamic = 'force-dynamic';
 export default async function TripsPage() {
   const labels = await getLabels({
     'booking.trips.loading': 'Loading your trips...',
+    'booking.trips.load_more': 'Load more trips',
+    'help.emergency.title': 'Emergency help',
     'booking.trips.title': 'My Trips',
     'booking.trips.count_singular': 'booking',
     'booking.trips.count_plural': 'bookings',
@@ -31,7 +35,7 @@ export default async function TripsPage() {
     'booking.trips.status.cancelled': 'Cancelled',
     'booking.trips.status.declined': 'Declined',
     'booking.trips.status.expired': 'Expired',
-  });
+  }, undefined, { ...GUEST_SERVICE_LOCALE_DRAFTS, ...GALLERY_EMERGENCY_LOCALE_DRAFTS });
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-surface-mint p-8"><p>{labels['booking.trips.loading']}</p></div>}>

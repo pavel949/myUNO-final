@@ -48,11 +48,12 @@ function ticketStatusLabel(status: string, labels: Record<string, string>): stri
   return labels[`tickets.status.${status}`] || status;
 }
 
-export default async function JuristicPortalPage({
-  searchParams,
-}: {
-  searchParams: { projectId?: string };
-}) {
+export default async function JuristicPortalPage(
+  props: {
+    searchParams: Promise<{ projectId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/juristic');

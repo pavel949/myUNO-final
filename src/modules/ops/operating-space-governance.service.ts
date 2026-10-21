@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { eligibleOrganizationUnits, getLegacyOperationalUnitIds, getOperationalActor, OperatingAccessError, validOperatingCapabilities } from './operating-space-access.service';
 import { CAPABILITY_DEPARTMENTS, GOVERNED_DAILY_CAPABILITIES } from './operating-space-capabilities';
+import { isOperatingCreationCapability } from './operating-creation-capabilities';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -127,6 +128,15 @@ export async function updateGovernedOperatingMember(db: PrismaClient, actorId: s
     if (input.active) {
       if (!capabilities.length) throw new OperatingAccessError('Choose at least one capability or deactivate access', 400);
       for (const cap of capabilities) {
+        if (isOperatingCreationCapability(cap)) {
+          const scopedIds = attached.map(row => row.unitId).filter(id => eligible.has(id));
+          const usable = await tx.unit.count({ where: { id: { in: scopedIds },
+            status: { not: 'offboarded' }, project: { status: { not: 'archived' } } } });
+          if (!usable) throw new OperatingAccessError('Creation requires an existing nonempty verified workspace. Ask the founder to set up its scope first.', 409);
+          // This is an intake capability only. Do not grant legacy operational roles.
+          effectiveUnits[cap] = usable;
+          continue;
+        }
         if (!GOVERNED_DAILY_CAPABILITIES.includes(cap) && !(before?.active && before.capabilities.includes(cap))) {
           throw new OperatingAccessError(`New grants for ${cap} are not available in this daily-task setup.`, 409);
         }

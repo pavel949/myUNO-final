@@ -1,5 +1,7 @@
 # Public discovery and navigation audit — 2026-10-07
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](current/SYSTEM.md) и [реализация / остаток](current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Repository: pavel949/myUNO-final. Baseline: main b801c442c57e9c2a95192b0f1ac09e4f3c32d22a.
 Scope: homepage, public stay search, project catalogue, project portal, inventory categories, exact-unit details, and return navigation. The Airbnb reference is a journey pattern: browse before dates, photo-led cards, a distinct detail page, dates on that page, and preserved search context.
 

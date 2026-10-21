@@ -13,9 +13,10 @@ import type { StayWorkDepartment } from '@/modules/booking/work-projection';
 import { getOperatingSpaceMembership, getOperatingSpaceUnitIds } from '@/modules/ops';
 
 export const dynamic='force-dynamic';
-export default async function StayOperationsPage({
-  searchParams,
-}:{searchParams?:{projectId?:string;department?:string;spaceId?:string}}){
+export default async function StayOperationsPage(
+  props:{searchParams?: Promise<{projectId?:string;department?:string;spaceId?:string}>}
+) {
+  const searchParams = await props.searchParams;
   const user=await getCurrentUser();
   if(!user)redirect('/login?next=/ops/stays');
   const requestedSpaceId=typeof searchParams?.spaceId==='string'?searchParams.spaceId:'';
@@ -49,7 +50,7 @@ export default async function StayOperationsPage({
     },
     select:{
       id:true,projectId:true,unitId:true,status:true,startDate:true,endDate:true,
-      totalThb:true,refundAccruedThb:true,
+      receivableStatus:true,totalThb:true,refundAccruedThb:true,
       unit:{select:{name:true}},
       guestIdentity:{select:{firstName:true,lastName:true}},
       payments:{where:{status:'succeeded',purpose:{in:['stay','stay_balance']}},
@@ -66,7 +67,7 @@ export default async function StayOperationsPage({
     status:b.status,startDate:b.startDate.toISOString().slice(0,10),
     endDate:b.endDate.toISOString().slice(0,10),totalSatang:b.totalThb,
     paidSatang:b.payments.reduce((sum,p)=>sum+p.amountThb,0),
-    refundAccruedSatang:b.refundAccruedThb,
+    refundAccruedSatang:b.refundAccruedThb,receivableStatus:b.receivableStatus,
   },today)).filter(item=>allowedDepartments.includes(item.department) && (user.isAdmin || !projectDepartments.has(bookingProjects.get(item.bookingId)||'') || projectDepartments.get(bookingProjects.get(item.bookingId)||'')?.includes(item.department)));
   const queue=(department?work.filter(item=>item.department===department):work)
     .sort((a,b)=>(a.severity==='attention'?-1:1)-(b.severity==='attention'?-1:1)||
@@ -90,6 +91,7 @@ export default async function StayOperationsPage({
     'staff.stay_queue.action_key.check_in':'Check in',
     'staff.stay_queue.action_key.check_out':'Check out',
     'staff.stay_queue.action_key.collect':'Collect',
+    'staff.stay_queue.action_key.reconcile_source':'Reconcile source payment and guest balance',
     'staff.stay_queue.action_key.inspect':'Inspect',
     'staff.stay_queue.action_key.prearrival':'Prearrival',
     'staff.stay_queue.action_key.prepare_home':'Prepare home',
@@ -177,3 +179,4 @@ export default async function StayOperationsPage({
     </div>
   </main>;
 }
+

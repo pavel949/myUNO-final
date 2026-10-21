@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import type { PrismaClient, MediaAssetKind } from '@prisma/client';
+import { mediaStorageCredentials } from './storage-config';
 
 /**
  * Media storage seam (doc 14 media seam; MediaAsset schema doc 02 §2.5).
@@ -30,12 +32,13 @@ async function putToStorage(
   fileName: string
 ): Promise<string> {
   const { put } = await import('@vercel/blob');
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  const credentials = mediaStorageCredentials();
+  if (credentials?.mode === 'token') {
     const blob = await put(`media/${fileName}`, buffer, {
       access: 'public',
       contentType: mimeType,
       addRandomSuffix: true,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: credentials.token,
     });
     return blob.url;
   }
@@ -43,13 +46,13 @@ async function putToStorage(
   // Vercel deployments receive a short-lived OIDC token automatically.
   // Use it with the configured canonical Blob store so production never
   // falls back to embedding image bytes in the database.
-  if (process.env.VERCEL_OIDC_TOKEN && process.env.BLOB_STORE_ID) {
+  if (credentials?.mode === 'oidc') {
     const blob = await put(`media/${fileName}`, buffer, {
       access: 'public',
       contentType: mimeType,
       addRandomSuffix: true,
-      oidcToken: process.env.VERCEL_OIDC_TOKEN,
-      storeId: process.env.BLOB_STORE_ID,
+      oidcToken: credentials.oidcToken,
+      storeId: credentials.storeId,
     });
     return blob.url;
   }
@@ -58,8 +61,9 @@ async function putToStorage(
     throw new Error('Durable media storage is not configured');
   }
 
-  // Local-development fallback only.
-  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  // Local-development fallback only. A URL fragment keeps each upload asset
+  // distinct (including uploader ownership) without changing the image bytes.
+  return `data:${mimeType};base64,${buffer.toString('base64')}#media-${randomUUID()}`;
 }
 
 /**

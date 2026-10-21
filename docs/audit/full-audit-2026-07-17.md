@@ -1,5 +1,7 @@
 # Full Product Audit & Remediation · myUNO · 2026-07-17
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../current/SYSTEM.md) и [реализация / остаток](../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 **Method.** Five parallel deep audits — live end-to-end booking test (against a
 real Postgres), data-model consistency, taxonomy/config/content completeness,
 architectural debt, and Airbnb-class UX parity — followed by a remediation pass.

@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import Link from 'next/link';
+import ContributorUnitPicker from './contributor-unit-picker';
+import { isPropertyCapabilityRole } from '@/modules/core/property-capability-policy';
 
 const ROLES = [
   'owner', 'guest', 'resident', 'buyer',
   'provider_member', 'mc_member', 'juristic_member',
-  'staff_ops', 'onsite_host',
+  'staff_ops', 'onsite_host', 'content_contributor', 'pricing_editor', 'booking_mode_editor',
 ] as const;
 
 /** Platform scope is for the roles that genuinely span everything. */
+const EXACT_UNIT_ROLES = new Set(['content_contributor', 'pricing_editor', 'booking_mode_editor']);
 const PLATFORM_SCOPED_ROLES = new Set(['staff_ops', 'onsite_host']);
 const DEPARTMENTS = ['reservations','front_desk','housekeeping','maintenance','guest_care','finance','pricing','content','channels','owner_relations'] as const;
 
@@ -24,6 +27,8 @@ interface InviteResult {
 interface Assignment {
   id: string; role: string; scopeType: string; status: string;
   projectName: string | null; unitName: string | null;
+  projectId: string | null; unitId: string | null;
+  canDelegate?: boolean; parentGrantId?: string | null; expiresAt?: string | null; updatedAt?: string;
 }
 
 export default function PeopleAdminClient({
@@ -33,6 +38,7 @@ export default function PeopleAdminClient({
   projects: { id: string; name: string }[];
   labels: Record<string, string>;
 }) {
+  const assignmentFormId = useId();
   const [query, setQuery] = useState('');
   const [people, setPeople] = useState<Person[]>([]);
   const [searching, setSearching] = useState(false);
@@ -43,13 +49,17 @@ export default function PeopleAdminClient({
   const [role, setRole] = useState<string>(ROLES[0]);
   const [scopeType, setScopeType] = useState('project');
   const [projectId, setProjectId] = useState(projects[0]?.id ?? '');
+  const [unitId, setUnitId] = useState('');
+  const [canDelegate, setCanDelegate] = useState(false);
+  const [expiresAt, setExpiresAt] = useState('');
+  const [editing, setEditing] = useState<Assignment | null>(null);
   const [busy, setBusy] = useState(false);
   const [teamProjectId, setTeamProjectId] = useState(projects[0]?.id ?? '');
   const [teamMembers, setTeamMembers] = useState<Array<{ identityId:string;name:string;email:string|null;role:string;departments:string[] }>>([]);
   const [teamLoaded, setTeamLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '' });
+  const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '', destination: 'property' });
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
 
   const search = useCallback(async () => {
@@ -65,6 +75,8 @@ export default function PeopleAdminClient({
 
   const open = useCallback(async (person: Person) => {
     setSelected(person);
+    setEditing(null); setCanDelegate(false); setExpiresAt('');
+    setUnitId('');
     setError(null);
     const res = await fetch(`/api/admin/people/${person.id}/roles`).catch(() => null);
     const body = await res?.json().catch(() => null);
@@ -81,7 +93,9 @@ export default function PeopleAdminClient({
   }, []);
 
   const grant = useCallback(async () => {
-    if (!selected) return;
+    if (!selected || busy || (scopeType !== 'platform' && !projectId) || (scopeType === 'unit' && !unitId)) return;
+    if (EXACT_UNIT_ROLES.has(role) && !['project', 'unit'].includes(scopeType)) return;
+    if (expiresAt && !Number.isFinite(new Date(expiresAt).getTime())) { setError(labels['admin.people.error']); return; }
     setBusy(true);
     setError(null);
     const res = await fetch('/api/admin/roles/grant', {
@@ -91,7 +105,10 @@ export default function PeopleAdminClient({
         identityId: selected.id,
         role,
         scopeType,
-        ...(scopeType === 'project' ? { projectId } : {}),
+        ...(scopeType !== 'platform' ? { projectId } : {}),
+        ...(scopeType === 'unit' ? { unitId } : {}),
+        ...(isPropertyCapabilityRole(role) ? { canDelegate, expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+          ...(editing?.updatedAt ? { expectedUpdatedAt: editing.updatedAt } : {}) } : {}),
       }),
     }).catch(() => null);
     if (!res?.ok) {
@@ -99,9 +116,10 @@ export default function PeopleAdminClient({
       setError(body?.error ?? labels['admin.people.error']);
     } else {
       await refresh(selected.id);
+      setEditing(null); setCanDelegate(false); setExpiresAt('');
     }
     setBusy(false);
-  }, [selected, role, scopeType, projectId, refresh, labels]);
+  }, [selected, role, scopeType, projectId, unitId, canDelegate, expiresAt, editing, busy, refresh, labels]);
 
   const revoke = useCallback(async (roleAssignmentId: string) => {
     if (!selected) return;
@@ -140,7 +158,7 @@ export default function PeopleAdminClient({
 
     if (res?.ok) {
       setInviteResult(payload);
-      if (!payload?.alreadyActive) setInviteForm({ firstName: '', lastName: '', email: '' });
+      if (!payload?.alreadyActive) setInviteForm(current => ({ ...current, firstName: '', lastName: '', email: '' }));
       // Put them straight into the list so a role can be granted immediately —
       // an invitation with no role attached is an account that opens onto
       // nothing.
@@ -212,18 +230,22 @@ export default function PeopleAdminClient({
           {labels['admin.people.invite']}
         </h2>
         <p className="text-small text-text-secondary mb-16">{labels['admin.people.invite_note']}</p>
+        <p className="text-small text-text-secondary mb-16">{labels['admin.people.employee_steps']}</p>
+        <p className="mb-16"><Link href="/login?next=%2Fproperty" className="text-brand-andaman underline">{labels['admin.people.employee_login']}</Link></p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <input
             value={inviteForm.firstName}
             onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
             placeholder={labels['admin.people.invite_first_name']}
+            aria-label={labels['admin.people.invite_first_name']}
             className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
           <input
             value={inviteForm.lastName}
             onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
             placeholder={labels['admin.people.invite_last_name']}
+            aria-label={labels['admin.people.invite_last_name']}
             className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
           <input
@@ -231,10 +253,19 @@ export default function PeopleAdminClient({
             value={inviteForm.email}
             onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
             placeholder={labels['admin.people.invite_email']}
+            aria-label={labels['admin.people.invite_email']}
             className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
           />
         </div>
 
+        <label className="mb-16 block text-small text-text-secondary">
+          {labels['admin.people.invite_destination']}
+          <select aria-label={labels['admin.people.invite_destination']} value={inviteForm.destination} onChange={e => setInviteForm({ ...inviteForm, destination: e.target.value })}
+            className="mt-8 block h-48 w-full rounded-sm border border-border-line bg-surface-ivory px-12">
+            <option value="property">{labels['admin.people.invite_property']}</option>
+            <option value="account">{labels['admin.people.invite_account']}</option>
+          </select>
+        </label>
         <button
           type="button"
           onClick={invite}
@@ -252,7 +283,7 @@ export default function PeopleAdminClient({
           <div className="mt-16">
             <p className="text-small text-text-secondary mb-4">
               {inviteResult.emailed
-                ? labels['admin.people.invite_sent']
+                ? labels['admin.people.invite_queued']
                 : labels['admin.people.invite_not_emailed']}
             </p>
             {/* Shown so an operator can pass it on by Telegram or WhatsApp,
@@ -296,6 +327,7 @@ export default function PeopleAdminClient({
               key={p.id}
               type="button"
               onClick={() => open(p)}
+              disabled={busy}
               className={`w-full text-left bg-surface-paper border rounded-lg p-16 mb-8 transition ${
                 selected?.id === p.id ? 'border-brand-andaman' : 'border-border-line hover:border-brand-andaman/50'
               }`}
@@ -326,15 +358,28 @@ export default function PeopleAdminClient({
                 {assignments.map((a) => (
                   <li key={a.id} className="flex items-center justify-between py-8 border-t border-border-line">
                     <span className="text-body text-text-ink">
-                      {a.role}
+                      {EXACT_UNIT_ROLES.has(a.role) ? labels[`admin.people.${a.role}`] : a.role}
                       <span className="text-small text-text-secondary">
                         {' · '}
                         {a.scopeType === 'platform'
                           ? labels['admin.people.scope_platform']
                           : a.unitName ?? a.projectName ?? a.scopeType}
+                        {a.role === 'content_contributor' && a.scopeType === 'project' && ` · ${labels['admin.people.scope_shared_content']}`}
+                        {a.role === 'pricing_editor' && ` · ${labels[a.scopeType === 'unit' ? 'admin.people.scope_pricing_unit' : 'admin.people.scope_pricing_project']}`}
                         {a.status !== 'active' && ` · ${a.status}`}
+                        {a.canDelegate && ` · ${labels['admin.people.delegable']}`}
+                        {a.parentGrantId && ` · ${labels['admin.people.delegated']}`}
+                        {a.expiresAt && ` · ${new Date(a.expiresAt).toLocaleString()}`}
                       </span>
                     </span>
+                    {isPropertyCapabilityRole(a.role) && !a.parentGrantId && a.updatedAt && <button
+                      type="button" disabled={busy} className="mx-12 text-small text-brand-andaman underline"
+                      onClick={() => {
+                        setEditing(a); setRole(a.role); setScopeType(a.scopeType); setProjectId(a.projectId ?? '');
+                        setUnitId(a.unitId ?? ''); setCanDelegate(a.canDelegate ?? false);
+                        const date = a.expiresAt ? new Date(a.expiresAt) : null;
+                        setExpiresAt(date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
+                      }}>{labels['admin.people.edit_capability']}</button>}
                     <button
                       type="button"
                       onClick={() => revoke(a.id)}
@@ -350,49 +395,92 @@ export default function PeopleAdminClient({
 
             <h3 className="text-small text-text-secondary mb-8">{labels['admin.people.grant']}</h3>
             <div className="grid grid-cols-1 gap-8 mb-8">
+              <label htmlFor={`${assignmentFormId}-role`} className="text-small text-text-secondary">
+                {labels['admin.people.role']}
+              </label>
               <select
+                id={`${assignmentFormId}-role`}
+                disabled={busy || editing !== null}
                 value={role}
                 onChange={(e) => {
                   setRole(e.target.value);
-                  // A role that cannot span the platform must not offer it.
-                  if (!PLATFORM_SCOPED_ROLES.has(e.target.value)) setScopeType('project');
+                  // Restricted employee roles default to one exact unit; project scope is explicit.
+                  setUnitId('');
+                  if (EXACT_UNIT_ROLES.has(e.target.value)) setScopeType('unit');
+                  else if (scopeType === 'unit' || !PLATFORM_SCOPED_ROLES.has(e.target.value)) setScopeType('project');
                 }}
                 className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
                 {ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>{EXACT_UNIT_ROLES.has(r) ? labels[`admin.people.${r}`] : r}</option>
                 ))}
               </select>
 
+              <label htmlFor={`${assignmentFormId}-scope`} className="text-small text-text-secondary">
+                {labels['admin.people.scope']}
+              </label>
               <select
+                id={`${assignmentFormId}-scope`}
+                disabled={busy || editing !== null}
                 value={scopeType}
-                onChange={(e) => setScopeType(e.target.value)}
+                onChange={(e) => { setScopeType(e.target.value); setUnitId(''); }}
                 className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
               >
-                <option value="project">{labels['admin.people.scope_project']}</option>
+                <option value="project">{labels[role === 'content_contributor' ? 'admin.people.scope_shared_content' : role === 'pricing_editor' ? 'admin.people.scope_pricing_project' : 'admin.people.scope_project']}</option>
+                {EXACT_UNIT_ROLES.has(role) && <option value="unit">{labels[role === 'pricing_editor' ? 'admin.people.scope_pricing_unit' : 'admin.people.scope_unit']}</option>}
                 {PLATFORM_SCOPED_ROLES.has(role) && (
                   <option value="platform">{labels['admin.people.scope_platform']}</option>
                 )}
               </select>
 
-              {scopeType === 'project' && (
-                <select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+              {scopeType !== 'platform' && (
+                <>
+                  <label htmlFor={`${assignmentFormId}-project`} className="text-small text-text-secondary">
+                    {labels['admin.people.project']}
+                  </label>
+                  <select
+                    id={`${assignmentFormId}-project`}
+                    disabled={busy || editing !== null}
+                    value={projectId}
+                    onChange={(e) => { setProjectId(e.target.value); setUnitId(''); }}
+                    className="h-48 rounded-sm border border-border-line bg-surface-ivory px-12 text-body text-text-ink"
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </>
               )}
+              {EXACT_UNIT_ROLES.has(role) && scopeType === 'unit' && projectId && <ContributorUnitPicker
+                key={`${role}:${projectId}`}
+                projectId={projectId}
+                unitId={unitId}
+                onChange={setUnitId}
+                disabled={busy || editing !== null}
+                labels={labels}
+              />}
             </div>
-            <p className="text-small text-text-secondary mb-16">{labels['admin.people.scope_note']}</p>
+            <p className="text-small text-text-secondary mb-16">{labels[role === 'content_contributor' ? 'admin.people.content_scope_note' : role === 'pricing_editor' ? 'admin.people.pricing_scope_note' : role === 'booking_mode_editor' ? 'admin.people.booking_scope_note' : 'admin.people.scope_note']}</p>
+
+            {isPropertyCapabilityRole(role) && <div className="mb-16 grid gap-12">
+              <label className="flex items-start gap-8 text-small"><input type="checkbox" checked={canDelegate}
+                onChange={e => setCanDelegate(e.target.checked)} disabled={busy} />{labels['admin.people.can_delegate']}</label>
+              <p className="text-small text-text-secondary">{labels['admin.people.delegate_note']}</p>
+              <label className="text-small">{labels['admin.people.grant_expiry']}<input type="datetime-local" value={expiresAt}
+                onChange={e => setExpiresAt(e.target.value)} disabled={busy}
+                className="mt-8 block h-48 w-full rounded-sm border border-border-line bg-surface-ivory px-12" /></label>
+              <p className="text-small text-text-secondary">{labels['admin.people.grant_expiry_note']}</p>
+              {editing && <button type="button" className="text-small text-brand-andaman underline" onClick={() => {
+                setEditing(null); setCanDelegate(false); setExpiresAt('');
+              }}>{labels['admin.people.cancel_edit']}</button>}
+            </div>}
+            {(role === 'content_contributor' || assignments.some(a => a.role === 'content_contributor' && a.status === 'active')) && <Link href="/property/content" className="mb-16 block text-small text-brand-andaman underline">{labels['admin.people.content_workspace_link']}</Link>}
+            {(role === 'pricing_editor' || assignments.some(a => a.role === 'pricing_editor' && a.status === 'active')) && <Link href="/property/pricing" className="mb-16 block text-small text-brand-andaman underline">{labels['admin.people.pricing_workspace_link']}</Link>}
 
             <button
               type="button"
               onClick={grant}
-              disabled={busy || (scopeType === 'project' && !projectId)}
+              disabled={busy || (scopeType !== 'platform' && !projectId) || (scopeType === 'unit' && !unitId)}
               className="h-48 px-24 rounded-sm bg-brand-andaman text-surface-ivory font-semibold hover:opacity-90 transition disabled:opacity-50 mb-24"
             >
               {busy ? labels['admin.people.granting'] : labels['admin.people.grant_submit']}

@@ -128,6 +128,44 @@ describe('one property intake and verified canonical conversion', () => {
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
   });
 
+  it('preserves the submitted description in one canonical locale without granting ownership', async () => {
+    const created = await (await POST(req('POST', {
+      ...application(), description: 'Квартира с отдельной спальней.', descriptionLocale: 'ru', status: 'submitted',
+    }))).json();
+    session.identityId = adminId;
+    const review = { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true, verifiedOwner: false };
+    const response = await convert(req('POST', review), { params: { id: created.id } });
+    await expectHttpStatus(response, 200);
+    const result = await response.json();
+    const unit = await db.unit.findUniqueOrThrow({ where: { id: result.unitId } });
+    expect(unit.status).toBe('draft');
+    expect(unit.ownerIdentityId).toBeNull();
+    const content = await db.contentKey.findUniqueOrThrow({ where: { key: unit.descriptionKey! }, include: { translations: true } });
+    expect(content.namespace).toBe('unit');
+    expect(content.translations).toHaveLength(1);
+    expect(content.translations[0]).toMatchObject({ locale: 'ru', value: 'Квартира с отдельной спальней.', status: 'needs_review', updatedByIdentityId: adminId });
+    expect(await db.roleAssignment.count({ where: { identityId: applicantId } })).toBe(0);
+    const retry = await convert(req('POST', review), { params: { id: created.id } });
+    await expectHttpStatus(retry, 200);
+    expect(await db.translation.count({ where: { contentKeyId: content.id } })).toBe(1);
+  });
+
+  it('rolls back conversion if the new canonical description cannot be created', async () => {
+    const created = await (await POST(req('POST', {
+      ...application(), description: 'A separate bedroom.', descriptionLocale: 'en', status: 'submitted',
+    }))).json();
+    const key = `unit.${created.id.replace(/-/g, '')}.description`;
+    const existing = await db.contentKey.create({ data: { key, namespace: 'unit', description: 'Existing content must not be overwritten' } });
+    session.identityId = adminId;
+    const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
+    expect(response.status).toBe(409);
+    expect(await db.unit.count({ where: { projectId } })).toBe(0);
+    expect(await db.translation.count({ where: { contentKeyId: existing.id } })).toBe(0);
+    const applicationRow = await db.crmOpportunity.findUniqueOrThrow({ where: { id: created.id } });
+    expect(applicationRow.requirements).toMatchObject({ status: 'submitted' });
+    expect(await db.auditLog.count({ where: { entityId: created.id, action: 'property_submission:convert' } })).toBe(0);
+  });
+
   it('creates a new draft complex independently of its future units', async () => {
     const area = await db.area.create({ data: { slug: 'test-area', nameKey: 'area.test', status: 'live', sort: 1 } });
     const created = await (await POST(req('POST', {
@@ -235,7 +273,7 @@ describe('one property intake and verified canonical conversion', () => {
     const created = await (await POST(req('POST', { ...application(), status: 'submitted' }))).json();
     session.identityId = adminId;
     const response = await convert(req('POST', { verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true }), { params: { id: created.id } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
   });
   it('serializes two different applications for the same normalized physical unit', async () => {
@@ -249,9 +287,9 @@ describe('one property intake and verified canonical conversion', () => {
     const responses = await Promise.all(applications.map(application => convert(req('POST', {
       verifiedAuthority: true, checkedDuplicates: true, checkedMedia: true,
     }), { params: { id: application.id } })));
-    expect(responses.map(response => response.status).sort()).toEqual([200, 400]);
-    const rejected = responses.find(response => response.status === 400)!;
-    expect((await rejected.json()).error).toContain('Possible existing property found');
+    expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
+    const rejected = responses.find(response => response.status === 409)!;
+    expect((await rejected.json()).error).toMatch(/Possible existing property found|Reload before continuing/);
     expect(await db.unit.count({ where: { projectId } })).toBe(1);
     const rows = await db.crmOpportunity.findMany({
       where: { id: { in: applications.map(application => application.id) } },

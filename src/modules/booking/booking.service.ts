@@ -10,7 +10,7 @@ import { notifyBookingRequested } from './notify-requested';
 import { notifyBookingModified } from './notify-modified';
 import { computePriceBreakdown, StayUnquotableError } from '@/modules/core';
 import { calendarDayIn, toCalendarDay, DEFAULT_TIME_ZONE } from '@/lib/date';
-import { ensureDepositPreauthOnStayConfirmed } from '@/modules/finance';
+import { ensureDepositPreauthOnStayConfirmed, reserveCancellationRefunds } from '@/modules/finance';
 import {
   formatDeclineCancellationReason,
   isBookingRequestDeclineReason,
@@ -877,11 +877,20 @@ export async function cancelBooking(
   db: PrismaClient,
   input: CancelBookingInput
 ) {
+  return (await cancelBookingAttempt(db, input)).booking;
+}
+
+/** Cancellation and its durable refund work commit together. */
+export async function cancelBookingAttempt(db: PrismaClient, input: CancelBookingInput) {
   const { bookingId, cancelledByIdentityId, reason } = input;
 
-  const cancelled = await db.$transaction(async tx => {
+  const result = await db.$transaction(async tx => {
     const booking = await lockBookingInventory(tx, bookingId);
     if (!booking) throw new Error(`Booking ${bookingId} not found`);
+    if (booking.status === 'cancelled' && input.cancellationQuote?.bookingId === bookingId &&
+        booking.cancelledByIdentityId === cancelledByIdentityId) {
+      return { booking, replayed: true, refundIds: [] as string[] };
+    }
     if ((input.expectedUpdatedAt && booking.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) ||
         (input.expectedStatus && booking.status !== input.expectedStatus)) {
       throw Object.assign(new Error('Booking changed while cancellation was being prepared. Review the updated payment and refund before cancelling again.'), {
@@ -901,12 +910,16 @@ export async function cancelBooking(
     // Requested stays may be withdrawn without reserving or returning money.
     const cancellableStatuses: BookingStatus[] = ['requested', 'pending_payment', 'confirmed', 'checked_in'];
     if (!cancellableStatuses.includes(booking.status)) throw new Error(`Cannot cancel booking with status ${booking.status}`);
-    return tx.booking.update({ where: { id: bookingId }, data: {
+    const cancelled = await tx.booking.update({ where: { id: bookingId }, data: {
       status: 'cancelled', cancelledAt: new Date(), cancelledByIdentityId,
       cancellationReason: reason, refundAccruedThb: refundAmountThb,
       holdExpiresAt: null, requestExpiresAt: null,
     } });
+    const refundIds = await reserveCancellationRefunds(tx, { bookingId, amountSatang: refundAmountThb, initiatedByIdentityId: cancelledByIdentityId });
+    return { booking: cancelled, replayed: false, refundIds };
   });
+  if (result.replayed) return result;
+  const cancelled = result.booking;
 
   // Track analytics event
   const nights = Math.ceil(
@@ -922,7 +935,7 @@ export async function cancelBooking(
     refundThb: cancelled.refundAccruedThb,
   }).catch(() => null);
 
-  return cancelled;
+  return result;
 }
 
 /**
@@ -949,6 +962,7 @@ export class CheckInBlockedError extends Error {
 }
 
 export interface CheckInCandidate {
+  partyDetailsStatus?: 'known' | 'source_unknown';
   priceBreakdown?: unknown;
   status: BookingStatus;
   startDate: Date;
@@ -983,7 +997,7 @@ export function assessCheckIn(booking: CheckInCandidate, today: string): CheckIn
   // workflow may resolve source uncertainty; this guard never invents counts.
   const counts = [booking.adults, booking.children, booking.infants];
   const terms = booking.priceBreakdown;
-  if (booking.adults < 1 || counts.some(count => !Number.isSafeInteger(count) || count < 0) ||
+  if (booking.partyDetailsStatus === 'source_unknown' || booking.adults < 1 || counts.some(count => !Number.isSafeInteger(count) || count < 0) ||
       (terms !== null && typeof terms === 'object' && !Array.isArray(terms) &&
         (terms as Record<string, unknown>).partyUnknown === true)) return 'party_unknown';
   const partySize = booking.adults + booking.children + booking.infants;
@@ -1400,14 +1414,14 @@ export async function changeBookingDates(
     throw new Error('A stay needs at least one adult');
   }
 
-  if (endDate <= startDate) {
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime()) || endDate <= startDate) {
     throw new Error('The new end date must be after the new start date');
   }
 
   const changeable: BookingStatus[] = ['pending_payment', 'confirmed', 'checked_in'];
 
   const result = await db.$transaction(async (tx) => {
-    const booking = await tx.booking.findUnique({
+    let booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { unit: true },
     });
@@ -1416,9 +1430,46 @@ export async function changeBookingDates(
     }
 
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.unitId}))`;
+    booking = await tx.booking.findUniqueOrThrow({ where: { id: bookingId }, include: { unit: true } });
 
     if (!changeable.includes(booking.status)) {
       throw new Error(`Cannot change the dates of a booking with status ${booking.status}`);
+    }
+
+    // Idempotent replay of an external party confirmation must not fall through
+    // to tariff repricing after the first command has resolved source_unknown.
+    if (booking.bookingType === 'external_ota' && booking.externalRef &&
+        booking.partyDetailsStatus === 'known' && input.adults === booking.adults &&
+        input.children === booking.children && startDate.getTime() === booking.startDate.getTime() &&
+        endDate.getTime() === booking.endDate.getTime()) {
+      return { bookingId, previousStartDate: booking.startDate, previousEndDate: booking.endDate,
+        startDate: booking.startDate, endDate: booking.endDate, previousTotalThb: booking.totalThb,
+        totalThb: booking.totalThb, balanceDueThb: booking.balanceDueThb, refundAccruedThb: booking.refundAccruedThb };
+    }
+
+    // Confirm missing source facts without replacing the historical sold price
+    // with today's tariff. Commercial changes need a separate reviewed decision.
+    if (booking.partyDetailsStatus === 'source_unknown' ||
+        (booking.bookingType === 'external_ota' && booking.externalRef && booking.receivableStatus === 'pending_reconciliation')) {
+      if (startDate.getTime() !== booking.startDate.getTime() || endDate.getTime() !== booking.endDate.getTime()) {
+        throw Object.assign(new Error('Resolve source party details before changing the commercial stay terms.'), { code: 'SOURCE_STAY_REVIEW_REQUIRED' });
+      }
+      if (input.adults === undefined || input.children === undefined) {
+        throw Object.assign(new Error('Confirm both the adult and child counts.'), { code: 'PARTY_DETAILS_REQUIRED' });
+      }
+      if (input.adults + input.children > booking.unit.maxGuests) throw new Error('Guest count exceeds unit capacity');
+      const updated = await tx.booking.update({ where: { id: bookingId }, data: {
+        adults: input.adults, children: input.children, partyDetailsStatus: 'known',
+      } });
+      await tx.bookingChange.create({ data: {
+        bookingId, changeType: 'party', priceDeltaThb: 0,
+        oldValue: { adults: booking.adults, children: booking.children, partyDetailsStatus: booking.partyDetailsStatus },
+        newValue: { adults: input.adults, children: input.children, partyDetailsStatus: 'known' },
+        actorIdentityId: actorIdentityId ?? booking.guestIdentityId,
+      } });
+      return { bookingId, previousStartDate: booking.startDate, previousEndDate: booking.endDate,
+        startDate: updated.startDate, endDate: updated.endDate, previousTotalThb: booking.totalThb,
+        totalThb: booking.totalThb, balanceDueThb: booking.balanceDueThb, refundAccruedThb: booking.refundAccruedThb };
     }
 
     // A stay in progress cannot have its start moved — the guest is already in
@@ -1426,6 +1477,20 @@ export async function changeBookingDates(
     // filing was made from.
     if (booking.status === 'checked_in' && startDate.getTime() !== booking.startDate.getTime()) {
       throw new Error('A stay that has begun can change its departure, not its arrival');
+    }
+
+    // Guest date changes cannot create historical occupancy. Stored stay dates
+    // are calendar days, while "today" belongs to the property's timezone.
+    // Source-party reconciliation above changes facts only, not historical dates.
+    const project = await tx.project.findUniqueOrThrow({
+      where: { id: booking.projectId }, select: { timezone: true },
+    });
+    const today = calendarDayIn(new Date(), project.timezone ?? DEFAULT_TIME_ZONE);
+    if ((booking.status !== 'checked_in' && toCalendarDay(startDate) < today) ||
+        (booking.status === 'checked_in' && toCalendarDay(endDate) <= today)) {
+      throw Object.assign(new Error(booking.status === 'checked_in'
+        ? 'Departure must be after today at the property'
+        : 'Arrival cannot be before today at the property'), { code: 'BOOKING_DATES_IN_PAST' });
     }
 
     // Excluding itself: the booking's own current nights are not a conflict with
@@ -1549,13 +1614,13 @@ export async function changeBookingDates(
           startDate: booking.startDate.toISOString(),
           endDate: booking.endDate.toISOString(),
           totalThb: previousTotalThb,
-          ...(partyChanged && { adults: booking.adults, children: booking.children }),
+          ...(partyChanged && { adults: booking.adults, children: booking.children, partyDetailsStatus: booking.partyDetailsStatus }),
         },
         newValue: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           totalThb,
-          ...(partyChanged && { adults, children }),
+          ...(partyChanged && { adults, children, partyDetailsStatus: booking.partyDetailsStatus }),
           priceBreakdown: { ...breakdown } as any,
         } as any,
         priceDeltaThb: difference,
@@ -1767,3 +1832,4 @@ export async function getGuestBookings(db: PrismaClient, guestIdentityId: string
     orderBy: { startDate: 'desc' },
   });
 }
+

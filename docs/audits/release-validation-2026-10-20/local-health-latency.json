@@ -1,0 +1,9 @@
+{
+  "scope": "isolated localhost production-mode build; synthetic PostgreSQL",
+  "requests": 30,
+  "ok": 30,
+  "p50ms": 8,
+  "p95ms": 16,
+  "maxms": 159,
+  "productionMeasured": false
+}

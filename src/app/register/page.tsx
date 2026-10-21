@@ -1,14 +1,17 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getLabels } from '@/lib/i18n';
 import { RegisterForm } from './register-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RegisterPage() {
+export default async function RegisterPage(props: { searchParams?: Promise<{ next?: string | string[] }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (user) {
-    redirect('/');
+    redirect(safeNextPath(typeof searchParams?.next === 'string' ? searchParams.next : null) || '/');
   }
 
   const labels = await getLabels({
@@ -27,15 +30,16 @@ export default async function RegisterPage() {
   });
 
   return (
-    <main className="stitch-workspace flex min-h-screen items-start justify-center px-24 py-64">
-      <div className="stitch-panel w-full max-w-md p-32">
-        <h1 className="font-display text-display-xl font-semibold text-text-ink mb-8">
+    <main className="stitch-workspace flex min-h-screen items-start justify-center px-16 py-32 sm:px-24 sm:py-48">
+      <div className="stitch-panel w-full max-w-xl p-24 sm:p-32">
+        <h1 className="font-display text-display font-semibold text-text-ink mb-8">
           {labels['auth.register.title']}
         </h1>
         <p className="text-body text-text-secondary mb-32">
           {labels['auth.register.subtitle']}
         </p>
-        <RegisterForm
+        <Suspense>
+          <RegisterForm
           labels={{
             firstName: labels['auth.register.first_name'],
             lastName: labels['auth.register.last_name'],
@@ -47,7 +51,8 @@ export default async function RegisterPage() {
             haveAccount: labels['auth.register.have_account'],
             loginLink: labels['auth.register.login_link'],
           }}
-        />
+          />
+        </Suspense>
       </div>
     </main>
   );

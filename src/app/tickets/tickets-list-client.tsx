@@ -60,6 +60,7 @@ export default function TicketsListClient({
         <div className="mb-16 flex flex-wrap gap-8">
           <button
             type="button"
+            aria-pressed={filter === 'all'}
             onClick={() => setFilter('all')}
             className={
               filter === 'all'
@@ -73,6 +74,7 @@ export default function TicketsListClient({
             <button
               key={status}
               type="button"
+              aria-pressed={filter === status}
               onClick={() => setFilter(status)}
               className={
                 filter === status
@@ -87,14 +89,14 @@ export default function TicketsListClient({
 
         {visible.length === 0 ? (
           <div className="stitch-panel p-32 text-center">
-            <p className="text-body text-text-secondary">{labels['tickets.list.empty']}</p>
+            <p className="text-body text-text-secondary">{labels[tickets.length === 0 ? 'tickets.list.empty' : 'tickets.list.filter_empty']}</p>
           </div>
         ) : (
           <div className="stitch-panel">
             {visible.map((ticket) => (
               <div
                 key={ticket.id}
-                className="flex items-center justify-between gap-12 border-b border-border-line p-16 last:border-b-0"
+                className="flex flex-wrap items-center justify-between gap-12 border-b border-border-line p-16 last:border-b-0"
               >
                 <div className="min-w-0">
                   <p className="truncate text-body font-semibold text-text-ink">

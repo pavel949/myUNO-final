@@ -1,4 +1,4 @@
-import type { OperatingSpaceCapability } from './operating-space.service';
+import type { OperatingSpaceCapability } from './operating-space-capability-policy';
 
 // Only these daily manual-operation capabilities have reviewed runtime guards in this slice.
 export const GOVERNED_DAILY_CAPABILITIES: readonly string[] = [
@@ -14,4 +14,6 @@ export const CAPABILITY_DEPARTMENTS: Record<OperatingSpaceCapability, readonly s
   manage_pricing: ['pricing'], manage_availability: ['pricing', 'reservations'],
   view_finance: ['finance'], record_expense: ['finance'], generate_owner_report: ['finance'],
   manage_team: ['front_desk'], manage_channels: ['channels'],
+  // Creation uses its dedicated current-authority resolver, never a department shortcut.
+  create_unit: [], create_complex: [],
 };

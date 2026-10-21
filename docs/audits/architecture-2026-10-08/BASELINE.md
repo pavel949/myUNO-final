@@ -1,5 +1,7 @@
 # Baseline архитектурного аудита
 
+> **Исторический отчёт / evidence прежнего среза.** Не является текущим статусом main или production. Актуальное [описание системы](../../current/SYSTEM.md) и [реализация / остаток](../../current/IMPLEMENTATION_STATUS.md) сверены 2026-10-16. Команды и результаты ниже относятся только к исходному контексту отчёта.
+
 Дата: 2026-10-08 Asia/Bangkok. Repo pavel949/myUNO-final, main 24138a2d717773534d923244a102631987aad641. Tree 1427771ff2f0daeea6c62ed865c2b63c954b4499. Production READY dpl_2MPVG8XJupQA5R5WtWGcHJFr14zB, alias https://my-uno-final.vercel.app; подтвержден exact SHA. Предыдущий дизайн baseline f90a564. Main без новой ветки/PR.
 
 Архитектурная проверка read-only; production код/схема/данные не менялись. Предыдущие Stitch corrections отдельный release, не remediation архитектурных findings. Нет доступа к подписанной рабочей сессии PMS; production DB role/grants/migrations, объем данных, scheduler/backup секреты и последние execution outcomes не проверены. Не применялись миграции, seed, cron, financial/provider commands. Безопасная тестовая PostgreSQL не установлена; DB-backed availability suite отказался запускаться без DATABASE_URL_TEST.

@@ -116,7 +116,7 @@ export function Footer({ labels, locale, localeOptions }: FooterProps) {
               <ul className="space-y-12 text-small text-surface-ivory/70">
                 {column.links.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="transition-colors duration-micro hover:text-surface-ivory">
+                    <Link prefetch={false} href={link.href} className="transition-colors duration-micro hover:text-surface-ivory">
                       {link.label}
                     </Link>
                   </li>

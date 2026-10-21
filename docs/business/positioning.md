@@ -1,5 +1,7 @@
 # myUNO — Positioning
 
+> **Дополнительный справочный материал / спецификация.** Может содержать проектные или прежние решения; не подтверждает текущее поведение или production. Начать с [текущей системы](../current/SYSTEM.md) и [остатка работ](../current/IMPLEMENTATION_STATUS.md), сверенных 2026-10-16.
+
 **One line.** myUNO is the one platform for serviced living in Phuket — it runs a residence's whole life: **stay, live, own**.
 
 **Category.** An operating layer, not a hotel brand or a management company. Like Shopify for a store — you don't hire it, you run on it. That is why it is “[Project] **on** myUNO”.

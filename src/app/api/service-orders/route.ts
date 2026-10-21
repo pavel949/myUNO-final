@@ -79,10 +79,14 @@ export async function POST(req: NextRequest) {
     // Project/unit context must be deterministic — never an arbitrary row.
     // Priority: booking (validated as the caller's) → explicit projectId in
     // the body (validated) → the single project when only one exists → 400.
+    const standalone = body.serviceContext != null;
+    if (standalone && (bookingId || body.projectId || requestedUnitId)) throw createPublicError('invalid request: choose a property or a standalone address', 400);
     let projectId: string | null = null;
     let unitId: string | undefined;
     let contextIsValidated = false;
-    if (bookingId) {
+    if (standalone) {
+      contextIsValidated = true; // Canonical writer validates active organization and explicit area coverage.
+    } else if (bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         select: { guestIdentityId: true, projectId: true, unitId: true },
@@ -108,7 +112,7 @@ export async function POST(req: NextRequest) {
       projectId = projects.length === 1 ? projects[0].id : null;
       unitId = typeof requestedUnitId === 'string' ? requestedUnitId : undefined;
     }
-    if (!projectId) {
+    if (!projectId && !standalone) {
       throw createPublicError('invalid request: no project context', 400);
     }
 
@@ -126,10 +130,13 @@ export async function POST(req: NextRequest) {
     // an active role scoped to this project or unit; a platform-shaped role is
     // not a substitute for resource scope.
     const hasScopedRole = user.isAdmin || user.roles.some(
-      (role) =>
+      // Content and pricing assignments do not establish a property ordering relationship.
+      // Independent bookings and ordinary standalone-customer access remain above.
+      (role) => role.role !== 'content_contributor' && role.role !== 'pricing_editor' && role.role !== 'booking_mode_editor' && (
         (unitId && role.unitId === unitId) ||
         (!unitId && role.projectId === projectId) ||
         (unitId && role.projectId === projectId)
+      )
     );
     if (!contextIsValidated && !hasScopedRole) {
       throw createPublicError('not found', 404);
@@ -137,7 +144,9 @@ export async function POST(req: NextRequest) {
 
     const order = await createServiceOrder(prisma, {
       serviceId,
+      ...(body.requestKey ? { requestKey: body.requestKey } : {}),
       projectId,
+      ...(standalone ? { serviceContext: body.serviceContext } : {}),
       unitId,
       bookingId,
       ordererIdentityId: user.identityId,
@@ -152,7 +161,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && !(error as { statusCode?: number }).statusCode) {
       const msg = error.message;
-      if (msg.includes('notice') || msg.includes('not found') || msg.includes('slot')) {
+      if (msg.includes('notice') || msg.includes('not found') || msg.includes('slot') || /service location|Service area|Service is not available|Standalone|Configured cancellation|Choose a stay|service request key/.test(msg)) {
         return NextResponse.json({ error: msg }, { status: 400 });
       }
     }

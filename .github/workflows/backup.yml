@@ -65,6 +65,15 @@ on:
     - cron: '0 20 * * *'
   workflow_dispatch:
   workflow_call:
+    inputs:
+      source_sha:
+        description: 'Exact reviewed source commit; defaults to the caller commit'
+        type: string
+        required: false
+    outputs:
+      verified_source_sha:
+        description: 'Source SHA attested after backup, restore and encrypted artifact storage'
+        value: ${{ jobs.dump-and-verify.outputs.verified_source_sha }}
     secrets:
       BACKUP_DATABASE_URL:
         required: true
@@ -80,6 +89,8 @@ concurrency:
 
 jobs:
   dump-and-verify:
+    outputs:
+      verified_source_sha: ${{ steps.attestation.outputs.sha }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -137,6 +148,15 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+
+      - name: Verify exact backup source checkout
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [ "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA" ]
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -214,6 +234,15 @@ jobs:
           # Matches the 30-day recovery window in doc 15 §5.
           retention-days: 30
           if-no-files-found: error
+
+      - name: Attest source after successful restore and encrypted storage
+        id: attestation
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA" ]
+          echo "sha=$EXPECTED_SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
       # A second destination outside GitHub, for when the database holds real
       # owner money or title records and a shared failure domain with the code

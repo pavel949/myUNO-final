@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { datedPricingRevision, saveDatedPricing } from './dated-pricing';
 import { PricingAccessError } from './pricing-access';
@@ -299,7 +299,7 @@ it('returns an application conflict without partial category writes for an activ
   });
   const revision = await datedPricingRevision(db, [a.id, b.id]);
   const auditCount = await db.auditLog.count();
-  await expect(saveDatedPricing(db, {
+  const save = saveDatedPricing(db, {
     actorIdentityId: actor.id,
     unitId: a.id,
     scope: 'category',
@@ -307,7 +307,9 @@ it('returns an application conflict without partial category writes for an activ
     end: '2026-10-27',
     amountSatang: 900000,
     expectedRevision: revision,
-  })).rejects.toEqual(new PricingAccessError('overlap', 409));
+  });
+  await expect(save).rejects.toBeInstanceOf(PricingAccessError);
+  await expect(save).rejects.toMatchObject({ message: 'overlap', status: 409 });
   expect(await db.pricingRule.findMany()).toEqual([existing]);
   expect(await datedPricingRevision(db, [a.id, b.id])).toBe(revision);
   expect(await db.auditLog.count()).toBe(auditCount);
@@ -334,16 +336,22 @@ it.each(['arrival', 'later night'] as const)(
       overlapAt === 'later night' && index === 0
         ? { ...rule, endDate: new Date('2026-10-25T00:00:00Z') } : rule
     ));
-    const read = vi.spyOn(db.pricingRule, 'findMany').mockResolvedValue(conflictingRules);
-    try {
-      await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow(StayUnquotableError);
-      await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow('Conflicting dated pricing rules');
-      expect(await computeCanonicalCalendarRates(db, a.id, from, to, 1)).toEqual({
-        lines: [], error: 'Conflicting dated pricing rules require correction',
-      });
-    } finally {
-      read.mockRestore();
-    }
+    // Prisma delegates are dynamic proxies: spyOn/mockRestore can delete their
+    // generated methods. Wrap this call's client instead of mutating shared db.
+    const conflictingDb = new Proxy(db, {
+      get(target, property, receiver) {
+        if (property === 'pricingRule') return {
+          ...target.pricingRule,
+          findMany: async () => conflictingRules,
+        };
+        return Reflect.get(target, property, receiver);
+      },
+    });
+    await expect(computeCanonicalPriceBreakdown(conflictingDb, a.id, from, to, 1)).rejects.toThrow(StayUnquotableError);
+    await expect(computeCanonicalPriceBreakdown(conflictingDb, a.id, from, to, 1)).rejects.toThrow('Conflicting dated pricing rules');
+    expect(await computeCanonicalCalendarRates(conflictingDb, a.id, from, to, 1)).toEqual({
+      lines: [], error: 'Conflicting dated pricing rules require correction',
+    });
     expect(await db.pricingRule.findMany({ orderBy: { startDate: 'asc' } })).toEqual(validRules);
   }
 );

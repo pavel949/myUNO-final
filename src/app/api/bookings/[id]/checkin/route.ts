@@ -18,7 +18,7 @@ import type { PrismaClient } from '@prisma/client';
 import { checkInBooking, CheckInBlockedError } from '@/modules/booking';
 import { getLabels } from '@/lib/i18n';
 import { createNotification } from '@/modules/comms';
-import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { canRecordBookingStayTransition } from '@/app/libs/bookingOperationsAccess';
 
 const CHECK_IN_BLOCK_LABELS = {
   'booking.checkin.blocked.party_unknown': 'Guest counts are unknown. Check-in is blocked until the party has been verified.',
@@ -52,15 +52,9 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    const access = await resolveBookingAccess(user, {
-      guestIdentityId: booking.guestIdentityId,
-      projectId: booking.projectId,
-      unitId: booking.unitId,
-      ownerIdentityId: booking.unit.ownerIdentityId,
-    });
-    if (!canRecordStayTransition(access)) {
+    if (!(await canRecordBookingStayTransition(user, booking))) {
       return NextResponse.json(
-        { error: 'Only guest, staff, or management company can check in' },
+        { error: 'Only the guest or an authorized front-desk operator can check in' },
         { status: 403 }
       );
     }

@@ -36,6 +36,15 @@ export async function resolveBookingOperationsAccess(
   };
 }
 
+/** Guest self-service or the same exact-unit front-desk authority as Stay 360. */
+export async function canRecordBookingStayTransition(
+  user: CurrentUser,
+  booking: { guestIdentityId: string; projectId: string; unitId: string },
+): Promise<boolean> {
+  if (booking.guestIdentityId === user.identityId) return true;
+  return (await resolveBookingOperationsAccess(user, booking)).canManageFrontDesk;
+}
+
 /** Re-read identity, roles and current unit mandate inside a claim transaction. */
 export async function canApproveBookingCandidate(
   db: PrismaClient,

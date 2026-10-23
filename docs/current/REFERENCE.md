@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `870c877c29feb362a8b46ffc7c33b888ad15af57`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `ec712ff4cc415acd5151112c4ac43f3e3d74af99`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 261 |
 | apiHandlers | 256 |
 | modules | 22 |
-| tests | 583 |
+| tests | 584 |
 | prismaModels | 124 |
 | migrations | 99 |
 | routeCollisions | 0 |
@@ -6572,6 +6572,7 @@ model ImportedReservationPlacement {
 - [src/app/ops/ops-tokens.test.ts](<../../src/app/ops/ops-tokens.test.ts>)
 - [src/app/ops/page.date.test.tsx](<../../src/app/ops/page.date.test.tsx>)
 - [src/app/ops/spaces/access-boundary.integration.test.tsx](<../../src/app/ops/spaces/access-boundary.integration.test.tsx>)
+- [src/app/ops/stays/[bookingId]/check-in/page.access.test.tsx](<../../src/app/ops/stays/[bookingId]/check-in/page.access.test.tsx>)
 - [src/app/ops/stays/page.navigation.test.tsx](<../../src/app/ops/stays/page.navigation.test.tsx>)
 - [src/app/ops/tasks/page.navigation.test.tsx](<../../src/app/ops/tasks/page.navigation.test.tsx>)
 - [src/app/owner/owner-tokens.test.ts](<../../src/app/owner/owner-tokens.test.ts>)

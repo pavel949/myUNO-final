@@ -1,0 +1,12 @@
+# Verified gaps and next work
+| Priority | Finding | Evidence / impact | Action |
+|---|---|---|---|
+| P1 | Guided check-in rejected authorized MC and isolated workspace administrators | Stay 360 uses resolveBookingOperationsAccess.canManageFrontDesk; destination previously used only project department access. Authorized operator encounters 404. | Fixed in this branch by using the same exact-unit resolver. Page regression covers MC, workspace admin, departments and revoked mandate. |
+| P1 | Arrival/departure APIs accepted a generic project staff role despite a restrictive department grant | Commands previously used bookingAccess.isStaff while the screen required Front Desk. Finance/reservations/housekeeping could submit directly. | Fixed in this branch with a shared command policy; real-route regressions deny those departments without side effects, admit Front Desk and preserve guest self-service. |
+| P1 | Current source is ahead of production code and schema | READY production SHA and absent tariff-grid column recorded in BASELINE. | Keep release gated; correct protected migration configuration, validate exact-main CI, fresh backup/restore and migration, then staged runtime acceptance. |
+| P1 | Production migration writer authentication unresolved | [PR #325](https://github.com/pavel949/myUNO-final/pull/325) records six pooler password rejections while restricted reader succeeded. | Verify effective Actions migration DATABASE_URL and environment precedence with existing approved credential. Do not blindly retry DDL or rotate credentials. No secret was accessed or changed in this checkpoint. |
+| P2 | Entire stay lifecycle has no single browser acceptance case | Existing successful browser report covers booking/payment/cancel/task operations separately. New route regression links departure, turnover and next arrival; it is not browser or production proof. | Add isolated UI acceptance for a full stay, then perform controlled role/runtime acceptance after safe release. |
+| P2 | Layout width and backgrounds vary across operational pages | Parallel UX inspection; see SURFACE_MAP for source evidence and limits. | Normalize shared workspace shell after process correctness; preserve screen-specific dense tables. |
+
+No P0 was newly demonstrated by this checkpoint. This is not a finding that no P0 exists. Procurement, capex, actual payouts, legal sale/lease completion and provider onboarding remain outside positive completion claims.
+

@@ -114,8 +114,8 @@ export default async function StayOperationsPage(
     '/ops/calendar/board'+(requestedSpaceId?'?'+new URLSearchParams({spaceId:requestedSpaceId}).toString():''),
     projectId,
   );
-  return <main className="stitch-workspace p-16 md:p-32">
-    <div className="mx-auto max-w-6xl space-y-24">
+  return <main className="stitch-workspace">
+    <div className="stitch-page space-y-24">
       <header>
         <Link href={calendarHref} className="text-small text-brand-andaman font-semibold">
           {labels['staff.stay_queue.back']}

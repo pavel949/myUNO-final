@@ -78,8 +78,8 @@ export default async function OpsRequestsPage(props: OpsRequestsPageProps) {
   const showProjectName = !validActiveProjectId;
 
   return (
-    <main className="stitch-workspace p-24 md:p-32">
-      <div className="max-w-4xl mx-auto">
+    <main className="stitch-workspace">
+      <div className="stitch-page">
         <p className="mb-8">
           <Link
             href={opsHref('/ops', validActiveProjectId)}

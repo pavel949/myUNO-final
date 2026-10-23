@@ -10,7 +10,7 @@ import React from 'react';
 export default function OpsLoading() {
   return (
     <main className="stitch-workspace" aria-busy="true">
-      <div className="max-w-6xl mx-auto px-24 py-40">
+      <div className="stitch-page">
         <div className="h-40 w-64 md:w-96 bg-border-line rounded-sm mb-32 animate-pulse" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20 mb-40">

@@ -4,6 +4,7 @@ import { db, resetDb, createIdentity, createOrganization, createProvider, create
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
 import { raiseTicket } from '@/modules/comms/ticket.service';
 import { canAccessThread } from '@/modules/comms/statement-thread-access';
+import { getThreadsForIdentity, getUnreadCounts } from '@/modules/comms/thread.service';
 
 const auth = vi.hoisted(() => ({ user: null as CurrentUser | null }));
 vi.mock('@/app/actions/getCurrentUser', () => ({ getCurrentUser: async () => auth.user }));
@@ -76,6 +77,43 @@ describe('standalone service ticket authorization', () => {
     expect(await canAccessThread(db, threadId, operatorId)).toBe(false);
     await expect(loadOrderForUser(orderId, await currentUser(operatorId))).rejects.toMatchObject({ statusCode: 404 });
     expect(await canAccessThread(db, threadId, ordererId)).toBe(true);
+  });
+
+  it('concurrent inbox, unread and access reads enroll each new authorized participant once', async () => {
+    const admin = await createIdentity({ isAdmin: true });
+    const replacement = await createIdentity();
+    await db.roleAssignment.create({ data: {
+      identityId: replacement.id, role: 'staff_ops', scopeType: 'platform', organizationId,
+    } });
+    const readAt = new Date('2026-10-01T00:00:00Z');
+    const previous = await db.threadParticipant.update({
+      where: { threadId_identityId: { threadId, identityId: ordererId } },
+      data: { lastReadAt: readAt, muted: true },
+    });
+    expect(await db.threadParticipant.count({ where: {
+      threadId, identityId: { in: [admin.id, replacement.id] },
+    } })).toBe(0);
+
+    const reads = await Promise.all(Array.from({ length: 8 }, () => Promise.all([
+      getThreadsForIdentity(db, ordererId),
+      getUnreadCounts(db, ordererId),
+      canAccessThread(db, threadId, admin.id),
+    ])));
+    for (const [threads, , allowed] of reads) {
+      expect(threads.some(thread => thread.id === threadId)).toBe(true);
+      expect(allowed).toBe(true);
+    }
+    for (const [identityId, participantRole] of [[admin.id, 'admin'], [replacement.id, 'staff_ops']]) {
+      expect(await db.threadParticipant.findMany({ where: { threadId, identityId } })).toEqual([
+        expect.objectContaining({ identityId, participantRole }),
+      ]);
+    }
+    expect(await db.threadParticipant.findUnique({ where: {
+      threadId_identityId: { threadId, identityId: ordererId },
+    } })).toEqual(previous);
+    expect(await canAccessThread(db, threadId, outsiderId)).toBe(false);
+    await db.roleAssignment.updateMany({ where: { identityId: replacement.id }, data: { status: 'revoked' } });
+    expect(await canAccessThread(db, threadId, replacement.id)).toBe(false);
   });
 
   it('derives order scope on POST and refuses foreign order identifiers', async () => {

@@ -1,8 +1,8 @@
 import {beforeEach,describe,it,expect,vi} from 'vitest';
 import {NextRequest} from 'next/server';
 import {db,resetDb,createIdentity,createProject,createUnit,createBooking,createBookingGuest} from '@/test/util';
-const auth=vi.hoisted(()=>({identityId:''}));
-vi.mock('@/app/actions/getCurrentUser',()=>({getCurrentUser:async()=>({identityId:auth.identityId,isAdmin:true,roles:[]})}));
+const auth=vi.hoisted(()=>({identityId:'',isAdmin:true,roles:[] as import('@prisma/client').RoleAssignment[]}));
+vi.mock('@/app/actions/getCurrentUser',()=>({getCurrentUser:async()=>({...auth})}));
 vi.mock('@/lib/prisma',async()=>({prisma:(await import('@/test/util')).db}));
 import {POST as checkIn} from './[id]/checkin/route';
 import {POST as checkOut} from './[id]/check-out/route';
@@ -10,12 +10,35 @@ import {createConditionReport, getUnitReadinessMap} from '@/modules/ops';
 import {PATCH as updateTask} from '@/app/api/ops/tasks/[id]/route';
 beforeEach(resetDb);
 async function fixture(status:'confirmed'|'checked_in'){
- const admin=await createIdentity({isAdmin:true}),guest=await createIdentity(),project=await createProject(),unit=await createUnit(project.id);auth.identityId=admin.id;
+ const admin=await createIdentity({isAdmin:true}),guest=await createIdentity(),project=await createProject(),unit=await createUnit(project.id);auth.identityId=admin.id;auth.isAdmin=true;auth.roles=[];
  const booking=await createBooking({unitId:unit.id,projectId:project.id,guestIdentityId:guest.id,status,adults:1,startDate:new Date(Date.now()-86400000),endDate:new Date(Date.now()+2*86400000)});
  await createBookingGuest({bookingId:booking.id,fullName:'Synthetic Guest',nationality:'RU',passportNumber:'SYNTHETIC'});return{admin,guest,booking,unit};
 }
 const req=(notes='Synthetic inspection',photoMediaIds:string[]=[])=>new NextRequest('http://localhost/api/bookings/synthetic/transition',{method:'POST',body:JSON.stringify({notes,photoMediaIds})});
 describe('condition evidence commits with PMS transitions',()=>{
+ it.each(['check_in','check_out'] as const)('%s requires front-desk authority even for existing project staff',async kind=>{
+  const f=await fixture(kind==='check_in'?'confirmed':'checked_in');
+  await db.identity.update({where:{id:f.admin.id},data:{isAdmin:false}});
+  auth.isAdmin=false;
+  auth.roles=[await db.roleAssignment.create({data:{identityId:f.admin.id,role:'staff_ops',scopeType:'project',projectId:f.booking.projectId}})];
+  const run=()=> (kind==='check_in'?checkIn:checkOut)(req(),{params:{id:f.booking.id}});
+  for(const department of ['finance','reservations','housekeeping']){
+   await db.projectStaffPermission.upsert({where:{projectId_identityId:{projectId:f.booking.projectId,identityId:f.admin.id}},
+    create:{projectId:f.booking.projectId,identityId:f.admin.id,departments:[department]},update:{departments:[department]}});
+   expect((await run()).status).toBe(403);
+   expect((await db.booking.findUniqueOrThrow({where:{id:f.booking.id}})).status).toBe(kind==='check_in'?'confirmed':'checked_in');
+   expect(await db.conditionReport.count()).toBe(0);
+   expect(await db.operationalTask.count()).toBe(0);
+   expect(await db.tm30Filing.count()).toBe(0);
+  }
+  await db.projectStaffPermission.update({where:{projectId_identityId:{projectId:f.booking.projectId,identityId:f.admin.id}},data:{departments:['front_desk']}});
+  expect((await run()).status).toBe(200);
+ });
+ it.each(['check_in','check_out'] as const)('%s preserves the booking guest’s own self-service transition',async kind=>{
+  const f=await fixture(kind==='check_in'?'confirmed':'checked_in');
+  auth.identityId=f.guest.id;auth.isAdmin=false;auth.roles=[];
+  expect((await (kind==='check_in'?checkIn:checkOut)(req(),{params:{id:f.booking.id}})).status).toBe(200);
+ });
  it('keeps the next arrival blocked until both departure tasks are finished through the task API',async()=>{
   const f=await fixture('checked_in');
   const today=new Date(new Date().toISOString().slice(0,10));

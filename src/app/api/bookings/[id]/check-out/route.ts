@@ -11,7 +11,7 @@ import {
   type CheckOutChecklistItem,
 } from '@/modules/ops';
 import { handleError, createPublicError } from '@/app/libs/errorHandler';
-import { canRecordStayTransition, resolveBookingAccess } from '@/app/libs/bookingAccess';
+import { canRecordBookingStayTransition } from '@/app/libs/bookingOperationsAccess';
 
 /**
  * POST /api/bookings/[id]/check-out
@@ -35,13 +35,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       throw createPublicError('not found', 404);
     }
 
-    const access = await resolveBookingAccess(user, {
-      guestIdentityId: booking.guestIdentityId,
-      projectId: booking.projectId,
-      unitId: booking.unitId,
-      ownerIdentityId: booking.unit?.ownerIdentityId,
-    });
-    if (!canRecordStayTransition(access)) {
+    if (!(await canRecordBookingStayTransition(user, booking))) {
       throw createPublicError('Access denied.', 403);
     }
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CurrentUser } from '@/app/actions/getCurrentUser';
-import { canApproveBookingCandidate, resolveBookingOperationsAccess } from './bookingOperationsAccess';
+import { canApproveBookingCandidate, canRecordBookingStayTransition, resolveBookingOperationsAccess } from './bookingOperationsAccess';
 const mocks = vi.hoisted(() => ({ mc: vi.fn(), department: vi.fn() }));
 vi.mock('@/modules/ops/workspace-unit-authority', () => ({ hasWorkspaceAdministratorUnitAccess: async () => false }));
 vi.mock('./projectScope', () => ({ hasManagedUnitMcAccess: mocks.mc, hasProjectDepartmentAccess: mocks.department }));
@@ -8,6 +8,14 @@ const user = { identityId: 'operator', isAdmin: false, roles: [] } as unknown as
 const booking = { projectId: 'resort', unitId: 'villa-a' };
 beforeEach(() => { vi.clearAllMocks(); mocks.mc.mockResolvedValue(false); mocks.department.mockResolvedValue(false); });
 describe('canonical stay-operation permissions', () => {
+  it('keeps guest self-service separate from staff department grants', async () => {
+    expect(await canRecordBookingStayTransition(user, { ...booking, guestIdentityId: user.identityId })).toBe(true);
+    expect(mocks.department).not.toHaveBeenCalled();
+  });
+  it.each(['reservations', 'housekeeping', 'finance', 'front_desk'])('checks %s when recording an arrival or departure', async department => {
+    mocks.department.mockImplementation(async (_u, project, grant) => project === 'resort' && grant === department);
+    expect(await canRecordBookingStayTransition(user, { ...booking, guestIdentityId: 'other' })).toBe(department === 'front_desk');
+  });
   it('denies an unrelated owner, guest or manager without operating authority', async () => {
     expect(Object.values(await resolveBookingOperationsAccess(user, booking))).toEqual([false, false, false, false, false, false]);
   });

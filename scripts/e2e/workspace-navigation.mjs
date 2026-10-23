@@ -396,6 +396,22 @@ try {
     await switcher(adminPage).getByText('Administration', { exact: true }).waitFor();
     await keyboardMode(adminPage, 'Personal', '/app', 'Everything connected to you.'); await assertTabs(adminPage, 'Personal', 'My');
   });
+  await step('Capture operational workspace and inbox layouts at desktop and mobile widths', adminPage, async () => {
+    const surfaces = [
+      ['today', '/ops'], ['requests', '/ops/requests'], ['stays', '/ops/stays'],
+      ['housekeeping', `/ops/housekeeping?spaceId=${staffSpace.id}`], ['inbox', '/messages'],
+    ];
+    for (const [name, path] of surfaces) {
+      for (const width of [1363, 390]) {
+        await adminPage.setViewportSize({ width, height: 844 });
+        const response = await adminPage.goto(path);
+        assert.equal(response.status(), 200, `${name} must be reachable before its screenshot`);
+        await adminPage.getByRole('heading', { level: 1 }).first().waitFor();
+        await adminPage.evaluate(() => document.fonts.ready);
+        await screenshot(adminPage, `layout-${name}-${width}`);
+      }
+    }
+  });
   await step('Navigation does not alter prior permissions, identities, inventory, booking snapshots, tasks or message content', null, async () => {
     assert.deepEqual(await snapshot(), before);
     assert.deepEqual(report.pageErrors, []); assert.deepEqual(report.serverErrors, []); assert.deepEqual(report.blockedBrowserOrigins, []);

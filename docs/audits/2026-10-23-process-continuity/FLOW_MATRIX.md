@@ -73,7 +73,7 @@ Values refer to the named scope only, not the whole capability.
 
 | Capability | Specification | Code | Migration | Data/config | Permission | UI | Test | Deploy | Runtime |
 |---|---|---|---|---|---|---|---|---|---|
-| Guided check-in destination fix | verified | verified (branch) | not applicable | not checked live | partial (shared resolver/page tests) | partial (source/page tests) | partial (local40; CI pending) | not checked for new code | not checked live |
+| Guided check-in and command authority fix | verified | verified (branch ec712ff4) | not applicable | not checked live | partial (shared resolver/page tests and route regressions) | partial (source/page tests) | partial (local45; CI pending) | not checked for new code | not checked live |
 | Canonical tariff matrix | verified | verified (main) | failed (absent production column) | partial | partial | partial (synthetic browser) | verified (baseline CI) | failed (old served SHA) | not checked live |
 | Departure/turnover/next arrival | verified | verified (main, new test branch) | not checked live | not checked live | partial | partial | partial (baseline and pending new case) | not checked at current code | not checked live |
 | Services and finance | verified | partial | not checked | not checked | partial | partial (synthetic browser) | partial | not checked at current code | not checked live |

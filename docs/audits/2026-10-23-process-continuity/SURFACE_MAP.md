@@ -11,5 +11,7 @@ Source-level UX differences requiring screenshot review before a visual redesign
 - Today: max-w-6xl; requests: max-w-4xl; housekeeping: max-w-7xl.
 - Admin shell uses a 1500px maximum while StitchMain uses1280px.
 - Messages has ivory/paper surfaces within a mint workspace shell.
-Widths may legitimately differ for dense operational tables; the next change should define consistent shell/gutters and intentional content widths. These source differences alone do not establish usability failure at every viewport. Production role screenshots were not obtained by this checkpoint.
+Widths may legitimately differ for dense operational tables; the next change should define consistent shell/gutters and intentional content widths.
+
+Subsequent read-only live desktop screenshots of deployed8bb999a confirmed /ops1028px versus /ops/requests896px at viewport1363 with the same256px rail. Messages content was212px tall inside a936px mint parent: the flex-1 inbox does not stretch inside block-level StitchConsumerShell. [Issue #334](https://github.com/pavel949/myUNO-final/issues/334) records evidence, minimal repair and acceptance. No data was changed. Live mobile screenshots of these exact screens were unavailable because the browser exposes no resize capability; synthetic /ops/spaces mobile acceptance is not a substitute.
 

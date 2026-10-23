@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
-import { hasProjectDepartmentAccess } from '@/app/libs/projectScope';
+import { resolveBookingOperationsAccess } from '@/app/libs/bookingOperationsAccess';
 import { prisma } from '@/lib/prisma';
 import { getLabels } from '@/lib/i18n';
 import { getUnitReadinessMap } from '@/modules/ops';
@@ -26,7 +26,8 @@ export default async function CheckInPage(props: { params: Promise<{ bookingId: 
     },
   });
   if (!booking) notFound();
-  if (!(await hasProjectDepartmentAccess(user, booking.projectId, 'front_desk'))) notFound();
+  const access = await resolveBookingOperationsAccess(user, booking);
+  if (!access.canManageFrontDesk) notFound();
 
   const readiness = (await getUnitReadinessMap(prisma, [booking.unitId]))[booking.unitId]?.state ?? 'ready';
   const labels = await getLabels({

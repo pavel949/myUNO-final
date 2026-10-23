@@ -209,13 +209,21 @@ export async function computeCanonicalPriceBreakdown(
       where: { unitId: unit.id, appliesToTariffGrid: true, startDate: { lt: checkOutDate }, endDate: { gt: checkInDate } },
       orderBy: [{ startDate: 'desc' }, { endDate: 'asc' }, { id: 'asc' }],
     }) : [];
-    const matchedRule = (date: string) => dateRules.find(rule =>
-      rule.startDate <= new Date(date + 'T00:00:00Z') && rule.endDate > new Date(date + 'T00:00:00Z'));
-    const arrivalMinimum = matchedRule(toCalendarDay(checkInDate))?.minNightsOverride;
+    const matchingRules = (date: string) => {
+      const day = new Date(date + 'T00:00:00Z');
+      return dateRules.filter(rule => rule.startDate <= day && rule.endDate > day);
+    };
+    const arrivalRules = matchingRules(toCalendarDay(checkInDate));
+    if (arrivalRules.length > 1)
+      throw new StayUnquotableError('Conflicting dated pricing rules require correction');
+    const arrivalMinimum = arrivalRules[0]?.minNightsOverride;
     if (!options.calendarProjection && arrivalMinimum && nights < arrivalMinimum)
       throw new StayUnquotableError('Stay length below dated minimum of ' + arrivalMinimum);
     const pricedLines = quoted.lines.map(line => {
-      const rule = matchedRule(line.date);
+      const rules = matchingRules(line.date);
+      if (rules.length > 1)
+        throw new StayUnquotableError('Conflicting dated pricing rules require correction');
+      const rule = rules[0];
       return { ...line, nightlySatang: rule?.nightlyThb ?? line.nightlySatang, overridden: Boolean(rule) };
     });
     const pricedSubtotal = pricedLines.reduce((total, line) => total + line.nightlySatang, 0);

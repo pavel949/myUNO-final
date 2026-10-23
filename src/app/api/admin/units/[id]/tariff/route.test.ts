@@ -44,6 +44,7 @@ describe('scoped tariff API', () => {
   it('retains explicit admin category saves', async () => {
     m.guard.mockResolvedValue({ ok: true, isAdmin: true, actorIdentityId: 'admin' });
     expect((await PUT(request('category'), params)).status).toBe(200);
+    expect(m.many).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: 'asc' } }));
     expect(m.adminSave).toHaveBeenCalledWith(expect.anything(), { unitIds: ['unit-a', 'unit-b'], draft, actorIdentityId: 'admin', expectedRevision: 'a'.repeat(64), categoryId: 'category' });
     expect(m.employeeSave).not.toHaveBeenCalled();
   });
@@ -64,6 +65,7 @@ it('limits matrix patches to admins and forwards only the selected season amount
  m.guard.mockResolvedValue({ ok: true, isAdmin: true, actorIdentityId: 'admin' });
  m.seasonSave.mockResolvedValue({ saved: 2, revision: 'b'.repeat(64) });
  expect((await PATCH(request(), params)).status).toBe(200);
+ expect(m.many).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: 'asc' } }));
  expect(m.seasonSave).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
   unitIds: ['unit-a', 'unit-b'], categoryId: 'category', mode: 'daily', seasonCode: 'BASE', amountSatang: 850001,
  }));

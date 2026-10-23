@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
           where: {
             status: { not: 'offboarded' },
             ...(scope === 'category'
-              ? { inventoryCategoryId: access.unit.inventoryCategoryId }
+              ? { inventoryCategoryId: access.unit.inventoryCategoryId, projectId: access.unit.projectId }
               : { id: unitId }),
           },
           select: {

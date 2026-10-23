@@ -61,7 +61,11 @@ export async function saveDatedPricing(
       const units =
         input.scope === 'category'
           ? await tx.unit.findMany({
-              where: { inventoryCategoryId: categoryId, status: { not: 'offboarded' } },
+              where: {
+                inventoryCategoryId: categoryId,
+                projectId: initial.unit.projectId,
+                status: { not: 'offboarded' },
+              },
               select: { id: true },
               orderBy: { id: 'asc' },
             })

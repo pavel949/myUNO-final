@@ -275,6 +275,18 @@ it('does not activate dormant legacy overrides on validated seasonal grids', asy
   expect(quote.lines.every((line) => line.applied_from === 'category_season')).toBe(true);
 });
 
+it('fails closed when active tariff-grid rules overlap', async () => {
+  await resetDb();
+  const { a } = await setup();
+  await db.pricingRule.createMany({
+    data: [
+      { unitId: a.id, startDate: from, endDate: new Date('2026-10-25T00:00:00Z'), nightlyThb: 850000, appliesToTariffGrid: true },
+      { unitId: a.id, startDate: new Date('2026-10-24T00:00:00Z'), endDate: to, nightlyThb: 900000, appliesToTariffGrid: true },
+    ],
+  });
+  await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow(/Conflicting dated pricing rules/);
+});
+
 it('refuses dated writes by a non-admin even with an exact current revision', async () => {
   await resetDb();
   const { a } = await setup();

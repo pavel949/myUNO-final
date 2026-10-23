@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
   if (!/^[a-f0-9]{64}$/.test(body.expectedRevision ?? '')) return NextResponse.json({ error: 'Reload the tariff editor before saving.' }, { status: 409 });
   if (body.scope === 'category' && !guard.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   if (!body?.draft || typeof body.draft !== 'object') return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  const unit = await prisma.unit.findUnique({ where: { id: params.id }, select: { id: true, inventoryCategoryId: true } });
+  const unit = await prisma.unit.findUnique({ where: { id: params.id }, select: { id: true, projectId: true, inventoryCategoryId: true } });
   if (!unit) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const draft: TariffDraft = {
@@ -56,7 +56,9 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
   if (body.scope === 'category' && !unit.inventoryCategoryId) return NextResponse.json({ error: 'This unit has no category. Reload the editor.' }, { status: 409 });
   const unitIds = body.scope === 'category' && unit.inventoryCategoryId
     ? (await prisma.unit.findMany({
-      where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } }, select: { id: true },
+      where: { inventoryCategoryId: unit.inventoryCategoryId, projectId: unit.projectId, status: { not: 'offboarded' } },
+      select: { id: true },
+      orderBy: { id: 'asc' },
     })).map(u => u.id)
     : [unit.id];
   try {
@@ -86,11 +88,15 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       typeof body.seasonCode !== 'string' || !/^[a-f0-9]{64}$/.test(body.expectedRevision ?? ''))
     return NextResponse.json({ error: 'invalid_range' }, { status: 400 });
   try {
-    const unit = await prisma.unit.findUnique({ where: { id }, select: { inventoryCategoryId: true } });
+    const unit = await prisma.unit.findUnique({ where: { id }, select: { projectId: true, inventoryCategoryId: true } });
     if (!unit) throw new PricingAccessError('not_found', 404);
     if (body.scope === 'category' && !unit.inventoryCategoryId) throw new PricingAccessError('category_missing', 409);
     const categoryId = body.scope === 'category' ? unit.inventoryCategoryId! : undefined;
-    const ids = categoryId ? (await prisma.unit.findMany({ where: { inventoryCategoryId: categoryId, status: { not: 'offboarded' } }, select: { id: true } })).map(row => row.id) : [id];
+    const ids = categoryId ? (await prisma.unit.findMany({
+      where: { inventoryCategoryId: categoryId, projectId: unit.projectId, status: { not: 'offboarded' } },
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    })).map(row => row.id) : [id];
     return NextResponse.json(await saveTariffSeasonAmount(prisma, { ...body, unitIds: ids, categoryId, actorIdentityId: guard.actorIdentityId }));
   } catch (error) {
     return NextResponse.json({ error: error instanceof PricingAccessError ? error.message : 'load_failed' },

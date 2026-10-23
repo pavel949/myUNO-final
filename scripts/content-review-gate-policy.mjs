@@ -1,5 +1,5 @@
 /** Explicit production review policy. No client text, secrets or DB errors leave this module. */
-import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.ts';
+import { resolveDatabaseUrl } from '../src/lib/resolveDatabaseUrl.mjs';
 
 /** The build gate must reach the registry through the same route as the running app (src/lib/prisma.ts). */
 export function contentGateDatabaseUrl(env) {

@@ -70,7 +70,7 @@ function tariffRows(input: unknown, mode: TariffMode): TariffRow[] {
   return rows;
 }
 export function quoteSeasonalTariffGrid(
-  rawRows: unknown, start: string, end: string, mode: TariffMode,
+  rawRows: unknown, start: string, end: string, mode: TariffMode, options: { calendarProjection?: boolean } = {},
 ): TariffQuote {
   const from = day(start), to = day(end);
   const nights = (to - from) / DAY;
@@ -113,7 +113,7 @@ export function quoteSeasonalTariffGrid(
     precedingId = row.sourceRateId;
     runLength += 1;
   }
-  if (nights < firstMin) throw new StayUnquotableError('Stay length below seasonal minimum of ' + firstMin);
+  if (!options.calendarProjection && nights < firstMin) throw new StayUnquotableError('Stay length below seasonal minimum of ' + firstMin);
   if (!Number.isSafeInteger(subtotalSatang)) throw new Error('Tariff total overflow');
   return { mode, lines, subtotalSatang, includesTaxes: includesTaxes!,
     includesServiceCharge: includesServiceCharge!, includesBreakfast: includesBreakfast!,

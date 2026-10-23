@@ -1,3 +1,4 @@
+import { PRICING_DESK_LABELS, PRICING_DESK_DRAFTS } from '@/modules/content/pricing-desk.seed';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds, getMCProjectScopes } from '@/app/libs/projectScope';
@@ -223,6 +224,7 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
       'staff.unified_calendar.category': 'Category',
       'staff.unified_calendar.all_categories': 'All categories',
       'staff.unified_calendar.home': 'Home',
+      ...PRICING_DESK_LABELS,
       'staff.unified_calendar.all_homes': 'All homes',
       'staff.unified_calendar.search': 'Search villas or properties',
       'staff.unified_calendar.prev': 'Previous',
@@ -267,7 +269,7 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
       'staff.unified_calendar.rate_unavailable': 'Rate unavailable',
       'staff.unified_calendar.effective_rate': 'Effective daily rate',
       'staff.unified_calendar.tasks': 'Housekeeping & readiness →',
-    }),
+    }, undefined, PRICING_DESK_DRAFTS),
   ]);
 
   const entries: CalendarEntry[] = [
@@ -302,6 +304,7 @@ export default async function UnifiedStayCalendarPage(props: { searchParams?: Pr
         block.note || block.reason.replace(/_/g, ' ') },
   ]));
   return <UnifiedStayCalendar
+    canManagePricing={user.isAdmin}
     mode={mcMode ? 'mc' : 'staff'} organizationId={organizationId} spaceId={requestedSpaceId || undefined}
     labels={labels} today={today} start={start} days={days} daysCount={daysCount}
     projects={projects} categories={categories}

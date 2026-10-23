@@ -1,15 +1,15 @@
 {
-  "codeRevision": "a7eb9fa7f29b01f47a1bcc1d243f0be3e0f70ffd",
+  "codeRevision": "870c877c29feb362a8b46ffc7c33b888ad15af57",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
     "pages": 179,
-    "handlers": 260,
-    "apiHandlers": 255,
+    "handlers": 261,
+    "apiHandlers": 256,
     "modules": 22,
-    "tests": 581,
+    "tests": 583,
     "prismaModels": 124,
-    "migrations": 98,
+    "migrations": 99,
     "routeCollisions": 0
   },
   "routes": [
@@ -400,6 +400,12 @@
     {
       "path": "/api/admin/people/search",
       "source": "src/app/api/admin/people/search/route.ts",
+      "kind": "handler",
+      "area": "api"
+    },
+    {
+      "path": "/api/admin/pricing-calendar",
+      "source": "src/app/api/admin/pricing-calendar/route.ts",
       "kind": "handler",
       "area": "api"
     },
@@ -2692,13 +2698,13 @@
     },
     {
       "name": "content",
-      "files": 78,
+      "files": 79,
       "testFiles": 9
     },
     {
       "name": "core",
-      "files": 76,
-      "testFiles": 46
+      "files": 78,
+      "testFiles": 47
     },
     {
       "name": "crm",
@@ -3079,6 +3085,7 @@
     "prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql",
     "prisma/migrations/20261021023000_imported_reservation_groups/migration.sql",
     "prisma/migrations/20261021140000_sales_offer_desk/migration.sql",
+    "prisma/migrations/20261021150000_pricing_rule_tariff_grid_intent/migration.sql",
     "prisma/migrations/20261021190000_protected_workspace_administration/migration.sql"
   ],
   "tests": [
@@ -3126,6 +3133,7 @@
     "src/app/api/admin/organizations/organizations.integration.test.ts",
     "src/app/api/admin/payouts/payouts.integration.test.ts",
     "src/app/api/admin/people/invite/route.test.ts",
+    "src/app/api/admin/pricing-calendar/route.test.ts",
     "src/app/api/admin/projects/[id]/amenities/[amenityId]/route.test.ts",
     "src/app/api/admin/projects/[id]/catalog/catalog-booking-journey.integration.test.ts",
     "src/app/api/admin/prospecting/prospecting.integration.test.ts",
@@ -3483,6 +3491,7 @@
     "src/modules/core/content-contributor-legacy.test.ts",
     "src/modules/core/content-contributor-role.integration.test.ts",
     "src/modules/core/content-contributor-role.test.ts",
+    "src/modules/core/dated-pricing.integration.test.ts",
     "src/modules/core/engagement.integration.test.ts",
     "src/modules/core/invite.integration.test.ts",
     "src/modules/core/landing.test.ts",

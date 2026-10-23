@@ -50,10 +50,13 @@ export async function getAuthorizedThreadParticipants(db: PrismaClient, thread: 
     });
     for (const identity of staff) {
       if (!identity.isAdmin && !(await standaloneTicketAuthority(db, ticket, identity.id)).canManage) continue;
-      await db.threadParticipant.upsert({
-        where: { threadId_identityId: { threadId: thread.id, identityId: identity.id } },
-        create: { threadId: thread.id, identityId: identity.id, participantRole: identity.isAdmin ? 'admin' : 'staff_ops' },
-        update: {},
+      // Inbox renders, unread requests and prefetches can discover the same
+      // newly authorized participant concurrently. Empty-update Prisma upserts
+      // can use read-then-create and race on the composite unique constraint.
+      // ON CONFLICT DO NOTHING preserves existing roles/read state atomically.
+      await db.threadParticipant.createMany({
+        data: { threadId: thread.id, identityId: identity.id, participantRole: identity.isAdmin ? 'admin' : 'staff_ops' },
+        skipDuplicates: true,
       });
     }
   }

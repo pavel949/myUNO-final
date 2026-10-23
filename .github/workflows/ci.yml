@@ -138,7 +138,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/myuno_test
           DATABASE_URL_TEST: postgresql://test:test@localhost:5432/myuno_test
-        run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts
+        run: npx vitest run src/modules/booking/calendar-projection.test.ts src/modules/integrations/layantara/*.test.ts src/app/api/tickets/standalone-scope.integration.test.ts
 
       - name: Employee release integration regressions
         env:

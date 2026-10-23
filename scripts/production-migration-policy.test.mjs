@@ -136,6 +136,7 @@ test('backup endpoint metadata preserves migration credentials and explicit dire
 
 test('reviewed release SQL is pinned and unreviewed migrations remain rejected', () => {
   const names = [
+    '20261021150000_pricing_rule_tariff_grid_intent',
     '20261021010000_booking_refund_dispatch_authorization',
     '20261021023000_imported_reservation_groups',
     '20261021140000_sales_offer_desk',

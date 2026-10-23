@@ -223,17 +223,18 @@ export async function readTariffRevision(db: TariffDb, unitIds: string[]): Promi
 }
 
 /** Draft, category target set and both baselines come from one PostgreSQL snapshot. */
+export async function readTariffEditorSnapshotInTransaction(tx: TariffDb, unitId: string, includeCategory: boolean) {
+  const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true, inventoryCategoryId: true } });
+  if (!unit) throw new PricingAccessError('Unit not found', 404);
+  const unitIds = includeCategory && unit.inventoryCategoryId ? (await tx.unit.findMany({
+    where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } }, select: { id: true }, orderBy: { id: 'asc' },
+  })).map(row => row.id) : [unitId];
+  return { draft: await readTariffDraft(tx, unitId), unitRevision: await readTariffRevision(tx, [unitId]),
+    categoryRevision: includeCategory && unitIds.length ? await readTariffRevision(tx, unitIds) : null,
+    categoryUnits: unitIds.length, ...(!includeCategory ? { permissions: await employeeTariffPermissions(tx, unitId) } : {}) };
+}
 export async function readTariffEditorSnapshot(db: PrismaClient, unitId: string, includeCategory: boolean) {
-  return db.$transaction(async tx => {
-    const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { id: true, inventoryCategoryId: true } });
-    if (!unit) throw new PricingAccessError('Unit not found', 404);
-    const unitIds = includeCategory && unit.inventoryCategoryId ? (await tx.unit.findMany({
-      where: { inventoryCategoryId: unit.inventoryCategoryId, status: { not: 'offboarded' } }, select: { id: true }, orderBy: { id: 'asc' },
-    })).map(row => row.id) : [unitId];
-    return { draft: await readTariffDraft(tx, unitId), unitRevision: await readTariffRevision(tx, [unitId]),
-      categoryRevision: includeCategory && unitIds.length > 1 ? await readTariffRevision(tx, unitIds) : null,
-      categoryUnits: unitIds.length, ...(!includeCategory ? { permissions: await employeeTariffPermissions(tx, unitId) } : {}) };
-  }, { isolationLevel: 'RepeatableRead' });
+  return db.$transaction(tx => readTariffEditorSnapshotInTransaction(tx, unitId, includeCategory), { isolationLevel: 'RepeatableRead' });
 }
 
 /** Shared lock order for admin/employee saves: category, sorted units, current authority, sorted offerings. */
@@ -437,7 +438,8 @@ export async function employeeTariffPermissions(db: TariffDb, unitId: string) {
 
 /**
  * True when the villa is priced by a validated seasonal tariff grid. Dated
- * nightly overrides (PricingRule) are not read for such villas, so they must
+ * legacy nightly overrides are not read for such villas. The canonical pricing
+ * desk explicitly marks reviewed dated rules as appliesToTariffGrid; legacy tools must
  * be refused rather than silently ignored — rates live in the grid.
  */
 export async function usesTariffGrid(db: Pick<PrismaClient, 'commercialOffering'>, unitId: string): Promise<boolean> {
@@ -449,3 +451,29 @@ export async function usesTariffGrid(db: Pick<PrismaClient, 'commercialOffering'
   return terms.quoteEngine === 'canonical_tariff_grid_v1' && terms.taxPolicyVerified === true && Array.isArray(terms.tariffGrid);
 }
 
+
+/** Matrix cell edits preserve every target unit's other rates, windows,
+ * inclusions and policies. Category application never clones a whole tariff. */
+export async function saveTariffSeasonAmount(db: PrismaClient, input: {
+  actorIdentityId: string; unitIds: string[]; categoryId?: string; expectedRevision: string;
+  mode: 'daily' | 'monthly'; seasonCode: string; amountSatang: number;
+}) {
+  if (!['daily', 'monthly'].includes(input.mode) || !SEASON.test(input.seasonCode) ||
+      !Number.isSafeInteger(input.amountSatang) || input.amountSatang <= 0 || input.amountSatang > 2147483647)
+    throw new PricingAccessError('invalid_range', 400);
+  return db.$transaction(async tx => {
+    const baseline = await readTariffDraft(tx, input.unitIds[0]);
+    await lockTariffSave(tx, { ...input, draft: baseline }, true);
+    for (const unitId of input.unitIds) {
+      const current = await readTariffDraft(tx, unitId);
+      if (!current[input.mode].some(season => season.seasonCode === input.seasonCode))
+        throw new PricingAccessError('season_missing', 409);
+      const draft = { ...current, [input.mode]: current[input.mode].map(season =>
+        season.seasonCode === input.seasonCode ? { ...season, amountSatang: input.amountSatang } : season) };
+      const save = { ...input, unitIds: [unitId], draft };
+      validateForSave(save);
+      await writeTariffDraft(tx, save, true);
+    }
+    return { saved: input.unitIds.length, revision: await readTariffRevision(tx, input.unitIds) };
+  }, { timeout: 30000 });
+}

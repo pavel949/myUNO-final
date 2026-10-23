@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `a7eb9fa7f29b01f47a1bcc1d243f0be3e0f70ffd`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `870c877c29feb362a8b46ffc7c33b888ad15af57`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -11,12 +11,12 @@
 | Объект | Количество |
 |---|---:|
 | pages | 179 |
-| handlers | 260 |
-| apiHandlers | 255 |
+| handlers | 261 |
+| apiHandlers | 256 |
 | modules | 22 |
-| tests | 581 |
+| tests | 583 |
 | prismaModels | 124 |
-| migrations | 98 |
+| migrations | 99 |
 | routeCollisions | 0 |
 
 21 module directories включают workflows (integration tests). src/modules/global-desks.ts — общий helper, отдельным модулем не считается.
@@ -273,6 +273,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/admin/people/[identityId]/unblock` | POST | [src/app/api/admin/people/[identityId]/unblock/route.ts](<../../src/app/api/admin/people/[identityId]/unblock/route.ts>) |
 | `/api/admin/people/invite` | POST | [src/app/api/admin/people/invite/route.ts](<../../src/app/api/admin/people/invite/route.ts>) |
 | `/api/admin/people/search` | GET | [src/app/api/admin/people/search/route.ts](<../../src/app/api/admin/people/search/route.ts>) |
+| `/api/admin/pricing-calendar` | GET, POST | [src/app/api/admin/pricing-calendar/route.ts](<../../src/app/api/admin/pricing-calendar/route.ts>) |
 | `/api/admin/project-team` | GET, PUT | [src/app/api/admin/project-team/route.ts](<../../src/app/api/admin/project-team/route.ts>) |
 | `/api/admin/projects` | POST, GET | [src/app/api/admin/projects/route.ts](<../../src/app/api/admin/projects/route.ts>) |
 | `/api/admin/projects/[id]` | PUT, GET | [src/app/api/admin/projects/[id]/route.ts](<../../src/app/api/admin/projects/[id]/route.ts>) |
@@ -322,7 +323,7 @@ URL с [id]/[slug] — шаблон. Route groups исключены из URL. R
 | `/api/admin/units/[id]/owner` | GET, PUT | [src/app/api/admin/units/[id]/owner/route.ts](<../../src/app/api/admin/units/[id]/owner/route.ts>) |
 | `/api/admin/units/[id]/property-details` | GET, POST | [src/app/api/admin/units/[id]/property-details/route.ts](<../../src/app/api/admin/units/[id]/property-details/route.ts>) |
 | `/api/admin/units/[id]/status` | PUT | [src/app/api/admin/units/[id]/status/route.ts](<../../src/app/api/admin/units/[id]/status/route.ts>) |
-| `/api/admin/units/[id]/tariff` | GET, PUT | [src/app/api/admin/units/[id]/tariff/route.ts](<../../src/app/api/admin/units/[id]/tariff/route.ts>) |
+| `/api/admin/units/[id]/tariff` | GET, PUT, PATCH | [src/app/api/admin/units/[id]/tariff/route.ts](<../../src/app/api/admin/units/[id]/tariff/route.ts>) |
 | `/api/admin/units/[id]/tariff-preview` | POST | [src/app/api/admin/units/[id]/tariff-preview/route.ts](<../../src/app/api/admin/units/[id]/tariff-preview/route.ts>) |
 | `/api/analytics/public` | POST | [src/app/api/analytics/public/route.ts](<../../src/app/api/analytics/public/route.ts>) |
 | `/api/announcements` | POST | [src/app/api/announcements/route.ts](<../../src/app/api/announcements/route.ts>) |
@@ -627,7 +628,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 78; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 79; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -666,6 +667,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/operator-unpaid-confirmation.seed.ts](<../../src/modules/content/operator-unpaid-confirmation.seed.ts>) | seed | `OPERATOR_UNPAID_CONFIRMATION_KEYS` |
 | [src/modules/content/owner-evidence.seed.ts](<../../src/modules/content/owner-evidence.seed.ts>) | seed | `OWNER_EVIDENCE_KEYS`, `ownerEvidenceLabelsForLocale`, `OWNER_EVIDENCE_LOCALE_DRAFTS` |
 | [src/modules/content/pms-release.seed.ts](<../../src/modules/content/pms-release.seed.ts>) | seed | `PMS_RELEASE_KEYS` |
+| [src/modules/content/pricing-desk.seed.ts](<../../src/modules/content/pricing-desk.seed.ts>) | seed | `PRICING_DESK_KEYS`, `PRICING_DESK_LABELS`, `PRICING_DESK_DRAFTS` |
 | [src/modules/content/pricing-editor-role.seed.ts](<../../src/modules/content/pricing-editor-role.seed.ts>) | seed | `PRICING_EDITOR_ROLE_KEYS`, `PRICING_EDITOR_ROLE_LOCALE_DRAFTS` |
 | [src/modules/content/pricing-workspace.seed.ts](<../../src/modules/content/pricing-workspace.seed.ts>) | seed | `PRICING_WORKSPACE_KEYS`, `PRICING_WORKSPACE_LABELS`, `PRICING_WORKSPACE_DRAFTS` |
 | [src/modules/content/process-hub.seed.ts](<../../src/modules/content/process-hub.seed.ts>) | seed | `PROCESS_HUB_KEYS` |
@@ -704,7 +706,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### core
 
-Файлов: 76; тестовых файлов: 46. [Описание](../../src/modules/core/README.md).
+Файлов: 78; тестовых файлов: 47. [Описание](../../src/modules/core/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -716,6 +718,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/core/canonical-pricing.service.ts](<../../src/modules/core/canonical-pricing.service.ts>) | implementation | `computeCanonicalPriceBreakdown`, `computeCanonicalCalendarRates` |
 | [src/modules/core/commercial-booking-terms.ts](<../../src/modules/core/commercial-booking-terms.ts>) | implementation | `resolveSourceBookingTerms` |
 | [src/modules/core/compliance.service.ts](<../../src/modules/core/compliance.service.ts>) | implementation | `createComplianceRecord`, `updateComplianceRecord`, `getComplianceRecord`, `getUnitComplianceRecords`, `deleteComplianceRecord`, `checkMobilizationGate`, `completeMobilizationStep`, `getUnitMobilizationChecklist`, `isMobilizationComplete`, `MOBILIZATION_STEPS`, `initializeMobilizationChecklist`, `getAdminComplianceOverview` |
+| [src/modules/core/dated-pricing.ts](<../../src/modules/core/dated-pricing.ts>) | implementation | `datedPricingRevision`, `saveDatedPricing` |
 | [src/modules/core/engagement.service.ts](<../../src/modules/core/engagement.service.ts>) | implementation | `createDraftUnitEngagementTx`, `createUnitEngagement`, `updateUnitEngagementTx`, `updateUnitEngagement`, `getUnitEngagement`, `getActiveEngagement`, `getUnitEngagements`, `deleteUnitEngagement` |
 | [src/modules/core/index.ts](<../../src/modules/core/index.ts>) | barrel | см. исходник |
 | [src/modules/core/landing.ts](<../../src/modules/core/landing.ts>) | implementation | `resolveLanding`, `availableSurfaces` |
@@ -735,7 +738,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/core/seed.ts](<../../src/modules/core/seed.ts>) | seed | `seedDemoData` |
 | [src/modules/core/stay-unquotable.ts](<../../src/modules/core/stay-unquotable.ts>) | implementation | `StayUnquotableError`, `LeaseRequestRequiredError` |
 | [src/modules/core/tariff-calendar.ts](<../../src/modules/core/tariff-calendar.ts>) | implementation | `remainingAnnualWindows` |
-| [src/modules/core/tariff-editor.ts](<../../src/modules/core/tariff-editor.ts>) | implementation | `validateTariffDraft`, `readTariffDraft`, `readTariffRevision`, `readTariffEditorSnapshot`, `saveTariffDraft`, `saveEmployeeTariffDraft`, `employeeTariffPermissions`, `usesTariffGrid` |
+| [src/modules/core/tariff-editor.ts](<../../src/modules/core/tariff-editor.ts>) | implementation | `validateTariffDraft`, `readTariffDraft`, `readTariffRevision`, `readTariffEditorSnapshotInTransaction`, `readTariffEditorSnapshot`, `saveTariffDraft`, `saveEmployeeTariffDraft`, `employeeTariffPermissions`, `usesTariffGrid`, `saveTariffSeasonAmount` |
 | [src/modules/core/walkthrough.seed.ts](<../../src/modules/core/walkthrough.seed.ts>) | seed | `seedWalkthroughState` |
 
 <a id="module-crm"></a>
@@ -1028,6 +1031,7 @@ Exports перечислены синтаксически, без вывода �
 - [src/lib/property-area.ts](<../../src/lib/property-area.ts>)
 - [src/lib/property-count.ts](<../../src/lib/property-count.ts>)
 - [src/lib/property-editor-return.ts](<../../src/lib/property-editor-return.ts>)
+- [src/lib/resolveDatabaseUrl.mjs](<../../src/lib/resolveDatabaseUrl.mjs>)
 - [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>)
 - [src/lib/safe-next-path.ts](<../../src/lib/safe-next-path.ts>)
 - [src/lib/secret-catalog.ts](<../../src/lib/secret-catalog.ts>)
@@ -2786,6 +2790,8 @@ model PricingRule {
   nightlyThb        Int      @map("nightly_thb")
   label             String?
   minNightsOverride Int?     @map("min_nights_override")
+  // Legacy overrides must not become active on seasonal grids by accident.
+  appliesToTariffGrid Boolean @default(false) @map("applies_to_tariff_grid")
 
   // Relations
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
@@ -6304,6 +6310,7 @@ model ImportedReservationPlacement {
 - [prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql](<../../prisma/migrations/20261021010000_booking_refund_dispatch_authorization/migration.sql>)
 - [prisma/migrations/20261021023000_imported_reservation_groups/migration.sql](<../../prisma/migrations/20261021023000_imported_reservation_groups/migration.sql>)
 - [prisma/migrations/20261021140000_sales_offer_desk/migration.sql](<../../prisma/migrations/20261021140000_sales_offer_desk/migration.sql>)
+- [prisma/migrations/20261021150000_pricing_rule_tariff_grid_intent/migration.sql](<../../prisma/migrations/20261021150000_pricing_rule_tariff_grid_intent/migration.sql>)
 - [prisma/migrations/20261021190000_protected_workspace_administration/migration.sql](<../../prisma/migrations/20261021190000_protected_workspace_administration/migration.sql>)
 
 <a id="environment"></a>
@@ -6335,8 +6342,8 @@ model ImportedReservationPlacement {
 | `CI` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>) |
 | `CONTENT_REVIEW_GATE_ENABLED` | [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [.env.example](<../../.env.example>) |
 | `CRON_SECRET` | [src/jobs/auth.ts](<../../src/jobs/auth.ts>), [.github/workflows/scheduler.yml](<../../.github/workflows/scheduler.yml>), [.env.example](<../../.env.example>) |
-| `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
-| `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>), [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
+| `DATABASE_CONNECTION_LIMIT` | [src/lib/resolveDatabaseUrl.mjs](<../../src/lib/resolveDatabaseUrl.mjs>) |
+| `DATABASE_POOLER_HOST` | [src/lib/resolveDatabaseUrl.mjs](<../../src/lib/resolveDatabaseUrl.mjs>), [scripts/production-migration-policy.mjs](<../../scripts/production-migration-policy.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>) |
 | `DATABASE_URL` | [src/app/api/auth/login/route.ts](<../../src/app/api/auth/login/route.ts>), [src/app/api/auth/register/route.ts](<../../src/app/api/auth/register/route.ts>), [src/app/api/auth/reset-password/route.ts](<../../src/app/api/auth/reset-password/route.ts>), [src/lib/prisma.ts](<../../src/lib/prisma.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/create-admin.mjs](<../../scripts/create-admin.mjs>), [scripts/db-verify.mjs](<../../scripts/db-verify.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/production-migrate.mjs](<../../scripts/production-migrate.mjs>), [scripts/production-migration-preflight.mjs](<../../scripts/production-migration-preflight.mjs>), [scripts/provision-database.mjs](<../../scripts/provision-database.mjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/repair-failed-migrations.mjs](<../../scripts/repair-failed-migrations.mjs>), [scripts/scoped-production-migrate.mjs](<../../scripts/scoped-production-migrate.mjs>), [scripts/security/local-browser-fixture.ts](<../../scripts/security/local-browser-fixture.ts>), [scripts/security/local-browser-journey.mjs](<../../scripts/security/local-browser-journey.mjs>), [scripts/test-db-connection.mjs](<../../scripts/test-db-connection.mjs>), [.github/workflows/production-migration.yml](<../../.github/workflows/production-migration.yml>), [.github/workflows/scoped-production-release.yml](<../../.github/workflows/scoped-production-release.yml>), [.env.example](<../../.env.example>) |
 | `DATABASE_URL_TEST` | [src/test/util.ts](<../../src/test/util.ts>), [scripts/content-review-gate-policy.mjs](<../../scripts/content-review-gate-policy.mjs>), [scripts/e2e/isolation.cjs](<../../scripts/e2e/isolation.cjs>), [scripts/rehearse-isolated-recovery.ts](<../../scripts/rehearse-isolated-recovery.ts>), [scripts/security/local-browser-fixture.ts](<../../scripts/security/local-browser-fixture.ts>), [.env.example](<../../.env.example>) |
 | `EMAIL_FROM` | [src/modules/auth/email.ts](<../../src/modules/auth/email.ts>), [src/modules/comms/email.seam.ts](<../../src/modules/comms/email.seam.ts>), [.env.example](<../../.env.example>) |
@@ -6377,7 +6384,7 @@ model ImportedReservationPlacement {
 | `SCHEDULER_MODE` | [src/jobs/registry.ts](<../../src/jobs/registry.ts>), [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [.env.example](<../../.env.example>) |
 | `SCRATCH_DATABASE_URL` | [scripts/backup-public-schema.mjs](<../../scripts/backup-public-schema.mjs>) |
 | `SESSION_SECRET` | [src/lib/launch-readiness.ts](<../../src/lib/launch-readiness.ts>), [src/modules/auth/session.ts](<../../src/modules/auth/session.ts>), [src/modules/booking/category-quote.ts](<../../src/modules/booking/category-quote.ts>), [src/modules/integrations/ical-token.ts](<../../src/modules/integrations/ical-token.ts>), [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>), [scripts/e2e/sales-offer.mjs](<../../scripts/e2e/sales-offer.mjs>), [.env.example](<../../.env.example>) |
-| `SUPABASE_PROJECT_REF` | [src/lib/resolveDatabaseUrl.ts](<../../src/lib/resolveDatabaseUrl.ts>) |
+| `SUPABASE_PROJECT_REF` | [src/lib/resolveDatabaseUrl.mjs](<../../src/lib/resolveDatabaseUrl.mjs>) |
 | `UNIFIED_BOOKING_INTAKE_ENABLED` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
 | `UNIFIED_CHANNEL_ENVIRONMENT` | [src/app/api/integrations/layantara/events/route.ts](<../../src/app/api/integrations/layantara/events/route.ts>), [.env.example](<../../.env.example>) |
 | `VERCEL` | [src/modules/media/direct-upload.service.ts](<../../src/modules/media/direct-upload.service.ts>) |
@@ -6437,6 +6444,7 @@ model ImportedReservationPlacement {
 - [src/app/api/admin/organizations/organizations.integration.test.ts](<../../src/app/api/admin/organizations/organizations.integration.test.ts>)
 - [src/app/api/admin/payouts/payouts.integration.test.ts](<../../src/app/api/admin/payouts/payouts.integration.test.ts>)
 - [src/app/api/admin/people/invite/route.test.ts](<../../src/app/api/admin/people/invite/route.test.ts>)
+- [src/app/api/admin/pricing-calendar/route.test.ts](<../../src/app/api/admin/pricing-calendar/route.test.ts>)
 - [src/app/api/admin/projects/[id]/amenities/[amenityId]/route.test.ts](<../../src/app/api/admin/projects/[id]/amenities/[amenityId]/route.test.ts>)
 - [src/app/api/admin/projects/[id]/catalog/catalog-booking-journey.integration.test.ts](<../../src/app/api/admin/projects/[id]/catalog/catalog-booking-journey.integration.test.ts>)
 - [src/app/api/admin/prospecting/prospecting.integration.test.ts](<../../src/app/api/admin/prospecting/prospecting.integration.test.ts>)
@@ -6794,6 +6802,7 @@ model ImportedReservationPlacement {
 - [src/modules/core/content-contributor-legacy.test.ts](<../../src/modules/core/content-contributor-legacy.test.ts>)
 - [src/modules/core/content-contributor-role.integration.test.ts](<../../src/modules/core/content-contributor-role.integration.test.ts>)
 - [src/modules/core/content-contributor-role.test.ts](<../../src/modules/core/content-contributor-role.test.ts>)
+- [src/modules/core/dated-pricing.integration.test.ts](<../../src/modules/core/dated-pricing.integration.test.ts>)
 - [src/modules/core/engagement.integration.test.ts](<../../src/modules/core/engagement.integration.test.ts>)
 - [src/modules/core/invite.integration.test.ts](<../../src/modules/core/invite.integration.test.ts>)
 - [src/modules/core/landing.test.ts](<../../src/modules/core/landing.test.ts>)

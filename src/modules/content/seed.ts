@@ -1,3 +1,4 @@
+import { PRICING_DESK_KEYS } from './pricing-desk.seed';
 import { LEAD_FORM_KEYS } from './lead-form.seed';
 import { SALES_KEYS } from './sales-offer.seed';
 import { PROPERTY_EDITOR_KEYS } from './property-editor.seed';
@@ -4791,7 +4792,7 @@ export async function seedContent(
     identityId = system.id;
   }
 
-  const registryKeys: KeyDef[] = [...WORKSPACE_NAVIGATION_KEYS, ...PRICING_WORKSPACE_KEYS,
+  const registryKeys: KeyDef[] = [...PRICING_DESK_KEYS, ...WORKSPACE_NAVIGATION_KEYS, ...PRICING_WORKSPACE_KEYS,
   ...PROPERTY_WORKSPACE_KEYS,
   ...PROPERTY_EDITOR_KEYS,
   ...PROPERTY_BOOKING_MODE_KEYS,

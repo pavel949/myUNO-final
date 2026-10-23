@@ -1202,6 +1202,8 @@ model PricingRule {
   nightlyThb        Int      @map("nightly_thb")
   label             String?
   minNightsOverride Int?     @map("min_nights_override")
+  // Legacy overrides must not become active on seasonal grids by accident.
+  appliesToTariffGrid Boolean @default(false) @map("applies_to_tariff_grid")
 
   // Relations
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)

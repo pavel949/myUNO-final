@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { getConfig, type CategoryRates } from '@/modules/config';
 import {
   addDays,
@@ -38,7 +38,7 @@ function applyRatePlanAdjustment(
 }
 
 async function resolveBarPlan(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   unitId: string,
   categoryId: string | null,
   projectId: string
@@ -78,7 +78,7 @@ async function resolveBarPlan(
  * one seam without changing unrelated money policy.
  */
 export async function computeCanonicalPriceBreakdown(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   unitId: string,
   checkInDate: Date,
   checkOutDate: Date,
@@ -177,7 +177,7 @@ export async function computeCanonicalPriceBreakdown(
         'Stays of ' + leaseMinimum + ' nights or more are arranged by lease request');
     const selectedGrid = mode === 'monthly' ? monthlyGrid : shortGrid;
     const quoted = quoteSeasonalTariffGrid(
-      selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode,
+      selectedGrid, toCalendarDay(checkInDate), toCalendarDay(checkOutDate), mode, { calendarProjection: options.calendarProjection },
     );
     const selectedOffer = stayOffers.find(o => o.offeringType ===
       (mode === 'monthly' ? 'long_term_rental' : 'short_term_stay'))!;
@@ -202,26 +202,52 @@ export async function computeCanonicalPriceBreakdown(
         throw new StayUnquotableError('Stay length below booking-policy minimum of ' +
           commercialTerms.minimumNights);
     }
+    // Explicit dated prices use the same PricingRule rows as the canonical
+    // calendar. They change nightly money only; source policy/tax approvals,
+    // annual lease routing and monthly commercial tariffs remain intact.
+    const dateRules = mode === 'daily' ? await db.pricingRule.findMany({
+      where: { unitId: unit.id, appliesToTariffGrid: true, startDate: { lt: checkOutDate }, endDate: { gt: checkInDate } },
+      orderBy: [{ startDate: 'desc' }, { endDate: 'asc' }, { id: 'asc' }],
+    }) : [];
+    const matchingRules = (date: string) => {
+      const day = new Date(date + 'T00:00:00Z');
+      return dateRules.filter(rule => rule.startDate <= day && rule.endDate > day);
+    };
+    const arrivalRules = matchingRules(toCalendarDay(checkInDate));
+    if (arrivalRules.length > 1)
+      throw new StayUnquotableError('Conflicting dated pricing rules require correction');
+    const arrivalMinimum = arrivalRules[0]?.minNightsOverride;
+    if (!options.calendarProjection && arrivalMinimum && nights < arrivalMinimum)
+      throw new StayUnquotableError('Stay length below dated minimum of ' + arrivalMinimum);
+    const pricedLines = quoted.lines.map(line => {
+      const rules = matchingRules(line.date);
+      if (rules.length > 1)
+        throw new StayUnquotableError('Conflicting dated pricing rules require correction');
+      const rule = rules[0];
+      return { ...line, nightlySatang: rule?.nightlyThb ?? line.nightlySatang, overridden: Boolean(rule) };
+    });
+    const pricedSubtotal = pricedLines.reduce((total, line) => total + line.nightlySatang, 0);
+    if (!Number.isSafeInteger(pricedSubtotal)) throw new Error('Tariff total overflow');
     const cleaningFee = quoted.includesServiceCharge
       ? 0 : ((await getConfig(db, 'pricing.cleaning_fee_thb', scope)) ?? 0);
     const servicePct = quoted.includesServiceCharge
       ? 0 : ((await getConfig(db, 'pricing.guest_service_fee_pct', scope)) ?? 0);
-    const serviceFee = Math.round(quoted.subtotalSatang * servicePct / 100);
+    const serviceFee = Math.round(pricedSubtotal * servicePct / 100);
     const vatPct = quoted.includesTaxes
       ? 0 : ((await getConfig(db, 'finance.vat_pct', scope)) ?? 0);
-    const tax = Math.round((quoted.subtotalSatang + cleaningFee + serviceFee) * vatPct / 100);
+    const tax = Math.round((pricedSubtotal + cleaningFee + serviceFee) * vatPct / 100);
     return {
-      lines: quoted.lines.map(line => ({
+      lines: pricedLines.map(line => ({
         date: line.date, nightly_thb: line.nightlySatang,
-        applied_from: mode === 'monthly' ? 'category_monthly' as const : 'category_season' as const,
+        applied_from: line.overridden ? 'rule' as const : mode === 'monthly' ? 'category_monthly' as const : 'category_season' as const,
       })),
-      subtotal_thb: quoted.subtotalSatang,
+      subtotal_thb: pricedSubtotal,
       cleaning_fee_thb: cleaningFee,
       los_discount_thb: 0,
       early_bird_discount_thb: 0,
       service_fee_thb: serviceFee,
       occupancy_tax_thb: tax,
-      total_thb: quoted.subtotalSatang + cleaningFee + serviceFee + tax,
+      total_thb: pricedSubtotal + cleaningFee + serviceFee + tax,
       tariffInclusions: { taxes: quoted.includesTaxes, serviceCharge: quoted.includesServiceCharge, breakfast: quoted.includesBreakfast },
       ...(commercialTerms ? { commercialTerms } : {}),
     };
@@ -387,7 +413,7 @@ export interface CanonicalCalendarRateLine {
  * than a fabricated nightly price.
  */
 export async function computeCanonicalCalendarRates(
-  db: PrismaClient,
+  db: PrismaClient | Prisma.TransactionClient,
   unitId: string,
   startDate: Date,
   endDate: Date,

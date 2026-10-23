@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db, resetDb, createIdentity, createProject, createUnit } from '@/test/util';
 import { datedPricingRevision, saveDatedPricing } from './dated-pricing';
+import { PricingAccessError } from './pricing-access';
+import { StayUnquotableError } from './stay-unquotable';
 import {
   computeCanonicalCalendarRates,
   computeCanonicalPriceBreakdown,
@@ -275,17 +277,76 @@ it('does not activate dormant legacy overrides on validated seasonal grids', asy
   expect(quote.lines.every((line) => line.applied_from === 'category_season')).toBe(true);
 });
 
-it('fails closed when active tariff-grid rules overlap', async () => {
+it('PostgreSQL rejects overlapping active tariff-grid rules atomically', async () => {
   await resetDb();
   const { a } = await setup();
-  await db.pricingRule.createMany({
+  const insert = db.pricingRule.createMany({
     data: [
       { unitId: a.id, startDate: from, endDate: new Date('2026-10-25T00:00:00Z'), nightlyThb: 850000, appliesToTariffGrid: true },
       { unitId: a.id, startDate: new Date('2026-10-24T00:00:00Z'), endDate: to, nightlyThb: 900000, appliesToTariffGrid: true },
     ],
   });
-  await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow(/Conflicting dated pricing rules/);
+  await expect(insert).rejects.toThrow(/23P01/);
+  await expect(insert).rejects.toThrow(/pricing_rule_tariff_grid_no_overlap/);
+  expect(await db.pricingRule.count()).toBe(0);
 });
+
+it('returns an application conflict without partial category writes for an active overlap', async () => {
+  await resetDb();
+  const { actor, a, b } = await setup();
+  const existing = await db.pricingRule.create({
+    data: { unitId: b.id, startDate: from, endDate: to, nightlyThb: 850000, appliesToTariffGrid: true },
+  });
+  const revision = await datedPricingRevision(db, [a.id, b.id]);
+  const auditCount = await db.auditLog.count();
+  await expect(saveDatedPricing(db, {
+    actorIdentityId: actor.id,
+    unitId: a.id,
+    scope: 'category',
+    start: '2026-10-24',
+    end: '2026-10-27',
+    amountSatang: 900000,
+    expectedRevision: revision,
+  })).rejects.toEqual(new PricingAccessError('overlap', 409));
+  expect(await db.pricingRule.findMany()).toEqual([existing]);
+  expect(await datedPricingRevision(db, [a.id, b.id])).toBe(revision);
+  expect(await db.auditLog.count()).toBe(auditCount);
+  expect((await computeCanonicalPriceBreakdown(db, b.id, from, to, 1)).subtotal_thb).toBe(2550000);
+});
+
+it.each(['arrival', 'later night'] as const)(
+  'fails closed on a conflicting tariff-grid read at %s without weakening PostgreSQL',
+  async (overlapAt) => {
+    await resetDb();
+    const { a } = await setup();
+    const boundary = new Date('2026-10-24T00:00:00Z');
+    // Persist only valid adjacent [start, end) periods. Corruption is injected
+    // at the read boundary; the real exclusion constraint stays enabled.
+    await db.pricingRule.createMany({ data: [
+      { unitId: a.id, startDate: from, endDate: boundary, nightlyThb: 850000, appliesToTariffGrid: true },
+      { unitId: a.id, startDate: boundary, endDate: to, nightlyThb: 900000, appliesToTariffGrid: true },
+    ] });
+    const quote = await computeCanonicalPriceBreakdown(db, a.id, from, to, 1);
+    expect(quote.subtotal_thb).toBe(2650000);
+    const validRules = await db.pricingRule.findMany({ orderBy: { startDate: 'asc' } });
+    const conflictingRules = validRules.map((rule, index) => (
+      overlapAt === 'arrival' && index === 1 ? { ...rule, startDate: from } :
+      overlapAt === 'later night' && index === 0
+        ? { ...rule, endDate: new Date('2026-10-25T00:00:00Z') } : rule
+    ));
+    const read = vi.spyOn(db.pricingRule, 'findMany').mockResolvedValue(conflictingRules);
+    try {
+      await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow(StayUnquotableError);
+      await expect(computeCanonicalPriceBreakdown(db, a.id, from, to, 1)).rejects.toThrow('Conflicting dated pricing rules');
+      expect(await computeCanonicalCalendarRates(db, a.id, from, to, 1)).toEqual({
+        lines: [], error: 'Conflicting dated pricing rules require correction',
+      });
+    } finally {
+      read.mockRestore();
+    }
+    expect(await db.pricingRule.findMany({ orderBy: { startDate: 'asc' } })).toEqual(validRules);
+  }
+);
 
 it('refuses dated writes by a non-admin even with an exact current revision', async () => {
   await resetDb();

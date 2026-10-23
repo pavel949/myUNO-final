@@ -63,7 +63,7 @@ export default async function HousekeepingBoard(props:{searchParams?: Promise<{s
     'staff.housekeeping.open_tasks_action':'Open tasks →',
   });
   return (
-    <main className="stitch-workspace p-16 md:p-32"><div className="mx-auto max-w-7xl space-y-20">
+    <main className="stitch-workspace"><div className="stitch-page space-y-20">
       <header className="stitch-hero-dark"><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-sun-soft hover:underline">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">{labels['staff.housekeeping.title']}</h1></header>
       <section className="grid grid-cols-2 gap-12 md:grid-cols-3 xl:grid-cols-6">
         {['dirty','cleaning','awaiting_inspection','ready','occupied','maintenance'].map(state=><div key={state} className="stitch-panel border-b-4 border-b-brand-andaman/30 p-16"><p className="text-kicker font-semibold uppercase tracking-wider text-text-secondary">{state.replace(/_/g,' ')}</p><p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{counts[state]||0}</p></div>)}

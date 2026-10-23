@@ -49,7 +49,7 @@ export default async function MessagesInboxPage() {
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface-ivory">
+    <div className="flex min-h-screen flex-1 flex-col bg-surface-ivory">
       <div className="border-b border-border-line bg-surface-paper px-24 py-20 md:px-32">
         <PageHeading title={labels['messages.inbox.title']} />
       </div>

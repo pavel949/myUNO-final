@@ -259,8 +259,8 @@ export default async function OpsBoardPage(props: OpsBoardPageProps) {
   const navClass = 'inline-flex min-h-40 items-center rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small font-semibold text-text-ink transition hover:bg-surface-sand';
 
   return (
-    <main className="stitch-workspace p-20 md:p-32">
-      <div className="max-w-6xl mx-auto">
+    <main className="stitch-workspace">
+      <div className="stitch-page">
         <div className="stitch-hero-dark mb-24 flex flex-col gap-20 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 className="mb-8 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">

@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 
 import { UI_LOCALE } from '@/lib/format';
@@ -74,7 +75,7 @@ export default function ProjectServicesClient({
             <p className="mt-8 text-small text-text-secondary">
               {labels['admin.project_services.base_price']}: {service.basePriceThb === null ? 'quote' : `฿${(service.basePriceThb / 100).toLocaleString(UI_LOCALE)}`} · {service.baseLeadTimeHours}h
             </p>
-            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-surface-sand px-8 py-4 text-small">Project preference{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
+            {hasOverride ? <span className="mt-8 inline-flex rounded-full bg-surface-sand px-8 py-4 text-small"><OperationalText text={"Project preference"} />{service.termsVersion ? ` · v${service.termsVersion}` : ''}</span> : null}
           </div>
           <div className="grid flex-1 gap-8 sm:grid-cols-3">
             <label className="text-small text-text-secondary">{labels['admin.project_services.price_override']}

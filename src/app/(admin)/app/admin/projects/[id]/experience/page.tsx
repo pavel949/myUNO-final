@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -65,14 +66,13 @@ export default async function ProjectExperiencePage(props: { params: Promise<{ i
     <ProjectWorkspaceNav projectId={project.id} active={'experience'} contentOnly={!actor.isAdmin} />
     <div className="mb-24 flex flex-wrap items-start justify-between gap-16">
       <div>
-        <Link href={`/app/admin/projects/${project.id}`} className="text-small font-semibold text-brand-andaman hover:underline">← Project 360</Link>
-        <p className="mt-12 text-kicker uppercase text-brand-andaman">Project Experience</p>
+        <Link href={`/app/admin/projects/${project.id}`} className="text-small font-semibold text-brand-andaman hover:underline"><OperationalText text={"← Project 360"} /></Link>
+        <p className="mt-12 text-kicker uppercase text-brand-andaman"><OperationalText text={"Project Experience"} /></p>
         <PageHeading title={project.name} />
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
-          Build the public Project Portal from canonical project data: story, facilities, food and beverage, guest-use rules and nearby places. Marketplace services remain on the shared myUNO service network.
-        </p>
+          <OperationalText text={" Build the public Project Portal from canonical project data: story, facilities, food and beverage, guest-use rules and nearby places. Marketplace services remain on the shared myUNO service network. "} /></p>
       </div>
-      <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-16 py-12 font-semibold text-brand-andaman">Preview portal</Link>
+      <Link href={`/app/admin/projects/${project.id}/preview`} className="rounded-md border border-border-line px-16 py-12 font-semibold text-brand-andaman"><OperationalText text={"Preview portal"} /></Link>
     </div>
     <div className="space-y-24">
       <ProjectStoryEditor projectId={project.id} fields={contentRows} />

@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -46,10 +47,10 @@ export default async function AmenityReservationsPage(props: { params: Promise<{
 
   return <main className="mx-auto max-w-6xl p-24 md:p-32">
     <ProjectWorkspaceNav projectId={amenity.project.id} active={'experience'} contentOnly={!actor.isAdmin} />
-    <Link href={`/app/admin/projects/${amenity.project.id}/experience`} className="text-small font-semibold text-brand-andaman underline">← Project Experience</Link>
-    <p className="mt-12 text-kicker uppercase text-brand-andaman">Amenity reservations</p>
+    <Link href={`/app/admin/projects/${amenity.project.id}/experience`} className="text-small font-semibold text-brand-andaman underline"><OperationalText text={"← Project Experience"} /></Link>
+    <p className="mt-12 text-kicker uppercase text-brand-andaman"><OperationalText text={"Amenity reservations"} /></p>
     <PageHeading title={amenity.name} />
-    <p className="mt-8 mb-24 text-body text-text-secondary">{amenity.project.name} · upcoming and historical requests from guests/residents.</p>
+    <p className="mt-8 mb-24 text-body text-text-secondary">{amenity.project.name} <OperationalText text={" · upcoming and historical requests from guests/residents."} /></p>
     <AmenityReservationsClient reservations={reservations} />
   </main>;
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import OpsStatusPill, { opsStateTone } from '@/components/ops/OpsStatusPill';
+import OpsProjectFilter from '@/components/ops/OpsProjectFilter';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
 import { getDepartmentProjectIds } from '@/app/libs/projectScope';
@@ -137,15 +138,13 @@ export default async function StayOperationsPage(
           {labels['staff.stay_queue.'+d]}
         </Link>)}
       </div>
-      <nav className="flex flex-wrap gap-8" aria-label={labels['staff.stay_queue.property']}>
-        <Link href={href(department,'')} className="rounded-md border border-border-line bg-surface-paper px-12 py-8 text-small">
-          {labels['staff.stay_queue.all_properties']}
-        </Link>
-        {projects.map(p=><Link key={p.id} href={href(department,p.id)}
-          className={'rounded-md border px-12 py-8 text-small '+(projectId===p.id?'border-brand-andaman text-brand-andaman':'border-border-line text-text-ink')}>
-          {p.name}
-        </Link>)}
-      </nav>
+      <OpsProjectFilter
+        label={labels['staff.stay_queue.property']}
+        allLabel={labels['staff.stay_queue.all_properties']}
+        allHref={href(department,'')}
+        activeProjectId={projectId || null}
+        options={projects.map(p => ({ ...p, href: href(department,p.id) }))}
+      />
       <div className="grid grid-cols-2 gap-12">
         <div className="stitch-panel p-20">
           <p className="text-small text-text-secondary">{labels['staff.stay_queue.total']}</p>

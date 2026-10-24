@@ -1,5 +1,5 @@
 {
-  "codeRevision": "720249fdfdc1dbf9725ed18f0b1ae91d2c611e9b",
+  "codeRevision": "ba4375f2c989a46cf32fcad778955f70d8bb5867",
   "disclaimer": "Static file discovery only. No authorization, caller reachability, functional testing, data migration or deployed runtime has been verified.",
   "root": ".",
   "summary": {
@@ -7,7 +7,7 @@
     "handlers": 261,
     "apiHandlers": 256,
     "modules": 22,
-    "tests": 584,
+    "tests": 586,
     "prismaModels": 124,
     "migrations": 99,
     "routeCollisions": 0
@@ -2698,7 +2698,7 @@
     },
     {
       "name": "content",
-      "files": 79,
+      "files": 80,
       "testFiles": 9
     },
     {
@@ -3337,6 +3337,8 @@
     "src/components/ops/ManualReservationForm.test.tsx",
     "src/components/ops/OperationalTaskCreateForm.test.tsx",
     "src/components/ops/OperationalTaskQueueClient.timezone.test.tsx",
+    "src/components/ops/OperationalText.test.tsx",
+    "src/components/ops/OpsProjectFilter.test.tsx",
     "src/components/ops/ReservationGroupForm.test.tsx",
     "src/components/ops/StayActions.unpaid.test.tsx",
     "src/components/ops/UnifiedStayCalendar.test.tsx",

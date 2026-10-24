@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/Button';
@@ -537,7 +538,7 @@ export default function AdminContractsClient({
                     </td>
                     <td className="px-12 py-8">{fee.calculationBasis}</td>
                     <td className="px-12 py-8 text-right font-tabular">{formatThb(fee.amount)}</td>
-                    <td className="px-12 py-8">{fee.status}</td>
+                    <td className="px-12 py-8"><OperationalText text={fee.status} /></td>
                   </tr>
                 ))}
               </tbody>

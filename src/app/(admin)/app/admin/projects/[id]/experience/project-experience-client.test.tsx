@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react';
 import ProjectExperienceClient, { type AmenityRow } from './project-experience-client';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock('@/components/projects/AmenityTranslationsEditor', () => ({ default: () => null }));
@@ -68,3 +68,7 @@ it('locks all editable facility controls while a deferred save is pending', asyn
   await act(async () => { finish(response({ amenity: row })); });
   await waitFor(() => expect(screen.getByLabelText('Full guest description').matches(':disabled')).toBe(false));
 });
+
+// Behavioral fixtures exercise English explicitly; locale rendering has separate coverage.
+import { LocaleProvider } from '@/components/LocaleProvider';
+const render = (ui: React.ReactNode) => renderUi(<LocaleProvider locale="en">{ui}</LocaleProvider>);

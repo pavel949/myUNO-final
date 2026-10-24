@@ -1,3 +1,5 @@
+import { OperationalCopyProvider } from '@/components/ops/OperationalText';
+import { OPERATIONAL_STATIC_DEFAULTS, OPERATIONAL_STATIC_DRAFTS } from '@/modules/content/operational-static.seed';
 import type { ReactNode } from 'react';
 import { getLabels } from '@/lib/i18n';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -7,6 +9,7 @@ import { StitchWorkspaceShell } from '@/components/stitch/StitchShells';
 export default async function OpsLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   const labels = await getLabels({
+    ...OPERATIONAL_STATIC_DEFAULTS,
     'staff.shell.eyebrow': 'myUNO PMS',
     'staff.shell.title': 'Operations',
     'staff.shell.today': 'Today',
@@ -19,7 +22,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
     'staff.shell.daily_close': 'Daily Reconciliation',
     'staff.shell.spaces': 'Workspaces',
     'staff.shell.refunds': 'Refunds',
-  });
+  }, undefined, OPERATIONAL_STATIC_DRAFTS);
 
   const [calendarProjects, frontDeskProjects, requestProjects, housekeepingProjects, maintenanceProjects, taskProjects, closeProjects] =
     user
@@ -55,7 +58,7 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
       items={items}
       preservePmsContext
     >
-      {children}
+      <OperationalCopyProvider labels={labels}>{children}</OperationalCopyProvider>
     </StitchWorkspaceShell>
   );
 }

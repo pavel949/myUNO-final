@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 /* eslint-disable local-rules/no-literal-ui-text */
 
@@ -41,17 +42,17 @@ export default function AmenityReservationsClient({ reservations }: { reservatio
       <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="font-semibold text-text-ink"><LocalDate value={row.startAt} format="dateTime" /> – <LocalDate value={row.endAt} format="time" /></p>
-          <p className="mt-4 text-small text-text-secondary">{row.identity.firstName} {row.identity.lastName}{row.identity.email ? ` · ${row.identity.email}` : ''} · party {row.partySize}</p>
+          <p className="mt-4 text-small text-text-secondary">{row.identity.firstName} {row.identity.lastName}{row.identity.email ? ` · ${row.identity.email}` : ''} <OperationalText text={" · party "} />{row.partySize}</p>
           <p className="mt-8 text-small text-text-secondary">{row.booking ? `${row.booking.unit.name} · Booking ${row.booking.id}` : 'Project role / no stay booking'}{row.note ? ` · ${row.note}` : ''}</p>
         </div>
         <div className="flex flex-wrap items-center gap-8">
-          <span className="rounded-full bg-surface-ivory px-12 py-4 text-small">{row.status}</span>
-          {row.status === 'pending' ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'confirmed')} className="rounded-md bg-brand-andaman px-12 py-8 text-small font-semibold text-white">Confirm</button> : null}
-          {['pending','confirmed'].includes(row.status) ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'cancelled')} className="rounded-md border border-state-error px-12 py-8 text-small font-semibold text-state-error">Cancel</button> : null}
-          {row.status === 'confirmed' ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'completed')} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold">Complete</button> : null}
+          <span className="rounded-full bg-surface-ivory px-12 py-4 text-small"><OperationalText text={row.status} /></span>
+          {row.status === 'pending' ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'confirmed')} className="rounded-md bg-brand-andaman px-12 py-8 text-small font-semibold text-white"><OperationalText text={"Confirm"} /></button> : null}
+          {['pending','confirmed'].includes(row.status) ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'cancelled')} className="rounded-md border border-state-error px-12 py-8 text-small font-semibold text-state-error"><OperationalText text={"Cancel"} /></button> : null}
+          {row.status === 'confirmed' ? <button disabled={busy===row.id} onClick={()=>setStatus(row.id,'completed')} className="rounded-md border border-border-line px-12 py-8 text-small font-semibold"><OperationalText text={"Complete"} /></button> : null}
         </div>
       </div>
     </article>)}
-    {!reservations.length ? <p className="rounded-md border border-dashed border-border-line p-24 text-center text-text-secondary">No amenity reservations yet.</p> : null}
+    {!reservations.length ? <p className="rounded-md border border-dashed border-border-line p-24 text-center text-text-secondary"><OperationalText text={"No amenity reservations yet."} /></p> : null}
   </div>;
 }

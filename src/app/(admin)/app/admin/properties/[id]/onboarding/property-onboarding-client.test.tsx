@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as renderUi, screen, waitFor } from '@testing-library/react';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -144,3 +144,7 @@ describe('onboarding unit destinations', () => {
       .toHaveAttribute('href', '/app/admin/units/unit-1');
   });
 });
+
+// Behavioral fixtures exercise English explicitly; locale rendering has separate coverage.
+import { LocaleProvider } from '@/components/LocaleProvider';
+const render = (ui: React.ReactNode) => renderUi(<LocaleProvider locale="en">{ui}</LocaleProvider>);

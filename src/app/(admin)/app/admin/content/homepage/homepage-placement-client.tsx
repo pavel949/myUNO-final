@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 import { FormEvent, useMemo, useState } from 'react';
 
@@ -108,44 +109,34 @@ export default function HomepagePlacementClient({
     const matching = candidates.filter((candidate) => candidate.type === entityType);
     return <>
       <div className="grid gap-12 md:grid-cols-3">
-        <label className="text-small">Destination
-          <input name="destinationKey" defaultValue={item?.destinationKey ?? 'phuket'} className={field} required />
+        <label className="text-small"><OperationalText text={"Destination "} /><input name="destinationKey" defaultValue={item?.destinationKey ?? 'phuket'} className={field} required />
         </label>
-        <label className="text-small">Locale
-          <select name="locale" defaultValue={item?.locale ?? ''} className={field}>
-            <option value="">All locales</option><option value="en">EN</option><option value="ru">RU</option><option value="th">TH</option><option value="zh">ZH</option>
+        <label className="text-small"><OperationalText text={"Locale "} /><select name="locale" defaultValue={item?.locale ?? ''} className={field}>
+            <option value=""><OperationalText text={"All locales"} /></option><option value="en">EN</option><option value="ru">RU</option><option value="th">TH</option><option value="zh">ZH</option>
           </select>
         </label>
-        <label className="text-small">Section
-          <select name="sectionKey" defaultValue={item?.sectionKey ?? 'projects'} className={field}>
-            <option value="projects">Projects</option><option value="homes">Homes</option><option value="services">Services</option><option value="areas">Areas</option>
+        <label className="text-small"><OperationalText text={"Section "} /><select name="sectionKey" defaultValue={item?.sectionKey ?? 'projects'} className={field}>
+            <option value="projects"><OperationalText text={"Projects"} /></option><option value="homes"><OperationalText text={"Homes"} /></option><option value="services"><OperationalText text={"Services"} /></option><option value="areas"><OperationalText text={"Areas"} /></option>
           </select>
         </label>
-        <label className="text-small">Entity type
-          <select name="entityType" defaultValue={entityType} className={field}>
-            <option value="project">Project</option><option value="unit">Unit</option><option value="service">Service</option><option value="area">Area</option>
+        <label className="text-small"><OperationalText text={"Entity type "} /><select name="entityType" defaultValue={entityType} className={field}>
+            <option value="project"><OperationalText text={"Project"} /></option><option value="unit"><OperationalText text={"Unit"} /></option><option value="service"><OperationalText text={"Service"} /></option><option value="area"><OperationalText text={"Area"} /></option>
           </select>
         </label>
-        <label className="text-small md:col-span-2">Entity
-          <select name="entityId" defaultValue={item?.entityId ?? ''} className={field} required>
-            <option value="">Choose canonical entity</option>
+        <label className="text-small md:col-span-2"><OperationalText text={"Entity "} /><select name="entityId" defaultValue={item?.entityId ?? ''} className={field} required>
+            <option value=""><OperationalText text={"Choose canonical entity"} /></option>
             {matching.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.label}</option>)}
           </select>
         </label>
-        <label className="text-small">Order
-          <input name="position" type="number" defaultValue={item?.position ?? 0} className={field} />
+        <label className="text-small"><OperationalText text={"Order "} /><input name="position" type="number" defaultValue={item?.position ?? 0} className={field} />
         </label>
-        <label className="text-small">Visible from
-          <input name="visibleFrom" type="datetime-local" defaultValue={item?.visibleFrom ? new Date(item.visibleFrom).toISOString().slice(0, 16) : ''} className={field} />
+        <label className="text-small"><OperationalText text={"Visible from "} /><input name="visibleFrom" type="datetime-local" defaultValue={item?.visibleFrom ? new Date(item.visibleFrom).toISOString().slice(0, 16) : ''} className={field} />
         </label>
-        <label className="text-small">Visible until
-          <input name="visibleUntil" type="datetime-local" defaultValue={item?.visibleUntil ? new Date(item.visibleUntil).toISOString().slice(0, 16) : ''} className={field} />
+        <label className="text-small"><OperationalText text={"Visible until "} /><input name="visibleUntil" type="datetime-local" defaultValue={item?.visibleUntil ? new Date(item.visibleUntil).toISOString().slice(0, 16) : ''} className={field} />
         </label>
-        <label className="text-small">Status
-          <select name="status" defaultValue={item?.status ?? 'active'} className={field}><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        <label className="text-small"><OperationalText text={"Status "} /><select name="status" defaultValue={item?.status ?? 'active'} className={field}><option value="active"><OperationalText text={"Active"} /></option><option value="inactive"><OperationalText text={"Inactive"} /></option></select>
         </label>
-        <label className="text-small md:col-span-3">Editorial reason
-          <textarea name="editorialReason" defaultValue={item?.editorialReason ?? ''} className={textarea} />
+        <label className="text-small md:col-span-3"><OperationalText text={"Editorial reason "} /><textarea name="editorialReason" defaultValue={item?.editorialReason ?? ''} className={textarea} />
         </label>
       </div>
     </>;
@@ -153,9 +144,9 @@ export default function HomepagePlacementClient({
 
   return <div className="grid gap-20 xl:grid-cols-[360px_minmax(0,1fr)]">
     <aside className="rounded-lg bg-brand-deep p-16 text-white shadow-card">
-      <p className="text-kicker uppercase text-brand-sun-soft">Homepage control</p>
-      <h2 className="mt-4 font-display text-heading-2 font-semibold">Managed placements</h2>
-      <p className="mt-8 text-small text-white/70">Ordering only. Canonical readiness, price, availability and authority cannot be overridden here.</p>
+      <p className="text-kicker uppercase text-brand-sun-soft"><OperationalText text={"Homepage control"} /></p>
+      <h2 className="mt-4 font-display text-heading-2 font-semibold"><OperationalText text={"Managed placements"} /></h2>
+      <p className="mt-8 text-small text-white/70"><OperationalText text={"Ordering only. Canonical readiness, price, availability and authority cannot be overridden here."} /></p>
       <div className="mt-20 max-h-[520px] space-y-8 overflow-y-auto">
         {placements.map((placement) => (
           <button key={placement.id} type="button" onClick={() => setSelectedId(placement.id)}
@@ -173,19 +164,19 @@ export default function HomepagePlacementClient({
     <div className="space-y-20">
       {message ? <p role="status" className="stitch-panel p-12 text-small">{message}</p> : null}
       <section className="stitch-panel p-20">
-        <p className="stitch-kicker">New placement</p>
+        <p className="stitch-kicker"><OperationalText text={"New placement"} /></p>
         <form onSubmit={createPlacement} className="mt-16">{editorFields(null)}
-          <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">Add placement</button>
+          <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50"><OperationalText text={"Add placement"} /></button>
         </form>
       </section>
 
       {selected ? <section className="stitch-panel p-20">
         <div className="flex flex-wrap items-start justify-between gap-12">
-          <div><p className="stitch-kicker">Selected placement</p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
-          <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-12 font-semibold text-state-error disabled:opacity-50">Delete</button>
+          <div><p className="stitch-kicker"><OperationalText text={"Selected placement"} /></p><h2 className="mt-4 font-display text-heading-2 font-semibold">{candidateLabel.get(selected.entityId || '') || selected.entityId}</h2></div>
+          <button type="button" onClick={deletePlacement} disabled={busy} className="rounded-lg border border-state-error px-16 py-12 font-semibold text-state-error disabled:opacity-50"><OperationalText text={"Delete"} /></button>
         </div>
         <form key={selected.id} onSubmit={savePlacement} className="mt-16">{editorFields(selected)}
-          <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">Save placement</button>
+          <button disabled={busy} className="mt-16 min-h-44 rounded-lg bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50"><OperationalText text={"Save placement"} /></button>
         </form>
       </section> : null}
     </div>

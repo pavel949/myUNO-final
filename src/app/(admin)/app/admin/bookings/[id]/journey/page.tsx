@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 import { outstandingStayBalanceSatang } from '@/modules/booking/outstanding-balance';
 /* eslint-disable local-rules/no-literal-ui-text -- operational diagnostic labels; localization is handled in a separate content pass */
 import Link from 'next/link';
@@ -83,20 +84,20 @@ export default async function BookingJourneyPage(props: { params: Promise<{ id: 
   return (
     <main className="max-w-6xl space-y-24 pb-40">
       <header className="rounded-md border border-border-line bg-surface-paper p-24">
-        <Link href="/app/admin/bookings" className="text-small text-brand-andaman underline">← All bookings</Link>
-        <p className="text-kicker uppercase text-brand-andaman mt-16 mb-4">Canonical booking journey</p>
+        <Link href="/app/admin/bookings" className="text-small text-brand-andaman underline"><OperationalText text={"← All bookings"} /></Link>
+        <p className="text-kicker uppercase text-brand-andaman mt-16 mb-4"><OperationalText text={"Canonical booking journey"} /></p>
         <PageHeading title={booking.unit.name} />
         <p className="text-text-secondary mt-4">{booking.project.name} · {booking.startDate.toISOString().slice(0, 10)} — {booking.endDate.toISOString().slice(0, 10)}</p>
-        <p className="text-small text-text-secondary mt-8">Booking {booking.id} · {booking.status.replace(/_/g, ' ')}</p>
+        <p className="text-small text-text-secondary mt-8"><OperationalText text={"Booking "} />{booking.id} · {booking.status.replace(/_/g, ' ')}</p>
         <div className="flex flex-wrap gap-12 mt-16">
-          <Link href={`/app/admin/units/${booking.unit.id}`} className="text-small text-brand-andaman underline">Physical home</Link>
-          <Link href="/ops" className="text-small text-brand-andaman underline">Stay operations</Link>
-          <Link href="/app/admin/ledger" className="text-small text-brand-andaman underline">Ledger</Link>
-          <Link href="/app/admin/statements" className="text-small text-brand-andaman underline">Owner statements</Link>
+          <Link href={`/app/admin/units/${booking.unit.id}`} className="text-small text-brand-andaman underline"><OperationalText text={"Physical home"} /></Link>
+          <Link href="/ops" className="text-small text-brand-andaman underline"><OperationalText text={"Stay operations"} /></Link>
+          <Link href="/app/admin/ledger" className="text-small text-brand-andaman underline"><OperationalText text={"Ledger"} /></Link>
+          <Link href="/app/admin/statements" className="text-small text-brand-andaman underline"><OperationalText text={"Owner statements"} /></Link>
         </div>
       </header>
       <section className="rounded-md border border-border-line bg-surface-paper p-24">
-        <h2 className="font-display text-title font-semibold text-text-ink mb-16">One booking · one lifecycle</h2>
+        <h2 className="font-display text-title font-semibold text-text-ink mb-16"><OperationalText text={"One booking · one lifecycle"} /></h2>
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
           {stages.map((stage, i) => {
             const reached = stage.label === 'Payment confirmed' ? received > 0 : stage.statuses.includes(booking.status);
@@ -109,28 +110,28 @@ export default async function BookingJourneyPage(props: { params: Promise<{ id: 
             </li>;
           })}
         </ol>
-        <p className="text-small text-text-secondary mt-16">Stages reflect the existing Booking status. Actions remain in the booking and operations screens; this view does not create another reservation.</p>
+        <p className="text-small text-text-secondary mt-16"><OperationalText text={"Stages reflect the existing Booking status. Actions remain in the booking and operations screens; this view does not create another reservation."} /></p>
       </section>
       <section className="rounded-md border border-border-line bg-surface-paper p-24">
-        <h2 className="font-display text-title font-semibold text-text-ink mb-16">Financial closure</h2>
+        <h2 className="font-display text-title font-semibold text-text-ink mb-16"><OperationalText text={"Financial closure"} /></h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mb-20">
-          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary">Booking total</p><p className="font-display text-title font-semibold">฿{money(booking.totalThb)}</p></div>
-          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary">Successful rental receipts</p><p className="font-display text-title font-semibold">฿{money(received)}</p></div>
-          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary">Rental ledger</p><p className="font-display text-title font-semibold">฿{money(revenueLedger)}</p></div>
+          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary"><OperationalText text={"Booking total"} /></p><p className="font-display text-title font-semibold">฿{money(booking.totalThb)}</p></div>
+          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary"><OperationalText text={"Successful rental receipts"} /></p><p className="font-display text-title font-semibold">฿{money(received)}</p></div>
+          <div className="rounded-lg bg-surface-ivory p-16"><p className="text-small text-text-secondary"><OperationalText text={"Rental ledger"} /></p><p className="font-display text-title font-semibold">฿{money(revenueLedger)}</p></div>
         </div>
         <div className="space-y-8">
           {checks.map(check => <div key={check.name} className="flex items-start gap-12 border-b border-border-line pb-8">
-            <span className={check.good ? 'text-state-success font-semibold' : 'text-state-warning font-semibold'} aria-label={check.good ? 'Complete' : 'Needs review'}>{check.good ? '✓' : '!'}</span>
+            <span className={check.good ? 'text-state-success font-semibold' : 'text-state-warning font-semibold'} aria-label={check.good ? 'Complete' : 'Needs review'}><OperationalText text={check.good ? '✓' : '!'} /></span>
             <div><p className="font-semibold text-text-ink">{check.name}</p><p className="text-small text-text-secondary">{check.description}</p></div>
           </div>)}
         </div>
-        <p className="text-small text-text-secondary mt-16">Operational completion and financial distribution are different milestones. A checked-out stay is not automatically financially closed.</p>
+        <p className="text-small text-text-secondary mt-16"><OperationalText text={"Operational completion and financial distribution are different milestones. A checked-out stay is not automatically financially closed."} /></p>
       </section>
       <section className="rounded-md border border-border-line bg-surface-paper p-24">
-        <h2 className="font-display text-title font-semibold text-text-ink mb-12">Linked evidence</h2>
-        <p className="text-small text-text-secondary">{booking.payments.length} payments · {booking.ledgerEntries.length} ledger entries · {booking.depositClaims.length} deposit claims · {statements.length} owner statements</p>
-        {booking.depositPreauth && <p className="text-small mt-8">Deposit authorization: {booking.depositPreauth.status} · ฿{money(booking.depositPreauth.amountThb)}</p>}
-        {statements.map(statement => <p key={statement.id} className="text-small mt-8">Statement {statement.periodStart.toISOString().slice(0, 10)} — {statement.periodEnd.toISOString().slice(0, 10)} · {statement.status}</p>)}
+        <h2 className="font-display text-title font-semibold text-text-ink mb-12"><OperationalText text={"Linked evidence"} /></h2>
+        <p className="text-small text-text-secondary">{booking.payments.length} <OperationalText text={" payments · "} />{booking.ledgerEntries.length} <OperationalText text={" ledger entries · "} />{booking.depositClaims.length} <OperationalText text={" deposit claims · "} />{statements.length} <OperationalText text={" owner statements"} /></p>
+        {booking.depositPreauth && <p className="text-small mt-8"><OperationalText text={"Deposit authorization: "} />{booking.depositPreauth.status} · ฿{money(booking.depositPreauth.amountThb)}</p>}
+        {statements.map(statement => <p key={statement.id} className="text-small mt-8"><OperationalText text={"Statement "} />{statement.periodStart.toISOString().slice(0, 10)} — {statement.periodEnd.toISOString().slice(0, 10)} · {statement.status}</p>)}
       </section>
     </main>
   );

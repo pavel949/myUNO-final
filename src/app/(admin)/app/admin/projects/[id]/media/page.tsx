@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import { galleryCopyLabelsForLocale, GALLERY_COPY_LOCALE_DRAFTS } from '@/modules/content/gallery-editor.seed';
 import { notFound, redirect } from 'next/navigation';
@@ -59,9 +60,9 @@ export default async function ProjectMediaPage(
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
     <ProjectWorkspaceNav projectId={project.id} active={'media'} contentOnly={!actor.isAdmin} />
     <div className="mb-24">
-      <p className="text-kicker uppercase text-brand-andaman">Project Media</p>
+      <p className="text-kicker uppercase text-brand-andaman"><OperationalText text={"Project Media"} /></p>
       <PageHeading title={project.name} />
-      <p className="mt-8 max-w-3xl text-body text-text-secondary">One workspace for project, category and exact-unit galleries. Amenity-specific photos are managed inside Experience so their context is never lost.</p>
+      <p className="mt-8 max-w-3xl text-body text-text-secondary"><OperationalText text={"One workspace for project, category and exact-unit galleries. Amenity-specific photos are managed inside Experience so their context is never lost."} /></p>
     </div>
     <ScopedGalleryEditor
       projectId={project.id}

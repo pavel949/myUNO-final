@@ -1,3 +1,4 @@
+import { OperationalInput } from '@/components/ops/OperationalText';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -142,7 +143,7 @@ export default async function DailyReconciliationPage(
             </label>
             <label className="text-small font-semibold text-text-secondary">
               {labels['staff.close.date']}
-              <input name="date" type="text" inputMode="numeric" pattern="\d{4}-\d{2}-\d{2}" defaultValue={day} placeholder="YYYY-MM-DD" className="stitch-control mt-4 w-full font-tabular" />
+              <OperationalInput name="date" type="text" inputMode="numeric" pattern="\d{4}-\d{2}-\d{2}" defaultValue={day} placeholder="YYYY-MM-DD" className="stitch-control mt-4 w-full font-tabular" />
             </label>
             <button type="submit" className="h-48 rounded-md bg-brand-deep px-16 text-small font-semibold text-white">{labels['staff.close.apply']}</button>
           </form>

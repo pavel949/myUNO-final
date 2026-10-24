@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
@@ -46,14 +47,13 @@ export default async function HomepagePlacementPage() {
   return <main className="mx-auto max-w-7xl p-24 md:p-32">
     <div className="mb-24 flex flex-wrap items-start justify-between gap-16">
       <div>
-        <Link href="/app/admin/content" className="text-small font-semibold text-brand-andaman hover:underline">← Content</Link>
-        <p className="stitch-kicker mt-12">Homepage</p>
-        <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink">Editorial placements</h1>
+        <Link href="/app/admin/content" className="text-small font-semibold text-brand-andaman hover:underline"><OperationalText text={"← Content"} /></Link>
+        <p className="stitch-kicker mt-12"><OperationalText text={"Homepage"} /></p>
+        <h1 className="mt-4 font-display text-display-xl font-semibold text-text-ink"><OperationalText text={"Editorial placements"} /></h1>
         <p className="mt-8 max-w-3xl text-body text-text-secondary">
-          Curate the visible order by destination and locale. This surface never overrides canonical price, availability, media readiness or operating authority.
-        </p>
+          <OperationalText text={" Curate the visible order by destination and locale. This surface never overrides canonical price, availability, media readiness or operating authority. "} /></p>
       </div>
-      <Link href="/" className="rounded-lg border border-border-line px-16 py-12 font-semibold text-brand-andaman">Open homepage</Link>
+      <Link href="/" className="rounded-lg border border-border-line px-16 py-12 font-semibold text-brand-andaman"><OperationalText text={"Open homepage"} /></Link>
     </div>
     <HomepagePlacementClient
       initialPlacements={placements.map((item) => ({

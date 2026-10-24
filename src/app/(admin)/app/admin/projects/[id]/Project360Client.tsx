@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 
 import { UI_LOCALE } from '@/lib/format';
@@ -266,7 +267,7 @@ export default function Project360Client({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {canonicalInventory.ratePlans.map((plan) => (
               <div key={plan.id} className="p-12 bg-surface-ivory border border-border-line rounded-md">
-                <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-small text-text-secondary">{plan.status}</span></div>
+                <div className="flex justify-between gap-8"><p className="font-medium text-text-ink">{plan.name}</p><span className="text-small text-text-secondary"><OperationalText text={plan.status} /></span></div>
                 <p className="text-small text-text-secondary mt-8">{plan.code}</p>
                 <p className="text-small mt-8 text-text-ink">
                   {plan.unitId

@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 
 import { useState } from 'react';
@@ -12,9 +13,9 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
   const field = 'block h-40 w-full mt-4 rounded-sm border border-border-line px-12 bg-surface-paper';
 
   return <main className="max-w-5xl">
-    <p className="text-kicker text-brand-andaman mb-8">Property onboarding · 1/10</p>
-    <h1 className="font-display text-display-xl font-semibold mb-8">Add a property</h1>
-    <p className="text-body text-text-secondary mb-24">Create the property shell, then continue through inventory, ownership, compliance, pricing, content, channels, team and final review.</p>
+    <p className="text-kicker text-brand-andaman mb-8"><OperationalText text={"Property onboarding · 1/10"} /></p>
+    <h1 className="font-display text-display-xl font-semibold mb-8"><OperationalText text={"Add a property"} /></h1>
+    <p className="text-body text-text-secondary mb-24"><OperationalText text={"Create the property shell, then continue through inventory, ownership, compliance, pricing, content, channels, team and final review."} /></p>
     {error ? <p role="alert" className="p-12 mb-16 bg-state-error-soft text-state-error rounded-md">{error}</p> : null}
     <form className="stitch-panel grid grid-cols-1 md:grid-cols-3 gap-16 p-24" onSubmit={async (event) => {
       event.preventDefault(); const data = new FormData(event.currentTarget); const plusCode = String(data.get('plusCode') || '').trim();
@@ -40,8 +41,8 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
       <TextField label="Property name" name="name" field={field} required />
       <TextField label="URL slug" name="slug" field={field} required />
       <TextField label="Brand" name="brand" field={field} />
-      <label className="text-small text-text-secondary">Property type<select name="projectType" className={field}><option value="resort">Resort</option><option value="condominium">Condominium</option><option value="villa_estate">Villa estate</option><option value="standalone">Standalone</option></select></label>
-      <label className="text-small text-text-secondary">Canonical area<select name="areaId" required defaultValue="" className={field}><option value="" disabled>Select area</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.slug}</option>)}</select></label>
+      <label className="text-small text-text-secondary"><OperationalText text={"Property type"} /><select name="projectType" className={field}><option value="resort"><OperationalText text={"Resort"} /></option><option value="condominium"><OperationalText text={"Condominium"} /></option><option value="villa_estate"><OperationalText text={"Villa estate"} /></option><option value="standalone"><OperationalText text={"Standalone"} /></option></select></label>
+      <label className="text-small text-text-secondary"><OperationalText text={"Canonical area"} /><select name="areaId" required defaultValue="" className={field}><option value="" disabled><OperationalText text={"Select area"} /></option>{areas.map((area) => <option key={area.id} value={area.id}>{area.slug}</option>)}</select></label>
       <TextField label="Full address" name="address" field={field} required />
       <TextField label="Country" name="country" field={field} defaultValue="TH" required />
       <TextField label="City" name="city" field={field} />
@@ -55,7 +56,7 @@ export default function NewPropertyClient({ areas }: { areas: Array<{ id: string
       <TextField label="Plus Code" name="plusCode" field={field} placeholder="Preferred" />
       <TextField label="Latitude (without Plus Code)" name="latitude" field={field} type="number" step="any" />
       <TextField label="Longitude (without Plus Code)" name="longitude" field={field} type="number" step="any" />
-      <div className="md:col-span-3"><Button type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create and continue'}</Button></div>
+      <div className="md:col-span-3"><Button type="submit" disabled={busy}><OperationalText text={busy ? 'Creating…' : 'Create and continue'} /></Button></div>
     </form>
   </main>;
 }

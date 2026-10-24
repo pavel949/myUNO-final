@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -47,6 +47,21 @@ beforeEach(() => {
 
 // Page/link regression with mocked authorization dependencies, not role-isolation E2E.
 describe('stay queue back-to-calendar context', () => {
+  it('keeps department and workspace on both compact project choices and reset', async () => {
+    state.projects.push({ id: 'project-2', name: 'Second project' });
+    const { container } = render(await StayOperationsPage({
+      searchParams: { projectId: 'project-1', spaceId: 'space-1', department: 'finance' },
+    }));
+    expect(container.querySelector('summary')).toHaveTextContent('Property: Allowed project');
+    fireEvent.click(container.querySelector('summary')!);
+    expect(screen.getByRole('link', { name: 'Second project' })).toHaveAttribute(
+      'href', '/ops/stays?department=finance&projectId=project-2&spaceId=space-1',
+    );
+    expect(screen.getByRole('link', { name: 'All properties' })).toHaveAttribute(
+      'href', '/ops/stays?department=finance&spaceId=space-1',
+    );
+  });
+
   it.each<{ name: string; params: SearchParams; href: string }>([
     { name: 'no scope', params: {}, href: '/ops/calendar/board' },
     { name: 'project', params: { projectId: 'project-1' }, href: '/ops/calendar/board?projectId=project-1' },

@@ -7,7 +7,7 @@ import { getUnitPublicationReadiness } from './unit-publication-readiness';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.unit.mockResolvedValue({ id: 'villa', descriptionKey: null, sizeSqm: null, grossAreaSqm: null, project: { status: 'live' }, sleepingSpaces: [] });
+  mocks.unit.mockResolvedValue({ id: 'villa', descriptionKey: null, sizeSqm: null, grossAreaSqm: null, ownerIdentityId: null, inventoryCategoryId: null, baseNightlyThb: 0, coverMediaId: null, media: [], project: { status: 'live' }, sleepingSpaces: [] });
   mocks.discovery.mockResolvedValue([{ id: 'villa', videoUrls: [] }]);
   mocks.booking.mockResolvedValue(null);
 });
@@ -15,7 +15,7 @@ describe('actual publication capability, independent of activation completeness'
   it('keeps an imported public draft inquiry-ready with all optional details missing', async () => {
     expect(await getUnitPublicationReadiness('villa')).toEqual({
       unitId: 'villa', published: true, canReceiveInquiry: true, bookingFlowAvailable: false,
-      detailsToAdd: ['description', 'sleeping', 'video', 'measurements'],
+      detailsToAdd: ['owner', 'category', 'photos', 'pricing', 'description', 'sleeping', 'video', 'measurements'],
     });
     expect(mocks.discovery).toHaveBeenCalledWith({ unitId: 'villa' });
     expect(mocks.booking).toHaveBeenCalledWith('villa');
@@ -41,12 +41,12 @@ describe('actual publication capability, independent of activation completeness'
     mocks.unit.mockResolvedValue({ id: 'villa', descriptionKey: 'unit.villa.description', grossAreaSqm: 120, project: { status: 'live' }, sleepingSpaces: [{ beds: [{ count: 2 }] }] });
     mocks.content.mockResolvedValue({ translations: [{ status: 'ok', value: 'Reviewed' }] });
     mocks.discovery.mockResolvedValue([]);
-    expect(await getUnitPublicationReadiness('villa')).toMatchObject({ published: false, bookingFlowAvailable: false, detailsToAdd: ['video'] });
+    expect(await getUnitPublicationReadiness('villa')).toMatchObject({ published: false, bookingFlowAvailable: false, detailsToAdd: ['owner', 'category', 'photos', 'pricing', 'video'] });
   });
   it('unreviewed copy and empty bed rows remain details to add, without blocking visibility', async () => {
     mocks.unit.mockResolvedValue({ id: 'villa', descriptionKey: 'key', grossAreaSqm: null, sizeSqm: 100, project: { status: 'live' }, sleepingSpaces: [{ beds: [{ count: 0 }] }] });
     mocks.content.mockResolvedValue({ translations: [{ status: 'needs_review', value: 'Draft' }] });
-    expect(await getUnitPublicationReadiness('villa')).toMatchObject({ published: true, detailsToAdd: ['description', 'sleeping', 'video'] });
+    expect(await getUnitPublicationReadiness('villa')).toMatchObject({ published: true, detailsToAdd: ['owner', 'category', 'photos', 'pricing', 'description', 'sleeping', 'video'] });
   });
   it('read failures are errors, never a false unpublished/disabled result', async () => {
     mocks.discovery.mockRejectedValue(new Error('unavailable'));

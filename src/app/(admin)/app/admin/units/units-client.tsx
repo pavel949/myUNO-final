@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText } from '@/components/ops/OperationalText';
 
 
 import { UI_LOCALE } from '@/lib/format';
@@ -183,7 +184,7 @@ export default function UnitsAdminClient({
             <p className="text-small text-text-secondary">
               {labels['admin.units.owner']}: {unit.ownerName} · {labels['admin.units.price']}: ฿
               {unit.baseNightlyThb.toLocaleString(UI_LOCALE)} · {labels['admin.units.status']}:{' '}
-              <span className="font-semibold text-text-ink">{unit.status}</span>
+              <span className="font-semibold text-text-ink"><OperationalText text={unit.status} /></span>
               {' · '}
               {labels['admin.units.permitted_use']}:{' '}
               {unit.permittedUseConfirmed ? (

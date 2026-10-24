@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/getCurrentUser';
@@ -48,9 +49,9 @@ export default async function PropertySubmissionsPage() {
   const media = mediaIds.length ? await prisma.mediaAsset.findMany({ where: { id: { in: mediaIds }, kind: 'photo', encrypted: false }, select: { id: true, storageKey: true } }) : [];
   const photoUrl = new Map(media.map(asset => [asset.id, asset.storageKey]));
   return <main className="max-w-5xl">
-    <h1 className="font-display text-display-xl font-semibold">Property applications</h1>
-    <p className="mt-8 mb-24 text-text-secondary">Review owner and manager submissions before creating or editing canonical property records. A submitted application is not a live listing.</p>
-    {rows.length === 0 ? <p>No applications yet.</p> : <div className="space-y-16">{rows.map(row => {
+    <h1 className="font-display text-display-xl font-semibold"><OperationalText text={"Property applications"} /></h1>
+    <p className="mt-8 mb-24 text-text-secondary"><OperationalText text={"Review owner and manager submissions before creating or editing canonical property records. A submitted application is not a live listing."} /></p>
+    {rows.length === 0 ? <p><OperationalText text={"No applications yet."} /></p> : <div className="space-y-16">{rows.map(row => {
       const data = row.requirements as Record<string, unknown>;
       const employeeMarker = Object.prototype.hasOwnProperty.call(data, 'employeeCreation');
       const rawReceipt = data.employeeCreation && typeof data.employeeCreation === 'object' && !Array.isArray(data.employeeCreation) ? data.employeeCreation as Record<string, unknown> : null;
@@ -61,14 +62,14 @@ export default async function PropertySubmissionsPage() {
         <div className="flex flex-wrap justify-between gap-12"><h2 className="font-semibold">{row.title}</h2><span className="text-small">{String(data.status || 'draft')}</span></div>
         <p className="mt-8 text-small text-text-secondary">{row.identity.firstName} {row.identity.lastName} · {row.identity.email}</p>
         {employeeCreation && <div className="mt-12 rounded-md border border-border-line p-12 text-small"><p className="font-semibold">{l('admin.employee')} · {l(employeeCreation.kind)}</p><p>{l('admin.organization')}: {organizationNames.get(employeeCreation.organizationId) || employeeCreation.organizationId}</p><p>{l('admin.space')}: {spaceNames.get(employeeCreation.spaceId) || employeeCreation.spaceId}</p><p className="mt-8">{l('admin.safety')}</p></div>}
-        <p className="mt-8">Residence: {row.project?.name || String(data.proposedProject || 'Not selected')}</p>
-        {!employeeMarker && <p className="mt-4">Intent: {Array.isArray(data.offers) ? data.offers.join(', ') : 'Not set'} · {photos} home photos</p>}
-        <p className="mt-4 text-small">Project: {String(data.projectType || '')} · {String(data.projectAddress || '')} · area {String(data.areaId || '')} · {String(data.latitude ?? '')}, {String(data.longitude ?? '')}</p>
-        {(['projectPhotos', 'photos'] as const).map(scope => <div key={scope} className="mt-12"><h3 className="text-small font-semibold">{scope === 'projectPhotos' ? 'Complex gallery' : 'Home gallery'}</h3><div className="mt-8 flex flex-wrap gap-8">{(Array.isArray(data[scope]) ? data[scope] as string[] : []).map((id, index) => photoUrl.get(id) ? <Image key={id} src={photoUrl.get(id)!} width={180} height={120} alt={`${scope === 'projectPhotos' ? 'Complex' : 'Home'} photo ${index + 1}`} className="h-32 w-44 rounded-lg object-cover" /> : <span key={id} className="text-small text-state-warning">Image unavailable</span>)}</div></div>)}
-        {!employeeMarker && <p className="mt-4 text-small text-text-secondary">Contact: {String(data.contact || 'Not supplied')}</p>}
+        <p className="mt-8"><OperationalText text={"Residence: "} />{row.project?.name || String(data.proposedProject || 'Not selected')}</p>
+        {!employeeMarker && <p className="mt-4"><OperationalText text={"Intent: "} />{Array.isArray(data.offers) ? data.offers.join(', ') : 'Not set'} · {photos} <OperationalText text={" home photos"} /></p>}
+        <p className="mt-4 text-small"><OperationalText text={"Project: "} />{String(data.projectType || '')} · {String(data.projectAddress || '')} <OperationalText text={" · area "} />{String(data.areaId || '')} · {String(data.latitude ?? '')}, {String(data.longitude ?? '')}</p>
+        {(['projectPhotos', 'photos'] as const).map(scope => <div key={scope} className="mt-12"><h3 className="text-small font-semibold"><OperationalText text={scope === 'projectPhotos' ? 'Complex gallery' : 'Home gallery'} /></h3><div className="mt-8 flex flex-wrap gap-8">{(Array.isArray(data[scope]) ? data[scope] as string[] : []).map((id, index) => photoUrl.get(id) ? <Image key={id} src={photoUrl.get(id)!} width={180} height={120} alt={`${scope === 'projectPhotos' ? 'Complex' : 'Home'} photo ${index + 1}`} className="h-32 w-44 rounded-lg object-cover" /> : <span key={id} className="text-small text-state-warning"><OperationalText text={"Image unavailable"} /></span>)}</div></div>)}
+        {!employeeMarker && <p className="mt-4 text-small text-text-secondary"><OperationalText text={"Contact: "} />{String(data.contact || 'Not supplied')}</p>}
         <p className="mt-8 whitespace-pre-wrap text-small">{String(data.description || '')}</p>
-        {!employeeMarker && row.projectId && <Link href={`/app/admin/projects/${row.projectId}`} className="mt-12 inline-block text-brand-andaman underline">Open existing project →</Link>}
-        {!employeeMarker && <p className="mt-12 text-small text-text-secondary">Verify authority, duplicate inventory and the project's real-world location. Conversion never publishes an offer.</p>}
+        {!employeeMarker && row.projectId && <Link href={`/app/admin/projects/${row.projectId}`} className="mt-12 inline-block text-brand-andaman underline"><OperationalText text={"Open existing project →"} /></Link>}
+        {!employeeMarker && <p className="mt-12 text-small text-text-secondary"><OperationalText text={"Verify authority, duplicate inventory and the project's real-world location. Conversion never publishes an offer."} /></p>}
         {employeeMarker && !employeeCreation ? <p role="alert" className="mt-12 text-state-error">{l('error.conflict')}</p> : <ConvertPropertySubmission employeeReviewOptions={employeeReviewOptions.get(row.id) || null} employeeExistingUnitId={typeof data.existingUnitId === 'string' ? data.existingUnitId : null} employeeCreation={employeeCreation} creationLabels={creationLabels} descriptionLocale={typeof data.descriptionLocale === 'string' ? data.descriptionLocale : null} hasDescription={Boolean(String(data.description || '').trim())} id={row.id} status={String(data.status || 'draft')} existingProjectId={row.projectId} projects={projects} organizations={organizations} areas={areas} proposedAddress={String(data.projectAddress || '')} proposedAreaId={typeof data.areaId === 'string' ? data.areaId : null} proposedLatitude={typeof data.latitude === 'number' ? data.latitude : null} proposedLongitude={typeof data.longitude === 'number' ? data.longitude : null} applicantKind={String(data.kind || '')} operatingModel={typeof data.operatingModel === 'string' ? data.operatingModel : null} requestedManagementCompanyName={String(data.requestedManagementCompanyName || '')} canonicalProjectId={typeof data.canonicalProjectId === 'string' ? data.canonicalProjectId : null} canonicalUnitId={typeof data.canonicalUnitId === 'string' ? data.canonicalUnitId : null} />}
       </article>;
     })}</div>}

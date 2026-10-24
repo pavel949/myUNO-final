@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as renderUi, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ConvertPropertySubmission from './convert-client';
 
@@ -143,3 +143,7 @@ it('sends an explicit existing-complex match without unit or ownership actions',
   expect(body).not.toHaveProperty('existingUnitId');
   expect(screen.queryByRole('link', { name: 'Open new complex draft' })).not.toBeInTheDocument();
 });
+
+// Behavioral fixtures exercise English explicitly; locale rendering has separate coverage.
+import { LocaleProvider } from '@/components/LocaleProvider';
+const render = (ui: React.ReactNode) => renderUi(<LocaleProvider locale="en">{ui}</LocaleProvider>);

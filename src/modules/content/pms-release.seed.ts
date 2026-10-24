@@ -1,5 +1,11 @@
 /** PMS release slice: readiness, effective-rate and channel-health operational UI. */
 export const PMS_RELEASE_KEYS = [
+  {"key": "staff.housekeeping.state.dirty", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Needs cleaning", "ru": "Нужна уборка", "th": "ต้องทำความสะอาด", "status": "needs_review" as const},
+  {"key": "staff.housekeeping.state.cleaning", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Cleaning", "ru": "Уборка", "th": "กำลังทำความสะอาด", "status": "needs_review" as const},
+  {"key": "staff.housekeeping.state.awaiting_inspection", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Awaiting inspection", "ru": "Ожидает проверки", "th": "รอตรวจสอบ", "status": "needs_review" as const},
+  {"key": "staff.housekeeping.state.ready", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Ready", "ru": "Готово", "th": "พร้อม", "status": "needs_review" as const},
+  {"key": "staff.housekeeping.state.occupied", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Occupied", "ru": "Занято", "th": "มีผู้เข้าพัก", "status": "needs_review" as const},
+  {"key": "staff.housekeeping.state.maintenance", "namespace": "staff", "description": "Housekeeping display state; stored enum unchanged", "en": "Maintenance", "ru": "Техобслуживание", "th": "การบำรุงรักษา", "status": "needs_review" as const},
   { key: 'staff.unified_calendar.blocked', namespace: 'staff', description: 'Calendar readiness: independent operational blocker', en: 'Blocked by operational work', ru: 'Заблокировано операционными работами', th: 'ไม่พร้อมเนื่องจากงานปฏิบัติการ', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.readiness', namespace: 'staff', description: 'Calendar readiness label', en: 'Readiness', ru: 'Готовность', th: 'ความพร้อม', status: 'needs_review' as const },
   { key: 'staff.unified_calendar.ready', namespace: 'staff', description: 'Calendar readiness: ready', en: 'Ready', ru: 'Готово', th: 'พร้อม', status: 'needs_review' as const },

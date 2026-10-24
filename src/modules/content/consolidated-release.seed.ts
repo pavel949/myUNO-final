@@ -9,7 +9,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project360.facilities_count',
     en: '{count} project amenities / facilities',
-    ru: '{count} project amenities / facilities',
+    ru: "Удобств и инфраструктуры комплекса: {count}",
     status: 'needs_review' as const,
   },
   {
@@ -17,7 +17,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project360.facilities_manage',
     en: 'Manage amenities, rules, access and booking →',
-    ru: 'Manage amenities, rules, access and booking →',
+    ru: "Удобства, правила, доступ и бронирование →",
     status: 'needs_review' as const,
   },
   {
@@ -25,7 +25,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.private',
     en: 'Private preview · not published',
-    ru: 'Private preview · not published',
+    ru: "Закрытый предпросмотр · не опубликовано",
     status: 'needs_review' as const,
   },
   {
@@ -33,7 +33,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.project360',
     en: 'Project 360',
-    ru: 'Project 360',
+    ru: "Карточка проекта",
     status: 'needs_review' as const,
   },
   {
@@ -41,7 +41,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.edit_media',
     en: 'Edit project media',
-    ru: 'Edit project media',
+    ru: "Редактировать материалы проекта",
     status: 'needs_review' as const,
   },
   {
@@ -49,7 +49,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.stats',
     en: '{categories} canonical categories · {units} physical units · {unitPhotos} linked unit photos · {projectPhotos} project gallery photos. Draft units are not available for booking.',
-    ru: '{categories} canonical categories · {units} physical units · {unitPhotos} linked unit photos · {projectPhotos} project gallery photos. Draft units are not available for booking.',
+    ru: "Категорий: {categories} · Объектов: {units} · Фото объектов: {unitPhotos} · Фото проекта: {projectPhotos}. Черновики недоступны для бронирования.",
     status: 'needs_review' as const,
   },
   {
@@ -57,7 +57,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.categories',
     en: 'Accommodation categories and exact units',
-    ru: 'Accommodation categories and exact units',
+    ru: "Категории размещения и конкретные объекты",
     status: 'needs_review' as const,
   },
   {
@@ -65,7 +65,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.unit_stats',
     en: '{bedrooms} bedrooms · {units} villas · {status}',
-    ru: '{bedrooms} bedrooms · {units} villas · {status}',
+    ru: "Спален: {bedrooms} · Вилл: {units} · {status}",
     status: 'needs_review' as const,
   },
   {
@@ -73,7 +73,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.photos',
     en: '{count} exact-unit photos · {status}',
-    ru: '{count} exact-unit photos · {status}',
+    ru: "Фото объекта: {count} · {status}",
     status: 'needs_review' as const,
   },
   {
@@ -81,7 +81,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.amenities_title',
     en: 'Project amenities',
-    ru: 'Project amenities',
+    ru: "Удобства комплекса",
     status: 'needs_review' as const,
   },
   {
@@ -89,7 +89,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_preview.amenities_manage',
     en: 'Manage amenities →',
-    ru: 'Manage amenities →',
+    ru: "Управление удобствами →",
     status: 'needs_review' as const,
   },
   {
@@ -97,7 +97,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project_page',
     description: 'Release 160 surface copy: project_page.amenities.kicker',
     en: 'Project amenities',
-    ru: 'Project amenities',
+    ru: "Удобства комплекса",
     status: 'needs_review' as const,
   },
   {
@@ -129,7 +129,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.title',
     en: 'Concierge preferences',
-    ru: 'Concierge preferences',
+    ru: "Настройки услуг консьержа",
     status: 'needs_review' as const,
   },
   {
@@ -137,7 +137,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.body',
     en: 'myUNO marketplace services are available across all projects. Configure only optional project-specific prices, lead times or commercial preferences here.',
-    ru: 'myUNO marketplace services are available across all projects. Configure only optional project-specific prices, lead times or commercial preferences here.',
+    ru: "Услуги myUNO доступны во всех проектах. Здесь задаются только индивидуальные цены, сроки подготовки и условия проекта.",
     status: 'needs_review' as const,
   },
   {
@@ -145,7 +145,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.back',
     en: 'Back to Project 360',
-    ru: 'Back to Project 360',
+    ru: "Вернуться к карточке проекта",
     status: 'needs_review' as const,
   },
   {
@@ -153,7 +153,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.base_price',
     en: 'Base price',
-    ru: 'Base price',
+    ru: "Базовая цена",
     status: 'needs_review' as const,
   },
   {
@@ -161,7 +161,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.price_override',
     en: 'Project price (THB)',
-    ru: 'Project price (THB)',
+    ru: "Цена для проекта (THB)",
     status: 'needs_review' as const,
   },
   {
@@ -169,7 +169,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.lead_time',
     en: 'Project lead time (hours)',
-    ru: 'Project lead time (hours)',
+    ru: "Срок подготовки для проекта (часов)",
     status: 'needs_review' as const,
   },
   {
@@ -177,7 +177,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.take_rate',
     en: 'Project take rate (%)',
-    ru: 'Project take rate (%)',
+    ru: "Комиссия проекта (%)",
     status: 'needs_review' as const,
   },
   {
@@ -185,7 +185,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.save_terms',
     en: 'Save preference',
-    ru: 'Save preference',
+    ru: "Сохранить настройки",
     status: 'needs_review' as const,
   },
   {
@@ -193,7 +193,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.clear',
     en: 'Use global defaults',
-    ru: 'Use global defaults',
+    ru: "Использовать общие настройки",
     status: 'needs_review' as const,
   },
   {
@@ -201,7 +201,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.saved',
     en: 'Concierge preference saved.',
-    ru: 'Concierge preference saved.',
+    ru: "Настройки услуг сохранены.",
     status: 'needs_review' as const,
   },
   {
@@ -209,7 +209,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.inherit',
     en: 'global default',
-    ru: 'global default',
+    ru: "Общая настройка",
     status: 'needs_review' as const,
   },
   {
@@ -217,7 +217,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'admin',
     description: 'Release 160 surface copy: admin.project_services.error',
     en: 'Could not update concierge preference.',
-    ru: 'Could not update concierge preference.',
+    ru: "Не удалось обновить настройки услуг.",
     status: 'needs_review' as const,
   },
   {
@@ -409,7 +409,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'project_amenity',
     description: 'Release 160 surface copy: project_amenity.location',
     en: 'Location',
-    ru: 'Location',
+    ru: "Расположение",
     status: 'needs_review' as const,
   },
   {
@@ -737,7 +737,7 @@ export const CONSOLIDATED_RELEASE_KEYS = [
     namespace: 'home',
     description: 'Release 160 surface copy: home.amenities.kicker',
     en: 'Project amenities',
-    ru: 'Project amenities',
+    ru: "Удобства комплекса",
     status: 'needs_review' as const,
   },
   {

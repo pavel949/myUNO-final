@@ -1,6 +1,6 @@
 # Полный справочник исходников
 
-Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `720249fdfdc1dbf9725ed18f0b1ae91d2c611e9b`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
+Сгенерировано `node scripts/generate-repository-reference.mjs`. Последняя ревизия исполняемого кода: `6c994934af16c31a5a9f5f5046cc648bc0d57f57`. Содержимое соответствует текущему checkout; uncommitted изменения также входят в discovery.
 
 Это статический справочник: файлы/exports/маршруты/модели/переменные. Не доказывает достижимость, права, production deploy, применение миграций или прохождение тестов. Handlers могут дополнительно экспортировать методы через re-export; для точного contract читать source.
 
@@ -14,7 +14,7 @@
 | handlers | 261 |
 | apiHandlers | 256 |
 | modules | 22 |
-| tests | 584 |
+| tests | 586 |
 | prismaModels | 124 |
 | migrations | 99 |
 | routeCollisions | 0 |
@@ -628,7 +628,7 @@ Exports перечислены синтаксически, без вывода �
 
 ### content
 
-Файлов: 79; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
+Файлов: 80; тестовых файлов: 9. [Описание](../../src/modules/content/README.md).
 
 | Исходник | Вид | Named declarations |
 |---|---|---|
@@ -664,6 +664,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/legal-pages.seed.ts](<../../src/modules/content/legal-pages.seed.ts>) | seed | `seedLegalPages` |
 | [src/modules/content/operating-governance.seed.ts](<../../src/modules/content/operating-governance.seed.ts>) | seed | `OPERATING_GOVERNANCE_LABELS`, `OPERATING_GOVERNANCE_KEYS`, `OPERATING_GOVERNANCE_DRAFTS` |
 | [src/modules/content/operating-space.seed.ts](<../../src/modules/content/operating-space.seed.ts>) | seed | `OPERATING_SPACE_KEYS` |
+| [src/modules/content/operational-static.seed.ts](<../../src/modules/content/operational-static.seed.ts>) | seed | `OPERATIONAL_STATIC_KEYS`, `OPERATIONAL_STATIC_COPY`, `OPERATIONAL_STATIC_DEFAULTS`, `OPERATIONAL_STATIC_DRAFTS` |
 | [src/modules/content/operator-unpaid-confirmation.seed.ts](<../../src/modules/content/operator-unpaid-confirmation.seed.ts>) | seed | `OPERATOR_UNPAID_CONFIRMATION_KEYS` |
 | [src/modules/content/owner-evidence.seed.ts](<../../src/modules/content/owner-evidence.seed.ts>) | seed | `OWNER_EVIDENCE_KEYS`, `ownerEvidenceLabelsForLocale`, `OWNER_EVIDENCE_LOCALE_DRAFTS` |
 | [src/modules/content/pms-release.seed.ts](<../../src/modules/content/pms-release.seed.ts>) | seed | `PMS_RELEASE_KEYS` |
@@ -691,7 +692,7 @@ Exports перечислены синтаксически, без вывода �
 | [src/modules/content/reservation-guest.seed.ts](<../../src/modules/content/reservation-guest.seed.ts>) | seed | `RESERVATION_GUEST_LABELS`, `RESERVATION_GUEST_DRAFTS`, `RESERVATION_GUEST_KEYS` |
 | [src/modules/content/role-dashboards.seed.ts](<../../src/modules/content/role-dashboards.seed.ts>) | seed | `ROLE_DASHBOARD_KEYS` |
 | [src/modules/content/sales-offer.seed.ts](<../../src/modules/content/sales-offer.seed.ts>) | seed | `SALES_LABELS`, `SALES_DRAFTS`, `SALES_KEYS`, `salesDefaults` |
-| [src/modules/content/seed.ts](<../../src/modules/content/seed.ts>) | seed | `seedContent` |
+| [src/modules/content/seed.ts](<../../src/modules/content/seed.ts>) | seed | `getContentKeyDefinitions`, `seedContent` |
 | [src/modules/content/session-security.seed.ts](<../../src/modules/content/session-security.seed.ts>) | seed | `SESSION_SECURITY_KEYS` |
 | [src/modules/content/sleeping-space.seed.ts](<../../src/modules/content/sleeping-space.seed.ts>) | seed | `SLEEPING_SPACE_KEYS`, `sleepingSpaceLabelsForLocale`, `SLEEPING_SPACE_LOCALE_DRAFTS` |
 | [src/modules/content/stay-ux.seed.ts](<../../src/modules/content/stay-ux.seed.ts>) | seed | `stayUxDefaults`, `STAY_UX_KEYS` |
@@ -1146,6 +1147,8 @@ Exports перечислены синтаксически, без вывода �
 - [src/components/ops/ManualReservationForm.tsx](<../../src/components/ops/ManualReservationForm.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.tsx](<../../src/components/ops/OperationalTaskCreateForm.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.tsx](<../../src/components/ops/OperationalTaskQueueClient.tsx>)
+- [src/components/ops/OperationalText.tsx](<../../src/components/ops/OperationalText.tsx>)
+- [src/components/ops/OpsProjectFilter.tsx](<../../src/components/ops/OpsProjectFilter.tsx>)
 - [src/components/ops/OpsProjectSwitcher.tsx](<../../src/components/ops/OpsProjectSwitcher.tsx>)
 - [src/components/ops/OpsStatusPill.tsx](<../../src/components/ops/OpsStatusPill.tsx>)
 - [src/components/ops/PreventiveMaintenanceForm.tsx](<../../src/components/ops/PreventiveMaintenanceForm.tsx>)
@@ -6648,6 +6651,8 @@ model ImportedReservationPlacement {
 - [src/components/ops/ManualReservationForm.test.tsx](<../../src/components/ops/ManualReservationForm.test.tsx>)
 - [src/components/ops/OperationalTaskCreateForm.test.tsx](<../../src/components/ops/OperationalTaskCreateForm.test.tsx>)
 - [src/components/ops/OperationalTaskQueueClient.timezone.test.tsx](<../../src/components/ops/OperationalTaskQueueClient.timezone.test.tsx>)
+- [src/components/ops/OperationalText.test.tsx](<../../src/components/ops/OperationalText.test.tsx>)
+- [src/components/ops/OpsProjectFilter.test.tsx](<../../src/components/ops/OpsProjectFilter.test.tsx>)
 - [src/components/ops/ReservationGroupForm.test.tsx](<../../src/components/ops/ReservationGroupForm.test.tsx>)
 - [src/components/ops/StayActions.unpaid.test.tsx](<../../src/components/ops/StayActions.unpaid.test.tsx>)
 - [src/components/ops/UnifiedStayCalendar.test.tsx](<../../src/components/ops/UnifiedStayCalendar.test.tsx>)

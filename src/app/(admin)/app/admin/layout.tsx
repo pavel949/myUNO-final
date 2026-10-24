@@ -1,3 +1,5 @@
+import { OperationalCopyProvider } from '@/components/ops/OperationalText';
+import { OPERATIONAL_STATIC_DEFAULTS, OPERATIONAL_STATIC_DRAFTS } from '@/modules/content/operational-static.seed';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
@@ -24,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const labels = await getLabels({
+    ...OPERATIONAL_STATIC_DEFAULTS,
     'property.content.review.title': 'Review property content',
     'pricing.workspace.title': 'Assigned property rates',
     'admin.nav.title': 'myUNO Admin',
@@ -71,7 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     'admin.nav.scheduler': 'Scheduler',
     'admin.nav.launch_readiness': 'Launch readiness',
     'admin.nav.back_to_site': '← Back to site',
-  }, undefined, { ...CONTENT_PROPOSAL_REVIEW_DRAFTS, ...PRICING_WORKSPACE_DRAFTS });
+  }, undefined, { ...OPERATIONAL_STATIC_DRAFTS, ...CONTENT_PROPOSAL_REVIEW_DRAFTS, ...PRICING_WORKSPACE_DRAFTS });
 
   const sections: NavSection[] = [
     {
@@ -94,7 +97,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: '/mc/portfolio', label: labels['admin.nav.portfolio_os'] },
         { href: '/app/admin/projects', label: labels['admin.nav.projects'] },
-        { href: '/app/admin/property-submissions', label: 'Property applications' },
+        { href: '/app/admin/property-submissions', label: labels['admin.static.f5c65c3bd04c'] },
         { href: '/app/admin/property-content-proposals', label: labels['property.content.review.title'] },
         { href: '/property/pricing', label: labels['pricing.workspace.title'] },
         { href: '/app/admin/areas', label: labels['admin.projects.manage_areas'] },
@@ -165,7 +168,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
       <div className="min-w-0 flex-1 bg-surface-mint p-20 md:p-32">
-        <div className="stitch-admin-content mx-auto w-full max-w-[1500px]">{children}</div>
+        <div className="stitch-admin-content mx-auto w-full max-w-[1500px]"><OperationalCopyProvider labels={labels}>{children}</OperationalCopyProvider></div>
       </div>
     </div>
   );

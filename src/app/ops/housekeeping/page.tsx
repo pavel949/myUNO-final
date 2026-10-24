@@ -59,6 +59,12 @@ export default async function HousekeepingBoard(props:{searchParams?: Promise<{s
   const counts=rows.reduce<Record<string,number>>((acc,row)=>{acc[row.state]=(acc[row.state]||0)+1;return acc;},{});
   const labels=await getLabels({
     'staff.housekeeping.title':'Housekeeping board',
+    'staff.housekeeping.state.dirty':'Needs cleaning',
+    'staff.housekeeping.state.cleaning':'Cleaning',
+    'staff.housekeeping.state.awaiting_inspection':'Awaiting inspection',
+    'staff.housekeeping.state.ready':'Ready',
+    'staff.housekeeping.state.occupied':'Occupied',
+    'staff.housekeeping.state.maintenance':'Maintenance',
     'staff.housekeeping.open_tasks':'open tasks',
     'staff.housekeeping.open_tasks_action':'Open tasks →',
   });
@@ -66,9 +72,9 @@ export default async function HousekeepingBoard(props:{searchParams?: Promise<{s
     <main className="stitch-workspace"><div className="stitch-page space-y-20">
       <header className="stitch-hero-dark"><Link href={'/ops/spaces/'+encodeURIComponent(spaceId)} className="text-small font-semibold text-brand-sun-soft hover:underline">← {space.name}</Link><h1 className="mt-12 font-display text-display-xl font-semibold tracking-[-0.025em] text-white">{labels['staff.housekeeping.title']}</h1></header>
       <section className="grid grid-cols-2 gap-12 md:grid-cols-3 xl:grid-cols-6">
-        {['dirty','cleaning','awaiting_inspection','ready','occupied','maintenance'].map(state=><div key={state} className="stitch-panel border-b-4 border-b-brand-andaman/30 p-16"><p className="text-kicker font-semibold uppercase tracking-wider text-text-secondary">{state.replace(/_/g,' ')}</p><p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{counts[state]||0}</p></div>)}
+        {['dirty','cleaning','awaiting_inspection','ready','occupied','maintenance'].map(state=><div key={state} className="stitch-panel border-b-4 border-b-brand-andaman/30 p-16"><p className="text-kicker font-semibold uppercase tracking-wider text-text-secondary">{labels[('staff.housekeeping.state.'+state) as keyof typeof labels]}</p><p className="mt-4 font-display text-heading-2 font-bold font-tabular text-text-ink">{counts[state]||0}</p></div>)}
       </section>
-      <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">{rows.map(row=><article key={row.id} className="stitch-panel p-16"><p className="text-small font-semibold text-brand-andaman">{row.project.name}</p><div className="mt-4 flex items-center justify-between gap-8"><h2 className="font-display text-heading-3 font-semibold">{row.name}</h2><OpsStatusPill tone={opsStateTone(row.state)}>{row.state.replace(/_/g,' ')}</OpsStatusPill></div><p className="mt-12 text-small text-text-secondary font-tabular">{row.operationalTasks.length} {labels['staff.housekeeping.open_tasks']}</p><Link href={'/ops/tasks?spaceId='+encodeURIComponent(spaceId)+'&unitId='+encodeURIComponent(row.id)} className="mt-12 inline-flex rounded-lg border border-brand-andaman/30 bg-surface-mint px-12 py-8 text-small font-semibold text-brand-andaman transition hover:bg-brand-andaman hover:text-white">{labels['staff.housekeeping.open_tasks_action']}</Link></article>)}</section>
+      <section className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">{rows.map(row=><article key={row.id} className="stitch-panel p-16"><p className="text-small font-semibold text-brand-andaman">{row.project.name}</p><div className="mt-4 flex flex-wrap items-center justify-between gap-8"><h2 className="min-w-0 break-words font-display text-heading-3 font-semibold">{row.name}</h2><OpsStatusPill tone={opsStateTone(row.state)}>{labels[('staff.housekeeping.state.'+row.state) as keyof typeof labels]}</OpsStatusPill></div><p className="mt-12 text-small text-text-secondary font-tabular">{row.operationalTasks.length} {labels['staff.housekeeping.open_tasks']}</p><Link href={'/ops/tasks?spaceId='+encodeURIComponent(spaceId)+'&unitId='+encodeURIComponent(row.id)} className="mt-12 inline-flex rounded-lg border border-brand-andaman/30 bg-surface-mint px-12 py-8 text-small font-semibold text-brand-andaman transition hover:bg-brand-andaman hover:text-white">{labels['staff.housekeeping.open_tasks_action']}</Link></article>)}</section>
     </div></main>
   );
 }

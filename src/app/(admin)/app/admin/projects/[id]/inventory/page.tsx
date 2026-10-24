@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 import { UI_LOCALE } from '@/lib/format';
 import { PageHeading } from '@/components/premium/StitchPage';
@@ -44,11 +45,11 @@ export default async function ProjectInventoryPage(props: { params: Promise<{ id
     <ProjectWorkspaceNav projectId={project.id} active="inventory" />
     <div className="mb-24 flex flex-wrap items-end justify-between gap-12">
       <div>
-        <p className="text-kicker uppercase text-brand-andaman">Inventory</p>
+        <p className="text-kicker uppercase text-brand-andaman"><OperationalText text={"Inventory"} /></p>
         <PageHeading title={project.name} />
-        <p className="mt-8 text-body text-text-secondary">{project.inventoryCategories.length} categories · {unitCount} exact physical units</p>
+        <p className="mt-8 text-body text-text-secondary">{project.inventoryCategories.length} <OperationalText text={" categories · "} />{unitCount} <OperationalText text={" exact physical units"} /></p>
       </div>
-      <Link href={`/app/admin/properties/${project.id}/onboarding`} className="rounded-md bg-brand-andaman px-16 py-12 font-semibold text-white">Add / edit inventory</Link>
+      <Link href={`/app/admin/properties/${project.id}/onboarding`} className="rounded-md bg-brand-andaman px-16 py-12 font-semibold text-white"><OperationalText text={"Add / edit inventory"} /></Link>
     </div>
 
     <div className="space-y-16">
@@ -56,24 +57,24 @@ export default async function ProjectInventoryPage(props: { params: Promise<{ id
         <div className="flex flex-wrap items-start justify-between gap-12 border-b border-border-line p-16">
           <div>
             <h2 className="font-display text-heading-2 font-semibold">{category.name}</h2>
-            <p className="mt-4 text-small text-text-secondary">{category.categoryKey} · {category.bedrooms} bd / {category.bathrooms} ba · up to {category.maxGuests} guests · {category.status}</p>
+            <p className="mt-4 text-small text-text-secondary">{category.categoryKey} · {category.bedrooms} <OperationalText text={" bd / "} />{category.bathrooms} <OperationalText text={" ba · up to "} />{category.maxGuests} <OperationalText text={" guests · "} /><OperationalText text={category.status} /></p>
           </div>
           <div className="text-right text-small">
-            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString(UI_LOCALE)} base</p>
-            <p className="text-text-secondary">{category.minNights} night minimum · {category.units.length} units</p>
+            <p className="font-semibold">฿{Math.round(category.baseNightlyThb/100).toLocaleString(UI_LOCALE)} <OperationalText text={" base"} /></p>
+            <p className="text-text-secondary">{category.minNights} <OperationalText text={" night minimum · "} />{category.units.length} <OperationalText text={" units"} /></p>
           </div>
         </div>
         <div className="divide-y divide-border-line">
           {category.units.map(unit => <Link key={unit.id} href={`/app/admin/units/${unit.id}`} className="grid gap-8 p-16 hover:bg-surface-ivory md:grid-cols-[1fr_160px_150px_160px] md:items-center">
-            <div><p className="font-semibold text-text-ink">{unit.name}</p><p className="text-small text-text-secondary">{category.name} · {unit.bedrooms} bd / {unit.bathrooms} ba{unit.sizeSqm ? ` · ${unit.sizeSqm} sqm` : ''}</p></div>
-            <p className="text-small text-text-secondary">{unit.status} · {unit.assetStatus}</p>
-            <p className="text-small text-text-secondary">{unit._count.media} photos</p>
-            <p className="text-small text-text-secondary">{unit._count.bookings} bookings</p>
+            <div><p className="font-semibold text-text-ink">{unit.name}</p><p className="text-small text-text-secondary">{category.name} · {unit.bedrooms} <OperationalText text={" bd / "} />{unit.bathrooms} <OperationalText text={" ba"} />{unit.sizeSqm ? ` · ${unit.sizeSqm} sqm` : ''}</p></div>
+            <p className="text-small text-text-secondary"><OperationalText text={unit.status} /> · {unit.assetStatus}</p>
+            <p className="text-small text-text-secondary">{unit._count.media} <OperationalText text={" photos"} /></p>
+            <p className="text-small text-text-secondary">{unit._count.bookings} <OperationalText text={" bookings"} /></p>
           </Link>)}
-          {!category.units.length ? <p className="p-16 text-small text-text-secondary">No exact units assigned to this category.</p> : null}
+          {!category.units.length ? <p className="p-16 text-small text-text-secondary"><OperationalText text={"No exact units assigned to this category."} /></p> : null}
         </div>
       </section>)}
-      {!project.inventoryCategories.length ? <div className="rounded-md border border-dashed border-border-line p-32 text-center text-text-secondary">No canonical inventory categories yet.</div> : null}
+      {!project.inventoryCategories.length ? <div className="rounded-md border border-dashed border-border-line p-32 text-center text-text-secondary"><OperationalText text={"No canonical inventory categories yet."} /></div> : null}
     </div>
   </main>;
 }

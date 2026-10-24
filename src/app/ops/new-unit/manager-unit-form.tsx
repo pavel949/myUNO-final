@@ -1,4 +1,5 @@
 'use client';
+import { OperationalText, OperationalInput } from '@/components/ops/OperationalText';
 /* eslint-disable local-rules/no-literal-ui-text */
 
 import { useState } from 'react';
@@ -38,17 +39,17 @@ export default function ManagerUnitForm({ projects }: { projects: Project[] }) {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save'); setBusy(false); }
   }}>
     {error && <p className="md:col-span-2 text-state-error" role="alert">{error}</p>}
-    <label className="text-small">Complex / project<select required className={field} value={projectId} onChange={(e) => { setProjectId(e.target.value); setCategoryId(''); }}>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-    <label className="text-small">Category<select className={field} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}><option value="">Individual unit / no category yet</option>{project?.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-    <label className="text-small">Unit name / number<input required className={field} name="name" placeholder="F705 or Villa G6-01"/></label>
-    <label className="text-small">Type<select className={field} name="unitType"><option value="condo">Condominium / apartment / hotel room</option><option value="villa">Villa</option><option value="townhouse">Townhouse</option></select></label>
-    <label className="text-small">Location within project<input required className={field} name="addressSupplement" placeholder="Building F, floor 7"/></label>
-    <label className="text-small">Floor<input className={field} name="floor"/></label>
-    <label className="text-small">Bedrooms<input required className={field} type="number" min="0" name="bedrooms" defaultValue={category?.bedrooms ?? 1} key={categoryId + '-bed'}/></label>
-    <label className="text-small">Bathrooms<input required className={field} type="number" min="0" name="bathrooms" defaultValue={category?.bathrooms ?? 1} key={categoryId + '-bath'}/></label>
-    <label className="text-small">Max guests<input required className={field} type="number" min="1" name="maxGuests" defaultValue={category?.maxGuests ?? 2} key={categoryId + '-guests'}/></label>
-    <label className="text-small">Size, sqm<input type="number" min="0" className={field} name="sizeSqm"/></label>
-    {!category && <label className="text-small">Indicative nightly price (THB)<input required type="number" min="0" step="0.01" name="nightlyBaht" className={field} defaultValue="0"/></label>}
-    <div className="md:col-span-2"><p className="mb-12 text-small text-text-secondary">Created as draft. Owner mandate, media, offering, compliance and commercial approval follow canonical onboarding before publication.</p><button type="submit" disabled={busy || !projectId} className="rounded-md bg-brand-deep px-24 py-12 font-semibold text-white disabled:opacity-50">{busy ? 'Creating…' : 'Create draft unit'}</button></div>
+    <label className="text-small"><OperationalText text={"Complex / project"} /><select required className={field} value={projectId} onChange={(e) => { setProjectId(e.target.value); setCategoryId(''); }}>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+    <label className="text-small"><OperationalText text={"Category"} /><select className={field} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}><option value=""><OperationalText text={"Individual unit / no category yet"} /></option>{project?.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+    <label className="text-small"><OperationalText text={"Unit name / number"} /><OperationalInput required className={field} name="name" placeholder="F705 or Villa G6-01"/></label>
+    <label className="text-small"><OperationalText text={"Type"} /><select className={field} name="unitType"><option value="condo"><OperationalText text={"Condominium / apartment / hotel room"} /></option><option value="villa"><OperationalText text={"Villa"} /></option><option value="townhouse"><OperationalText text={"Townhouse"} /></option></select></label>
+    <label className="text-small"><OperationalText text={"Location within project"} /><OperationalInput required className={field} name="addressSupplement" placeholder="Building F, floor 7"/></label>
+    <label className="text-small"><OperationalText text={"Floor"} /><input className={field} name="floor"/></label>
+    <label className="text-small"><OperationalText text={"Bedrooms"} /><input required className={field} type="number" min="0" name="bedrooms" defaultValue={category?.bedrooms ?? 1} key={categoryId + '-bed'}/></label>
+    <label className="text-small"><OperationalText text={"Bathrooms"} /><input required className={field} type="number" min="0" name="bathrooms" defaultValue={category?.bathrooms ?? 1} key={categoryId + '-bath'}/></label>
+    <label className="text-small"><OperationalText text={"Max guests"} /><input required className={field} type="number" min="1" name="maxGuests" defaultValue={category?.maxGuests ?? 2} key={categoryId + '-guests'}/></label>
+    <label className="text-small"><OperationalText text={"Size, sqm"} /><input type="number" min="0" className={field} name="sizeSqm"/></label>
+    {!category && <label className="text-small"><OperationalText text={"Indicative nightly price (THB)"} /><input required type="number" min="0" step="0.01" name="nightlyBaht" className={field} defaultValue="0"/></label>}
+    <div className="md:col-span-2"><p className="mb-12 text-small text-text-secondary"><OperationalText text={"Created as draft. Owner mandate, media, offering, compliance and commercial approval follow canonical onboarding before publication."} /></p><button type="submit" disabled={busy || !projectId} className="rounded-md bg-brand-deep px-24 py-12 font-semibold text-white disabled:opacity-50"><OperationalText text={busy ? 'Creating…' : 'Create draft unit'} /></button></div>
   </form>;
 }

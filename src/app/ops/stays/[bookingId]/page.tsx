@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 import Link from 'next/link';
 import { pmsNavigationHref } from '@/lib/pms-navigation';
 import { notFound,redirect } from 'next/navigation';
@@ -199,7 +200,7 @@ export default async function CanonicalStayPage(
               <h3 className="font-semibold">{labels['staff.stay_360.claims']}</h3>
               {booking.depositClaims.length===0?<p className="mt-8 text-small text-text-secondary">{labels['staff.stay_360.no_claims']}</p>:
                 <ul className="mt-8 space-y-8">{booking.depositClaims.map(claim=><li key={claim.id} className="rounded-md bg-surface-ivory p-12 text-small">
-                  <div className="flex justify-between gap-8"><span className="font-semibold">{claim.status}</span><span>{amount(claim.claimedAmountThb)}</span></div>
+                  <div className="flex justify-between gap-8"><span className="font-semibold"><OperationalText text={claim.status} /></span><span>{amount(claim.claimedAmountThb)}</span></div>
                   <p className="mt-4 text-text-secondary">{claim.description}</p>
                 </li>)}</ul>}
             </div>

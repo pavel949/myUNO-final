@@ -1,3 +1,4 @@
+import { OperationalText } from '@/components/ops/OperationalText';
 import Link from 'next/link';
 import { PageHeading } from '@/components/premium/StitchPage';
 import { getLabels } from '@/lib/i18n';
@@ -20,7 +21,7 @@ const processes: Process[] = [
   { number: '08', title: 'Sales & CRM', description: 'Manage prospects and property sales separately from rental reservations.', steps: ['Lead', 'Qualification', 'Deal'], primary: { label: 'CRM & pipeline', href: '/app/admin/crm' }, secondary: [{ label: 'Prospecting', href: '/app/admin/prospecting' }] },
   { number: '09', title: 'Owners', description: 'Keep contracts, statements and owner-facing records linked to the portfolio.', steps: ['Owner', 'Contract', 'Statement'], primary: { label: 'Contracts', href: '/app/admin/contracts' }, secondary: [{ label: 'Statements', href: '/app/admin/statements' }, { label: 'Owner portal', href: '/owner' }] },
   { number: '10', title: 'Partners & agents', description: 'Manage providers and booking attribution through existing surfaces.', steps: ['Partner', 'Referral', 'Attribution'], primary: { label: 'Providers', href: '/app/admin/providers' }, secondary: [{ label: 'Attribution', href: '/app/admin/reports/attribution' }] },
-  { number: '11', title: 'Concierge services', description: 'Track service supply and fulfillment alongside property stays.', steps: ['Catalogue', 'Order', 'Fulfillment'], primary: { label: 'Service orders', href: '/app/admin/service-orders' }, secondary: [{ label: 'Service submissions', href: '/app/admin/services' }] },
+  { number: '11', title: 'Concierge services', description: 'Track service supply and fulfillment alongside property stays.', steps: ['Catalogue', 'Service orders', 'Fulfillment'], primary: { label: 'Service orders', href: '/app/admin/service-orders' }, secondary: [{ label: 'Service submissions', href: '/app/admin/services' }] },
   { number: '12', title: 'Finance & governance', description: 'Use the ledger as the financial record, with reconciliation and audit.', steps: ['Payment', 'Ledger', 'Settlement'], primary: { label: 'Ledger', href: '/app/admin/ledger' }, secondary: [{ label: 'Payouts', href: '/app/admin/payouts' }, { label: 'Audit trail', href: '/app/admin/audit' }] },
 ];
 
@@ -61,7 +62,7 @@ export default async function ProcessesPage() {
           {['One property record', 'Commercial offers', 'Availability & rates', 'One booking record', 'Operations & ledger'].map((step, i) => (
             <span key={step} className="inline-flex items-center gap-8">
               {i > 0 && <span className="text-brand-andaman" aria-hidden="true">→</span>}
-              <span className="rounded-full bg-surface-ivory border border-border-line px-12 py-8 text-text-ink">{step}</span>
+              <span className="rounded-full bg-surface-ivory border border-border-line px-12 py-8 text-text-ink"><OperationalText text={step} /></span>
             </span>
           ))}
         </div>
@@ -70,8 +71,8 @@ export default async function ProcessesPage() {
       {lanes.map((lane) => (
         <section key={lane.title} aria-label={lane.title} className="space-y-16">
           <div>
-            <h2 className="font-display text-title font-semibold text-text-ink">{lane.title}</h2>
-            <p className="text-small text-text-secondary mt-4">{lane.description}</p>
+            <h2 className="font-display text-title font-semibold text-text-ink"><OperationalText text={lane.title} /></h2>
+            <p className="text-small text-text-secondary mt-4"><OperationalText text={lane.description} /></p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             {lane.items.map((process) => (
@@ -79,8 +80,8 @@ export default async function ProcessesPage() {
                 <div className="flex items-start gap-12">
                   <span className="shrink-0 rounded-md bg-surface-ivory px-12 py-8 text-small font-semibold text-brand-andaman tabular-nums">{process.number}</span>
                   <div>
-                    <h3 className="font-display text-subtitle font-semibold text-text-ink">{process.title}</h3>
-                    <p className="text-small text-text-secondary mt-4">{process.description}</p>
+                    <h3 className="font-display text-subtitle font-semibold text-text-ink"><OperationalText text={process.title} /></h3>
+                    <p className="text-small text-text-secondary mt-4"><OperationalText text={process.description} /></p>
                   </div>
                 </div>
                 <div className="stitch-panel-soft mt-16 p-12" aria-live="polite">
@@ -88,11 +89,11 @@ export default async function ProcessesPage() {
                   {state[process.number as keyof typeof state].attention && <p className="text-small text-state-warning mt-4">{labels['admin.processes.attention']} {state[process.number as keyof typeof state].attention}</p>}
                 </div>
                 <ol className="flex flex-wrap items-center gap-8 my-20 text-small text-text-secondary" aria-label={process.title + ' stages'}>
-                  {process.steps.map((step, i) => <li key={step} className="flex items-center gap-8">{i > 0 && <span aria-hidden="true">→</span>}<span className="rounded-md bg-surface-ivory px-8 py-4">{step}</span></li>)}
+                  {process.steps.map((step, i) => <li key={step} className="flex items-center gap-8">{i > 0 && <span aria-hidden="true">→</span>}<span className="rounded-md bg-surface-ivory px-8 py-4"><OperationalText text={step} /></span></li>)}
                 </ol>
                 <div className="mt-auto flex flex-wrap items-center gap-x-16 gap-y-12 border-t border-border-line pt-16">
-                  <Link href={process.primary.href} className="rounded-md bg-brand-andaman px-12 py-8 text-small font-semibold text-on-dark-text hover:opacity-90 transition-opacity">{process.primary.label} →</Link>
-                  {process.secondary?.map((link) => <Link key={link.href} href={link.href} className="text-small text-brand-andaman underline underline-offset-4 hover:no-underline">{link.label}</Link>)}
+                  <Link href={process.primary.href} className="rounded-md bg-brand-andaman px-12 py-8 text-small font-semibold text-on-dark-text hover:opacity-90 transition-opacity"><OperationalText text={process.primary.label} /> →</Link>
+                  {process.secondary?.map((link) => <Link key={link.href} href={link.href} className="text-small text-brand-andaman underline underline-offset-4 hover:no-underline"><OperationalText text={link.label} /></Link>)}
                 </div>
               </article>
             ))}

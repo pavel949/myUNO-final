@@ -1,4 +1,5 @@
 'use client';
+import { OperationalInput } from '@/components/ops/OperationalText';
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -61,7 +62,7 @@ export default function ProjectTeamClient({ projects, labels }: { projects: Proj
     <form onSubmit={assign} className="mt-24 flex flex-col gap-8 md:flex-row">
       <label className="flex-1 text-small font-semibold text-text-ink" htmlFor="team-email">
         {labels['ops.team.email']}
-        <input id="team-email" type="email" required value={email} onChange={e => setEmail(e.target.value)}
+        <OperationalInput id="team-email" type="email" required value={email} onChange={e => setEmail(e.target.value)}
           className="mt-8 w-full rounded-lg border border-border-line bg-surface-ivory p-12"
           placeholder="colleague@example.com" />
       </label>

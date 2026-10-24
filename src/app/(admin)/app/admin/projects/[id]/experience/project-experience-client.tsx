@@ -1,5 +1,6 @@
 /* eslint-disable local-rules/no-literal-ui-text */
 'use client';
+import { OperationalText, OperationalInput } from '@/components/ops/OperationalText';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -248,108 +249,108 @@ export default function ProjectExperienceClient({
   return <div className="grid gap-20 lg:grid-cols-[300px_1fr]">
     <aside className="space-y-12">
       <form onSubmit={createAmenity} className="rounded-md border border-border-line bg-surface-paper p-16">
-        <h2 className="font-semibold text-text-ink">Add amenity or facility</h2>
-        <label className="mt-12 block text-small">Choose a common facility (optional)<select defaultValue="" className={input} onChange={event => {
+        <h2 className="font-semibold text-text-ink"><OperationalText text={"Add amenity or facility"} /></h2>
+        <label className="mt-12 block text-small"><OperationalText text={"Choose a common facility (optional)"} /><select defaultValue="" className={input} onChange={event => {
           const name = event.currentTarget.form?.elements.namedItem('name');
           if (name instanceof HTMLInputElement && event.target.value) name.value = event.target.value;
-        }}><option value="">Choose or enter your own below</option>{commonFacilities.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-        <p className="mt-8 text-small text-text-secondary">Select only facilities this complex actually has. Add as a draft, complete known details, then publish.</p>
-        <label className="mt-12 block text-small">Name<input name="name" required className={input} placeholder="Cinema room, sauna, beach shuttle…" /></label>
-        <label className="mt-8 block text-small">Group / category<input name="categoryKey" className={input} placeholder="wellness, entertainment, transport…" /></label>
-        <label className="mt-8 block text-small">Short guest description<input name="shortDescription" className={input} /></label>
-        <button disabled={busy} className="mt-12 min-h-40 rounded-md bg-brand-andaman px-16 font-semibold text-white disabled:opacity-50">Add draft</button>
+        }}><option value=""><OperationalText text={"Choose or enter your own below"} /></option>{commonFacilities.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+        <p className="mt-8 text-small text-text-secondary"><OperationalText text={"Select only facilities this complex actually has. Add as a draft, complete known details, then publish."} /></p>
+        <label className="mt-12 block text-small"><OperationalText text={"Name"} /><OperationalInput name="name" required className={input} placeholder="Cinema room, sauna, beach shuttle…" /></label>
+        <label className="mt-8 block text-small"><OperationalText text={"Group / category"} /><OperationalInput name="categoryKey" className={input} placeholder="wellness, entertainment, transport…" /></label>
+        <label className="mt-8 block text-small"><OperationalText text={"Short guest description"} /><input name="shortDescription" className={input} /></label>
+        <button disabled={busy} className="mt-12 min-h-40 rounded-md bg-brand-andaman px-16 font-semibold text-white disabled:opacity-50"><OperationalText text={"Add draft"} /></button>
       </form>
 
-      <input value={query} onChange={e => setQuery(e.target.value)} className={input} placeholder="Search amenities…" />
+      <OperationalInput value={query} onChange={e => setQuery(e.target.value)} className={input} placeholder="Search amenities…" />
       <div className="max-h-[640px] space-y-8 overflow-y-auto pr-4">
         {filtered.map(row => <button key={row.id} disabled={busy} onClick={() => { setSelectedId(row.id); setEditorVersion(new Date(row.updatedAt).toISOString()); setMessage(null); }} className={`w-full rounded-lg border p-12 text-left ${selectedId === row.id ? 'border-brand-andaman bg-surface-paper' : 'border-border-line bg-surface-ivory'}`}>
-          <div className="flex justify-between gap-8"><span className="font-medium text-text-ink">{row.name}</span><span className="text-small text-text-secondary">{row.published ? 'Live' : 'Draft'}</span></div>
-          <p className="mt-8 text-small text-text-secondary">{row.categoryKey || 'Uncategorized'}{row.bookingRequired ? ' · booking' : ''}</p>
+          <div className="flex justify-between gap-8"><span className="font-medium text-text-ink">{row.name}</span><span className="text-small text-text-secondary"><OperationalText text={row.published ? 'Live' : 'Draft'} /></span></div>
+          <p className="mt-8 text-small text-text-secondary">{row.categoryKey || 'Uncategorized'}<OperationalText text={row.bookingRequired ? ' · booking' : ''} /></p>
         </button>)}
       </div>
     </aside>
 
     <section>
       {message ? <p role="status" className="mb-12 rounded-lg bg-surface-subtle p-12 text-small">{message}</p> : null}
-      {!selected ? <div className="rounded-md border border-border-line bg-surface-paper p-24 text-text-secondary">Select an amenity or add a new one.</div> : (
+      {!selected ? <div className="rounded-md border border-border-line bg-surface-paper p-24 text-text-secondary"><OperationalText text={"Select an amenity or add a new one."} /></div> : (
         <form key={`${selected.id}:${editorVersion}`} onSubmit={saveAmenity}>
           <fieldset disabled={busy} className="space-y-20">
           <div className="rounded-md border border-border-line bg-surface-paper p-20">
             <div className="flex flex-wrap items-center justify-between gap-12">
-              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary">Shared complex facility · ID {selected.id}</p>{selected.bookingRequired && canOperateReservations ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline">Manage reservations →</Link> : null}</div>
+              <div><h2 className="font-display text-heading-2 font-semibold">{selected.name}</h2><p className="text-small text-text-secondary"><OperationalText text={"Shared complex facility · ID "} />{selected.id}</p>{selected.bookingRequired && canOperateReservations ? <Link href={`/app/admin/projects/${projectId}/amenities/${selected.id}/reservations`} className="mt-4 inline-block text-small font-semibold text-brand-andaman underline"><OperationalText text={"Manage reservations →"} /></Link> : null}</div>
               <div className="flex gap-8">
-                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> Featured</label>
-                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> Published</label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="isFeatured" defaultChecked={selected.isFeatured}/> <OperationalText text={" Featured"} /></label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="published" defaultChecked={selected.published}/> <OperationalText text={" Published"} /></label>
               </div>
             </div>
 
             <div className="mt-16 grid gap-12 md:grid-cols-2">
-              <label className="text-small">Name<input name="name" defaultValue={selected.name} required className={input}/></label>
-              <label className="text-small">Slug<input name="slug" defaultValue={selected.slug} required className={input}/></label>
-              <label className="text-small">Group / category<input name="categoryKey" defaultValue={selected.categoryKey || ''} className={input}/></label>
-              <label className="text-small">Icon key (optional)<input name="iconKey" defaultValue={selected.iconKey || ''} className={input}/></label>
-              <label className="text-small md:col-span-2">Short description<input name="shortDescription" defaultValue={selected.shortDescription || ''} className={input}/></label>
-              <label className="text-small md:col-span-2">Full guest description<textarea name="description" defaultValue={selected.description || ''} className={area}/></label>
-              <label className="text-small">Location / floor inside complex<input name="locationLabel" defaultValue={selected.locationLabel || ''} className={input} placeholder="Building C, level 2"/></label>
-              <label className="text-small">Display order<input type="number" min="0" name="sort" defaultValue={selected.sort} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Name"} /><input name="name" defaultValue={selected.name} required className={input}/></label>
+              <label className="text-small"><OperationalText text={"Slug"} /><input name="slug" defaultValue={selected.slug} required className={input}/></label>
+              <label className="text-small"><OperationalText text={"Group / category"} /><input name="categoryKey" defaultValue={selected.categoryKey || ''} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Icon key (optional)"} /><input name="iconKey" defaultValue={selected.iconKey || ''} className={input}/></label>
+              <label className="text-small md:col-span-2"><OperationalText text={"Short description"} /><input name="shortDescription" defaultValue={selected.shortDescription || ''} className={input}/></label>
+              <label className="text-small md:col-span-2"><OperationalText text={"Full guest description"} /><textarea name="description" defaultValue={selected.description || ''} className={area}/></label>
+              <label className="text-small"><OperationalText text={"Location / floor inside complex"} /><OperationalInput name="locationLabel" defaultValue={selected.locationLabel || ''} className={input} placeholder="Building C, level 2"/></label>
+              <label className="text-small"><OperationalText text={"Display order"} /><input type="number" min="0" name="sort" defaultValue={selected.sort} className={input}/></label>
             </div>
           </div>
 
           <AmenityTranslationsEditor projectId={projectId} amenityId={selected.id} />
 
           <div className="rounded-md border border-border-line bg-surface-paper p-20">
-            <h3 className="font-semibold">Access, use and booking</h3>
-            <p className="mt-4 text-small text-text-secondary">Values are open, not tied to a fixed amenity list. Use project-specific wording where needed. Booking method “other” records a local requirement without enabling online reservations. Leave price unknown as “not_specified”.</p>
+            <h3 className="font-semibold"><OperationalText text={"Access, use and booking"} /></h3>
+            <p className="mt-4 text-small text-text-secondary"><OperationalText text={"Values are open, not tied to a fixed amenity list. Use project-specific wording where needed. Booking method “other” records a local requirement without enabling online reservations. Leave price unknown as “not_specified”."} /></p>
             <div className="mt-12 grid gap-12 md:grid-cols-2">
-              <label className="text-small">Access type<input list="amenity-access-types" name="accessType" defaultValue={selected.accessType} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Access type"} /><input list="amenity-access-types" name="accessType" defaultValue={selected.accessType} className={input}/></label>
               <datalist id="amenity-access-types"><option value="not_specified"/><option value="open"/><option value="room_key"/><option value="key_card"/><option value="wristband"/><option value="staff_assisted"/><option value="reservation"/><option value="membership"/></datalist>
-              <label className="text-small">Access instructions<textarea name="accessInstructions" defaultValue={selected.accessInstructions || ''} className={area}/></label>
-              <label className="flex items-center gap-8 text-small"><input type="checkbox" name="bookingRequired" defaultChecked={selected.bookingRequired}/> Advance booking / reservation required</label>
-              <label className="text-small">Booking method<input list="amenity-booking-modes" name="bookingMode" defaultValue={selected.bookingMode} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Access instructions"} /><textarea name="accessInstructions" defaultValue={selected.accessInstructions || ''} className={area}/></label>
+              <label className="flex items-center gap-8 text-small"><input type="checkbox" name="bookingRequired" defaultChecked={selected.bookingRequired}/> <OperationalText text={" Advance booking / reservation required"} /></label>
+              <label className="text-small"><OperationalText text={"Booking method"} /><input list="amenity-booking-modes" name="bookingMode" defaultValue={selected.bookingMode} className={input}/></label>
               <datalist id="amenity-booking-modes"><option value="none"/><option value="other"/><option value="reception"/><option value="request"/><option value="time_slot"/><option value="external_link"/></datalist>
-              <label className="text-small">Booking URL / action (optional)<input name="bookingUrl" defaultValue={selected.bookingUrl || ''} className={input}/></label>
-              <label className="text-small">Slot size (minutes)<input name="slotMinutes" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'slotMinutes')} className={input} placeholder="60"/></label>
+              <label className="text-small"><OperationalText text={"Booking URL / action (optional)"} /><input name="bookingUrl" defaultValue={selected.bookingUrl || ''} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Slot size (minutes)"} /><input name="slotMinutes" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'slotMinutes')} className={input} placeholder="60"/></label>
               <div className="grid grid-cols-2 gap-8">
-                <label className="text-small">Minimum booking notice<input name="leadTimeAmount" type="number" min="0" step="1" defaultValue={leadTime?.amount ?? ''} className={input}/></label>
-                <label className="text-small">Notice unit<select name="leadTimeUnit" defaultValue={leadTime?.unit === 'days' ? '1440' : leadTime?.unit === 'hours' ? '60' : '1'} className={input}><option value="1">Minutes</option><option value="60">Hours</option><option value="1440">Days</option></select></label>
+                <label className="text-small"><OperationalText text={"Minimum booking notice"} /><input name="leadTimeAmount" type="number" min="0" step="1" defaultValue={leadTime?.amount ?? ''} className={input}/></label>
+                <label className="text-small"><OperationalText text={"Notice unit"} /><select name="leadTimeUnit" defaultValue={leadTime?.unit === 'days' ? '1440' : leadTime?.unit === 'hours' ? '60' : '1'} className={input}><option value="1"><OperationalText text={"Minutes"} /></option><option value="60"><OperationalText text={"Hours"} /></option><option value="1440"><OperationalText text={"Days"} /></option></select></label>
               </div>
-              <label className="text-small">Maximum advance window (days)<input name="maxAdvanceDays" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxAdvanceDays')} className={input} placeholder="90"/></label>
-              <label className="text-small">Maximum party size<input name="maxPartySize" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxPartySize')} className={input}/></label>
-              <label className="text-small">Shared capacity per slot<input name="maxConcurrentGuests" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxConcurrentGuests')} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Maximum advance window (days)"} /><input name="maxAdvanceDays" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxAdvanceDays')} className={input} placeholder="90"/></label>
+              <label className="text-small"><OperationalText text={"Maximum party size"} /><input name="maxPartySize" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxPartySize')} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Shared capacity per slot"} /><input name="maxConcurrentGuests" type="number" min="1" defaultValue={configValue(selected.reservationConfig, 'maxConcurrentGuests')} className={input}/></label>
               <div className="flex flex-wrap gap-16 md:col-span-2">
-                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="exclusive" defaultChecked={configBool(selected.reservationConfig, 'exclusive', true)}/> Exclusive slot</label>
-                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="autoConfirm" defaultChecked={configBool(selected.reservationConfig, 'autoConfirm', true)}/> Auto-confirm available slots</label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="exclusive" defaultChecked={configBool(selected.reservationConfig, 'exclusive', true)}/> <OperationalText text={" Exclusive slot"} /></label>
+                <label className="flex items-center gap-8 text-small"><input type="checkbox" name="autoConfirm" defaultChecked={configBool(selected.reservationConfig, 'autoConfirm', true)}/> <OperationalText text={" Auto-confirm available slots"} /></label>
               </div>
-              <label className="text-small">Pricing / entitlement<input list="amenity-pricing-types" name="pricingType" defaultValue={selected.pricingType} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Pricing / entitlement"} /><input list="amenity-pricing-types" name="pricingType" defaultValue={selected.pricingType} className={input}/></label>
               <datalist id="amenity-pricing-types"><option value="not_specified"/><option value="included"/><option value="free"/><option value="paid"/><option value="deposit"/><option value="mixed"/></datalist>
-              <label className="text-small">Price THB (optional)<input name="priceBaht" type="number" min="0" step="0.01" defaultValue={money(selected.priceThb)} className={input}/></label>
-              <label className="text-small">Capacity (optional)<input name="capacity" type="number" min="1" defaultValue={selected.capacity ?? ''} className={input}/></label>
-              <label className="text-small">Minimum age (optional)<input name="minAge" type="number" min="0" defaultValue={selected.minAge ?? ''} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Price THB (optional)"} /><input name="priceBaht" type="number" min="0" step="0.01" defaultValue={money(selected.priceThb)} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Capacity (optional)"} /><input name="capacity" type="number" min="1" defaultValue={selected.capacity ?? ''} className={input}/></label>
+              <label className="text-small"><OperationalText text={"Minimum age (optional)"} /><input name="minAge" type="number" min="0" defaultValue={selected.minAge ?? ''} className={input}/></label>
             </div>
           </div>
 
           <div className="rounded-md border border-border-line bg-surface-paper p-20">
-            <h3 className="font-semibold">Hours, rules and terms</h3>
+            <h3 className="font-semibold"><OperationalText text={"Hours, rules and terms"} /></h3>
             <div className="mt-12 grid gap-12 md:grid-cols-2">
               <AmenityHoursEditor value={selected.openingHours} timezone={timezone} disabled={busy} />
-              <label className="text-small md:col-span-2">Visitor and usage rules<textarea name="rules" defaultValue={amenityLinesInput(selected.rules)} className={area} placeholder={'One rule per line; leave unknown rules empty'}/></label>
-              <label className="text-small md:col-span-2">Terms of use<textarea name="terms" defaultValue={selected.terms || ''} className={area}/></label>
+              <label className="text-small md:col-span-2"><OperationalText text={"Visitor and usage rules"} /><textarea name="rules" defaultValue={amenityLinesInput(selected.rules)} className={area} placeholder={'One rule per line; leave unknown rules empty'}/></label>
+              <label className="text-small md:col-span-2"><OperationalText text={"Terms of use"} /><textarea name="terms" defaultValue={selected.terms || ''} className={area}/></label>
             </div>
           </div>
 
           <div className="rounded-md border border-border-line bg-surface-paper p-20">
-            <div className="flex flex-wrap items-center justify-between gap-12"><div><h3 className="font-semibold">Amenity gallery</h3><p className="text-small text-text-secondary">Photos belong to this amenity, not to the whole project or a unit.</p></div><label className="cursor-pointer rounded-md border border-border-line px-12 py-8 text-small font-semibold">Upload photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} className="hidden"/></label></div>
+            <div className="flex flex-wrap items-center justify-between gap-12"><div><h3 className="font-semibold"><OperationalText text={"Amenity gallery"} /></h3><p className="text-small text-text-secondary"><OperationalText text={"Photos belong to this amenity, not to the whole project or a unit."} /></p></div><label className="cursor-pointer rounded-md border border-border-line px-12 py-8 text-small font-semibold"><OperationalText text={"Upload photo"} /><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} className="hidden"/></label></div>
             <div className="mt-12 grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
               {selected.media.map(row => <div key={row.mediaId} className="relative overflow-hidden rounded-lg border border-border-line">
                 <Image src={row.media.storageKey} alt={selected.name} width={420} height={260} className="aspect-video w-full object-cover"/>
-                <div className="flex flex-wrap gap-8 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-small font-semibold text-brand-andaman">{selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'}</button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-small text-state-error">Remove</button></div>
+                <div className="flex flex-wrap gap-8 p-8"><button type="button" onClick={() => setCover(row.mediaId)} className="text-small font-semibold text-brand-andaman"><OperationalText text={selected.coverMediaId === row.mediaId ? 'Cover' : 'Set cover'} /></button><button type="button" onClick={() => removePhoto(row.mediaId)} className="text-small text-state-error"><OperationalText text={"Remove"} /></button></div>
               </div>)}
             </div>
           </div>
 
           <div className="flex flex-wrap justify-between gap-12">
-            <button type="button" onClick={deleteAmenity} disabled={busy} className="min-h-40 rounded-md border border-state-error px-16 font-semibold text-state-error">Delete amenity</button>
-            <button disabled={busy} className="min-h-44 rounded-md bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save amenity'}</button>
+            <button type="button" onClick={deleteAmenity} disabled={busy} className="min-h-40 rounded-md border border-state-error px-16 font-semibold text-state-error"><OperationalText text={"Delete amenity"} /></button>
+            <button disabled={busy} className="min-h-44 rounded-md bg-brand-andaman px-20 font-semibold text-white disabled:opacity-50"><OperationalText text={busy ? 'Saving…' : 'Save amenity'} /></button>
           </div>
           </fieldset>
         </form>
